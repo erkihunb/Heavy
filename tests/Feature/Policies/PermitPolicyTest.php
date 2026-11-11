@@ -263,8 +263,11 @@ it('covers every ability of the policy', function () {
         ->values()
         ->all();
 
-    // submitPayment is covered in PaymentPolicyTest.
-    $tested = ['viewAny', 'create', 'view', 'viewQueue', 'submitPayment', ...APPLICANT_ABILITIES, ...REVIEWER_ABILITIES, ...APPROVER_ABILITIES];
+    // submitPayment is covered in PaymentPolicyTest; download, reissue, scan and report in VerificationPolicyTest.
+    $tested = [
+        'viewAny', 'create', 'view', 'viewQueue', 'submitPayment', 'download', 'reissue', 'scan', 'report',
+        ...APPLICANT_ABILITIES, ...REVIEWER_ABILITIES, ...APPROVER_ABILITIES,
+    ];
     sort($tested);
 
     expect($methods)->toBe($tested);

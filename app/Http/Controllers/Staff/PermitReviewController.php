@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Staff;
 
 use App\Actions\Permits\ApprovePermit;
 use App\Actions\Permits\RecommendPermit;
+use App\Actions\Permits\ReissuePermit;
 use App\Actions\Permits\RejectPermit;
 use App\Actions\Permits\RequestChanges;
+use App\Actions\Permits\RevokePermit;
 use App\Actions\Permits\StartReview;
 use App\Domain\Permits\OverlapGuard;
 use App\Domain\Vehicles\PlateNumber;
@@ -14,8 +16,10 @@ use App\Enums\PermitType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\ApprovePermitRequest;
 use App\Http\Requests\Staff\RecommendPermitRequest;
+use App\Http\Requests\Staff\ReissuePermitRequest;
 use App\Http\Requests\Staff\RejectPermitRequest;
 use App\Http\Requests\Staff\RequestChangesRequest;
+use App\Http\Requests\Staff\RevokePermitRequest;
 use App\Http\Requests\Staff\StartReviewRequest;
 use App\Http\Resources\PermitResource;
 use App\Http\Resources\VehiclePermitHistoryResource;
@@ -140,6 +144,20 @@ class PermitReviewController extends Controller
         $rejectPermit->handle($permit, $request->user(), (string) $request->note());
 
         return to_route('staff.permits.show', $permit)->with('success', __('permits.messages.rejected'));
+    }
+
+    public function revoke(RevokePermitRequest $request, Permit $permit, RevokePermit $revokePermit): RedirectResponse
+    {
+        $revokePermit->handle($permit, $request->user(), (string) $request->note());
+
+        return to_route('staff.permits.show', $permit)->with('success', __('permits.messages.revoked'));
+    }
+
+    public function reissue(ReissuePermitRequest $request, Permit $permit, ReissuePermit $reissuePermit): RedirectResponse
+    {
+        $reissuePermit->handle($permit, $request->user(), (string) $request->note());
+
+        return to_route('staff.permits.show', $permit)->with('success', __('permits.messages.reissued'));
     }
 
     /**

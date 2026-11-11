@@ -108,6 +108,53 @@ class PermitPolicy
         return $this->staffWith($user, $permit, Permission::RevokePermits);
     }
 
+    /**
+     * Replacing the QR code and document of an issued permit. Whether the
+     * permit is still live is checked by ReissuePermit.
+     */
+    public function reissue(User $user, Permit $permit): Response
+    {
+        return $this->staffWith($user, $permit, Permission::RevokePermits);
+    }
+
+    /**
+     * Opening the permit's PDF: its own organization while the permit is
+     * issued or has expired, and staff who can see the permit.
+     */
+    public function download(User $user, Permit $permit): Response
+    {
+        if ($this->isOwnedByOrganizationOf($user, $permit)) {
+            return $user->can(Permission::DownloadOwnPermits->value)
+                && in_array($permit->status, [PermitStatus::Issued, PermitStatus::Expired], true)
+                ? Response::allow()
+                : Response::deny();
+        }
+
+        return $this->isVisibleToStaff($user, $permit) ? Response::allow() : Response::denyAsNotFound();
+    }
+
+    /**
+     * The traffic officer's view of a verification (spec §7).
+     */
+    public function scan(User $user): bool
+    {
+        return $user->can(Permission::ScanPermits->value);
+    }
+
+    /**
+     * Reporting a violation seen at the roadside.
+     */
+    public function report(User $user, Permit $permit): Response
+    {
+        if (! $user->can(Permission::ScanPermits->value)) {
+            return Response::deny();
+        }
+
+        return in_array($permit->status, [PermitStatus::Issued, PermitStatus::Expired, PermitStatus::Revoked], true)
+            ? Response::allow()
+            : Response::denyAsNotFound();
+    }
+
     private function isOwnedByOrganizationOf(User $user, Permit $permit): bool
     {
         return $user->can(Permission::ApplyForPermits->value)

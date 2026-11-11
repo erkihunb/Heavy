@@ -1,5 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, FileDown, TriangleAlert } from 'lucide-react';
 import { DualDate } from '@/components/dual-date';
 import { PageHeader } from '@/components/page-header';
 import { PermitDetails } from '@/components/permit-details';
@@ -14,8 +14,10 @@ import {
     approve,
     index,
     recommend,
+    reissue,
     reject,
     requestChanges,
+    revoke,
     show,
     startReview,
 } from '@/routes/staff/permits';
@@ -37,7 +39,9 @@ export default function StaffPermitsShow({ permit, vehicleHistory }: Props) {
         can.recommend ||
         can.requestChanges ||
         can.approve ||
-        can.reject;
+        can.reject ||
+        can.revoke ||
+        can.reissue;
 
     // Why an Approver cannot decide yet. Display only: the server enforces it.
     const isApprover =
@@ -314,6 +318,48 @@ export default function StaffPermitsShow({ permit, vehicleHistory }: Props) {
                                 noteLabel={t(
                                     'permits.staff.note_for_applicant',
                                 )}
+                                destructive
+                            />
+                        )}
+
+                        {permit.document_url && (
+                            <Button
+                                asChild
+                                variant="outline"
+                                className="w-full"
+                            >
+                                <a
+                                    href={permit.document_url}
+                                    target="_blank"
+                                    rel="noopener"
+                                >
+                                    <FileDown aria-hidden="true" />
+                                    {t('permits.actions.download')}
+                                </a>
+                            </Button>
+                        )}
+
+                        {can.reissue && (
+                            <StaffAction
+                                id="reissue"
+                                title={t('permits.staff.reissue.title')}
+                                hint={t('permits.staff.reissue.hint')}
+                                action={reissue.url(args)}
+                                submitLabel={t('permits.staff.reissue.submit')}
+                                note="required"
+                                noteLabel={t('permits.staff.reissue.reason')}
+                            />
+                        )}
+
+                        {can.revoke && (
+                            <StaffAction
+                                id="revoke"
+                                title={t('permits.staff.revoke.title')}
+                                hint={t('permits.staff.revoke.hint')}
+                                action={revoke.url(args)}
+                                submitLabel={t('permits.staff.revoke.submit')}
+                                note="required"
+                                noteLabel={t('permits.staff.revoke.reason')}
                                 destructive
                             />
                         )}

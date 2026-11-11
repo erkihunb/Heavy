@@ -28,6 +28,12 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Chromium-based PDF renderer for permit documents (spec §8).
+    'gotenberg' => [
+        'url' => env('GOTENBERG_URL', 'http://127.0.0.1:3000'),
+        'timeout' => (int) env('GOTENBERG_TIMEOUT', 60),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

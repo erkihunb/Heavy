@@ -32,6 +32,8 @@ const PERMIT_FIELDS = [
     'organization',
     'submitted_at',
     'transitions',
+    'document_url',
+    'document_pending',
     'can',
 ];
 
@@ -48,6 +50,7 @@ const PERMIT_ABILITIES = [
     'approve',
     'reject',
     'revoke',
+    'reissue',
 ];
 
 const TRANSITION_FIELDS = ['from', 'to', 'note', 'at', 'time'];
@@ -283,8 +286,8 @@ describe('PermitResource', function () {
         'approver, recommended' => ['recommended', 'approver', ['approve', 'reject']],
         'approver, own recommendation' => ['recommended by the approver', 'approver', []],
         'approver, awaiting payment' => ['awaitingPayment', 'approver', []],
-        'approver, issued' => ['issued', 'approver', ['revoke']],
-        'approver, active' => ['active', 'approver', ['revoke']],
+        'approver, issued' => ['issued', 'approver', ['revoke', 'reissue']],
+        'approver, active' => ['active', 'approver', ['revoke', 'reissue']],
         'approver, revoked' => ['revoked', 'approver', []],
         'approver, expired' => ['expired', 'approver', []],
     ]);

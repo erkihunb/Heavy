@@ -54,3 +54,19 @@ export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 export const PAYMENT_METHODS = ['bank_deposit', 'cash', 'legacy'] as const;
 
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+/** Mirrors App\Enums\ScanResult. */
+export const SCAN_RESULTS = [
+    'valid',
+    'not_yet_valid',
+    'expired',
+    'revoked',
+    'not_found',
+] as const;
+
+export type ScanResult = (typeof SCAN_RESULTS)[number];
+
+/** Mirrors App\Enums\ScanChannel. */
+export const SCAN_CHANNELS = ['qr', 'lookup'] as const;
+
+export type ScanChannel = (typeof SCAN_CHANNELS)[number];

@@ -147,6 +147,7 @@ export type PermitAbilities = {
     approve: boolean;
     reject: boolean;
     revoke: boolean;
+    reissue: boolean;
 };
 
 /** Mirrors App\Http\Resources\PermitResource. */
@@ -170,6 +171,10 @@ export type Permit = {
     organization?: string;
     submitted_at: DualDate | null;
     transitions?: PermitTransition[];
+    /** Temporary signed link to the PDF; null while it is being prepared or not allowed. */
+    document_url: string | null;
+    /** Issued, but the PDF is still being rendered. */
+    document_pending: boolean;
     can: PermitAbilities;
     /** Staff viewers only. */
     applicant?: string;

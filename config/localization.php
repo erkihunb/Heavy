@@ -42,6 +42,7 @@ return [
         'organization',
         'vehicles',
         'permits',
+        'verification',
         'payments',
         'fees',
     ],

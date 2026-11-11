@@ -24,7 +24,9 @@ export function PermitTimeline({
                     <p className="font-bold">
                         {transition.from === null
                             ? t('permits.timeline.created')
-                            : t(`permits.status.${transition.to}`)}
+                            : transition.from === transition.to
+                              ? t('permits.timeline.reissued')
+                              : t(`permits.status.${transition.to}`)}
                     </p>
                     <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-muted-foreground">
                         <DualDate date={transition.at} />

@@ -12,6 +12,7 @@ use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\URL;
 
 /**
  * A permit as shown to the members of its organization and to reviewing
@@ -50,6 +51,11 @@ class PermitResource extends JsonResource
             'organization' => $this->whenLoaded('organization', fn (): string => $this->organization->localizedName($locale)),
             'submitted_at' => EthiopianCalendar::present($this->submitted_at?->setTimezone($timezone), $locale),
             'transitions' => PermitTransitionResource::collection($this->whenLoaded('transitions')),
+            // A short-lived signed link to the PDF; null while it is being prepared or not allowed.
+            'document_url' => $this->document_path !== null && (bool) $user?->can('download', $this->resource)
+                ? URL::temporarySignedRoute('permits.document', now()->addMinutes(30), ['permit' => $this->id])
+                : null,
+            'document_pending' => $this->status === PermitStatus::Issued && $this->document_path === null,
             'can' => $this->abilities($user),
 
             ...($forStaff ? [
@@ -97,6 +103,8 @@ class PermitResource extends JsonResource
             'approve' => $canMoveTo(PermitStatus::AwaitingPayment) && $may('approve') && $mayDecide(),
             'reject' => $canMoveTo(PermitStatus::Rejected) && $may('reject') && $mayDecide(),
             'revoke' => $canMoveTo(PermitStatus::Revoked) && $may('revoke'),
+            'reissue' => in_array($permit->effectiveStatus(CarbonImmutable::now()), [PermitStatus::Issued, PermitStatus::Active], true)
+                && $may('reissue'),
         ];
     }
 }

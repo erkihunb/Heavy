@@ -6,6 +6,7 @@ import {
     FileText,
     LayoutGrid,
     Receipt,
+    ScanLine,
     Truck,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -23,6 +24,7 @@ import {
 import { useTranslation } from '@/lib/i18n';
 import { dashboard } from '@/routes';
 import { index as feeSchedules } from '@/routes/admin/fee-schedules';
+import { verify as officerVerify } from '@/routes/officer';
 import { show as organization } from '@/routes/organization';
 import { index as permits } from '@/routes/permits';
 import { index as paymentQueue } from '@/routes/staff/payments';
@@ -42,6 +44,7 @@ export function AppSidebar() {
         isAdmin ||
         auth.user.roles.some((role) => ['reviewer', 'approver'].includes(role));
     const isCashier = isAdmin || auth.user.roles.includes('cashier');
+    const isOfficer = isAdmin || auth.user.roles.includes('traffic_officer');
 
     const mainNavItems: NavItem[] = [
         {
@@ -83,6 +86,15 @@ export function AppSidebar() {
                       title: t('nav.payments'),
                       href: paymentQueue(),
                       icon: Banknote,
+                  },
+              ]
+            : []),
+        ...(isOfficer
+            ? [
+                  {
+                      title: t('verification.officer.nav'),
+                      href: officerVerify(),
+                      icon: ScanLine,
                   },
               ]
             : []),

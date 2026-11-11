@@ -117,6 +117,11 @@ return [
         'resubmit' => 'Submit again',
         'withdraw' => 'Withdraw',
         'back' => 'Back to the list',
+        'download' => 'Download permit (PDF)',
+    ],
+    'document' => [
+        'pending' => 'The permit document is being prepared. Refresh this page in a minute.',
+        'ready' => 'Print the permit or keep it on the phone. The QR code on it shows its current status when scanned.',
     ],
     'review' => [
         'title' => 'Review and submit',
@@ -128,6 +133,7 @@ return [
     'timeline' => [
         'title' => 'History',
         'created' => 'Application started',
+        'reissued' => 'Reissued with a new QR code',
         'by' => 'by :name',
     ],
     'messages' => [
@@ -139,6 +145,8 @@ return [
         'changes_requested' => 'The applicant has been asked for changes.',
         'approved' => 'Application approved. It is now awaiting payment.',
         'rejected' => 'Application rejected.',
+        'revoked' => 'Permit revoked. Its QR code now shows REVOKED.',
+        'reissued' => 'Permit reissued. The old QR code no longer works; the new document is being prepared.',
     ],
     'errors' => [
         'invalid_transition' => 'This cannot be done while the application is ":status". Nothing was changed.',
@@ -150,6 +158,8 @@ return [
         'recommendation_required' => 'A Reviewer must record a recommendation before this application can be decided.',
         'approver_is_recommender' => 'You recorded the recommendation, so another Approver must take the decision.',
         'revocation_reason_required' => 'Give the reason for revoking the permit.',
+        'reissue_reason_required' => 'Give the reason for replacing the QR code and document.',
+        'not_reissuable' => 'Only a permit that is issued and not yet expired can be reissued.',
         'valid_to_before_from' => 'The last day cannot be before the first day.',
         'valid_from_in_past' => 'The first day cannot be in the past.',
         'duration_too_long' => 'A permit can cover at most :max days.',
@@ -204,6 +214,18 @@ return [
             'title' => 'Reject',
             'hint' => 'Rejection is final. The applicant sees your note.',
             'submit' => 'Reject application',
+        ],
+        'revoke' => [
+            'title' => 'Revoke permit',
+            'hint' => 'Revocation is final and takes effect at once: scanning the QR code shows REVOKED. The applicant sees your reason.',
+            'reason' => 'Reason for revoking',
+            'submit' => 'Revoke permit',
+        ],
+        'reissue' => [
+            'title' => 'Reissue',
+            'hint' => 'Replaces the QR code and the document, e.g. when the paper was lost. The old QR code stops working at once.',
+            'reason' => 'Reason for reissuing',
+            'submit' => 'Reissue permit',
         ],
         'history' => [
             'title' => 'Other permits of these vehicles',

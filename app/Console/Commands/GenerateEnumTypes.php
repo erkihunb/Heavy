@@ -8,6 +8,8 @@ use App\Enums\PermitStatus;
 use App\Enums\PermitType;
 use App\Enums\Recommendation;
 use App\Enums\Role;
+use App\Enums\ScanChannel;
+use App\Enums\ScanResult;
 use App\Enums\VehicleRole;
 use BackedEnum;
 use Illuminate\Console\Command;
@@ -27,6 +29,8 @@ class GenerateEnumTypes extends Command
         Role::class => 'ROLES',
         PaymentStatus::class => 'PAYMENT_STATUSES',
         PaymentMethod::class => 'PAYMENT_METHODS',
+        ScanResult::class => 'SCAN_RESULTS',
+        ScanChannel::class => 'SCAN_CHANNELS',
     ];
 
     /** Prettier's print width: a list that fits on one line must be written on one line. */

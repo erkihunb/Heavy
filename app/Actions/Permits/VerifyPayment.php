@@ -14,12 +14,15 @@ use Carbon\CarbonImmutable;
 
 class VerifyPayment
 {
-    public function __construct(private readonly PermitTransitions $transitions) {}
+    public function __construct(
+        private readonly PermitTransitions $transitions,
+        private readonly IssuePermit $issuePermit,
+    ) {}
 
     /**
      * A cashier confirms that the receipt is genuine and covers the fee. The
-     * permit is issued; from Milestone 5 this is also where the verification
-     * token and the permit document are produced.
+     * permit is issued: it gets its verification token, and its document is
+     * queued once the transaction commits.
      *
      * @throws InvalidPermitTransition
      * @throws PermitRuleViolation when the cashier approved this permit, or the payment is not the one awaiting verification
@@ -50,6 +53,7 @@ class VerifyPayment
             $payment->save();
 
             $permit->issued_at = $now;
+            $this->issuePermit->handle($permit);
         });
 
         return $payment;

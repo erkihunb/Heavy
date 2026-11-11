@@ -84,4 +84,65 @@ return [
 
     'receipt_max_kilobytes' => (int) env('PERMITS_RECEIPT_MAX_KB', 5120),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Verification
+    |--------------------------------------------------------------------------
+    |
+    | The address printed in every permit's QR code is "<verify_url>/v/<token>"
+    | (spec §7: https://{VERIFY_DOMAIN}/v/{token}). It must be the public HTTPS
+    | address of this application. Changing it later breaks printed permits.
+    |
+    | Whether the public page names the permit holder's organization (open
+    | question §14.4; shown by default). How many checks one IP address may
+    | make per minute.
+    |
+    */
+
+    'verify_url' => env('PERMITS_VERIFY_URL', env('APP_URL', 'http://localhost')),
+
+    'public_shows_organization' => (bool) env('PERMITS_PUBLIC_SHOWS_ORGANIZATION', true),
+
+    'verification_per_minute' => (int) env('PERMITS_VERIFICATION_PER_MINUTE', 30),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Time-Window Rules — PLACEHOLDER TEXT
+    |--------------------------------------------------------------------------
+    |
+    | The hours each permit type allows a heavy vehicle to move, printed on the
+    | permit and shown on the verification page (open question §14.2). The
+    | text below is a PLACEHOLDER and must be replaced with the Authority's
+    | official wording before go-live (docs/DECISIONS.md).
+    |
+    */
+
+    'time_windows' => [
+        'full_day' => [
+            'am' => '[ጊዜያዊ ጽሑፍ] ይህ ፍቃድ ተሽከርካሪው በገደብ ሰዓቶች ውስጥም ጨምሮ ቀኑን ሙሉ እንዲንቀሳቀስ ይፈቅዳል። ትክክለኛው የሰዓት ገደብ በባለስልጣኑ ይወሰናል።',
+            'en' => '[PLACEHOLDER] This permit allows the vehicle to move throughout the day, including during restricted hours. The exact hours are set by the Authority.',
+        ],
+        'pass' => [
+            'am' => '[ጊዜያዊ ጽሑፍ] ይህ የይለፍ ፍቃድ ተሽከርካሪው በገደብ ሰዓቶች ውስጥ ለአንድ ጉዞ እንዲያልፍ ይፈቅዳል። ትክክለኛው የሰዓት ገደብ በባለስልጣኑ ይወሰናል።',
+            'en' => '[PLACEHOLDER] This pass allows the vehicle to pass through during restricted hours for a single trip. The exact hours are set by the Authority.',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Permit Document
+    |--------------------------------------------------------------------------
+    |
+    | The official logo for the PDF header (open question §14.6). Until one is
+    | provided, the document shows a clearly marked placeholder.
+    |
+    */
+
+    'document' => [
+        'logo_path' => env('PERMITS_DOCUMENT_LOGO_PATH'),
+    ],
+
+    // "gotenberg" (Chromium; required in production) or "fake" (tests, machines without Gotenberg).
+    'pdf_renderer' => env('PERMITS_PDF_RENDERER', 'gotenberg'),
+
 ];

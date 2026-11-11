@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PermitStatus;
+use App\Enums\VehicleRole;
 use Database\Factories\VehicleFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -75,5 +76,16 @@ class Vehicle extends Model
         return $this->permits()
             ->whereNotIn('status', [PermitStatus::Draft, PermitStatus::Withdrawn])
             ->exists();
+    }
+
+    /**
+     * The vehicle's role on the permit it was loaded through
+     * ($permit->vehicles), or null when it was not loaded through a permit.
+     */
+    public function roleOnPermit(): ?VehicleRole
+    {
+        $pivot = $this->relationLoaded('pivot') ? $this->getRelation('pivot') : null;
+
+        return $pivot instanceof PermitVehicle ? $pivot->role : null;
     }
 }

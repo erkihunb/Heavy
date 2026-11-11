@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Pencil, Send, Undo2 } from 'lucide-react';
+import { ArrowLeft, FileDown, Pencil, Send, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { PaymentForm } from '@/components/payment-form';
@@ -121,6 +121,44 @@ export default function PermitsShow({
                             )}
                         </div>
                     </section>
+                )}
+
+                {permit.document_url && (
+                    <section
+                        aria-labelledby="document-title"
+                        className="flex flex-col gap-4 rounded-2xl border-2 border-success bg-card p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7"
+                    >
+                        <div className="space-y-1.5">
+                            <h2
+                                id="document-title"
+                                className="text-xl text-display"
+                            >
+                                {t('permits.actions.download')}
+                            </h2>
+                            <p className="max-w-xl text-muted-foreground">
+                                {t('permits.document.ready')}
+                            </p>
+                        </div>
+                        <Button asChild size="lg" className="shrink-0">
+                            <a
+                                href={permit.document_url}
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                <FileDown aria-hidden="true" />
+                                {t('permits.actions.download')}
+                            </a>
+                        </Button>
+                    </section>
+                )}
+
+                {permit.document_pending && (
+                    <p
+                        role="status"
+                        className="rounded-2xl border border-border bg-muted px-5 py-4 font-medium"
+                    >
+                        {t('permits.document.pending')}
+                    </p>
                 )}
 
                 {pendingPayment && (

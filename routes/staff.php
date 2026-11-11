@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Officer\VerificationController as OfficerVerificationController;
 use App\Http\Controllers\Staff\PaymentController;
 use App\Http\Controllers\Staff\PermitReviewController;
 use App\Models\Payment;
@@ -23,6 +24,23 @@ Route::middleware(['auth', 'verified', 'can:viewQueue,'.Permit::class])
         Route::post('permits/{permit}/request-changes', 'requestChanges')->name('permits.request-changes');
         Route::post('permits/{permit}/approve', 'approve')->name('permits.approve');
         Route::post('permits/{permit}/reject', 'reject')->name('permits.reject');
+        Route::post('permits/{permit}/revoke', 'revoke')->name('permits.revoke');
+        Route::post('permits/{permit}/reissue', 'reissue')->name('permits.reissue');
+    });
+
+/*
+ * The traffic officer's tools (spec §7). Scanning a QR code opens the public
+ * /v/{token} page, which shows officers the officer view.
+ */
+Route::middleware(['auth', 'verified', 'can:scan,'.Permit::class])
+    ->prefix('officer')
+    ->name('officer.')
+    ->controller(OfficerVerificationController::class)
+    ->group(function () {
+        Route::get('verify', 'lookup')->name('verify');
+        Route::post('permits/{permit}/reports', 'report')
+            ->middleware('throttle:20,1')
+            ->name('permits.reports.store');
     });
 
 /*
