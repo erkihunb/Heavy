@@ -78,9 +78,13 @@ native implementation (integer arithmetic over the Julian Day Number).
 - Roles and permissions are PHP enums (`App\Enums\Role`, `App\Enums\Permission`); the
   mapping lives in `Role::permissions()` and is synced by the idempotent
   `RolesAndPermissionsSeeder` (run it on every deploy). Policies check permissions.
-- **Admin is not a super-user.** It holds only the permissions listed for Admin in
-  spec §2; it cannot review, approve, revoke, verify payments or scan. This is the
-  conservative reading and supports separation of duties.
+- **Admin holds every staff permission** (changed on the owner's instruction, 2026-11-11;
+  the original reading kept Admin to the permissions listed for it in spec §2). Admin can
+  now also review, approve, revoke, verify payments and scan. It still does not hold the
+  applicant's own-organization permissions. The per-permit rules are unchanged and apply
+  to an Admin like anyone else: the approver must differ from the recommender, and the
+  approver must differ from the payment verifier. **CONFIRM** before go-live that a
+  single all-powerful role is acceptable for separation of duties.
 - Cashier has only `payments.verify`; Approver can see the review queue but not review.
 - Self-registration always creates an **Applicant**; a role in the request is ignored.
   Staff accounts will be created by an Admin (admin UI: later milestone). Until then,
@@ -323,3 +327,78 @@ Plan: [plans/milestone-3-applications-workflow.md](plans/milestone-3-application
 - **Permit numbers** are zero-padded to six digits; beyond 999,999 in one Ethiopian year
   the number grows to seven digits rather than failing.
 - List filters ignore values that are not text (`?status[]=x`) instead of failing.
+
+## Milestone 4 — Fees & Payments
+
+Plan: [plans/milestone-4-fees-payments.md](plans/milestone-4-fees-payments.md).
+
+### Fees (open question §14.1)
+
+- **The seeded fee schedule is a PLACEHOLDER** (`FeeScheduleSeeder`, local environment
+  only): the three amounts seen in the legacy sheet (1,000 / 6,000 / 15,000 ETB) over
+  invented bands (1–30, 31–60, 61+ days) for both permit types. **CONFIRM** the official
+  tariff; an Admin enters it under *Fee schedule*.
+- A schedule line prices a **permit type × vehicle type (or every type) × duration band**
+  while it is in force (`effective_from`–`effective_to`, both days included, no end date
+  = until replaced). The **primary vehicle's** type decides; trailers do not change the fee.
+  A line for the vehicle type beats a line for every type; among equals the latest start
+  date wins. The Admin form refuses two lines that would price the same permit on the
+  same day (table lock while checking), so normally exactly one line applies.
+- **The fee is copied onto the permit at approval** (`permits.fee_cents`) from the
+  schedule in force on the approval day (display timezone). Editing the schedule never
+  changes an approved permit. **Approval is refused** when no line applies, rather than
+  issuing a permit with no fee.
+- Lines are never deleted; to retire a fee, give it an end date.
+- Money is integer santim everywhere (`App\Support\Money`); amounts are typed in birr
+  ("1500" / "1,500.50") and parsed without floats.
+- The application form shows a **live fee estimate** (`GET /fee-estimate`) by today's
+  schedule; it is informative only.
+- Permits approved before this milestone have no fee; in production there are none.
+  Legacy imports (Milestone 7) will set the fee from the sheet.
+
+### Payments (open question §14.3)
+
+- **No online payment in v1.** The applicant pays at the bank or the Authority's cashier
+  and submits the receipt; a cashier verifies it. `App\Domain\Payments\PaymentGateway` is
+  the interface for a later Telebirr / Chapa integration; nothing implements it yet.
+- Methods an applicant can choose: bank deposit, cash. `legacy` is reserved for imports.
+- **The amount must equal the fee exactly** (checked by the form and again in the Action).
+  Partial payments and over-payments are refused. **CONFIRM** whether partial payment or
+  a tolerance is needed.
+- **Receipt numbers** are normalised (upper-case, no spaces, one kind of dash) and unique
+  among payments that are not rejected (partial unique index): a rejected receipt can be
+  submitted again, e.g. when the scan was unreadable. The error names the receipt and
+  nothing about who used it.
+- **Receipt files**: PDF / JPG / PNG, at most `permits.receipt_max_kilobytes` (5 MB),
+  checked by **content** (finfo), stored on the private `documents` disk under a random
+  40-character name, served only through authorising controllers with `no-store` and
+  `nosniff`. The applicant's file name is never stored. A file is deleted again if the
+  submission fails.
+- A rejected payment stays on record with the cashier's reason (shown to the applicant);
+  the permit goes back to *awaiting payment*. A cashier's note on a *verified* payment is
+  internal (cashiers and Admins only).
+- **Verifying the payment issues the permit** (`issued`, `issued_at`). The verification
+  token, QR code and PDF are added to this step in Milestone 5.
+
+### Separation of duties (spec §2)
+
+- `permits.separation_of_duties` (default on): the person who **approved** a permit cannot
+  **verify its payment**. With Admin now holding every staff permission (Milestone 1
+  section), this rule is what stops one Admin from approving and collecting alone.
+  Together with two-step approval (the recommender must differ from the approver), the
+  recommend → approve → verify steps of one permit need at least two different people:
+  the recommender may still verify the payment. **CONFIRM** whether verifier and
+  recommender must also differ.
+
+### Frontend
+
+- New screens: payment form and payment history on the applicant's permit page; the
+  cashier's payment queue and verification page (`staff/payments`); the Admin fee
+  schedule (`admin/fee-schedules`). Sidebar: Payments for cashiers and Admins, Fee
+  schedule for Admins; the review queue entry now also shows for Admins.
+- `PaymentStatus` and `PaymentMethod` are added to the generated `types/enums.ts`.
+
+### Deferred within this milestone
+
+- Payment notifications (Milestone 6). Fee and payment changes are not yet in an audit
+  log beyond `permit_status_transitions` (hardening milestone).

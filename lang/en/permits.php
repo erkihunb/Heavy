@@ -157,6 +157,11 @@ return [
         'vehicles_not_owned' => 'Choose vehicles from your own register.',
         'vehicles_duplicate' => 'Each vehicle can be listed only once.',
         'too_many_trailers' => 'A permit can list at most :max trailers.',
+        'fee_not_configured' => 'The fee schedule has no fee for this permit. It cannot be approved until an Admin adds one.',
+        'amount_mismatch' => 'The amount paid does not match the fee of the permit.',
+        'payment_not_pending' => 'This payment is no longer waiting for verification. Nothing was changed.',
+        'verifier_is_approver' => 'You approved this permit, so another cashier must verify its payment.',
+        'receipt_not_stored' => 'The receipt file could not be saved. Please try again.',
     ],
     'staff' => [
         'queue_title' => 'Review queue',

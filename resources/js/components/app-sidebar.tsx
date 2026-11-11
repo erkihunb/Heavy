@@ -1,9 +1,11 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Banknote,
     Building2,
     ClipboardList,
     FileText,
     LayoutGrid,
+    Receipt,
     Truck,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -20,8 +22,10 @@ import {
 } from '@/components/ui/sidebar';
 import { useTranslation } from '@/lib/i18n';
 import { dashboard } from '@/routes';
+import { index as feeSchedules } from '@/routes/admin/fee-schedules';
 import { show as organization } from '@/routes/organization';
 import { index as permits } from '@/routes/permits';
+import { index as paymentQueue } from '@/routes/staff/payments';
 import { index as reviewQueue } from '@/routes/staff/permits';
 import { index as vehicles } from '@/routes/vehicles';
 import type { NavItem } from '@/types';
@@ -32,9 +36,12 @@ export function AppSidebar() {
 
     // Which entries are shown is a convenience only; every route is authorised on the server.
     const isApplicant = auth.user.roles.includes('applicant');
-    const isReviewingStaff = auth.user.roles.some((role) =>
-        ['reviewer', 'approver', 'admin'].includes(role),
-    );
+    // Admins hold every staff permission (docs/DECISIONS.md).
+    const isAdmin = auth.user.roles.includes('admin');
+    const isReviewingStaff =
+        isAdmin ||
+        auth.user.roles.some((role) => ['reviewer', 'approver'].includes(role));
+    const isCashier = isAdmin || auth.user.roles.includes('cashier');
 
     const mainNavItems: NavItem[] = [
         {
@@ -67,6 +74,24 @@ export function AppSidebar() {
                       title: t('nav.review_queue'),
                       href: reviewQueue(),
                       icon: ClipboardList,
+                  },
+              ]
+            : []),
+        ...(isCashier
+            ? [
+                  {
+                      title: t('nav.payments'),
+                      href: paymentQueue(),
+                      icon: Banknote,
+                  },
+              ]
+            : []),
+        ...(isAdmin
+            ? [
+                  {
+                      title: t('nav.fee_schedules'),
+                      href: feeSchedules(),
+                      icon: Receipt,
                   },
               ]
             : []),

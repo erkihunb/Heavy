@@ -71,9 +71,9 @@ describe('without a permit', function () {
             ->and($user->can('create', Permit::class))->toBeFalse();
     });
 
-    it('lets only Reviewers and Approvers reach the review queue', function (Role $role) {
+    it('lets only Reviewers, Approvers and Admins reach the review queue', function (Role $role) {
         expect(userWithRole($role)->can('viewQueue', Permit::class))
-            ->toBe(in_array($role, [Role::Reviewer, Role::Approver], true));
+            ->toBe(in_array($role, [Role::Reviewer, Role::Approver, Role::Admin], true));
     })->with(Role::cases());
 });
 
@@ -84,11 +84,11 @@ describe('viewing', function () {
         expect(memberWithRole($role, $permit)->can('view', $permit))->toBe($role === Role::Applicant);
     })->with(Role::cases())->with([PermitStatus::Draft, PermitStatus::Withdrawn]);
 
-    it('shows a submitted application to its organization, Reviewers and Approvers', function (Role $role, PermitStatus $status) {
+    it('shows a submitted application to its organization, Reviewers, Approvers and Admins', function (Role $role, PermitStatus $status) {
         $permit = Permit::factory()->create(['status' => $status]);
 
         expect(memberWithRole($role, $permit)->can('view', $permit))
-            ->toBe(in_array($role, [Role::Applicant, Role::Reviewer, Role::Approver], true));
+            ->toBe(in_array($role, [Role::Applicant, Role::Reviewer, Role::Approver, Role::Admin], true));
     })->with(Role::cases())->with([
         PermitStatus::Submitted,
         PermitStatus::UnderReview,
@@ -178,6 +178,7 @@ describe('the decisions of staff', function () {
         $expected = match ($role) {
             Role::Reviewer => REVIEWER_ABILITIES,
             Role::Approver => APPROVER_ABILITIES,
+            Role::Admin => [...REVIEWER_ABILITIES, ...APPROVER_ABILITIES],
             default => [],
         };
 
@@ -225,7 +226,7 @@ describe('the decisions of staff', function () {
         foreach ([...REVIEWER_ABILITIES, ...APPROVER_ABILITIES] as $ability) {
             expect(denialStatus($user, $ability, $permit))->toBe(404);
         }
-    })->with([Role::Applicant, Role::Cashier, Role::TrafficOfficer, Role::Admin]);
+    })->with([Role::Applicant, Role::Cashier, Role::TrafficOfficer]);
 
     it('does not depend on the organization of the member of staff', function () {
         $permit = Permit::factory()->underReview()->create();
@@ -262,7 +263,8 @@ it('covers every ability of the policy', function () {
         ->values()
         ->all();
 
-    $tested = ['viewAny', 'create', 'view', 'viewQueue', ...APPLICANT_ABILITIES, ...REVIEWER_ABILITIES, ...APPROVER_ABILITIES];
+    // submitPayment is covered in PaymentPolicyTest.
+    $tested = ['viewAny', 'create', 'view', 'viewQueue', 'submitPayment', ...APPLICANT_ABILITIES, ...REVIEWER_ABILITIES, ...APPROVER_ABILITIES];
     sort($tested);
 
     expect($methods)->toBe($tested);

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
  */
 
 beforeEach(function () {
+    withFeeSchedule();
     $this->numbers = app(PermitNumberGenerator::class);
     // Noon in Addis Ababa on 1 Tir 2019 and 1 Tir 2020.
     $this->in2019 = EthiopianCalendar::toGregorian(2019, 5, 1)->setTime(9, 0);

@@ -4,6 +4,7 @@ use App\Data\PermitData;
 use App\Domain\Permits\ValidityRules;
 use App\Enums\PermitType;
 use App\Enums\Role;
+use App\Models\FeeSchedule;
 use App\Models\Organization;
 use App\Models\Permit;
 use App\Models\User;
@@ -119,6 +120,17 @@ function permitData(Vehicle $primary, array $trailers = [], ?string $from = null
         validTo: CarbonImmutable::parse($to ?? $today->addDays(12)->toDateString(), 'UTC'),
         reason: 'የግንባታ ዕቃ ማጓጓዝ',
     );
+}
+
+/**
+ * A fee schedule that prices every permit, so that approval can snapshot a
+ * fee. Tests about the schedule itself build their own lines instead.
+ */
+function withFeeSchedule(int $cents = 100_000): void
+{
+    foreach (PermitType::cases() as $type) {
+        FeeSchedule::factory()->forType($type)->amount($cents)->create();
+    }
 }
 
 /**

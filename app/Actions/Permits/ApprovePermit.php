@@ -3,6 +3,7 @@
 namespace App\Actions\Permits;
 
 use App\Domain\Permits\ApprovalRules;
+use App\Domain\Permits\FeeCalculator;
 use App\Domain\Permits\OverlapGuard;
 use App\Domain\Permits\PermitNumberGenerator;
 use App\Domain\Permits\PermitTransitions;
@@ -25,16 +26,18 @@ class ApprovePermit
         private readonly ApprovalRules $rules,
         private readonly OverlapGuard $overlap,
         private readonly PermitNumberGenerator $numbers,
+        private readonly FeeCalculator $fees,
     ) {}
 
     /**
      * An Approver accepts an application under review. The permit gets its
      * number, starts reserving its vehicles for its dates and waits for
-     * payment. The fee is snapshotted here from Milestone 4 on.
+     * payment. The fee is copied onto the permit from the schedule in force
+     * today, so later changes to the schedule never change what is owed.
      *
      * @throws InvalidPermitTransition
      * @throws OverlappingPermit
-     * @throws PermitRuleViolation
+     * @throws PermitRuleViolation when the approval rules refuse, or the fee schedule has no line for this permit
      */
     public function handle(Permit $permit, User $approver, ?string $note = null): Permit
     {
@@ -46,6 +49,11 @@ class ApprovePermit
                 $this->overlap->ensureNoOverlap($permit, lock: true);
 
                 $now = CarbonImmutable::now();
+
+                $permit->fee_cents = $this->fees->requireAmountForPermit(
+                    $permit,
+                    $now->setTimezone(config('localization.display_timezone')),
+                );
 
                 $permit->permit_number = $this->numbers->next($now);
                 $permit->approved_by = $approver->id;

@@ -32,6 +32,8 @@
         <env name="DB_USERNAME" value="heavy" force="true"/>
         <env name="DB_PASSWORD" value="secret" force="true"/>
         <env name="DB_URL" value="" force="true"/>
+        <!-- Tests assert the production default, whatever the local .env says. -->
+        <env name="PERMITS_STAFF_TWO_FACTOR_REQUIRED" value="true" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

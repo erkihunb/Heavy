@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
         $this->call(VehicleTypeSeeder::class);
 
         if (app()->environment('local')) {
+            $this->call(FeeScheduleSeeder::class);
             $this->call(DemoUserSeeder::class);
         }
     }

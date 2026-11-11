@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import type { InertiaFormProps } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
 import { EthiopianDateInput } from '@/components/ethiopian-date-input';
+import { FeeEstimate } from '@/components/fee-estimate';
 import { FormField } from '@/components/form-field';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -256,6 +257,12 @@ export function PermitForm({
                         onChange={(iso) => form.setData('valid_to', iso)}
                     />
                 </div>
+                <FeeEstimate
+                    permitType={form.data.permit_type}
+                    primaryVehicleId={form.data.primary_vehicle_id}
+                    validFrom={form.data.valid_from}
+                    validTo={form.data.valid_to}
+                />
             </Section>
 
             <Section

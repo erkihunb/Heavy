@@ -38,6 +38,16 @@ return [
             'report' => false,
         ],
 
+        // Payment receipts and permit documents. Not served by the framework:
+        // every download goes through an authorising controller.
+        'documents' => [
+            'driver' => 'local',
+            'root' => storage_path('app/documents'),
+            'serve' => false,
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

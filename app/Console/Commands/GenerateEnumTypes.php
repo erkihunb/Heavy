@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use App\Enums\PermitStatus;
 use App\Enums\PermitType;
 use App\Enums\Recommendation;
@@ -23,6 +25,8 @@ class GenerateEnumTypes extends Command
         VehicleRole::class => 'VEHICLE_ROLES',
         Recommendation::class => 'RECOMMENDATIONS',
         Role::class => 'ROLES',
+        PaymentStatus::class => 'PAYMENT_STATUSES',
+        PaymentMethod::class => 'PAYMENT_METHODS',
     ];
 
     /** Prettier's print width: a list that fits on one line must be written on one line. */

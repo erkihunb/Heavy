@@ -3,8 +3,8 @@
 Permit application, review, payment, issuance and verification system for the Addis Ababa
 City Administration Traffic Management Authority.
 
-**Status:** Milestones 1 (Foundation), 2 (Organizations & Vehicles) and 3 (Applications &
-Workflow) of 9 are complete.
+**Status:** Milestones 1 (Foundation), 2 (Organizations & Vehicles), 3 (Applications &
+Workflow) and 4 (Fees & Payments) of 9 are complete.
 See [docs/plans/](docs/plans/) for what exists and [docs/DECISIONS.md](docs/DECISIONS.md)
 for assumptions and open questions.
 
@@ -26,7 +26,7 @@ composer install
 npm install
 cp .env.example .env                 # already points at the compose database
 php artisan key:generate
-php artisan migrate --seed           # roles, vehicle types; demo users in APP_ENV=local
+php artisan migrate --seed           # roles, vehicle types; placeholder fees and demo users in APP_ENV=local
 composer dev                         # app server, queue listener, logs and Vite
 ```
 
@@ -71,5 +71,9 @@ uses, regenerate its TypeScript type: `php artisan enums:types`.
 
 Run `php artisan migrate --force` and `php artisan db:seed --force` on every deploy. The
 seeders are idempotent: roles and permissions are kept in sync with the code, and vehicle
-types are only added, never overwritten. Queues, scheduler,
+types are only added, never overwritten. No fees are seeded outside `APP_ENV=local`: an
+Admin must enter the official fee schedule before the first application can be approved.
+Payment receipts are stored on the private `documents` disk (`storage/app/documents` by
+default, `PERMITS_DOCUMENTS_DISK`); it must never be web-served and must be backed up with
+the database. Queues, scheduler,
 legacy import and the production stack arrive in later milestones.

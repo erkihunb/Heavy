@@ -40,7 +40,10 @@ it('matches the role table in the specification', function (Role $role, array $e
     'approver' => [Role::Approver, ['permits.view-queue', 'permits.approve', 'permits.revoke']],
     'cashier' => [Role::Cashier, ['payments.verify']],
     'traffic officer' => [Role::TrafficOfficer, ['verification.scan']],
-    'admin' => [Role::Admin, ['users.manage', 'vehicle-types.manage', 'fee-schedules.manage', 'settings.manage', 'audit-log.view', 'imports.run']],
+    'admin' => [Role::Admin, [
+        'users.manage', 'vehicle-types.manage', 'fee-schedules.manage', 'settings.manage', 'audit-log.view', 'imports.run',
+        'permits.view-queue', 'permits.review', 'permits.approve', 'permits.revoke', 'payments.verify', 'verification.scan',
+    ]],
 ]);
 
 it('assigns every permission to at least one role', function () {
@@ -67,14 +70,14 @@ it('gives a user without a role no permissions at all', function () {
     }
 });
 
-it('does not make admin a super-user', function () {
+it('gives admin every staff permission, but not those of an applicant', function () {
     $admin = User::factory()->create();
     $admin->assignRole(Role::Admin->value);
 
-    expect($admin->can(Permission::ApprovePermits->value))->toBeFalse()
-        ->and($admin->can(Permission::ReviewPermits->value))->toBeFalse()
-        ->and($admin->can(Permission::VerifyPayments->value))->toBeFalse()
-        ->and($admin->can(Permission::RevokePermits->value))->toBeFalse();
+    foreach (Permission::cases() as $permission) {
+        expect($admin->can($permission->value))
+            ->toBe(! in_array($permission, Role::Applicant->permissions(), true), $permission->value);
+    }
 });
 
 it('keeps approving and payment verification in different roles', function () {
@@ -91,11 +94,11 @@ it('is idempotent', function () {
 });
 
 it('revokes a permission that the mapping no longer grants', function () {
-    RoleModel::findByName(Role::Admin->value)->givePermissionTo(Permission::ApprovePermits->value);
+    RoleModel::findByName(Role::Cashier->value)->givePermissionTo(Permission::ApprovePermits->value);
 
     $this->seed(RolesAndPermissionsSeeder::class);
 
-    expect(RoleModel::findByName(Role::Admin->value)->hasPermissionTo(Permission::ApprovePermits->value))->toBeFalse();
+    expect(RoleModel::findByName(Role::Cashier->value)->hasPermissionTo(Permission::ApprovePermits->value))->toBeFalse();
 });
 
 it('treats every role except applicant as staff', function () {

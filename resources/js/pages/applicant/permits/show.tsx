@@ -2,6 +2,8 @@ import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Pencil, Send, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/page-header';
+import { PaymentForm } from '@/components/payment-form';
+import { PaymentList } from '@/components/payment-list';
 import { PermitDetails } from '@/components/permit-details';
 import { PermitTimeline } from '@/components/permit-timeline';
 import { StatusBadge } from '@/components/status-badge';
@@ -9,15 +11,31 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
+import { receipt } from '@/routes/payments';
 import { edit, index, show, submit, withdraw } from '@/routes/permits';
 import type { BreadcrumbItem, Permit } from '@/types';
+import type { PaymentMethod } from '@/types/enums';
 
 type Props = {
     permit: Permit;
+    /** The payment methods an applicant can choose. */
+    paymentMethods: PaymentMethod[];
+    receiptMaxKilobytes: number;
 };
 
-export default function PermitsShow({ permit }: Props) {
+export default function PermitsShow({
+    permit,
+    paymentMethods,
+    receiptMaxKilobytes,
+}: Props) {
     const { t } = useTranslation();
+    const payments = permit.payments ?? [];
+    const pendingPayment = payments.some(
+        (payment) => payment.status === 'submitted',
+    );
+    const lastRejected = [...payments]
+        .reverse()
+        .find((payment) => payment.status === 'rejected');
     const [busy, setBusy] = useState<'submit' | 'withdraw' | null>(null);
 
     const post = (action: 'submit' | 'withdraw') => {
@@ -105,6 +123,54 @@ export default function PermitsShow({ permit }: Props) {
                     </section>
                 )}
 
+                {pendingPayment && (
+                    <p
+                        role="status"
+                        className="rounded-2xl border border-border bg-muted px-5 py-4 font-medium"
+                    >
+                        {t('payments.waiting_notice')}
+                    </p>
+                )}
+
+                {permit.can.submitPayment && permit.fee && (
+                    <section
+                        aria-labelledby="payment-title"
+                        className="space-y-5 rounded-2xl border-2 border-primary bg-card p-6 sm:p-7"
+                    >
+                        <div className="space-y-1.5">
+                            <h2
+                                id="payment-title"
+                                className="text-2xl text-display"
+                            >
+                                {t('payments.form.title')}
+                            </h2>
+                            <p className="max-w-2xl text-muted-foreground">
+                                {t('payments.form.intro', {
+                                    fee: permit.fee.formatted,
+                                })}
+                            </p>
+                        </div>
+
+                        {lastRejected?.notes && (
+                            <p
+                                role="alert"
+                                className="rounded-xl border-2 border-destructive px-4 py-3 font-medium"
+                            >
+                                {t('payments.rejected_notice', {
+                                    note: lastRejected.notes,
+                                })}
+                            </p>
+                        )}
+
+                        <PaymentForm
+                            permitId={permit.id}
+                            fee={permit.fee}
+                            methods={paymentMethods}
+                            maxKilobytes={receiptMaxKilobytes}
+                        />
+                    </section>
+                )}
+
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
                     <section
                         aria-labelledby="details-title"
@@ -117,6 +183,20 @@ export default function PermitsShow({ permit }: Props) {
                             {t('permits.review.details')}
                         </h2>
                         <PermitDetails permit={permit} />
+
+                        {payments.length > 0 && (
+                            <div className="mt-6 space-y-3">
+                                <h3 className="text-lg font-bold">
+                                    {t('payments.history')}
+                                </h3>
+                                <PaymentList
+                                    payments={payments}
+                                    receiptUrl={(payment) =>
+                                        receipt.url({ payment: payment.id })
+                                    }
+                                />
+                            </div>
+                        )}
                     </section>
 
                     <section

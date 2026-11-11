@@ -8,6 +8,7 @@ use App\Enums\PermitStatus;
 use App\Models\Permit;
 use App\Models\User;
 use App\Support\EthiopianCalendar;
+use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -42,6 +43,9 @@ class PermitResource extends JsonResource
             'valid_from' => EthiopianCalendar::present($this->valid_from, $locale),
             'valid_to' => EthiopianCalendar::present($this->valid_to, $locale),
             'duration_days' => $this->durationDays(),
+            // Copied from the fee schedule at approval; null until then.
+            'fee' => $this->fee_cents === null ? null : Money::present($this->fee_cents, $this->currency),
+            'payments' => PaymentResource::collection($this->whenLoaded('payments')),
             'vehicles' => PermitVehicleResource::collection($this->whenLoaded('vehicles')),
             'organization' => $this->whenLoaded('organization', fn (): string => $this->organization->localizedName($locale)),
             'submitted_at' => EthiopianCalendar::present($this->submitted_at?->setTimezone($timezone), $locale),
@@ -86,6 +90,7 @@ class PermitResource extends JsonResource
             'update' => $may('update'),
             'submit' => $may('submit'),
             'withdraw' => $may('withdraw'),
+            'submitPayment' => $may('submitPayment'),
             'startReview' => $canMoveTo(PermitStatus::UnderReview) && $may('startReview'),
             'recommend' => $status === PermitStatus::UnderReview && $may('recommend'),
             'requestChanges' => $canMoveTo(PermitStatus::ChangesRequested) && $may('requestChanges'),

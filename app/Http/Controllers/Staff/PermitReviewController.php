@@ -99,7 +99,7 @@ class PermitReviewController extends Controller
     {
         Gate::authorize('view', $permit);
 
-        $permit->load(['vehicles.vehicleType', 'organization', 'applicant', 'recommender', 'transitions.actor']);
+        $permit->load(['vehicles.vehicleType', 'organization', 'applicant', 'recommender', 'transitions.actor', 'payments']);
 
         return Inertia::render('staff/permits/show', [
             'permit' => PermitResource::make($permit),

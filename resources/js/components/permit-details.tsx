@@ -90,6 +90,14 @@ export function PermitDetails({ permit }: { permit: Permit }) {
                 </span>
             </Row>
 
+            {permit.fee && (
+                <Row label={t('payments.fee')}>
+                    <span className="font-extrabold tabular-nums">
+                        {permit.fee.formatted}
+                    </span>
+                </Row>
+            )}
+
             <Row label={t('permits.fields.reason')}>
                 <p className="leading-relaxed whitespace-pre-line">
                     {permit.reason}

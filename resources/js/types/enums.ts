@@ -44,3 +44,13 @@ export const ROLES = [
 ] as const;
 
 export type Role = (typeof ROLES)[number];
+
+/** Mirrors App\Enums\PaymentStatus. */
+export const PAYMENT_STATUSES = ['submitted', 'verified', 'rejected'] as const;
+
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+/** Mirrors App\Enums\PaymentMethod. */
+export const PAYMENT_METHODS = ['bank_deposit', 'cash', 'legacy'] as const;
+
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];

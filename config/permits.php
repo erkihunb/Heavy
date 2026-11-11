@@ -56,4 +56,32 @@ return [
 
     'number_prefix' => env('PERMITS_NUMBER_PREFIX', 'TMA-HV'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Separation Of Duties
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, the person who approved a permit cannot be the one who
+    | verifies its payment (spec §2).
+    |
+    */
+
+    'separation_of_duties' => (bool) env('PERMITS_SEPARATION_OF_DUTIES', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Private Documents
+    |--------------------------------------------------------------------------
+    |
+    | The filesystem disk payment receipts (and, later, permit documents) are
+    | stored on. It must never be publicly reachable: files are served only
+    | through controllers that authorise the request (spec §15). The largest
+    | receipt file accepted, in kilobytes (spec §11: 5 MB).
+    |
+    */
+
+    'documents_disk' => env('PERMITS_DOCUMENTS_DISK', 'documents'),
+
+    'receipt_max_kilobytes' => (int) env('PERMITS_RECEIPT_MAX_KB', 5120),
+
 ];

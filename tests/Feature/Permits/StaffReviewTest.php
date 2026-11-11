@@ -20,6 +20,7 @@ use Inertia\Testing\AssertableInertia as Assert;
  */
 
 beforeEach(function () {
+    withFeeSchedule();
     $this->reviewer = staffUser(Role::Reviewer);
     $this->approver = staffUser(Role::Approver);
     $this->organization = Organization::factory()->create(['name_am' => 'ዋሊያ ትራንስፖርት', 'name_en' => 'Walia Transport']);
@@ -288,7 +289,7 @@ describe('access', function () {
         $this->actingAs($staff)->post(route('staff.permits.approve', $permit))->assertForbidden();
 
         expect($permit->refresh()->status)->toBe(PermitStatus::Submitted);
-    })->with([Role::Cashier, Role::TrafficOfficer, Role::Admin]);
+    })->with([Role::Cashier, Role::TrafficOfficer]);
 
     it('blocks staff who have not confirmed two-factor authentication', function (Role $role) {
         $permit = Permit::factory()->forVehicles($this->vehicle)->recommended()->create();

@@ -148,6 +148,16 @@ class Permit extends Model
     }
 
     /**
+     * Every receipt submitted for the fee, oldest first.
+     *
+     * @return HasMany<Payment, $this>
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class)->orderBy('id');
+    }
+
+    /**
      * Permits whose status, as people see it today, is the given one:
      * "issued", "active" and "expired" are told apart by the dates of an
      * issued permit, exactly as {@see effectiveStatus()} does.

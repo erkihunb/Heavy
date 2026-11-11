@@ -42,6 +42,8 @@ return [
         'organization',
         'vehicles',
         'permits',
+        'payments',
+        'fees',
     ],
 
     /*

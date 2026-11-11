@@ -26,6 +26,8 @@ const PERMIT_FIELDS = [
     'valid_from',
     'valid_to',
     'duration_days',
+    'fee',
+    'payments',
     'vehicles',
     'organization',
     'submitted_at',
@@ -39,6 +41,7 @@ const PERMIT_ABILITIES = [
     'update',
     'submit',
     'withdraw',
+    'submitPayment',
     'startReview',
     'recommend',
     'requestChanges',
@@ -124,7 +127,7 @@ beforeEach(function () {
 
     // Everything either page ever loads.
     $this->loaded = fn (): Permit => Permit::query()
-        ->with(['vehicles.vehicleType', 'organization', 'applicant', 'recommender', 'transitions.actor'])
+        ->with(['vehicles.vehicleType', 'organization', 'applicant', 'recommender', 'transitions.actor', 'payments'])
         ->findOrFail($this->permit->id);
 });
 
@@ -154,7 +157,7 @@ describe('PermitResource', function () {
         foreach ($data['transitions'] as $transition) {
             expect(sortedKeys($transition))->toBe(sortedFields(TRANSITION_FIELDS));
         }
-    })->with([Role::Cashier, Role::TrafficOfficer, Role::Admin, null]);
+    })->with([Role::Cashier, Role::TrafficOfficer, null]);
 
     it('presents the application itself', function () {
         $data = resourceAs($this->applicant, PermitResource::make(($this->loaded)()));
@@ -266,7 +269,8 @@ describe('PermitResource', function () {
         'applicant, submitted' => ['submitted', 'applicant', ['withdraw']],
         'applicant, under review' => ['underReview', 'applicant', []],
         'applicant, changes requested' => ['changesRequested', 'applicant', ['update', 'submit']],
-        'applicant, awaiting payment' => ['awaitingPayment', 'applicant', []],
+        'applicant, awaiting payment' => ['awaitingPayment', 'applicant', ['submitPayment']],
+        'applicant, payment submitted' => ['paymentSubmitted', 'applicant', []],
         'applicant, issued' => ['issued', 'applicant', []],
         'applicant, rejected' => ['rejected', 'applicant', []],
         'reviewer, submitted' => ['submitted', 'reviewer', ['startReview']],

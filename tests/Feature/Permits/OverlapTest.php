@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
  */
 
 beforeEach(function () {
+    withFeeSchedule();
     $this->applicant = applicantWithOrganization();
     $this->vehicle = Vehicle::factory()->for($this->applicant->organization)->withPlate('ኢት-03-40134')->create();
     $this->approver = userWithRole(Role::Approver);

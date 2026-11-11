@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\DB;
  */
 
 beforeEach(function () {
+    withFeeSchedule();
     $this->applicant = applicantWithOrganization();
     $this->organization = $this->applicant->organization;
     $this->vehicle = Vehicle::factory()->for($this->organization)->create();
@@ -509,7 +510,8 @@ describe('ApprovePermit', function () {
             ->and($permit->approved_by)->toBe($this->approver->id)
             ->and($permit->approved_at?->equalTo(now()))->toBeTrue()
             ->and($permit->issued_at)->toBeNull()
-            ->and($permit->fee_cents)->toBeNull()
+            // The fee is copied from the schedule in force (withFeeSchedule()).
+            ->and($permit->fee_cents)->toBe(100_000)
             // The recommendation stays on record.
             ->and($permit->recommendation)->toBe(Recommendation::Approve)
             ->and($permit->recommended_by)->toBe($this->reviewer->id)

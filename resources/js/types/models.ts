@@ -1,10 +1,59 @@
 import type { DualDate } from '@/types/calendar';
 import type {
+    PaymentMethod,
+    PaymentStatus,
     PermitStatus,
     PermitType,
     Recommendation,
     VehicleRole,
 } from '@/types/enums';
+
+/** An amount of money as App\Support\Money::present() sends it. */
+export type Money = {
+    /** Santim (1 ETB = 100 santim). */
+    amount_cents: number;
+    currency: string;
+    /** E.g. "ETB 1,500.00". */
+    formatted: string;
+};
+
+/** Mirrors App\Http\Resources\PaymentResource. */
+export type Payment = {
+    /** ULID. */
+    id: string;
+    permit_id: string;
+    method: PaymentMethod;
+    receipt_number: string;
+    amount: Money;
+    paid_at: DualDate;
+    status: PaymentStatus;
+    /** The cashier's note: always for cashiers, for applicants only on a rejection. */
+    notes: string | null;
+    has_receipt_file: boolean;
+    submitted_at: DualDate | null;
+    decided_at: DualDate | null;
+    permit?: Permit;
+    can: { verify: boolean; reject: boolean };
+    /** Cashiers only. */
+    submitted_by?: string | null;
+    /** Cashiers only. */
+    decided_by?: string | null;
+};
+
+/** Mirrors App\Http\Resources\FeeScheduleResource. */
+export type FeeSchedule = {
+    id: number;
+    permit_type: PermitType;
+    /** Absent (null) when the fee applies to every vehicle type. */
+    vehicle_type: VehicleType | null;
+    vehicle_type_id: number | null;
+    min_days: number;
+    max_days: number;
+    amount: Money;
+    effective_from: DualDate;
+    effective_to: DualDate | null;
+    is_current: boolean;
+};
 
 /** Mirrors App\Http\Resources\OrganizationResource. */
 export type Organization = {
@@ -91,6 +140,7 @@ export type PermitAbilities = {
     update: boolean;
     submit: boolean;
     withdraw: boolean;
+    submitPayment: boolean;
     startReview: boolean;
     recommend: boolean;
     requestChanges: boolean;
@@ -112,6 +162,9 @@ export type Permit = {
     valid_from: DualDate;
     valid_to: DualDate;
     duration_days: number;
+    /** Copied from the fee schedule at approval; null until then. */
+    fee: Money | null;
+    payments?: Payment[];
     vehicles?: PermitVehicle[];
     /** Organization name in the current interface language. */
     organization?: string;

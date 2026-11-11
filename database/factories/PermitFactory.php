@@ -169,6 +169,8 @@ class PermitFactory extends Factory
             'permit_number' => 'TMA-HV-2019-'.fake()->unique()->numerify('9#####'),
             'approved_by' => User::factory(),
             'approved_at' => now()->subHour(),
+            // Santim; the fee is copied onto the permit at approval.
+            'fee_cents' => 100_000,
         ]);
     }
 

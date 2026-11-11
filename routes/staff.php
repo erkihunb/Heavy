@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Staff\PaymentController;
 use App\Http\Controllers\Staff\PermitReviewController;
+use App\Models\Payment;
 use App\Models\Permit;
 use Illuminate\Support\Facades\Route;
 
@@ -21,4 +23,20 @@ Route::middleware(['auth', 'verified', 'can:viewQueue,'.Permit::class])
         Route::post('permits/{permit}/request-changes', 'requestChanges')->name('permits.request-changes');
         Route::post('permits/{permit}/approve', 'approve')->name('permits.approve');
         Route::post('permits/{permit}/reject', 'reject')->name('permits.reject');
+    });
+
+/*
+ * The cashier's payment verification (spec §2: Cashier / Finance).
+ */
+Route::middleware(['auth', 'verified', 'can:viewQueue,'.Payment::class])
+    ->prefix('staff')
+    ->name('staff.')
+    ->controller(PaymentController::class)
+    ->group(function () {
+        Route::get('payments', 'index')->name('payments.index');
+        Route::get('payments/{payment}', 'show')->name('payments.show');
+        Route::get('payments/{payment}/receipt', 'receipt')->name('payments.receipt');
+
+        Route::post('payments/{payment}/verify', 'verify')->name('payments.verify');
+        Route::post('payments/{payment}/reject', 'reject')->name('payments.reject');
     });

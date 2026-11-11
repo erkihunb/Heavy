@@ -40,8 +40,10 @@ enum Role: string
     }
 
     /**
-     * The permissions granted to this role. Admin is deliberately not a
-     * super-user: it cannot review, approve, verify payments or scan.
+     * The permissions granted to this role. Admin holds every staff
+     * permission (administration, review, approval, payment verification and
+     * scanning). It does not hold the applicant's own-organization
+     * permissions, because an Admin does not belong to an organization.
      *
      * @return list<Permission>
      */
@@ -70,14 +72,10 @@ enum Role: string
             self::TrafficOfficer => [
                 Permission::ScanPermits,
             ],
-            self::Admin => [
-                Permission::ManageUsers,
-                Permission::ManageVehicleTypes,
-                Permission::ManageFeeSchedules,
-                Permission::ManageSettings,
-                Permission::ViewAuditLog,
-                Permission::RunImports,
-            ],
+            self::Admin => array_values(array_filter(
+                Permission::cases(),
+                fn (Permission $permission): bool => ! in_array($permission, self::Applicant->permissions(), true),
+            )),
         };
     }
 }

@@ -57,6 +57,20 @@ class PermitPolicy
     }
 
     /**
+     * Reporting the fee as paid, while the permit waits for payment.
+     */
+    public function submitPayment(User $user, Permit $permit): Response
+    {
+        if (! $this->isOwnedByOrganizationOf($user, $permit)) {
+            return Response::denyAsNotFound();
+        }
+
+        return $user->can(Permission::SubmitPayments->value) && $permit->status === PermitStatus::AwaitingPayment
+            ? Response::allow()
+            : Response::deny();
+    }
+
+    /**
      * Reaching the review queue.
      */
     public function viewQueue(User $user): bool

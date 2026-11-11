@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Applicant\FeeEstimateController;
 use App\Http\Controllers\Applicant\OrganizationController;
+use App\Http\Controllers\Applicant\PaymentController;
 use App\Http\Controllers\Applicant\PermitController;
 use App\Http\Controllers\Applicant\VehicleController;
 use App\Models\Permit;
@@ -29,5 +31,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::post('permits/{permit}/submit', [PermitController::class, 'submit'])->name('permits.submit');
         Route::post('permits/{permit}/withdraw', [PermitController::class, 'withdraw'])->name('permits.withdraw');
+
+        // Uploads are rate limited (spec §15).
+        Route::post('permits/{permit}/payments', [PaymentController::class, 'store'])
+            ->middleware('throttle:10,1')
+            ->name('permits.payments.store');
+
+        Route::get('fee-estimate', FeeEstimateController::class)
+            ->middleware('throttle:60,1')
+            ->name('fee-estimate');
     });
+
+    // Authorised by PaymentPolicy::downloadReceipt; also reached by cashiers via the staff route.
+    Route::get('payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('payments.receipt');
 });

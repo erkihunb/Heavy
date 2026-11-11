@@ -9,4 +9,6 @@ return [
     'vehicles' => 'ተሽከርካሪዎች',
     'permits' => 'ፍቃዶች',
     'review_queue' => 'የግምገማ ወረፋ',
+    'payments' => 'ክፍያዎች',
+    'fee_schedules' => 'የክፍያ ተመን',
 ];

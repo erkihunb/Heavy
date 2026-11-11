@@ -8,6 +8,7 @@ use App\Actions\Permits\UpdateDraftPermit;
 use App\Actions\Permits\WithdrawPermit;
 use App\Domain\Permits\ValidityRules;
 use App\Domain\Vehicles\PlateNumber;
+use App\Enums\PaymentMethod;
 use App\Enums\PermitStatus;
 use App\Enums\PermitType;
 use App\Http\Controllers\Controller;
@@ -90,7 +91,9 @@ class PermitController extends Controller
         Gate::authorize('view', $permit);
 
         return Inertia::render('applicant/permits/show', [
-            'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'transitions'])),
+            'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'transitions', 'payments'])),
+            'paymentMethods' => array_map(fn (PaymentMethod $method): string => $method->value, PaymentMethod::selectable()),
+            'receiptMaxKilobytes' => (int) config('permits.receipt_max_kilobytes'),
         ]);
     }
 

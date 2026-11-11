@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\DuplicateReceipt;
 use App\Exceptions\DuplicateVehiclePlate;
 use App\Exceptions\PermitException;
 use App\Exceptions\UserAlreadyHasOrganization;
@@ -47,6 +48,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->map(fn (VehiclePlateLocked $e) => ValidationException::withMessages([
             'plate' => $e->userMessage(),
+        ]));
+
+        // Spec §4.5: a duplicate receipt is a validation error on the receipt number.
+        $exceptions->map(fn (DuplicateReceipt $e) => ValidationException::withMessages([
+            'receipt_number' => $e->userMessage(),
         ]));
 
         $exceptions->map(fn (UserAlreadyHasOrganization $e) => new ConflictHttpException($e->getMessage(), $e));
