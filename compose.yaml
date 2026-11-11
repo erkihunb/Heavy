@@ -1,0 +1,41 @@
+# Local development services. The production-like stack (php-fpm, nginx, horizon,
+# scheduler, PDF renderer) is added in Milestone 9.
+#
+# The database credentials are fixed local-development values, deliberately NOT read
+# from the app's DB_* variables, so a real password in .env never ends up in a
+# container definition. Never reuse them outside local development.
+# Postgres is published on host port 54320 (not 5432) to avoid clashing with a
+# locally installed server; override with FORWARD_DB_PORT.
+services:
+    postgres:
+        image: postgres:16-alpine
+        environment:
+            POSTGRES_DB: heavy
+            POSTGRES_USER: heavy
+            POSTGRES_PASSWORD: secret
+        ports:
+            - '127.0.0.1:${FORWARD_DB_PORT:-54320}:5432'
+        volumes:
+            - postgres-data:/var/lib/postgresql/data
+            - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U heavy -d heavy']
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+    redis:
+        image: redis:7-alpine
+        ports:
+            - '127.0.0.1:${FORWARD_REDIS_PORT:-6379}:6379'
+        volumes:
+            - redis-data:/data
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+volumes:
+    postgres-data:
+    redis-data:

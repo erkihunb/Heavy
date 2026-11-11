@@ -2,6 +2,9 @@
 
 @import 'tw-animate-css';
 
+/* Self-hosted (bundled by Vite) - never loaded from a font CDN. Covers Ethiopic and Latin. */
+@import '@fontsource-variable/noto-sans-ethiopic/wght.css';
+
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
@@ -9,7 +12,7 @@
 
 @theme {
     --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+        'Noto Sans Ethiopic Variable', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 

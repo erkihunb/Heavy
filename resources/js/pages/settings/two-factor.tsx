@@ -1,14 +1,16 @@
-import { Form, Head } from '@inertiajs/react';
-import { ShieldBan, ShieldCheck } from 'lucide-react';
+import { Form, Head, usePage } from '@inertiajs/react';
+import { ShieldAlert, ShieldBan, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
 import TwoFactorRecoveryCodes from '@/components/two-factor-recovery-codes';
 import TwoFactorSetupModal from '@/components/two-factor-setup-modal';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTwoFactorAuth } from '@/hooks/use-two-factor-auth';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import { useTranslation } from '@/lib/i18n';
 import { disable, enable, show } from '@/routes/two-factor';
 import type { BreadcrumbItem } from '@/types';
 
@@ -39,6 +41,8 @@ export default function TwoFactor({
         errors,
     } = useTwoFactorAuth();
     const [showSetupModal, setShowSetupModal] = useState<boolean>(false);
+    const { auth } = usePage().props;
+    const { t } = useTranslation();
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -48,6 +52,17 @@ export default function TwoFactor({
 
             <SettingsLayout>
                 <div className="space-y-6">
+                    {auth.mustEnableTwoFactor && (
+                        <Alert role="alert">
+                            <ShieldAlert aria-hidden="true" />
+                            <AlertTitle>
+                                {t('settings.two_factor.required_title')}
+                            </AlertTitle>
+                            <AlertDescription>
+                                {t('settings.two_factor.required_notice')}
+                            </AlertDescription>
+                        </Alert>
+                    )}
                     <Heading
                         variant="small"
                         title="Two-factor authentication"

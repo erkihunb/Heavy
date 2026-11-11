@@ -1,0 +1,121 @@
+name: CI
+
+on:
+    push:
+        branches: [main, develop]
+    pull_request:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    backend:
+        name: PHP (Pint, Larastan, Pest, audit)
+        runs-on: ubuntu-latest
+
+        services:
+            postgres:
+                image: postgres:16-alpine
+                env:
+                    POSTGRES_DB: heavy_testing
+                    POSTGRES_USER: heavy
+                    POSTGRES_PASSWORD: secret
+                ports:
+                    # phpunit.xml points the test suite at port 54320.
+                    - 54320:5432
+                options: >-
+                    --health-cmd "pg_isready -U heavy -d heavy_testing"
+                    --health-interval 5s
+                    --health-timeout 5s
+                    --health-retries 10
+
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.4'
+                  extensions: pdo_pgsql, intl, mbstring, bcmath
+                  tools: composer:v2
+                  coverage: none
+
+            - name: Install Composer dependencies
+              run: composer install --no-interaction --prefer-dist --no-progress
+
+            - name: Prepare environment
+              run: |
+                  cp .env.example .env
+                  php artisan key:generate
+
+            - name: Code style (Pint)
+              run: vendor/bin/pint --test
+
+            - name: Static analysis (Larastan level 6)
+              run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+
+            - name: Translation types are up to date
+              run: php artisan translations:types --check
+
+            - name: Tests (Pest)
+              run: vendor/bin/pest
+
+            - name: Dependency audit
+              run: composer audit
+
+    frontend:
+        name: Frontend (ESLint, Prettier, tsc, Vitest, build, audit)
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v6
+
+            # PHP is needed because the typed route helpers (Wayfinder) are generated from the Laravel routes.
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.4'
+                  tools: composer:v2
+                  coverage: none
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22'
+                  cache: npm
+
+            - name: Install Composer dependencies
+              run: composer install --no-interaction --prefer-dist --no-progress
+
+            - name: Install Node dependencies
+              run: npm ci
+
+            - name: Prepare environment
+              run: |
+                  cp .env.example .env
+                  php artisan key:generate
+
+            - name: Generate typed routes
+              run: php artisan wayfinder:generate --with-form
+
+            - name: Lint (ESLint)
+              run: npm run lint:check
+
+            - name: Formatting (Prettier)
+              run: npm run format:check
+
+            - name: Types (tsc --noEmit)
+              run: npm run types
+
+            - name: Unit tests (Vitest)
+              run: npm test
+
+            - name: Build
+              run: npm run build
+
+            - name: Dependency audit
+              run: npm audit --audit-level=high

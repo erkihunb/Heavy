@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\FrontendTranslations;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,12 +36,27 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                // An explicit whitelist: never serialize the whole model to the browser.
+                'user' => $user === null ? null : [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'email_verified_at' => $user->email_verified_at,
+                    'locale' => $user->locale,
+                    // For navigation and display only; authorization is enforced by Policies.
+                    'roles' => $user->getRoleNames()->values()->all(),
+                ],
+                'mustEnableTwoFactor' => (bool) $user?->mustEnableTwoFactor(),
             ],
+            'locale' => app()->getLocale(),
+            'locales' => config('localization.supported'),
+            'translations' => fn (): array => FrontendTranslations::for(app()->getLocale()),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

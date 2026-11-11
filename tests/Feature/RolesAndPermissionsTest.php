@@ -1,0 +1,142 @@
+<?php
+
+use App\Enums\Permission;
+use App\Enums\Role;
+use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\DemoUserSeeder;
+use Database\Seeders\RolesAndPermissionsSeeder;
+use Spatie\Permission\Models\Permission as PermissionModel;
+use Spatie\Permission\Models\Role as RoleModel;
+
+function permissionValues(Role $role): array
+{
+    $values = array_map(fn (Permission $permission) => $permission->value, $role->permissions());
+    sort($values);
+
+    return $values;
+}
+
+it('seeds every role and every permission', function () {
+    expect(RoleModel::pluck('name')->sort()->values()->all())
+        ->toBe(collect(Role::cases())->map->value->sort()->values()->all())
+        ->and(PermissionModel::pluck('name')->sort()->values()->all())
+        ->toBe(collect(Permission::cases())->map->value->sort()->values()->all());
+});
+
+it('grants each role exactly the permissions mapped to it', function (Role $role) {
+    $granted = RoleModel::findByName($role->value)->permissions->pluck('name')->sort()->values()->all();
+
+    expect($granted)->toBe(permissionValues($role));
+})->with(Role::cases());
+
+it('matches the role table in the specification', function (Role $role, array $expected) {
+    sort($expected);
+
+    expect(permissionValues($role))->toBe($expected);
+})->with([
+    'applicant' => [Role::Applicant, ['organization.manage-own', 'vehicles.manage-own', 'permits.apply', 'payments.submit', 'permits.download-own']],
+    'reviewer' => [Role::Reviewer, ['permits.view-queue', 'permits.review']],
+    'approver' => [Role::Approver, ['permits.view-queue', 'permits.approve', 'permits.revoke']],
+    'cashier' => [Role::Cashier, ['payments.verify']],
+    'traffic officer' => [Role::TrafficOfficer, ['verification.scan']],
+    'admin' => [Role::Admin, ['users.manage', 'vehicle-types.manage', 'fee-schedules.manage', 'settings.manage', 'audit-log.view', 'imports.run']],
+]);
+
+it('assigns every permission to at least one role', function () {
+    $assigned = collect(Role::cases())->flatMap(fn (Role $role) => permissionValues($role))->unique();
+
+    expect($assigned->count())->toBe(count(Permission::cases()));
+});
+
+it('lets a user exercise only the permissions of their role', function (Role $role) {
+    $user = User::factory()->create();
+    $user->assignRole($role->value);
+
+    foreach (Permission::cases() as $permission) {
+        expect($user->can($permission->value))
+            ->toBe(in_array($permission, $role->permissions(), true), "{$role->value} / {$permission->value}");
+    }
+})->with(Role::cases());
+
+it('gives a user without a role no permissions at all', function () {
+    $user = User::factory()->create();
+
+    foreach (Permission::cases() as $permission) {
+        expect($user->can($permission->value))->toBeFalse();
+    }
+});
+
+it('does not make admin a super-user', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole(Role::Admin->value);
+
+    expect($admin->can(Permission::ApprovePermits->value))->toBeFalse()
+        ->and($admin->can(Permission::ReviewPermits->value))->toBeFalse()
+        ->and($admin->can(Permission::VerifyPayments->value))->toBeFalse()
+        ->and($admin->can(Permission::RevokePermits->value))->toBeFalse();
+});
+
+it('keeps approving and payment verification in different roles', function () {
+    expect(Role::Approver->permissions())->not->toContain(Permission::VerifyPayments)
+        ->and(Role::Cashier->permissions())->not->toContain(Permission::ApprovePermits);
+});
+
+it('is idempotent', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    expect(RoleModel::count())->toBe(count(Role::cases()))
+        ->and(PermissionModel::count())->toBe(count(Permission::cases()));
+});
+
+it('revokes a permission that the mapping no longer grants', function () {
+    RoleModel::findByName(Role::Admin->value)->givePermissionTo(Permission::ApprovePermits->value);
+
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    expect(RoleModel::findByName(Role::Admin->value)->hasPermissionTo(Permission::ApprovePermits->value))->toBeFalse();
+});
+
+it('treats every role except applicant as staff', function () {
+    expect(Role::staff())->toBe([Role::Reviewer, Role::Approver, Role::Cashier, Role::TrafficOfficer, Role::Admin])
+        ->and(Role::Applicant->isStaff())->toBeFalse();
+
+    foreach (Role::staff() as $role) {
+        expect($role->isStaff())->toBeTrue();
+    }
+});
+
+it('reports whether a user is staff from their role', function (Role $role) {
+    $user = User::factory()->create();
+    $user->assignRole($role->value);
+
+    expect($user->isStaff())->toBe($role->isStaff());
+})->with(Role::cases());
+
+it('seeds one demo user per role', function () {
+    $this->seed(DemoUserSeeder::class);
+    $this->seed(DemoUserSeeder::class);
+
+    expect(User::count())->toBe(count(Role::cases()));
+
+    foreach (Role::cases() as $role) {
+        $user = User::where('email', "{$role->value}@example.test")->firstOrFail();
+
+        expect($user->getRoleNames()->all())->toBe([$role->value]);
+    }
+});
+
+it('refuses to seed demo users in production', function () {
+    app()->detectEnvironment(fn () => 'production');
+
+    expect(fn () => $this->seed(DemoUserSeeder::class))->toThrow(LogicException::class);
+    expect(User::count())->toBe(0);
+});
+
+it('does not create demo users outside the local environment', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    expect(User::count())->toBe(0)
+        ->and(RoleModel::count())->toBe(count(Role::cases()));
+});
