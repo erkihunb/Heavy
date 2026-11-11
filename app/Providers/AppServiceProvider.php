@@ -7,6 +7,8 @@ use App\Domain\Documents\GotenbergPdfRenderer;
 use App\Domain\Documents\PdfRenderer;
 use App\Domain\Sms\LogSmsGateway;
 use App\Domain\Sms\SmsGateway;
+use App\Enums\Permission;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -45,6 +48,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        // The reporting dashboard (spec §11): Approvers, Cashiers and Admins.
+        Gate::define('viewReports', fn (User $user): bool => $user->can(Permission::ViewReports->value));
 
         // Permit verification: per IP address, for the public and officers alike (spec §7).
         RateLimiter::for('verification', fn (Request $request): Limit => Limit::perMinute(

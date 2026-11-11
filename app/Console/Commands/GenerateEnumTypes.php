@@ -2,6 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\ExportDataset;
+use App\Enums\ExportFormat;
+use App\Enums\ExportStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\PermitStatus;
@@ -31,6 +34,9 @@ class GenerateEnumTypes extends Command
         PaymentMethod::class => 'PAYMENT_METHODS',
         ScanResult::class => 'SCAN_RESULTS',
         ScanChannel::class => 'SCAN_CHANNELS',
+        ExportDataset::class => 'EXPORT_DATASETS',
+        ExportFormat::class => 'EXPORT_FORMATS',
+        ExportStatus::class => 'EXPORT_STATUSES',
     ];
 
     /** Prettier's print width: a list that fits on one line must be written on one line. */

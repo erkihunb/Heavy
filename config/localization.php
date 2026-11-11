@@ -44,6 +44,7 @@ return [
         'permits',
         'verification',
         'imports',
+        'reports',
         'payments',
         'fees',
     ],

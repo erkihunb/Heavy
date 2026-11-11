@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Officer\VerificationController as OfficerVerificationController;
+use App\Http\Controllers\Staff\ExportController;
 use App\Http\Controllers\Staff\PaymentController;
 use App\Http\Controllers\Staff\PermitReviewController;
+use App\Http\Controllers\Staff\ReportController;
 use App\Models\Payment;
 use App\Models\Permit;
 use Illuminate\Support\Facades\Route;
@@ -57,4 +59,20 @@ Route::middleware(['auth', 'verified', 'can:viewQueue,'.Payment::class])
 
         Route::post('payments/{payment}/verify', 'verify')->name('payments.verify');
         Route::post('payments/{payment}/reject', 'reject')->name('payments.reject');
+    });
+
+/*
+ * Reporting and exports (spec §11): Approvers, Cashiers and Admins.
+ */
+Route::middleware(['auth', 'verified', 'can:viewReports'])
+    ->prefix('staff')
+    ->name('staff.')
+    ->group(function () {
+        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+
+        Route::get('exports', [ExportController::class, 'index'])->name('exports.index');
+        Route::post('exports', [ExportController::class, 'store'])
+            ->middleware('throttle:10,1')
+            ->name('exports.store');
+        Route::get('exports/{export}/download', [ExportController::class, 'download'])->name('exports.download');
     });

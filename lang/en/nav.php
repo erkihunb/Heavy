@@ -12,4 +12,5 @@ return [
     'payments' => 'Payments',
     'fee_schedules' => 'Fee schedule',
     'imports' => 'Legacy import',
+    'reports' => 'Reports',
 ];

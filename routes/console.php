@@ -13,6 +13,12 @@ Schedule::command('permits:expire')
     ->withoutOverlapping()
     ->onOneServer();
 
+Schedule::command('exports:prune')
+    ->dailyAt('03:00')
+    ->timezone(config('localization.display_timezone'))
+    ->withoutOverlapping()
+    ->onOneServer();
+
 Schedule::command('permits:notify-expiring')
     ->dailyAt((string) config('permits.notifications.reminder_time'))
     ->timezone(config('localization.display_timezone'))

@@ -70,3 +70,23 @@ export type ScanResult = (typeof SCAN_RESULTS)[number];
 export const SCAN_CHANNELS = ['qr', 'lookup'] as const;
 
 export type ScanChannel = (typeof SCAN_CHANNELS)[number];
+
+/** Mirrors App\Enums\ExportDataset. */
+export const EXPORT_DATASETS = ['permits', 'payments'] as const;
+
+export type ExportDataset = (typeof EXPORT_DATASETS)[number];
+
+/** Mirrors App\Enums\ExportFormat. */
+export const EXPORT_FORMATS = ['xlsx', 'csv'] as const;
+
+export type ExportFormat = (typeof EXPORT_FORMATS)[number];
+
+/** Mirrors App\Enums\ExportStatus. */
+export const EXPORT_STATUSES = [
+    'pending',
+    'running',
+    'completed',
+    'failed',
+] as const;
+
+export type ExportStatus = (typeof EXPORT_STATUSES)[number];

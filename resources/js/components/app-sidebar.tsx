@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     Banknote,
     Building2,
+    ChartColumn,
     ClipboardList,
     FileText,
     FileUp,
@@ -31,6 +32,7 @@ import { show as organization } from '@/routes/organization';
 import { index as permits } from '@/routes/permits';
 import { index as paymentQueue } from '@/routes/staff/payments';
 import { index as reviewQueue } from '@/routes/staff/permits';
+import { index as reports } from '@/routes/staff/reports';
 import { index as vehicles } from '@/routes/vehicles';
 import type { NavItem } from '@/types';
 
@@ -47,6 +49,9 @@ export function AppSidebar() {
         auth.user.roles.some((role) => ['reviewer', 'approver'].includes(role));
     const isCashier = isAdmin || auth.user.roles.includes('cashier');
     const isOfficer = isAdmin || auth.user.roles.includes('traffic_officer');
+    const seesReports =
+        isAdmin ||
+        auth.user.roles.some((role) => ['approver', 'cashier'].includes(role));
 
     const mainNavItems: NavItem[] = [
         {
@@ -88,6 +93,15 @@ export function AppSidebar() {
                       title: t('nav.payments'),
                       href: paymentQueue(),
                       icon: Banknote,
+                  },
+              ]
+            : []),
+        ...(seesReports
+            ? [
+                  {
+                      title: t('nav.reports'),
+                      href: reports(),
+                      icon: ChartColumn,
                   },
               ]
             : []),

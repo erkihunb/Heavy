@@ -65,9 +65,11 @@ enum Role: string
                 Permission::ViewReviewQueue,
                 Permission::ApprovePermits,
                 Permission::RevokePermits,
+                Permission::ViewReports,
             ],
             self::Cashier => [
                 Permission::VerifyPayments,
+                Permission::ViewReports,
             ],
             self::TrafficOfficer => [
                 Permission::ScanPermits,

@@ -29,6 +29,9 @@ enum Permission: string
     // Traffic Officer
     case ScanPermits = 'verification.scan';
 
+    // Approver and Cashier: the reporting dashboard and exports
+    case ViewReports = 'reports.view';
+
     // Admin
     case ManageUsers = 'users.manage';
     case ManageVehicleTypes = 'vehicle-types.manage';

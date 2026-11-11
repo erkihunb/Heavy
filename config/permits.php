@@ -157,6 +157,11 @@ return [
     |
     */
 
+    // Spreadsheet exports are kept this many days, then deleted by exports:prune.
+    'exports' => [
+        'keep_days' => (int) env('PERMITS_EXPORTS_KEEP_DAYS', 7),
+    ],
+
     'notifications' => [
         'sms' => (bool) env('PERMITS_NOTIFY_SMS', true),
         'expiring_days' => (int) env('PERMITS_EXPIRING_REMINDER_DAYS', 7),

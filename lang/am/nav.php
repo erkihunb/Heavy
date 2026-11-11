@@ -12,4 +12,5 @@ return [
     'payments' => 'ክፍያዎች',
     'fee_schedules' => 'የክፍያ ተመን',
     'imports' => 'የቀድሞ መዝገብ',
+    'reports' => 'ሪፖርቶች',
 ];

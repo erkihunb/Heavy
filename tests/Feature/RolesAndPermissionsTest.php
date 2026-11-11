@@ -37,12 +37,13 @@ it('matches the role table in the specification', function (Role $role, array $e
 })->with([
     'applicant' => [Role::Applicant, ['organization.manage-own', 'vehicles.manage-own', 'permits.apply', 'payments.submit', 'permits.download-own']],
     'reviewer' => [Role::Reviewer, ['permits.view-queue', 'permits.review']],
-    'approver' => [Role::Approver, ['permits.view-queue', 'permits.approve', 'permits.revoke']],
-    'cashier' => [Role::Cashier, ['payments.verify']],
+    'approver' => [Role::Approver, ['permits.view-queue', 'permits.approve', 'permits.revoke', 'reports.view']],
+    'cashier' => [Role::Cashier, ['payments.verify', 'reports.view']],
     'traffic officer' => [Role::TrafficOfficer, ['verification.scan']],
     'admin' => [Role::Admin, [
         'users.manage', 'vehicle-types.manage', 'fee-schedules.manage', 'settings.manage', 'audit-log.view', 'imports.run',
         'permits.view-queue', 'permits.review', 'permits.approve', 'permits.revoke', 'payments.verify', 'verification.scan',
+        'reports.view',
     ]],
 ]);
 

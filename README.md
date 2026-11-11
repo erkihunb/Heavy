@@ -5,7 +5,7 @@ City Administration Traffic Management Authority.
 
 **Status:** Milestones 1 (Foundation), 2 (Organizations & Vehicles), 3 (Applications &
 Workflow), 4 (Fees & Payments), 5 (Issuance, QR, PDF, Verification), 6 (Notifications &
-Scheduling) and 7 (Legacy Import) of 9 are complete.
+Scheduling), 7 (Legacy Import) and 8 (Reporting & Exports) of 9 are complete.
 See [docs/plans/](docs/plans/) for what exists and [docs/DECISIONS.md](docs/DECISIONS.md)
 for assumptions and open questions.
 
@@ -54,6 +54,7 @@ Everything is listed in `.env.example`. Project-specific ones:
 | `GOTENBERG_URL` | `http://127.0.0.1:3000` | PDF renderer (`docker compose up -d gotenberg`) |
 | `PERMITS_PDF_RENDERER` | `gotenberg` | `fake` on machines without Gotenberg |
 | `PERMITS_DOCUMENT_LOGO_PATH` | — | Official logo for the PDF (placeholder until set) |
+| `PERMITS_EXPORTS_KEEP_DAYS` | `7` | Days a spreadsheet export is kept before `exports:prune` deletes it |
 
 ## Quality checks
 
@@ -101,7 +102,8 @@ and run it again. Re-running never creates duplicates. See docs/DECISIONS.md, Mi
 
 ## Queue and scheduler
 
-Permit PDFs and all e-mails / SMS are queued. Run a worker and the scheduler:
+Permit PDFs, spreadsheet exports and all e-mails / SMS are queued. Run a worker and the
+scheduler:
 
 ```bash
 php artisan queue:work               # or `composer dev`, which runs a queue listener
@@ -112,6 +114,7 @@ php artisan schedule:work            # or cron: * * * * * php artisan schedule:r
 |---|---|---|
 | 00:05 daily | `permits:expire` | Issued permits whose last day has passed become *expired* |
 | 08:00 daily (`PERMITS_EXPIRING_REMINDER_TIME`) | `permits:notify-expiring` | "Expires soon" e-mail + SMS, once per permit, `PERMITS_EXPIRING_REMINDER_DAYS` (7) days ahead |
+| 03:00 daily | `exports:prune` | Deletes spreadsheet exports (and their files) older than `PERMITS_EXPORTS_KEEP_DAYS` (7) |
 
-Both commands are safe to run by hand at any time. Until an SMS provider is chosen,
+All three commands are safe to run by hand at any time. Until an SMS provider is chosen,
 `SMS_DRIVER=log` writes text messages to the log with the number masked.

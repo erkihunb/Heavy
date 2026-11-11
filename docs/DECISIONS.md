@@ -613,3 +613,54 @@ Plan: [plans/milestone-7-legacy-import.md](plans/milestone-7-legacy-import.md).
   issues CSV (UTF-8 with BOM for Excel) on the private documents disk.
 - CLI: `php artisan legacy:import file.csv [--dry-run] [--user=admin@…]`. Admin screen:
   *Legacy import* uploads the CSV and runs it on the queue (one try; re-running is safe).
+
+## Milestone 8 — Reporting & Exports
+
+Plan: [plans/milestone-8-reporting-exports.md](plans/milestone-8-reporting-exports.md).
+
+### Who sees reports
+
+- New permission `reports.view`, held by **Approver, Cashier and Admin**. Reviewers and
+  traffic officers do not see revenue. **CONFIRM** with the Authority who should see the
+  dashboard and the exports.
+- Exports are for the same people. Each file can be downloaded only by the person who
+  requested it (anyone else gets 404); the list shows only one's own exports.
+
+### What the figures mean (spec §11)
+
+- Everything is grouped by **Ethiopian month** in Africa/Addis_Ababa. The dashboard shows
+  the current month and the 11 before it; Pagume counts as a month, so twelve months
+  cover a little less than a year.
+- **Issued** counts permits by `issued_at`, whatever happened to them since (revoked,
+  expired). Legacy permits count in the month of their form submission, which the import
+  uses as their issue time; one with an unreadable timestamp has no issue time and is not
+  counted as issued in any month.
+- **Revenue** is the sum of **verified** payments by the day they were paid (`paid_at`),
+  not by the day the cashier verified them. Submitted and rejected payments are not revenue.
+- **By status** is the status people see today: issued permits are split into *issued*
+  (not started), *active* and *expired* by their dates, even before the nightly job runs.
+- **By vehicle type** uses the primary vehicle's type; **top organizations** lists the ten
+  with the most permits issued in the period, with the verified revenue of those permits.
+- **Expiring soon**: issued permits whose last day is today or within the next 7 days.
+
+### Exports
+
+- openspout (named in the spec) writes XLSX or CSV row by row on the queue, so a large
+  export never sits in memory. CSV starts with a UTF-8 byte-order mark so Excel shows
+  Ethiopic text.
+- Datasets: **permits** (never drafts or withdrawn applications; filter by status and by a
+  period the permit is valid in) and **payments** (filter by status and by the day paid).
+  Dates are given in both calendars, money in birr.
+- **No e-mail addresses, phone numbers or staff names** are exported.
+- Text that a spreadsheet program would run as a formula (starting with `=`, `+`, `-`,
+  `@`, a tab or a carriage return) gets a leading apostrophe ("CSV injection"):
+  organization names and receipt numbers are typed by applicants.
+- Files are stored on the private documents disk under a random name, the requester gets
+  an e-mail when one is ready, and `exports:prune` deletes exports older than
+  `PERMITS_EXPORTS_KEEP_DAYS` (7) days every night at 03:00. Requests are limited to 10
+  a minute per user.
+
+### Deferred
+
+- Charts are simple bars drawn in CSS; no charting library was added. PDF reports and
+  scheduled (e-mailed) reports are not built.
