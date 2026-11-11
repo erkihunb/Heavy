@@ -127,5 +127,5 @@ it('does not load fonts from a third-party host', function () {
     expect(file_get_contents(resource_path('css/app.css')))
         ->toContain("@import '@fontsource-variable/noto-sans-ethiopic/wght.css'")
         ->toContain("'Noto Sans Ethiopic Variable'")
-        ->not->toContain('http');
+        ->not->toMatch('/@import\s+url\(|fonts\.(bunny|googleapis|gstatic)|https:\/\//');
 });

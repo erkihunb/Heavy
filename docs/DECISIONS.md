@@ -138,3 +138,32 @@ Defaults that later milestones will implement as configuration. None is built ye
 | 6 | Official logo, letterhead and legal wording for the PDF | Placeholders from config | 5 |
 | 7 | SMS provider | `SmsGateway` interface with a log driver | 6 |
 | 8 | Hosting environment and data residency | Docker Compose stack that runs on-prem or in a cloud; S3-compatible private storage | 9 |
+
+## UI design language (added after Milestone 1)
+
+- **Direction: road signage.** Asphalt neutrals, a permit green for primary actions, one
+  signal amber as the accent; sign-like shapes (large corner radius, confident borders,
+  hard unblurred shadows on the few "plate" elements); lane-dash and hazard-stripe motifs
+  instead of generic decoration. Tokens and utilities live in `resources/css/app.css`
+  (`surface-asphalt`, `hazard-stripe`, `lane-dash`, `shadow-plate`, `text-display`,
+  `text-eyebrow`). Every text/background pair in the palette was checked at ≥ 4.5:1
+  (WCAG AA); most exceed 7:1.
+- **One typeface.** Noto Sans Ethiopic (variable weight) for both scripts. The width axis
+  was not added: it costs ~130 KB more on the Ethiopic subset, which matters on phones.
+- **No official branding.** `BrandMark` and `public/favicon.svg` are a neutral placeholder
+  (a truck on a sign plate). The starter kit's Laravel logo, `favicon.ico` and
+  `apple-touch-icon.png` were removed. **CONFIRM:** supply the Authority's logo and colours;
+  swapping them means changing the tokens and `brand-mark.tsx` only.
+- **Touch targets.** Inputs are 44 px high and buttons 40–48 px, because traffic officers
+  use phones.
+- **Dates in the page chrome.** Today's date in both calendars is a shared Inertia prop
+  (`today`), computed in the display timezone, and shown in the app header.
+- **Landing page content.** The sample permit card is an illustration with placeholder
+  values (`TMA-HV-0000-000000`, `አአ-00-A00000`), labelled as such; its dates are real
+  calendar conversions. The "how a permit is issued" steps and the three feature
+  statements describe the finished service (QR verification and the audit trail arrive in
+  later milestones). **CONFIRM** the wording with the Authority.
+- **Dashboard.** Shows role, account status and the process, plus an explicit notice that
+  applications are not open yet. Replace the notice when Milestone 3 ships.
+- **Removed starter-kit files:** the unused `auth-simple-layout` and `auth-card-layout`
+  (the auth screens now use the split layout).

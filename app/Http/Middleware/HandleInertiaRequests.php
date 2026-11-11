@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\EthiopianCalendar;
 use App\Support\FrontendTranslations;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -57,6 +58,11 @@ class HandleInertiaRequests extends Middleware
             'locale' => app()->getLocale(),
             'locales' => config('localization.supported'),
             'translations' => fn (): array => FrontendTranslations::for(app()->getLocale()),
+            // Today in both calendars, for the date shown in the page chrome.
+            'today' => fn (): ?array => EthiopianCalendar::present(
+                now(config('localization.display_timezone')),
+                app()->getLocale(),
+            ),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }
