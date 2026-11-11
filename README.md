@@ -4,8 +4,8 @@ Permit application, review, payment, issuance and verification system for the Ad
 City Administration Traffic Management Authority.
 
 **Status:** Milestones 1 (Foundation), 2 (Organizations & Vehicles), 3 (Applications &
-Workflow), 4 (Fees & Payments), 5 (Issuance, QR, PDF, Verification) and 6 (Notifications &
-Scheduling) of 9 are complete.
+Workflow), 4 (Fees & Payments), 5 (Issuance, QR, PDF, Verification), 6 (Notifications &
+Scheduling) and 7 (Legacy Import) of 9 are complete.
 See [docs/plans/](docs/plans/) for what exists and [docs/DECISIONS.md](docs/DECISIONS.md)
 for assumptions and open questions.
 
@@ -84,6 +84,20 @@ Payment receipts are stored on the private `documents` disk (`storage/app/docume
 default, `PERMITS_DOCUMENTS_DISK`); it must never be web-served and must be backed up with
 the database. The legacy import and the production stack (Horizon, Docker images) arrive
 in later milestones.
+
+## Importing the legacy Google Form data
+
+Download the sheet "Form Responses 1" as CSV (File → Download → Comma-separated values),
+then either use **Admin → Legacy import** or the command line:
+
+```bash
+php artisan legacy:import form-responses.csv --dry-run --user=admin@example.org   # check first
+php artisan legacy:import form-responses.csv --user=admin@example.org             # then import
+```
+
+Review the issues CSV of the dry run (path printed at the end; also downloadable on the
+Admin screen), add missing vehicle-type spellings to `database/import/vehicle_type_map.php`,
+and run it again. Re-running never creates duplicates. See docs/DECISIONS.md, Milestone 7.
 
 ## Queue and scheduler
 

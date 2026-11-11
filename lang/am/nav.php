@@ -11,4 +11,5 @@ return [
     'review_queue' => 'የግምገማ ወረፋ',
     'payments' => 'ክፍያዎች',
     'fee_schedules' => 'የክፍያ ተመን',
+    'imports' => 'የቀድሞ መዝገብ',
 ];

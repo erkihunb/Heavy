@@ -557,3 +557,59 @@ Plan: [plans/milestone-6-notifications-scheduling.md](plans/milestone-6-notifica
   runs cannot send twice).
 - Both use `withoutOverlapping()` and `onOneServer()` (cache locks). Horizon's snapshot and
   the database backups are scheduled with the production stack (Milestone 9).
+
+## Milestone 7 — Legacy Import
+
+Plan: [plans/milestone-7-legacy-import.md](plans/milestone-7-legacy-import.md).
+
+### What is imported and how
+
+- Input: the CSV of "Form Responses 1", columns by position as in spec §1 (Timestamp,
+  e-mail, owner, organization, permit type, vehicle type, plates, reason, validity,
+  amount, receipt number, QR). The QR column is ignored: those QR codes point to the old
+  spreadsheet and cannot be verified.
+- **Idempotent** on `legacy_source_ref` = sha256 of the timestamp, the e-mail (lower
+  case) and the plate cell as written. A second run, or a duplicate row, is counted as
+  *already imported*.
+- **Skipped** (with an issue) when the row is not safely a permit: no readable plate,
+  permit type, validity period or organization name, or too few columns.
+- **Imported with a warning** otherwise: unreadable timestamp (no submission time),
+  invalid e-mail, unmapped vehicle type (type `legacy_unmapped`, not offered to
+  applicants), missing / unreadable amount (no fee), missing receipt (no payment),
+  receipt already used (no payment), unreadable trailer plate (trailer left out), a
+  vehicle already registered to another organization (stays with that one), and overlaps.
+- **Overlaps** (spec §13): an issued legacy permit that would reserve a vehicle already
+  reserved for some of the same days is imported with `is_blocking = false` and a warning.
+- **Status** by date on the day of the import: last day today or later → `issued`,
+  otherwise `expired`. Permit numbers are generated in the normal sequence for the
+  Ethiopian year of the submission. No verification token or PDF: an Approver can
+  reissue a still-valid legacy permit to give it a QR code and document.
+- Payment: method `legacy`, status `verified`, amount and receipt from the sheet, paid
+  on the submission date.
+- **Timestamps** are read as Addis Ababa time, trying `n/j/Y G:i:s` (Google Sheets'
+  US-style export) and a few other formats; `--timestamp-format=` overrides. **CONFIRM**
+  the format after a dry run on the real file.
+- Vehicle types: `database/import/vehicle_type_map.php` holds the reviewed spellings
+  (only those named in the spec so far). **Run a dry run on the real CSV, review the
+  "vehicle_type" issues, extend the map, then run the import.**
+
+### People and organizations
+
+- **No user accounts are created for the people in the sheet.** An e-mail address in a
+  form submission is not consent to an account, and one address often submitted for
+  several institutions. Legacy permits belong to a system user `legacy-import@system.invalid`
+  (no roles, unverified, random password: it cannot sign in). **CONFIRM** how an
+  organization later claims its legacy permits (e.g. an Admin linking a registered
+  applicant to the organization) — not built yet.
+- Organizations are recognised by name, ignoring spacing and punctuation; created with the
+  first submitter's e-mail and **empty phone and address** (the sheet has neither).
+
+### Running it
+
+- Chunks of 200 rows, one transaction per chunk and a savepoint per row; memory stays flat
+  (the file is streamed). A **dry run** runs everything in one transaction that is rolled
+  back, keeping only the batch and its issues.
+- Every run is an `import_batches` row (who, when, totals) with its `import_issues`, and an
+  issues CSV (UTF-8 with BOM for Excel) on the private documents disk.
+- CLI: `php artisan legacy:import file.csv [--dry-run] [--user=admin@…]`. Admin screen:
+  *Legacy import* uploads the CSV and runs it on the queue (one try; re-running is safe).

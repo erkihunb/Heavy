@@ -43,6 +43,7 @@ return [
         'vehicles',
         'permits',
         'verification',
+        'imports',
         'payments',
         'fees',
     ],

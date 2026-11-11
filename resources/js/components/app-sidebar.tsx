@@ -4,6 +4,7 @@ import {
     Building2,
     ClipboardList,
     FileText,
+    FileUp,
     LayoutGrid,
     Receipt,
     ScanLine,
@@ -24,6 +25,7 @@ import {
 import { useTranslation } from '@/lib/i18n';
 import { dashboard } from '@/routes';
 import { index as feeSchedules } from '@/routes/admin/fee-schedules';
+import { index as imports } from '@/routes/admin/imports';
 import { verify as officerVerify } from '@/routes/officer';
 import { show as organization } from '@/routes/organization';
 import { index as permits } from '@/routes/permits';
@@ -104,6 +106,11 @@ export function AppSidebar() {
                       title: t('nav.fee_schedules'),
                       href: feeSchedules(),
                       icon: Receipt,
+                  },
+                  {
+                      title: t('nav.imports'),
+                      href: imports(),
+                      icon: FileUp,
                   },
               ]
             : []),
