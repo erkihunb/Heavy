@@ -39,6 +39,8 @@ return [
         'landing',
         'dashboard',
         'roles',
+        'organization',
+        'vehicles',
     ],
 
     /*

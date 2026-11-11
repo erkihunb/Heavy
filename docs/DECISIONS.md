@@ -167,3 +167,63 @@ Defaults that later milestones will implement as configuration. None is built ye
   applications are not open yet. Replace the notice when Milestone 3 ships.
 - **Removed starter-kit files:** the unused `auth-simple-layout` and `auth-card-layout`
   (the auth screens now use the split layout).
+
+## Milestone 2 — Organizations & Vehicles
+
+### Organizations
+
+- **Ownership.** The applicant who creates the profile is its owner (`organizations.created_by`).
+  Any member can view the profile; only the owner can change it. There is no separate
+  `owner_id` column — the spec's schema has `created_by` only.
+- **One organization per applicant**, enforced by the policy and, under a row lock, by the
+  `CreateOrganization` action. There is no screen yet for adding further users to an
+  organization; the data model allows it and the policies already distinguish members
+  from the owner. **CONFIRM** how colleagues should join (invitation by the owner, or
+  assignment by an Admin).
+- **Fields.** Amharic name, phone, e-mail and address are required; English name and TIN
+  are optional. TIN must be exactly 10 digits and unique when given — **CONFIRM** the TIN
+  format. Phone numbers (mobile or landline) are stored as `+251` + nine digits.
+- **Ids.** Organizations use ordinary integer ids because no organization id ever appears
+  in a URL (`/organization` is always the signed-in user's own). Vehicles use ULIDs.
+
+### Vehicles
+
+- **Vehicle types are a placeholder list**: only the two named in the spec's import
+  mapping (`cargo` / የጭነት, `special_mobile` / ልዩ ተንቀሳቃሽ). **CONFIRM** the full list;
+  it is seeded without overwriting later edits, and an Admin screen to maintain it comes
+  with the admin milestone. Caching of vehicle types is added with that screen.
+- **Duplicate plates.** Checked in validation, again in the Action, and finally by the
+  unique index (a lost race becomes the same validation error). The message says whether
+  the plate is in your own register or registered by another organization, never which one.
+- **Cross-organization access answers 404**, not 403, so a vehicle's existence is not
+  revealed. Lists are always filtered by the user's organization in the query.
+- **A plate can still be corrected** after registration. From Milestone 3 it must be
+  locked once the vehicle is on a submitted permit — otherwise editing it would rewrite
+  permit history.
+- **Vehicles cannot be deleted.** Not in the spec's actions, and permits will reference
+  them (`ON DELETE RESTRICT`).
+- **Plate search** matches any part of the normalised plate, ignoring letter case and
+  the kind of separator typed. A Latin region prefix is not translated in search
+  (`AA` does not find `አአ`).
+- **The plate inputs have no `maxlength`**: browsers count pasted spaces and dashes and
+  would cut a plate short before it is cleaned.
+
+### Accounts
+
+- **Self-service account deletion is removed** (starter-kit feature). Accounts own
+  organizations and will carry permit history; removal needs a retention policy.
+  **CONFIRM** the policy for closing accounts.
+
+### Frontend contract
+
+- Resource shapes are mirrored by hand in `resources/js/types/models.ts`, and each
+  Resource has a test asserting its exact fields. Generated TypeScript for enums is
+  deferred to Milestone 3, where `PermitStatus` first needs it.
+- `JsonResource::withoutWrapping()` is on: a single resource reaches the page as a plain
+  object; paginated collections keep `data` / `links` / `meta`.
+- Amharic validation messages now exist for the rules in use (`lang/am/validation.php`);
+  any other rule still falls back to English.
+
+### Deferred within this milestone
+
+- The audit log (`spatie/laravel-activitylog`) starts with Milestone 3's state transitions.

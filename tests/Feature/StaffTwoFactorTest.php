@@ -1,17 +1,7 @@
 <?php
 
 use App\Enums\Role;
-use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
-
-function userWithRole(Role $role, bool $twoFactor = false): User
-{
-    $factory = $twoFactor ? User::factory()->withTwoFactor() : User::factory();
-    $user = $factory->create();
-    $user->assignRole($role->value);
-
-    return $user;
-}
 
 function passwordConfirmed(): array
 {

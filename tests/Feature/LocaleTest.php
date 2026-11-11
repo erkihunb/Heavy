@@ -103,7 +103,7 @@ it('shares only whitelisted fields of the signed-in user', function () {
         ->get(route('dashboard'))
         ->assertInertia(fn (Assert $page) => $page
             ->where('auth.user', fn ($shared) => collect($shared)->keys()->sort()->values()->all()
-                === ['email', 'email_verified_at', 'id', 'locale', 'name', 'roles'])
+                === ['email', 'email_verified_at', 'has_organization', 'id', 'locale', 'name', 'roles'])
             ->where('auth.user.roles', ['applicant'])
             ->missing('auth.user.password')
             ->missing('auth.user.remember_token')

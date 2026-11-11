@@ -5,4 +5,6 @@ return [
     'dashboard' => 'Dashboard',
     'settings' => 'Settings',
     'log_out' => 'Log out',
+    'organization' => 'Organisation',
+    'vehicles' => 'Vehicles',
 ];

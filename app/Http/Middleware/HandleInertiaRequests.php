@@ -50,10 +50,16 @@ class HandleInertiaRequests extends Middleware
                     'email' => $user->email,
                     'email_verified_at' => $user->email_verified_at,
                     'locale' => $user->locale,
+                    'has_organization' => $user->organization_id !== null,
                     // For navigation and display only; authorization is enforced by Policies.
                     'roles' => $user->getRoleNames()->values()->all(),
                 ],
                 'mustEnableTwoFactor' => (bool) $user?->mustEnableTwoFactor(),
+            ],
+            // One-off messages set by the previous request.
+            'flash' => [
+                'success' => fn (): ?string => $request->session()->get('success'),
+                'warning' => fn (): ?string => $request->session()->get('warning'),
             ],
             'locale' => app()->getLocale(),
             'locales' => config('localization.supported'),

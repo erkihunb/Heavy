@@ -2,6 +2,7 @@
 
 use App\Enums\Role;
 use App\Models\User;
+use App\Models\Vehicle;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('guests are redirected to the login page', function () {
@@ -60,4 +61,28 @@ test('every role has a name and a summary in both languages', function () {
                 ->and($roles[$role]['summary'] ?? '')->not->toBe('', "{$locale}.roles.{$role}.summary");
         }
     }
+});
+
+test('an applicant without an organization is told to create one', function () {
+    $this->actingAs(userWithRole(Role::Applicant))
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('registration', ['hasOrganization' => false, 'vehicleCount' => 0]));
+});
+
+test('an applicant sees how many vehicles their own organization has registered', function () {
+    $user = applicantWithOrganization();
+    Vehicle::factory()->for($user->organization)->count(2)->create();
+    Vehicle::factory()->count(3)->create();
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('registration', ['hasOrganization' => true, 'vehicleCount' => 2]));
+});
+
+test('staff see no registration step', function () {
+    $this->actingAs(userWithRole(Role::Reviewer, twoFactor: true))
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page->where('registration', null));
 });

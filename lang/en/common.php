@@ -12,4 +12,10 @@ return [
         'title' => 'Time-restricted movement permits for heavy vehicles',
         'intro' => 'Apply for, pay for and manage permits that allow heavy vehicles to move during restricted hours.',
     ],
+    'pagination' => [
+        'label' => 'Pages',
+        'previous' => 'Previous',
+        'next' => 'Next',
+        'page_of' => 'Page :current of :last',
+    ],
 ];

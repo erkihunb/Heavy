@@ -91,3 +91,15 @@ it('has no two regions sharing a Latin prefix', function () {
 
     expect(array_unique($codes))->toHaveCount(count($codes));
 });
+
+it('brings a partial plate typed into a search box into the stored spelling', function (string $typed, string $term) {
+    expect(PlateNumber::searchTerm($typed))->toBe($term);
+})->with([
+    'lower case' => ['a45301', 'A45301'],
+    'spaces as separators' => ['አአ 03 a453', 'አአ-03-A453'],
+    'mixed dashes' => ['ኢት–03—401', 'ኢት-03-401'],
+    'surrounding whitespace and dashes' => [' -40134- ', '40134'],
+    'full-width digits' => ['４０１３４', '40134'],
+    'already normalised' => ['ኢት-03-40134', 'ኢት-03-40134'],
+    'empty' => ['', ''],
+]);

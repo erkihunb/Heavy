@@ -69,6 +69,19 @@ final readonly class PlateNumber implements Stringable
         );
     }
 
+    /**
+     * Bring a partial plate typed into a search box into the stored spelling
+     * (separators and letter case), without requiring it to be a whole plate.
+     */
+    public static function searchTerm(string $term): string
+    {
+        $value = class_exists(Normalizer::class)
+            ? (Normalizer::normalize($term, Normalizer::FORM_KC) ?: $term)
+            : $term;
+
+        return mb_strtoupper(trim((string) preg_replace(self::SEPARATORS, '-', $value), '-'));
+    }
+
     public static function tryParse(string $raw): ?self
     {
         try {

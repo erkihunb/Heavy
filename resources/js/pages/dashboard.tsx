@@ -1,5 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
+    ArrowRight,
     CircleAlert,
     Info,
     MailCheck,
@@ -12,7 +13,9 @@ import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
+import { show as organization } from '@/routes/organization';
 import { show as twoFactor } from '@/routes/two-factor';
+import { create as registerVehicle } from '@/routes/vehicles';
 import type { BreadcrumbItem } from '@/types';
 
 type Props = {
@@ -20,6 +23,11 @@ type Props = {
         emailVerified: boolean;
         twoFactorEnabled: boolean;
     };
+    /** Where an applicant stands in setting up their register; null for staff. */
+    registration: {
+        hasOrganization: boolean;
+        vehicleCount: number;
+    } | null;
 };
 
 function StatusLine({
@@ -50,7 +58,7 @@ function StatusLine({
     );
 }
 
-export default function Dashboard({ account }: Props) {
+export default function Dashboard({ account, registration }: Props) {
     const { auth, today } = usePage().props;
     const { t } = useTranslation();
     const role = auth.user.roles[0] ?? 'none';
@@ -100,6 +108,52 @@ export default function Dashboard({ account }: Props) {
                         </p>
                     </div>
                 </section>
+
+                {/* The applicant's next step */}
+                {registration && (
+                    <section
+                        aria-labelledby="next-title"
+                        className="flex animate-rise flex-col gap-5 rounded-3xl border-2 border-foreground bg-card p-6 [animation-delay:60ms] sm:flex-row sm:items-center sm:justify-between sm:p-7"
+                    >
+                        <div className="space-y-1.5">
+                            <p className="text-eyebrow text-muted-foreground">
+                                {t('dashboard.next.label')}
+                            </p>
+                            <h2
+                                id="next-title"
+                                className="text-2xl text-display"
+                            >
+                                {registration.hasOrganization
+                                    ? t('dashboard.next.vehicles.title')
+                                    : t('dashboard.next.organization.title')}
+                            </h2>
+                            <p className="text-muted-foreground">
+                                {registration.hasOrganization
+                                    ? t('dashboard.next.vehicles.body', {
+                                          count: registration.vehicleCount,
+                                      })
+                                    : t('dashboard.next.organization.body')}
+                            </p>
+                        </div>
+                        <Button
+                            asChild
+                            size="lg"
+                            className="shrink-0 shadow-plate hover:-translate-y-0.5"
+                        >
+                            {registration.hasOrganization ? (
+                                <Link href={registerVehicle()}>
+                                    {t('vehicles.register')}
+                                    <ArrowRight aria-hidden="true" />
+                                </Link>
+                            ) : (
+                                <Link href={organization()}>
+                                    {t('organization.actions.create')}
+                                    <ArrowRight aria-hidden="true" />
+                                </Link>
+                            )}
+                        </Button>
+                    </section>
+                )}
 
                 {/* What is not available yet */}
                 <section

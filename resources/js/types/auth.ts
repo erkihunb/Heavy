@@ -15,6 +15,8 @@ export type User = {
     avatar?: string;
     email_verified_at: string | null;
     locale: string;
+    /** Whether the user belongs to an organization (applicants only). */
+    has_organization: boolean;
     roles: Role[];
 };
 

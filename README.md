@@ -3,9 +3,9 @@
 Permit application, review, payment, issuance and verification system for the Addis Ababa
 City Administration Traffic Management Authority.
 
-**Status:** Milestone 1 (Foundation) of 9 is complete. See
-[docs/plans/milestone-1-foundation.md](docs/plans/milestone-1-foundation.md) for what
-exists and [docs/DECISIONS.md](docs/DECISIONS.md) for assumptions and open questions.
+**Status:** Milestones 1 (Foundation) and 2 (Organizations & Vehicles) of 9 are complete.
+See [docs/plans/](docs/plans/) for what exists and [docs/DECISIONS.md](docs/DECISIONS.md)
+for assumptions and open questions.
 
 ## Stack
 
@@ -25,7 +25,7 @@ composer install
 npm install
 cp .env.example .env                 # already points at the compose database
 php artisan key:generate
-php artisan migrate --seed           # roles & permissions; demo users in APP_ENV=local
+php artisan migrate --seed           # roles, vehicle types; demo users in APP_ENV=local
 composer dev                         # app server, queue listener, logs and Vite
 ```
 
@@ -67,6 +67,7 @@ translation keys: `php artisan translations:types`.
 
 ## Deploying
 
-Run `php artisan db:seed --class=RolesAndPermissionsSeeder --force` on every deploy; it
-is idempotent and keeps roles and permissions in sync with the code. Queues, scheduler,
+Run `php artisan migrate --force` and `php artisan db:seed --force` on every deploy. The
+seeders are idempotent: roles and permissions are kept in sync with the code, and vehicle
+types are only added, never overwritten. Queues, scheduler,
 legacy import and the production stack arrive in later milestones.

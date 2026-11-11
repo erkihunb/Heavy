@@ -6,6 +6,11 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             auth: Auth;
+            /** One-off messages set by the previous request. */
+            flash: {
+                success: string | null;
+                warning: string | null;
+            };
             /** Current interface language, e.g. "am". */
             locale: string;
             /** Supported languages: code => name written in that language. */
