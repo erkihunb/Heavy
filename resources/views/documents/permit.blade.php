@@ -23,7 +23,8 @@
             font-size: 10.5pt;
             line-height: 1.45;
         }
-        .page { padding: 16mm 16mm 12mm; min-height: 297mm; position: relative; }
+        /* A4 is 297mm; the 6mm band above takes the rest, with 1mm to spare against rounding. */
+        .page { padding: 16mm 16mm 12mm; min-height: 290mm; position: relative; }
         .band { height: 6mm; background: #1f6b45; }
         header { display: flex; align-items: center; gap: 6mm; border-bottom: 2px solid #1f6b45; padding-bottom: 5mm; }
         .logo {
