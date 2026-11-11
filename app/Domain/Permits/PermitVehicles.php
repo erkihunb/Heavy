@@ -6,13 +6,12 @@ use App\Enums\VehicleRole;
 use App\Exceptions\PermitRuleViolation;
 use App\Models\Permit;
 use App\Models\Vehicle;
-use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Writes the vehicles of a permit (spec §4.3) and keeps the two denormalised
  * columns the overlap rule depends on in step with the permit:
- * `period` = the validity as a daterange, `is_blocking` = whether the permit
+ * `period_from` / `period_to` = the validity, `is_blocking` = whether the permit
  * currently reserves its vehicles. Call it inside the Action's transaction.
  */
 final class PermitVehicles
@@ -34,7 +33,7 @@ final class PermitVehicles
             'permit_id' => $permit->id,
             'vehicle_id' => $vehicleId,
             'role' => $role->value,
-            'period' => $this->period($permit),
+            ...$this->period($permit),
             'is_blocking' => $permit->status->blocksVehicles(),
         ];
 
@@ -47,12 +46,12 @@ final class PermitVehicles
     }
 
     /**
-     * Bring `period` and `is_blocking` in line with the permit's dates and status.
+     * Bring the period and `is_blocking` in line with the permit's dates and status.
      */
     public function sync(Permit $permit): void
     {
         DB::table('permit_vehicles')->where('permit_id', $permit->id)->update([
-            'period' => $this->period($permit),
+            ...$this->period($permit),
             'is_blocking' => $permit->status->blocksVehicles(),
         ]);
 
@@ -109,14 +108,15 @@ final class PermitVehicles
     }
 
     /**
-     * Both days are included. The dates come from Carbon, never from input.
+     * Both days are included.
+     *
+     * @return array{period_from: string, period_to: string}
      */
-    private function period(Permit $permit): Expression
+    private function period(Permit $permit): array
     {
-        return DB::raw(sprintf(
-            "daterange('%s', '%s', '[]')",
-            $permit->valid_from->toDateString(),
-            $permit->valid_to->toDateString(),
-        ));
+        return [
+            'period_from' => $permit->valid_from->toDateString(),
+            'period_to' => $permit->valid_to->toDateString(),
+        ];
     }
 }

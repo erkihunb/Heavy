@@ -18,8 +18,8 @@ use Illuminate\Database\QueryException;
 
 class ApprovePermit
 {
-    /** PostgreSQL SQLSTATE for a violated exclusion constraint. */
-    private const string EXCLUSION_VIOLATION = '23P01';
+    /** The message raised by the overlap triggers on permit_vehicles. */
+    private const string OVERLAP_SIGNAL = 'permit_vehicles_no_overlap';
 
     public function __construct(
         private readonly PermitTransitions $transitions,
@@ -60,7 +60,7 @@ class ApprovePermit
                 $permit->approved_at = $now;
             });
         } catch (QueryException $exception) {
-            if ($exception->getCode() !== self::EXCLUSION_VIOLATION) {
+            if (! str_contains($exception->getMessage(), self::OVERLAP_SIGNAL)) {
                 throw $exception;
             }
 

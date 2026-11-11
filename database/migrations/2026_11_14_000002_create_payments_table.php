@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -30,16 +29,19 @@ return new class extends Migration
             $table->timestamp('verified_at')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
+            // The receipt number while the payment is live, NULL once it is rejected.
+            // A receipt pays for one permit (spec §4.5); a unique index ignores NULLs,
+            // so a rejected payment gives its receipt number back for a corrected submission.
+            $table->string('live_receipt_number', 64)
+                ->nullable()
+                ->virtualAs("case when status <> 'rejected' then receipt_number end");
 
+            $table->unique('live_receipt_number', 'payments_receipt_number_unique');
             $table->index('permit_id');
             $table->index(['status', 'created_at']);
             $table->index('submitted_by');
             $table->index('verified_by');
         });
-
-        // A receipt pays for one permit (spec §4.5). A rejected payment gives
-        // its receipt number back, so a corrected submission can use it again.
-        DB::statement("CREATE UNIQUE INDEX payments_receipt_number_unique ON payments (receipt_number) WHERE status <> 'rejected'");
     }
 
     public function down(): void

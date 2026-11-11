@@ -149,7 +149,13 @@ function permitVehicleRows(Permit $permit): Collection
             'vehicle_id',
             'role',
             'is_blocking',
-            DB::raw('lower(period)::text as period_from'),
-            DB::raw('(upper(period) - 1)::text as period_to'),
-        ]);
+            'period_from',
+            'period_to',
+        ])
+        // MySQL returns booleans as 0 / 1.
+        ->map(function (stdClass $row): stdClass {
+            $row->is_blocking = (bool) $row->is_blocking;
+
+            return $row;
+        });
 }

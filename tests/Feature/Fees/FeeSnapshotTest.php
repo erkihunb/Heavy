@@ -59,7 +59,7 @@ it('refuses to approve a permit the schedule has no fee for, and changes nothing
         ->and($this->permit->approved_by)->toBeNull()
         ->and(PermitStatusTransition::query()->where('permit_id', $this->permit->id)->count())->toBe(0)
         ->and(DB::table('permit_number_sequences')->count())->toBe($sequences)
-        ->and(DB::table('permit_vehicles')->where('permit_id', $this->permit->id)->value('is_blocking'))->toBeFalse();
+        ->and(DB::table('permit_vehicles')->where('permit_id', $this->permit->id)->value('is_blocking'))->toBeFalsy();
 });
 
 it('tells the approver over HTTP when the fee is missing', function () {

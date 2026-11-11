@@ -18,17 +18,16 @@ jobs:
         runs-on: ubuntu-latest
 
         services:
-            postgres:
-                image: postgres:16-alpine
+            # The oldest server the application supports; .env.example connects as root without a password.
+            mariadb:
+                image: mariadb:10.4
                 env:
-                    POSTGRES_DB: heavy_testing
-                    POSTGRES_USER: heavy
-                    POSTGRES_PASSWORD: secret
+                    MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: '1'
+                    MARIADB_DATABASE: heavy_testing
                 ports:
-                    # phpunit.xml points the test suite at port 54320.
-                    - 54320:5432
+                    - 3306:3306
                 options: >-
-                    --health-cmd "pg_isready -U heavy -d heavy_testing"
+                    --health-cmd "mysqladmin ping -h 127.0.0.1"
                     --health-interval 5s
                     --health-timeout 5s
                     --health-retries 10
@@ -40,7 +39,7 @@ jobs:
               uses: shivammathur/setup-php@v2
               with:
                   php-version: '8.4'
-                  extensions: pdo_pgsql, intl, mbstring, bcmath
+                  extensions: pdo_mysql, intl, mbstring, bcmath
                   tools: composer:v2
                   coverage: none
 

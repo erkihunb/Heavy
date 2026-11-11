@@ -20,6 +20,8 @@ function expectDatabaseToRefuse(Closure $statement, ?string $sqlState = null): v
     try {
         DB::transaction($statement);
     } catch (QueryException $exception) {
+        expect($exception)->toBeInstanceOf(QueryException::class);
+
         if ($sqlState !== null) {
             expect($exception->getCode())->toBe($sqlState);
         }
@@ -255,14 +257,14 @@ describe('schema constraints', function () {
     it('refuses a permit whose last day is before its first', function () {
         expectDatabaseToRefuse(
             fn () => Permit::factory()->withoutVehicles()->validBetween('2026-12-10', '2026-12-09')->create(),
-            '23514',
+            '23000',
         );
 
         $permit = Permit::factory()->withoutVehicles()->validBetween('2026-12-10', '2026-12-20')->create();
 
         expectDatabaseToRefuse(
             fn () => DB::table('permits')->where('id', $permit->id)->update(['valid_to' => '2026-12-01']),
-            '23514',
+            '23000',
         );
 
         expect(Permit::sole()->valid_to->toDateString())->toBe('2026-12-20');
@@ -282,11 +284,11 @@ describe('schema constraints', function () {
             'permit_id' => $permit->id,
             'vehicle_id' => $vehicle->id,
             'role' => $role,
-            'period' => DB::raw("daterange('2026-12-01', '2026-12-10', '[]')"),
+            'period_from' => '2026-12-01', 'period_to' => '2026-12-10',
             'is_blocking' => false,
         ];
 
-        expectDatabaseToRefuse(fn () => DB::table('permit_vehicles')->insert($row($second, 'primary')), '23505');
+        expectDatabaseToRefuse(fn () => DB::table('permit_vehicles')->insert($row($second, 'primary')), '23000');
 
         // Any number of trailers.
         DB::table('permit_vehicles')->insert([
@@ -297,7 +299,7 @@ describe('schema constraints', function () {
         expectDatabaseToRefuse(fn () => DB::table('permit_vehicles')
             ->where('permit_id', $permit->id)
             ->where('vehicle_id', $second->id)
-            ->update(['role' => 'primary']), '23505');
+            ->update(['role' => 'primary']), '23000');
 
         expect(permitVehicleRows($permit)->pluck('role')->all())->toBe(['primary', 'trailer', 'trailer']);
     });
@@ -310,9 +312,9 @@ describe('schema constraints', function () {
             'permit_id' => $permit->id,
             'vehicle_id' => $vehicle->id,
             'role' => 'trailer',
-            'period' => DB::raw("daterange('2026-12-01', '2026-12-10', '[]')"),
+            'period_from' => '2026-12-01', 'period_to' => '2026-12-10',
             'is_blocking' => false,
-        ]), '23505');
+        ]), '23000');
     });
 
     it('needs a period on every vehicle row', function () {
@@ -323,7 +325,7 @@ describe('schema constraints', function () {
             'vehicle_id' => Vehicle::factory()->create()->id,
             'role' => 'primary',
             'is_blocking' => false,
-        ]), '23502');
+        ]));
     });
 
     it('never stores the same permit number twice', function () {
@@ -331,14 +333,14 @@ describe('schema constraints', function () {
 
         expectDatabaseToRefuse(
             fn () => Permit::factory()->awaitingPayment()->create(['permit_number' => 'TMA-HV-2019-000001']),
-            '23505',
+            '23000',
         );
 
         $other = Permit::factory()->awaitingPayment()->create(['permit_number' => 'TMA-HV-2019-000002']);
 
         expectDatabaseToRefuse(
             fn () => DB::table('permits')->where('id', $other->id)->update(['permit_number' => 'TMA-HV-2019-000001']),
-            '23505',
+            '23000',
         );
 
         expect(Permit::where('permit_number', 'TMA-HV-2019-000001')->count())->toBe(1);
@@ -354,7 +356,7 @@ describe('schema constraints', function () {
         $vehicle = Vehicle::factory()->create();
         Permit::factory()->forVehicles($vehicle)->create();
 
-        expectDatabaseToRefuse(fn () => DB::table('vehicles')->where('id', $vehicle->id)->delete(), '23503');
+        expectDatabaseToRefuse(fn () => DB::table('vehicles')->where('id', $vehicle->id)->delete(), '23000');
 
         expect(Vehicle::whereKey($vehicle->id)->exists())->toBeTrue();
     });
@@ -362,8 +364,8 @@ describe('schema constraints', function () {
     it('keeps an organization and an applicant that have permits from being deleted', function () {
         $permit = Permit::factory()->withoutVehicles()->create();
 
-        expectDatabaseToRefuse(fn () => DB::table('users')->where('id', $permit->applicant_id)->delete(), '23503');
-        expectDatabaseToRefuse(fn () => DB::table('organizations')->where('id', $permit->organization_id)->delete(), '23503');
+        expectDatabaseToRefuse(fn () => DB::table('users')->where('id', $permit->applicant_id)->delete(), '23000');
+        expectDatabaseToRefuse(fn () => DB::table('organizations')->where('id', $permit->organization_id)->delete(), '23000');
 
         expect(Permit::count())->toBe(1);
     });

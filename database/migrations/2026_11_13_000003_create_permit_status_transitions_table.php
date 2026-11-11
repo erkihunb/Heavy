@@ -25,23 +25,17 @@ return new class extends Migration
         });
 
         // The history is an audit trail: rows are only ever added.
-        DB::unprepared(<<<'SQL'
-            CREATE OR REPLACE FUNCTION permit_status_transitions_append_only() RETURNS trigger AS $$
-            BEGIN
-                RAISE EXCEPTION 'permit_status_transitions is append-only'
-                    USING ERRCODE = 'restrict_violation';
-            END;
-            $$ LANGUAGE plpgsql;
-
-            CREATE TRIGGER permit_status_transitions_append_only
-                BEFORE UPDATE OR DELETE ON permit_status_transitions
-                FOR EACH ROW EXECUTE FUNCTION permit_status_transitions_append_only();
-            SQL);
+        foreach (['UPDATE', 'DELETE'] as $event) {
+            DB::unprepared(
+                'CREATE TRIGGER permit_status_transitions_no_'.strtolower($event).
+                " BEFORE {$event} ON permit_status_transitions FOR EACH ROW ".
+                "SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'permit_status_transitions is append-only'"
+            );
+        }
     }
 
     public function down(): void
     {
         Schema::dropIfExists('permit_status_transitions');
-        DB::statement('DROP FUNCTION IF EXISTS permit_status_transitions_append_only()');
     }
 };

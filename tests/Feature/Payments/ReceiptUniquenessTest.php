@@ -113,7 +113,7 @@ describe('database', function () {
         insertPayment($this->otherPermit, 'FS228740', $first);
 
         expect(fn () => insertPayment($this->permit, 'FS228740', $second))
-            ->toThrow(fn (QueryException $e) => expect($e->getCode())->toBe('23505'));
+            ->toThrow(fn (QueryException $e) => expect($e->getCode())->toBe('23000'));
     })->with([
         ['submitted', 'submitted'],
         ['verified', 'submitted'],

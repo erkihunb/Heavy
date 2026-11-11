@@ -16,7 +16,7 @@ use stdClass;
  * payment submitted, issued) whose dates overlap.
  *
  * At approval the guard locks the vehicle rows, so two approvals for the same
- * vehicle are decided one after the other; the exclusion constraint on
+ * vehicle are decided one after the other; the pair of triggers on
  * `permit_vehicles` is the final authority. At submission the same check runs
  * without locks, only to tell the applicant early.
  */
@@ -81,10 +81,9 @@ class OverlapGuard
             ->whereIn('permit_vehicles.vehicle_id', $vehicleIds)
             ->where('permit_vehicles.permit_id', '!=', $permit->id)
             ->where('permit_vehicles.is_blocking', true)
-            ->whereRaw("permit_vehicles.period && daterange(?::date, ?::date, '[]')", [
-                $permit->valid_from->toDateString(),
-                $permit->valid_to->toDateString(),
-            ])
+            // Two periods intersect when each starts on or before the other ends.
+            ->where('permit_vehicles.period_from', '<=', $permit->valid_to->toDateString())
+            ->where('permit_vehicles.period_to', '>=', $permit->valid_from->toDateString())
             ->orderBy('permits.valid_from')
             ->orderBy('permits.id')
             ->select([

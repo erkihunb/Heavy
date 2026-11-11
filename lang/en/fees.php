@@ -36,5 +36,6 @@ return [
     ],
     'errors' => [
         'overlap' => 'Another fee already covers some of these days for the same permit type and vehicle type during this period.',
+        'busy' => 'The fee schedule is being changed by someone else. Please try again.',
     ],
 ];

@@ -12,16 +12,13 @@ use App\Exceptions\PermitRuleViolation;
 use App\Models\Payment;
 use App\Models\Permit;
 use App\Models\User;
-use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
 
 class SubmitPayment
 {
-    /** PostgreSQL SQLSTATE for a violated unique constraint. */
-    private const string UNIQUE_VIOLATION = '23505';
-
     public function __construct(private readonly PermitTransitions $transitions) {}
 
     /**
@@ -83,7 +80,7 @@ class SubmitPayment
             $this->discard($path);
 
             // Two submissions of the same receipt raced; the unique index decided.
-            if ($exception instanceof QueryException && $exception->getCode() === self::UNIQUE_VIOLATION) {
+            if ($exception instanceof UniqueConstraintViolationException) {
                 throw new DuplicateReceipt($data->receiptNumber);
             }
 

@@ -20,10 +20,10 @@ abstract class TestCase extends BaseTestCase
         $connection = config('database.default');
         $database = (string) config("database.connections.{$connection}.database");
 
-        if ($connection !== 'pgsql' || ! str_ends_with($database, '_testing')) {
+        if (! in_array($connection, ['mysql', 'mariadb'], true) || ! str_ends_with($database, '_testing')) {
             throw new RuntimeException(
                 "Refusing to run tests against [{$connection}:{$database}]. ".
-                'Tests must use the PostgreSQL *_testing database configured in phpunit.xml.'
+                'Tests must use the MySQL *_testing database configured in phpunit.xml.'
             );
         }
 

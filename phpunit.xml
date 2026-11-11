@@ -23,17 +23,16 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
-        <!-- Tests always run against the PostgreSQL service from compose.yaml (or the CI service),
-             never against the database configured in .env. -->
-        <env name="DB_CONNECTION" value="pgsql" force="true"/>
-        <env name="DB_HOST" value="127.0.0.1" force="true"/>
-        <env name="DB_PORT" value="54320" force="true"/>
+        <!-- Tests run on the MySQL / MariaDB server from .env (host, port, user, password),
+             but always in their own heavy_testing database, never in the application's. -->
+        <env name="DB_CONNECTION" value="mysql" force="true"/>
         <env name="DB_DATABASE" value="heavy_testing" force="true"/>
-        <env name="DB_USERNAME" value="heavy" force="true"/>
-        <env name="DB_PASSWORD" value="secret" force="true"/>
         <env name="DB_URL" value="" force="true"/>
         <!-- Tests assert the production default, whatever the local .env says. -->
         <env name="PERMITS_STAFF_TWO_FACTOR_REQUIRED" value="true" force="true"/>
+        <!-- Permit PDFs are rendered by a fake; the Gotenberg smoke test opts in by itself. -->
+        <env name="PERMITS_PDF_RENDERER" value="fake" force="true"/>
+        <env name="PERMITS_VERIFY_URL" value="https://verify.example.test" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

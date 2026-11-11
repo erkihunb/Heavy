@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 /*
  * Spec §4.1: a vehicle may not be on two blocking permits (awaiting payment,
  * payment submitted, issued) whose dates overlap. The Action checks it, and
- * the exclusion constraint on permit_vehicles is the final authority.
+ * the triggers on permit_vehicles are the final authority.
  */
 
 beforeEach(function () {
@@ -71,7 +71,7 @@ function permitVehicleRow(Permit $permit, Vehicle $vehicle, string $from, string
         'permit_id' => $permit->id,
         'vehicle_id' => $vehicle->id,
         'role' => $role,
-        'period' => DB::raw("daterange('{$from}', '{$to}', '[]')"),
+        'period_from' => $from, 'period_to' => $to,
         'is_blocking' => $blocking,
     ];
 }
@@ -349,7 +349,7 @@ describe('the guard', function () {
     });
 });
 
-describe('the exclusion constraint', function () {
+describe('the database triggers', function () {
     beforeEach(function () {
         $this->first = Permit::factory()->withoutVehicles()->create();
         $this->second = Permit::factory()->withoutVehicles()->create();
@@ -362,7 +362,7 @@ describe('the exclusion constraint', function () {
     it('refuses a second reserving row for the same vehicle and overlapping days', function (string $from, string $to) {
         expectSqlState(fn () => DB::table('permit_vehicles')->insert(
             permitVehicleRow($this->second, $this->vehicle, $from, $to, blocking: true),
-        ), '23P01');
+        ), '45000');
 
         expect(DB::table('permit_vehicles')->count())->toBe(1);
     })->with([
@@ -375,7 +375,7 @@ describe('the exclusion constraint', function () {
     it('refuses it whatever the role of the vehicle', function () {
         expectSqlState(fn () => DB::table('permit_vehicles')->insert(
             permitVehicleRow($this->second, $this->vehicle, '2027-01-15', '2027-01-25', blocking: true, role: 'trailer'),
-        ), '23P01');
+        ), '45000');
     });
 
     it('accepts adjacent days, another vehicle, and a row that does not reserve', function () {
@@ -398,9 +398,9 @@ describe('the exclusion constraint', function () {
 
         expectSqlState(fn () => DB::table('permit_vehicles')
             ->where('permit_id', $this->second->id)
-            ->update(['is_blocking' => true]), '23P01');
+            ->update(['is_blocking' => true]), '45000');
 
-        expect(DB::table('permit_vehicles')->where('permit_id', $this->second->id)->value('is_blocking'))->toBeFalse();
+        expect(DB::table('permit_vehicles')->where('permit_id', $this->second->id)->value('is_blocking'))->toBeFalsy();
     });
 
     it('refuses to move a reserving row onto days that are taken', function () {
@@ -410,7 +410,7 @@ describe('the exclusion constraint', function () {
 
         expectSqlState(fn () => DB::table('permit_vehicles')
             ->where('permit_id', $this->second->id)
-            ->update(['period' => DB::raw("daterange('2027-01-20', '2027-02-10', '[]')")]), '23P01');
+            ->update(['period_from' => '2027-01-20']), '45000');
 
         expect(permitVehicleRows($this->second)->first()->period_from)->toBe('2027-02-01');
     });

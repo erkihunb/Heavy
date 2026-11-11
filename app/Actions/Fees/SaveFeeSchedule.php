@@ -10,6 +10,8 @@ use Illuminate\Validation\ValidationException;
 
 class SaveFeeSchedule
 {
+    private const string LOCK = 'fee_schedules.save';
+
     /**
      * Add a line to the fee schedule, or change one. Two lines for the same
      * permit type and vehicle type may not cover the same number of days on
@@ -22,10 +24,23 @@ class SaveFeeSchedule
      */
     public function handle(FeeScheduleData $data, ?FeeSchedule $schedule = null): FeeSchedule
     {
-        return DB::transaction(function () use ($data, $schedule): FeeSchedule {
-            // Serialise changes to the schedule so two Admins cannot both pass the overlap check.
-            DB::statement('LOCK TABLE fee_schedules IN SHARE ROW EXCLUSIVE MODE');
+        // Serialise changes to the schedule so two Admins cannot both pass the
+        // overlap check. A named lock is used because LOCK TABLES would end the
+        // surrounding transaction in MySQL.
+        if (! DB::scalar('SELECT GET_LOCK(?, 10)', [self::LOCK])) {
+            throw ValidationException::withMessages(['min_days' => __('fees.errors.busy')]);
+        }
 
+        try {
+            return $this->save($data, $schedule);
+        } finally {
+            DB::scalar('SELECT RELEASE_LOCK(?)', [self::LOCK]);
+        }
+    }
+
+    private function save(FeeScheduleData $data, ?FeeSchedule $schedule): FeeSchedule
+    {
+        return DB::transaction(function () use ($data, $schedule): FeeSchedule {
             if ($this->overlaps($data, $schedule)) {
                 throw ValidationException::withMessages([
                     'min_days' => __('fees.errors.overlap'),

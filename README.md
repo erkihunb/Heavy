@@ -4,24 +4,24 @@ Permit application, review, payment, issuance and verification system for the Ad
 City Administration Traffic Management Authority.
 
 **Status:** Milestones 1 (Foundation), 2 (Organizations & Vehicles), 3 (Applications &
-Workflow) and 4 (Fees & Payments) of 9 are complete.
+Workflow), 4 (Fees & Payments) and 5 (Issuance, QR, PDF, Verification) of 9 are complete.
 See [docs/plans/](docs/plans/) for what exists and [docs/DECISIONS.md](docs/DECISIONS.md)
 for assumptions and open questions.
 
 ## Stack
 
-Laravel 12 · PHP 8.3+ · PostgreSQL 16 · Inertia 2 + React 19 + TypeScript · Tailwind 4 ·
+Laravel 12 · PHP 8.3+ · MySQL 8 / MariaDB 10.4+ · Inertia 2 + React 19 + TypeScript · Tailwind 4 ·
 Fortify (2FA) · spatie/laravel-permission · Pest · Vitest · Vite
 
 ## Requirements
 
-- PHP 8.3+ with `pdo_pgsql`, `intl`, `mbstring`, `bcmath`
-- Composer 2, Node 22+, Docker (for PostgreSQL and Redis)
+- PHP 8.3+ with `pdo_mysql`, `intl`, `mbstring`, `bcmath`
+- Composer 2, Node 22+, and MySQL 8 or MariaDB 10.4+ (your own server, or the one in `compose.yaml`)
 
 ## Setup
 
 ```bash
-docker compose up -d                 # PostgreSQL 16 on 127.0.0.1:54320, Redis on 6379
+docker compose up -d                 # optional: MariaDB on 3306, Redis on 6379, Gotenberg (PDF) on 3000
 composer install
 npm install
 cp .env.example .env                 # already points at the compose database
@@ -30,8 +30,10 @@ php artisan migrate --seed           # roles, vehicle types; placeholder fees an
 composer dev                         # app server, queue listener, logs and Vite
 ```
 
-PostgreSQL is required (later milestones use exclusion constraints and `daterange`);
-keep `DB_CONNECTION=pgsql`.
+The database is MySQL / MariaDB (`DB_CONNECTION=mysql`). The account in `.env` needs the
+`TRIGGER` privilege: two rules (no overlapping permits for a vehicle, append-only status
+history) are enforced by triggers. The tests need a second database on the same server:
+`CREATE DATABASE heavy_testing;`
 
 Demo accounts (local only): `applicant@example.test`, `reviewer@…`, `approver@…`,
 `cashier@…`, `traffic_officer@…`, `admin@…` — password `password`. Staff accounts are
@@ -46,12 +48,16 @@ Everything is listed in `.env.example`. Project-specific ones:
 | `APP_LOCALE` / `APP_FALLBACK_LOCALE` | `am` / `en` | Interface language and fallback |
 | `APP_DISPLAY_TIMEZONE` | `Africa/Addis_Ababa` | Timezone for displaying UTC timestamps |
 | `PERMITS_STAFF_TWO_FACTOR_REQUIRED` | `true` | Mandatory 2FA for staff — keep on in production |
-| `FORWARD_DB_PORT` | `54320` | Host port of the compose PostgreSQL service |
+| `FORWARD_DB_PORT` | `3306` | Host port of the compose MariaDB service |
+| `PERMITS_VERIFY_URL` | `APP_URL` | Public HTTPS address printed in QR codes (`<url>/v/<token>`) |
+| `GOTENBERG_URL` | `http://127.0.0.1:3000` | PDF renderer (`docker compose up -d gotenberg`) |
+| `PERMITS_PDF_RENDERER` | `gotenberg` | `fake` on machines without Gotenberg |
+| `PERMITS_DOCUMENT_LOGO_PATH` | — | Official logo for the PDF (placeholder until set) |
 
 ## Quality checks
 
 ```bash
-php artisan test            # Pest — needs `docker compose up -d postgres`
+php artisan test            # Pest — needs the heavy_testing database
 vendor/bin/pint --test      # code style
 composer analyse            # Larastan level 6
 npm run types               # tsc --noEmit
@@ -61,7 +67,7 @@ composer ci:check           # all of the above
 ```
 
 The test suite always runs against the `heavy_testing` database of the compose
-PostgreSQL service, whatever `.env` says, and refuses to start otherwise.
+MySQL server from `.env`, never the application's own database, and refuses to start otherwise.
 
 After changing a language file that is sent to the frontend, regenerate the typed
 translation keys: `php artisan translations:types`. After changing a PHP enum the frontend

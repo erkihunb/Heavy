@@ -27,13 +27,17 @@ final class PermitNumberGenerator
             $at->setTimezone(config('localization.display_timezone')),
         )->year;
 
-        $row = DB::selectOne(
-            'INSERT INTO permit_number_sequences (year, last_number) VALUES (?, 1) '.
-            'ON CONFLICT (year) DO UPDATE SET last_number = permit_number_sequences.last_number + 1 '.
-            'RETURNING last_number',
+        // One atomic statement: the row for the year is created or incremented
+        // under its row lock, and LAST_INSERT_ID(expr) hands the new value back
+        // to this connection only. No gaps from races, no MAX() + 1.
+        DB::statement(
+            'INSERT INTO permit_number_sequences (year, last_number) VALUES (?, LAST_INSERT_ID(1)) '.
+            'ON DUPLICATE KEY UPDATE last_number = LAST_INSERT_ID(last_number + 1)',
             [$year],
         );
 
-        return sprintf('%s-%d-%06d', config('permits.number_prefix'), $year, $row->last_number);
+        $number = (int) DB::scalar('SELECT LAST_INSERT_ID()');
+
+        return sprintf('%s-%d-%06d', config('permits.number_prefix'), $year, $number);
     }
 }

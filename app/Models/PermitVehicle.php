@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 
 /**
  * A vehicle on a permit. Rows are written by App\Domain\Permits\PermitVehicles,
- * which also keeps `period` (a PostgreSQL daterange) and `is_blocking` in step
+ * which also keeps the period (`period_from`, `period_to`) and `is_blocking` in step
  * with the permit.
  *
  * @property string $permit_id

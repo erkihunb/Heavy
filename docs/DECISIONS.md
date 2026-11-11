@@ -402,3 +402,117 @@ Plan: [plans/milestone-4-fees-payments.md](plans/milestone-4-fees-payments.md).
 
 - Payment notifications (Milestone 6). Fee and payment changes are not yet in an audit
   log beyond `permit_status_transitions` (hardening milestone).
+
+## Database: MySQL / MariaDB instead of PostgreSQL (owner's decision)
+
+The specification asks for PostgreSQL 16 (exclusion constraints, `daterange`). The owner
+chose **MySQL / MariaDB** (development server: MariaDB 10.4). This section replaces every
+earlier statement about PostgreSQL in this file and in the milestone plans.
+
+| PostgreSQL feature the spec relied on | What is used instead |
+|---|---|
+| `daterange` column `permit_vehicles.period` | Two `DATE` columns, `period_from` and `period_to` (both days included) |
+| Exclusion constraint: no overlapping blocking permits per vehicle (§4.1) | `OverlapGuard` locks the vehicle rows inside the approval transaction (this is what holds under concurrency), plus `BEFORE INSERT` / `BEFORE UPDATE` triggers on `permit_vehicles` that refuse an overlapping reserving row with `SQLSTATE 45000` (`permit_vehicles_no_overlap`), so a write that bypasses the Action is still refused |
+| Partial unique index: one primary vehicle per permit | Virtual generated column `primary_marker` (1 for the primary, NULL otherwise) with a unique index on `(permit_id, primary_marker)` |
+| Partial unique index: receipt number unique unless rejected (§4.5) | Virtual generated column `payments.live_receipt_number` with a unique index |
+| plpgsql trigger: append-only `permit_status_transitions` | Two MySQL triggers (`BEFORE UPDATE`, `BEFORE DELETE`) that `SIGNAL` an error |
+| `INSERT … ON CONFLICT … RETURNING` for permit numbers (§4.7) | `INSERT … ON DUPLICATE KEY UPDATE last_number = LAST_INSERT_ID(last_number + 1)`; still one atomic statement under the row lock, no `MAX() + 1` |
+| `LOCK TABLE … SHARE ROW EXCLUSIVE` when saving a fee schedule line | A named lock (`GET_LOCK`), because `LOCK TABLES` would end the transaction |
+
+Things to know:
+
+- **The overlap rule is weaker at the database level than in the spec.** A trigger cannot
+  see another transaction's uncommitted row, so two simultaneous raw writes could both
+  pass. Every application write goes through `ApprovePermit`, which serialises on the
+  vehicle rows, so the application is safe; a script that writes to `permit_vehicles`
+  directly, concurrently, is not.
+- **Schema changes are not transactional in MySQL.** A migration that fails half-way
+  leaves its tables behind. `create_permit_vehicles_table` therefore drops a leftover
+  table before creating it.
+- **The database account needs the `TRIGGER` privilege**, and on a server with binary
+  logging enabled also `SUPER` or `log_bin_trust_function_creators = 1`, to run the migrations.
+- **MariaDB 10.4 is past its end of life** (June 2024). It works and CI runs against it,
+  but production should use a supported release — **CONFIRM** the production version.
+- **Tests** run on the MySQL server from `.env` but always in the separate database
+  `heavy_testing`; `Tests\TestCase` refuses any database whose name does not end in `_testing`.
+- Database errors are reported with MySQL's codes: `23000` for unique, foreign-key and
+  check violations, `45000` for the triggers.
+## Milestone 5 — Issuance, QR, PDF, Verification
+
+Plan: [plans/milestone-5-issuance-verification.md](plans/milestone-5-issuance-verification.md).
+Flows and diagrams: [ARCHITECTURE.md](ARCHITECTURE.md).
+
+### Tokens and QR codes (spec §7)
+
+- **Issuance happens when the cashier verifies the payment** (`VerifyPayment` →
+  `IssuePermit`): 32 random bytes, base64url (43 characters); only `sha256(token)` is
+  stored (`permits.verification_token_hash`, unique). The token itself exists only in the
+  QR code and, briefly, in the queued PDF job, whose payload is **encrypted**
+  (`ShouldBeEncrypted`).
+- The QR code holds `PERMITS_VERIFY_URL/v/{token}` and nothing else. It is generated on
+  the server as SVG with `bacon/bacon-qr-code` (already installed through Fortify; no new
+  package) at error-correction level **Q** (spec: M or higher), so a creased paper copy
+  still scans. **CONFIRM** the public verification domain: changing it later breaks every
+  printed permit.
+- **Reissue** (Approver or Admin, reason required, only while the permit is issued and
+  not yet expired) rotates the token: the old QR code answers NOT FOUND at once, the old
+  PDF is deleted, a new one is queued, and the history records an `issued → issued` step
+  with the reason.
+- **Revocation** (Approver or Admin, reason required) takes effect immediately: the next
+  scan answers REVOKED. Nothing about verification is cached.
+
+### Verification (spec §7)
+
+- Answers: **VALID** (issued and today within its dates), **NOT YET VALID** (issued, first
+  day still ahead — added to the spec's four so a driver is not stopped by a "valid" that
+  does not apply yet), **EXPIRED**, **REVOKED**, **NOT FOUND**. All come from
+  `Permit::effectiveStatus()`. Permits that were never issued are always NOT FOUND, so
+  applications in progress are never revealed.
+- The public page is **server-rendered Blade** (works without JavaScript), sends
+  `Cache-Control: no-store`, `X-Robots-Tag: noindex`, `Referrer-Policy: no-referrer`, and
+  is limited to `PERMITS_VERIFICATION_PER_MINUTE` (30) requests per minute per IP.
+- Shown publicly: permit number, status, permit type, plates with role and vehicle type,
+  organization name (open question §14.4, default yes, `PERMITS_PUBLIC_SHOWS_ORGANIZATION`),
+  validity in both calendars, time-window rules. Never: e-mails, phones, TIN, owner names,
+  fees, receipts, the reason, staff names, notes, internal ids, the token.
+- **Lookup by permit number requires a plate of that permit**, written in any form the
+  plate parser accepts; the number is case-insensitive.
+- **Scan log** (`verification_scans`): every check, public or officer, with result,
+  channel (QR / lookup), the officer if signed in, the user agent and an **HMAC-SHA256 of
+  the IP keyed with the app key** — the IP itself is never stored. Rotating `APP_KEY`
+  changes the hashes; that is acceptable for an abuse log.
+- **Traffic officers** (and Admins) opening the same QR address while signed in get the
+  officer view: the public answer plus the status history (with revocation and reissue
+  reasons), the last 10 checks and the last 10 officer reports, and a form to **report a
+  violation** (`permit_reports`, append-only). Officers also have a manual lookup screen.
+
+### Permit document (spec §8)
+
+- Rendered by a **queued job** with **Gotenberg** (headless Chromium over HTTP, its own
+  container, `GOTENBERG_URL`) rather than Browsershot, so the PHP image needs neither
+  Node nor Chrome. No new PHP package: Laravel's HTTP client posts the HTML.
+- The HTML is self-contained: Noto Sans Ethiopic (OFL, copied to `resources/fonts` with
+  its licence) is embedded as data URIs, the QR code inline as SVG. A4, Amharic first with
+  English beside it, both calendars.
+- **Left out of the PDF on purpose**: the fee, receipt, contact details and staff names —
+  the paper travels with the driver and is shown at the roadside. "Issued by" is the
+  Authority, not a person. **CONFIRM** the legal wording; the time-window rules text
+  (`config/permits.php`) and the logo (`PERMITS_DOCUMENT_LOGO_PATH`) are **PLACEHOLDERS**
+  until the Authority provides them (open questions §14.2, §14.6).
+- Stored on the private `documents` disk under a random name. The job is idempotent: it
+  does nothing if the token was rotated meanwhile, and attaches the file only if the token
+  still matches. 3 tries, back-off 30 s / 2 min / 10 min; `failed()` logs without the
+  token.
+- **Download** only through a **temporary signed URL** (30 minutes) **and** the
+  `download` policy: the permit's organization while it is issued or expired (not after
+  revocation), and staff who can see the permit (Reviewer, Approver, Admin).
+- `PERMITS_PDF_RENDERER=fake` uses a stand-in renderer (tests, machines without
+  Gotenberg). One integration test renders a real PDF when Gotenberg is reachable and is
+  skipped otherwise.
+
+### Deferred
+
+- **Offline verification** with an Ed25519-signed payload: designed in ARCHITECTURE.md,
+  not built (spec §7 Phase 2).
+- Notifications on issue / revoke → Milestone 6. A staff screen listing officer reports
+  → later; reports are visible to officers on each scan.

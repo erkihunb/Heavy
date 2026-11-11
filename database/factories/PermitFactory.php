@@ -79,11 +79,8 @@ class PermitFactory extends Factory
             'permit_id' => $permit->id,
             'vehicle_id' => $vehicle->id,
             'role' => $role->value,
-            'period' => DB::raw(sprintf(
-                "daterange('%s', '%s', '[]')",
-                $permit->valid_from->toDateString(),
-                $permit->valid_to->toDateString(),
-            )),
+            'period_from' => $permit->valid_from->toDateString(),
+            'period_to' => $permit->valid_to->toDateString(),
             'is_blocking' => $permit->status->blocksVehicles(),
         ];
 
