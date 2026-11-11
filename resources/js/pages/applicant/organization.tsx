@@ -77,7 +77,7 @@ export default function OrganizationPage({ organization, canUpdate }: Props) {
                 />
 
                 {!canUpdate && (
-                    <p className="flex items-center gap-3 rounded-2xl border border-border bg-muted px-4 py-3 font-medium">
+                    <p className="flex items-center gap-3 rounded-xl border border-border bg-muted px-4 py-3 font-medium">
                         <Lock aria-hidden="true" className="size-5 shrink-0" />
                         {t('organization.read_only')}
                     </p>
@@ -86,7 +86,7 @@ export default function OrganizationPage({ organization, canUpdate }: Props) {
                 <form
                     onSubmit={submit}
                     noValidate
-                    className="max-w-2xl rounded-3xl border border-border bg-card p-6 sm:p-8"
+                    className="max-w-2xl rounded-2xl border border-border bg-card p-6 sm:p-8"
                 >
                     <fieldset disabled={!canUpdate} className="space-y-6">
                         <FormField

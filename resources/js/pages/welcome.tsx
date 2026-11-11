@@ -48,7 +48,7 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                 {t('common.skip_to_content')}
             </a>
 
-            <div className="flex min-h-svh flex-col bg-background text-foreground">
+            <div className="flex min-h-svh flex-col text-foreground">
                 <div className="brand-bar" aria-hidden="true" />
 
                 <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
@@ -169,7 +169,7 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                     {/* The route a permit takes */}
                     <section
                         aria-labelledby="process-title"
-                        className="surface-asphalt"
+                        className="surface-brand"
                     >
                         <div className="mx-auto w-full max-w-6xl space-y-12 px-4 py-16 sm:px-6 lg:py-20">
                             <h2
@@ -198,10 +198,10 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                             {features.map(({ key, icon: Icon }, index) => (
                                 <li
                                     key={key}
-                                    className="group relative flex flex-col gap-4 rounded-3xl border border-border bg-card p-6 transition-[transform,box-shadow] duration-300 ease-snap hover:-translate-y-1 hover:shadow-raised sm:p-7"
+                                    className="group relative flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 transition-[transform,box-shadow] duration-300 ease-snap hover:-translate-y-1 hover:shadow-raised sm:p-7"
                                 >
                                     <div className="flex items-center justify-between">
-                                        <span className="flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+                                        <span className="flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                                             <Icon
                                                 aria-hidden="true"
                                                 className="size-6"
@@ -231,7 +231,7 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                             aria-labelledby="cta-title"
                             className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:pb-24"
                         >
-                            <div className="flex flex-col gap-6 rounded-3xl bg-highlight p-7 text-highlight-foreground sm:p-10 md:flex-row md:items-center md:justify-between">
+                            <div className="flex flex-col gap-6 rounded-2xl border border-border bg-card p-7 shadow-raised sm:p-10 md:flex-row md:items-center md:justify-between">
                                 <div className="space-y-2">
                                     <h2
                                         id="cta-title"
@@ -243,11 +243,7 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                                         {t('landing.cta.body')}
                                     </p>
                                 </div>
-                                <Button
-                                    asChild
-                                    size="lg"
-                                    className="shrink-0 bg-asphalt text-asphalt-foreground hover:bg-asphalt/90"
-                                >
+                                <Button asChild size="lg" className="shrink-0">
                                     <Link href={register()}>
                                         {t('common.register')}
                                         <ArrowRight aria-hidden="true" />
@@ -258,7 +254,7 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                     )}
                 </main>
 
-                <footer className="surface-asphalt">
+                <footer className="surface-brand">
                     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                         <div className="flex items-center gap-3">
                             <BrandMark className="size-9 shrink-0" />

@@ -22,8 +22,8 @@ export function FlashMessage() {
                 role="status"
                 className={
                     isSuccess
-                        ? 'flex animate-rise items-center gap-3 rounded-2xl border-2 border-success bg-accent px-4 py-3 font-medium text-accent-foreground'
-                        : 'flex animate-rise items-center gap-3 rounded-2xl border border-border bg-muted px-4 py-3 font-medium'
+                        ? 'flex animate-rise items-center gap-3 rounded-xl border-2 border-success bg-accent px-4 py-3 font-medium text-accent-foreground'
+                        : 'flex animate-rise items-center gap-3 rounded-xl border border-border bg-muted px-4 py-3 font-medium'
                 }
             >
                 <Icon aria-hidden="true" className="size-5 shrink-0" />

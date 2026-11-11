@@ -70,7 +70,8 @@ abstract class VehicleRequest extends FormRequest
     }
 
     /**
-     * The plate must be well formed and not already in the register.
+     * The plate must be well formed, not already in the register, and may not
+     * change once the vehicle is on a submitted application.
      */
     private function validPlate(string $attribute, mixed $value, Closure $fail): void
     {
@@ -78,6 +79,14 @@ abstract class VehicleRequest extends FormRequest
 
         if ($plate === null) {
             $fail(__('vehicles.errors.plate_invalid'));
+
+            return;
+        }
+
+        $vehicle = $this->vehicle();
+
+        if ($vehicle !== null && $plate->normalized !== $vehicle->plate_normalized && $vehicle->hasLockedPlate()) {
+            $fail(__('vehicles.errors.plate_locked'));
 
             return;
         }

@@ -1,10 +1,18 @@
 <?php
 
+use App\Data\PermitData;
+use App\Domain\Permits\ValidityRules;
+use App\Enums\PermitType;
 use App\Enums\Role;
 use App\Models\Organization;
+use App\Models\Permit;
 use App\Models\User;
+use App\Models\Vehicle;
+use Carbon\CarbonImmutable;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /*
@@ -48,6 +56,15 @@ function userWithRole(Role $role, bool $twoFactor = false): User
 }
 
 /**
+ * A member of staff who has confirmed two-factor authentication, as the
+ * back office requires.
+ */
+function staffUser(Role $role): User
+{
+    return userWithRole($role, twoFactor: true);
+}
+
+/**
  * An applicant who owns an organization.
  *
  * @param  array<string, mixed>  $organization  attribute overrides for the organization
@@ -60,4 +77,67 @@ function applicantWithOrganization(array $organization = []): User
     $user->forceFill(['organization_id' => $created->id])->save();
 
     return $user->refresh();
+}
+
+/**
+ * The form fields of a valid application for the applicant's organization.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function permitPayload(User $applicant, array $overrides = []): array
+{
+    $today = ValidityRules::today();
+
+    return [
+        'permit_type' => PermitType::FullDay->value,
+        'primary_vehicle_id' => array_key_exists('primary_vehicle_id', $overrides)
+            ? $overrides['primary_vehicle_id']
+            : Vehicle::factory()->create(['organization_id' => $applicant->organization_id])->id,
+        'trailer_vehicle_ids' => [],
+        'valid_from' => $today->addDays(3)->toDateString(),
+        'valid_to' => $today->addDays(12)->toDateString(),
+        'reason' => 'የግንባታ ዕቃ ማጓጓዝ',
+        ...$overrides,
+    ];
+}
+
+/**
+ * Validated application details, as a FormRequest would hand them to an Action.
+ *
+ * @param  list<Vehicle>  $trailers
+ */
+function permitData(Vehicle $primary, array $trailers = [], ?string $from = null, ?string $to = null): PermitData
+{
+    $today = ValidityRules::today();
+
+    return new PermitData(
+        permitType: PermitType::Pass,
+        primaryVehicleId: $primary->id,
+        trailerVehicleIds: array_map(fn (Vehicle $trailer): string => $trailer->id, $trailers),
+        validFrom: CarbonImmutable::parse($from ?? $today->addDays(3)->toDateString(), 'UTC'),
+        validTo: CarbonImmutable::parse($to ?? $today->addDays(12)->toDateString(), 'UTC'),
+        reason: 'የግንባታ ዕቃ ማጓጓዝ',
+    );
+}
+
+/**
+ * The vehicle rows of a permit as the database holds them, primary first:
+ * vehicle_id, role, is_blocking and the first and last day of `period`.
+ *
+ * @return Collection<int, stdClass>
+ */
+function permitVehicleRows(Permit $permit): Collection
+{
+    return DB::table('permit_vehicles')
+        ->where('permit_id', $permit->id)
+        ->orderBy('role')
+        ->orderBy('vehicle_id')
+        ->get([
+            'vehicle_id',
+            'role',
+            'is_blocking',
+            DB::raw('lower(period)::text as period_from'),
+            DB::raw('(upper(period) - 1)::text as period_to'),
+        ]);
 }

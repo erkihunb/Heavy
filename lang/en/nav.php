@@ -7,4 +7,6 @@ return [
     'log_out' => 'Log out',
     'organization' => 'Organisation',
     'vehicles' => 'Vehicles',
+    'permits' => 'Permits',
+    'review_queue' => 'Review queue',
 ];

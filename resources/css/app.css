@@ -5,23 +5,43 @@
 /* Self-hosted (bundled by Vite) - never loaded from a font CDN. Covers Ethiopic and Latin. */
 @import '@fontsource-variable/noto-sans-ethiopic/wght.css';
 
+/*
+ * Amharic (Ethiopic script) is set in Abyssinica SIL, self-hosted like the font
+ * above. The unicode-range limits it to Ethiopic, so Latin text and digits stay
+ * in Noto Sans. Abyssinica SIL ships one weight (400); bold is synthesised.
+ */
+@font-face {
+    font-family: 'Abyssinica SIL';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src:
+        url('../../node_modules/@fontsource/abyssinica-sil/files/abyssinica-sil-ethiopic-400-normal.woff2')
+            format('woff2'),
+        url('../../node_modules/@fontsource/abyssinica-sil/files/abyssinica-sil-ethiopic-400-normal.woff')
+            format('woff');
+    unicode-range: U+1200-139F, U+2D80-2DDF, U+AB00-AB2F, U+1E7E0-1E7FF;
+}
+
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Visual language: brand green on neutral gray.
- * Graphite grays carry structure and text, the brand green marks primary
- * actions and active state, and a brighter green is the highlight on dark
- * surfaces. Shapes are calm: hairline borders, soft shadows, generous radius.
- * The lane-dash divider is the one road motif that remains.
+ * Visual language: glassmorphism in brand green and gray.
+ * A fixed green-and-gray light field sits behind everything; cards, the
+ * sidebar, the header and menus are frosted panes (translucent fill, backdrop
+ * blur, a light top edge, soft depth shadow). Text keeps AA contrast because
+ * the panes stay light in the light theme and dark in the dark theme, and
+ * `prefers-reduced-transparency` / missing backdrop-filter fall back to solid
+ * surfaces. The deep-green brand surface stays for the introducing panels.
  */
 @theme {
     --font-sans:
-        'Noto Sans Ethiopic Variable', ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
+        'Abyssinica SIL', 'Noto Sans Ethiopic Variable', ui-sans-serif,
+        system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
     --font-mono:
         ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', 'Roboto Mono', Menlo,
         Consolas, monospace;
@@ -100,29 +120,29 @@
 
 :root {
     /* Near-white gray paper, graphite ink. */
-    --background: oklch(0.985 0.002 160);
+    --background: oklch(0.965 0.012 158);
     --foreground: oklch(0.24 0.006 160);
-    --card: oklch(1 0 0);
+    --card: oklch(1 0 0 / 0.52);
     --card-foreground: oklch(0.24 0.006 160);
-    --popover: oklch(1 0 0);
+    --popover: oklch(1 0 0 / 0.86);
     --popover-foreground: oklch(0.24 0.006 160);
 
     /* Brand green. */
     --primary: oklch(0.47 0.125 152);
     --primary-foreground: oklch(0.99 0.01 152);
 
-    --secondary: oklch(0.955 0.003 160);
+    --secondary: oklch(0.45 0.02 158 / 0.1);
     --secondary-foreground: oklch(0.24 0.006 160);
-    --muted: oklch(0.955 0.003 160);
-    --muted-foreground: oklch(0.47 0.006 160);
-    --accent: oklch(0.95 0.035 152);
-    --accent-foreground: oklch(0.3 0.08 152);
+    --muted: oklch(0.45 0.02 158 / 0.09);
+    --muted-foreground: oklch(0.4 0.01 160);
+    --accent: oklch(0.6 0.13 152 / 0.18);
+    --accent-foreground: oklch(0.28 0.08 152);
 
     --destructive: oklch(0.53 0.21 27);
     --destructive-foreground: oklch(0.53 0.21 27);
 
-    --border: oklch(0.9 0.003 160);
-    --input: oklch(0.82 0.004 160);
+    --border: oklch(0.4 0.02 158 / 0.16);
+    --input: oklch(0.4 0.02 158 / 0.42);
     --ring: oklch(0.47 0.125 152);
 
     /* Bright green highlight (always paired with graphite text) and the graphite surface. */
@@ -130,7 +150,9 @@
     --highlight-foreground: oklch(0.24 0.006 160);
     --asphalt: oklch(0.24 0.006 160);
     --asphalt-foreground: oklch(0.97 0.002 160);
-    --asphalt-muted: oklch(0.78 0.004 160);
+    --asphalt-muted: oklch(0.86 0.02 155);
+    /* Deep green behind the panels that introduce the service. */
+    --brand-surface: oklch(0.31 0.07 155);
     --success: oklch(0.47 0.125 152);
     --success-foreground: oklch(0.99 0.01 152);
 
@@ -140,49 +162,58 @@
     --chart-4: oklch(0.36 0.006 160);
     --chart-5: oklch(0.82 0.07 150);
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
 
-    /* The sidebar is graphite in both themes. */
-    --sidebar: oklch(0.24 0.006 160);
-    --sidebar-foreground: oklch(0.93 0.002 160);
-    --sidebar-primary: oklch(0.82 0.16 150);
-    --sidebar-primary-foreground: oklch(0.24 0.006 160);
-    --sidebar-accent: oklch(0.31 0.006 160);
-    --sidebar-accent-foreground: oklch(0.985 0.002 160);
-    --sidebar-border: oklch(0.34 0.006 160);
-    --sidebar-ring: oklch(0.82 0.16 150);
+    /* Glass: blur, top-edge light and depth shadow shared by every pane. */
+    --glass-blur: 18px;
+    --glass-edge: oklch(1 0 0 / 0.7);
+    --glass-shadow: oklch(0.3 0.06 155 / 0.16);
+    --backdrop-a: oklch(0.84 0.13 150 / 0.75);
+    --backdrop-b: oklch(0.8 0.012 200 / 0.7);
+    --backdrop-c: oklch(0.8 0.15 158 / 0.5);
+
+    /* Light gray sidebar; the current page is a solid brand-green item. */
+    --sidebar: oklch(1 0 0 / 0.3);
+    --sidebar-foreground: oklch(0.3 0.006 160);
+    --sidebar-primary: oklch(0.47 0.125 152);
+    --sidebar-primary-foreground: oklch(0.99 0.01 152);
+    --sidebar-accent: oklch(0.6 0.13 152 / 0.16);
+    --sidebar-accent-foreground: oklch(0.24 0.02 155);
+    --sidebar-border: oklch(0.4 0.02 158 / 0.14);
+    --sidebar-ring: oklch(0.47 0.125 152);
 }
 
 .dark {
-    --background: oklch(0.18 0.004 160);
+    --background: oklch(0.17 0.012 158);
     --foreground: oklch(0.96 0.002 160);
-    --card: oklch(0.225 0.005 160);
+    --card: oklch(0.32 0.015 158 / 0.42);
     --card-foreground: oklch(0.96 0.002 160);
-    --popover: oklch(0.225 0.005 160);
+    --popover: oklch(0.24 0.012 158 / 0.88);
     --popover-foreground: oklch(0.96 0.002 160);
 
     --primary: oklch(0.76 0.16 150);
     --primary-foreground: oklch(0.18 0.03 152);
 
-    --secondary: oklch(0.28 0.005 160);
+    --secondary: oklch(0.9 0.02 158 / 0.1);
     --secondary-foreground: oklch(0.96 0.002 160);
-    --muted: oklch(0.28 0.005 160);
-    --muted-foreground: oklch(0.76 0.004 160);
-    --accent: oklch(0.3 0.045 152);
+    --muted: oklch(0.9 0.02 158 / 0.08);
+    --muted-foreground: oklch(0.8 0.006 160);
+    --accent: oklch(0.7 0.15 152 / 0.18);
     --accent-foreground: oklch(0.93 0.06 152);
 
     --destructive: oklch(0.62 0.2 27);
     --destructive-foreground: oklch(0.72 0.17 27);
 
-    --border: oklch(0.32 0.005 160);
-    --input: oklch(0.39 0.005 160);
+    --border: oklch(0.95 0.01 158 / 0.14);
+    --input: oklch(0.95 0.01 158 / 0.3);
     --ring: oklch(0.76 0.16 150);
 
     --highlight: oklch(0.82 0.16 150);
     --highlight-foreground: oklch(0.2 0.006 160);
     --asphalt: oklch(0.14 0.004 160);
     --asphalt-foreground: oklch(0.97 0.002 160);
-    --asphalt-muted: oklch(0.78 0.004 160);
+    --asphalt-muted: oklch(0.86 0.02 155);
+    --brand-surface: oklch(0.25 0.055 155);
     --success: oklch(0.76 0.16 150);
     --success-foreground: oklch(0.18 0.03 152);
 
@@ -192,14 +223,20 @@
     --chart-4: oklch(0.5 0.005 160);
     --chart-5: oklch(0.88 0.08 150);
 
-    --sidebar: oklch(0.14 0.004 160);
+    --glass-edge: oklch(1 0 0 / 0.12);
+    --glass-shadow: oklch(0 0 0 / 0.45);
+    --backdrop-a: oklch(0.45 0.12 152 / 0.55);
+    --backdrop-b: oklch(0.4 0.02 200 / 0.5);
+    --backdrop-c: oklch(0.5 0.14 158 / 0.3);
+
+    --sidebar: oklch(0.3 0.015 158 / 0.4);
     --sidebar-foreground: oklch(0.93 0.002 160);
-    --sidebar-primary: oklch(0.82 0.16 150);
-    --sidebar-primary-foreground: oklch(0.2 0.006 160);
-    --sidebar-accent: oklch(0.26 0.005 160);
+    --sidebar-primary: oklch(0.76 0.16 150);
+    --sidebar-primary-foreground: oklch(0.18 0.03 152);
+    --sidebar-accent: oklch(0.7 0.15 152 / 0.16);
     --sidebar-accent-foreground: oklch(0.985 0.002 160);
-    --sidebar-border: oklch(0.28 0.005 160);
-    --sidebar-ring: oklch(0.82 0.16 150);
+    --sidebar-border: oklch(0.95 0.01 158 / 0.12);
+    --sidebar-ring: oklch(0.76 0.16 150);
 }
 
 @layer base {
@@ -209,6 +246,24 @@
 
     body {
         @apply bg-background text-foreground;
+        min-height: 100svh;
+        background-image:
+            radial-gradient(
+                60% 55% at 0% 0%,
+                var(--backdrop-a),
+                transparent 70%
+            ),
+            radial-gradient(
+                50% 50% at 100% 12%,
+                var(--backdrop-b),
+                transparent 70%
+            ),
+            radial-gradient(
+                65% 60% at 70% 100%,
+                var(--backdrop-c),
+                transparent 72%
+            );
+        background-attachment: fixed;
         font-feature-settings: 'kern';
         text-rendering: optimizeLegibility;
     }
@@ -222,6 +277,63 @@
     ::selection {
         background: var(--highlight);
         color: var(--highlight-foreground);
+    }
+}
+
+/*
+ * Every surface drawn with these colour utilities becomes a frosted pane.
+ * In the components layer, so shadow-* and border-* utilities still win.
+ */
+@layer components {
+    .bg-card,
+    .bg-popover,
+    .bg-sidebar,
+    .glass {
+        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+        backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+    }
+
+    .bg-card,
+    .glass {
+        box-shadow:
+            inset 0 1px 0 0 var(--glass-edge),
+            0 10px 30px -12px var(--glass-shadow);
+    }
+
+    .glass {
+        background-color: var(--card);
+        border: 1px solid var(--border);
+    }
+
+    /* Solid fallbacks: no backdrop-filter support, or the user asked for less transparency. */
+    @supports not (
+        (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+    ) {
+        .bg-card,
+        .bg-popover,
+        .bg-sidebar,
+        .glass {
+            background-color: color-mix(
+                in oklch,
+                var(--background) 92%,
+                var(--foreground)
+            );
+        }
+    }
+
+    @media (prefers-reduced-transparency: reduce) {
+        .bg-card,
+        .bg-popover,
+        .bg-sidebar,
+        .glass {
+            -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+            background-color: color-mix(
+                in oklch,
+                var(--background) 92%,
+                var(--foreground)
+            );
+        }
     }
 }
 
@@ -275,14 +387,23 @@
     );
 }
 
-/* Graphite surface with a faint aggregate texture (inline SVG noise, no request). */
-@utility surface-asphalt {
+/* Deep-green brand surface with a faint grain (inline SVG noise, no request). */
+@utility surface-brand {
     color: var(--asphalt-foreground);
-    background-color: var(--asphalt);
+    background-color: color-mix(
+        in oklch,
+        var(--brand-surface) 86%,
+        transparent
+    );
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    box-shadow:
+        inset 0 1px 0 0 oklch(1 0 0 / 0.18),
+        0 14px 36px -14px var(--glass-shadow);
     background-image:
         radial-gradient(
             120% 80% at 100% 0%,
-            color-mix(in oklch, var(--highlight) 14%, transparent),
+            color-mix(in oklch, var(--highlight) 22%, transparent),
             transparent 60%
         ),
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");

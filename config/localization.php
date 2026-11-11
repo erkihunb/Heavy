@@ -41,6 +41,7 @@ return [
         'roles',
         'organization',
         'vehicles',
+        'permits',
     ],
 
     /*

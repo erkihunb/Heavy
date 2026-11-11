@@ -226,4 +226,100 @@ Defaults that later milestones will implement as configuration. None is built ye
 
 ### Deferred within this milestone
 
-- The audit log (`spatie/laravel-activitylog`) starts with Milestone 3's state transitions.
+- The audit log (`spatie/laravel-activitylog`) is deferred to the hardening milestone; from Milestone 3 state transitions are recorded in `permit_status_transitions`.
+
+## Milestone 3 — Applications & Workflow
+
+Plan: [plans/milestone-3-applications-workflow.md](plans/milestone-3-applications-workflow.md).
+
+### Status and lifecycle
+
+- **`active` is computed, never stored.** A permit is stored as `issued`;
+  `Permit::effectiveStatus($at)` turns it into `active` from `valid_from` and `expired`
+  after `valid_to` (dates in the display timezone). Lists, the status filter
+  (`inEffectiveStatus`) and Resources all go through it, so verification (Milestone 5)
+  has one method to call. `permits:expire` (Milestone 6) will store `expired`.
+- **Every status change goes through `PermitTransitions`**: lock the permit row → ask
+  `PermitStateMachine` → save → sync `permit_vehicles` → write the history row, in one
+  transaction. Actions never set `status` themselves.
+- **History is append-only at database level**: a trigger on
+  `permit_status_transitions` raises on `UPDATE` and `DELETE`. The function is created
+  with `CREATE OR REPLACE` because `migrate:fresh` drops tables but not functions.
+- **Drafts are complete applications.** A draft needs every field (type, primary vehicle,
+  dates, reason); there are no half-filled drafts to validate again on submission.
+- **`submitted_at` is reset on resubmission** after changes were requested, so the queue
+  age (SLA) counts from when the Authority last received the application.
+- **Withdrawal** is possible from `draft` and `submitted` only (spec §3), by the
+  applicant's organization.
+
+### Approval (open question §14.5)
+
+- **Two-step by default** (`permits.two_step_approval`, env `PERMITS_TWO_STEP_APPROVAL`):
+  a Reviewer records a *recommendation* (approve / reject, note required for reject) on
+  the permit while it is under review; an Approver then decides. The recommendation is
+  not a status of its own — the spec's state machine is unchanged.
+- **The Approver must not be the person who recommended** (`ApprovalRules`). With the
+  setting off, an Approver can decide without a recommendation.
+- **Staff policy abilities check permission and visibility only**; whether the action is
+  possible *now* is the state machine's job. The Resource's `can` map combines both so
+  the UI only offers what will succeed; the server re-checks everything.
+- **Staff never see drafts or withdrawn applications** (policy answers "not found").
+- Rejecting and requesting changes require a note; the applicant sees it in the history.
+  Applicants never see which member of staff acted.
+
+### Vehicles, overlap and numbers
+
+- One **primary** vehicle and up to `permits.max_trailers` (default 2) **trailers**, all
+  from the applicant's own organization. A partial unique index guarantees one primary.
+- **Overlap** (spec §4.1) is enforced twice: `OverlapGuard` in the Action (vehicle rows
+  locked) and the `btree_gist` exclusion constraint on `permit_vehicles`. A permit is
+  *blocking* from approval (`awaiting_payment`) until it is revoked or expired; `period`
+  is an inclusive `daterange`. Applications still under review do not block each other —
+  the staff detail page shows the vehicle's other permits and flags conflicts.
+- **The plate of a vehicle is locked** once it is on any application that is not a draft
+  or withdrawn: the plate on a submitted or issued permit must not change underneath it.
+- **Permit number** `TMA-HV-<Ethiopian year>-<6 digits>` is assigned at approval from
+  `permit_number_sequences` under a row lock. The year is the Ethiopian *calendar* year
+  of the approval date. **CONFIRM** calendar year vs fiscal year (spec says either), and
+  the prefix (`permits.number_prefix`).
+- **Validity** (spec §4.6): `valid_from <= valid_to` (also a CHECK constraint), at most
+  `permits.max_duration_days` (default 90, counted inclusively), not starting before
+  today in the display timezone. The staff override for past dates is deferred until
+  staff can create applications.
+
+### Frontend
+
+- **One long form instead of a multi-page wizard**: four numbered sections (type →
+  vehicles → dates → reason) on one screen, saved as a draft; "review & submit" is the
+  detail page. Fewer round-trips on slow connections and nothing is lost between steps.
+- **`EthiopianDateInput`** (three native selects, Pagume included) is the only place the
+  frontend converts dates; `resources/js/lib/ethiopian-calendar.ts` mirrors
+  `App\Support\EthiopianCalendar` and is tested with the same known pairs. It offers the
+  current Ethiopian year and the next one by default.
+- **`resources/js/types/enums.ts` is generated** by `php artisan enums:types`; CI runs it
+  with `--check`. Resource shapes are still mirrored by hand in `types/models.ts` and
+  pinned by Resource tests (`spatie/laravel-typescript-transformer` not added).
+- Withdrawing has no confirmation dialog; the button is separated from the main actions
+  and labelled as final. **CONFIRM** whether a confirmation step is wanted.
+
+### Deferred within this milestone
+
+- Fee snapshot at approval → Milestone 4. Revocation UI → Milestone 5 (the Action,
+  policy and transition exist and are tested). Stored `expired` → Milestone 6.
+- `spatie/laravel-activitylog` → hardening milestone; state transitions are already
+  recorded in `permit_status_transitions` (who, from, to, when, note).
+
+### Known limits and points to confirm
+
+- **Every transition note is shown to the applicant**, including an Approver's optional
+  note on approval. **CONFIRM** whether staff need a separate internal note.
+- **An Approver may approve an application whose recommendation is "reject"** (and the
+  reverse): the recommendation is advice, the decision is the Approver's. **CONFIRM**.
+- **The revocation reason** reaches the applicant only as the note of the `revoked`
+  history step. Decide with the revocation UI (Milestone 5) whether it needs its own field.
+- **Plate lock race**: `UpdateVehicle` checks `hasLockedPlate()` without locking the
+  vehicle row, so a plate change racing a submission of the same vehicle could slip
+  through. To be closed in the hardening milestone (lock the vehicle row in both Actions).
+- **Permit numbers** are zero-padded to six digits; beyond 999,999 in one Ethiopian year
+  the number grows to seven digits rather than failing.
+- List filters ignore values that are not text (`?status[]=x`) instead of failing.

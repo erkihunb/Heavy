@@ -16,4 +16,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__.'/applicant.php';
+require __DIR__.'/staff.php';
 require __DIR__.'/settings.php';

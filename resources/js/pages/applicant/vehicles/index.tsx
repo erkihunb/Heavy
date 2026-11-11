@@ -74,8 +74,8 @@ export default function VehiclesIndex({
                 />
 
                 {vehicles.meta.total === 0 && !filtered ? (
-                    <div className="flex flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-input px-6 py-16 text-center">
-                        <span className="flex size-16 items-center justify-center rounded-2xl bg-highlight text-highlight-foreground">
+                    <div className="flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-input px-6 py-16 text-center">
+                        <span className="flex size-16 items-center justify-center rounded-xl bg-highlight text-highlight-foreground">
                             <Truck aria-hidden="true" className="size-8" />
                         </span>
                         <h2 className="text-2xl text-display">
@@ -90,7 +90,7 @@ export default function VehiclesIndex({
                         <form
                             role="search"
                             onSubmit={search}
-                            className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)_auto_auto] sm:items-end"
+                            className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)_auto_auto] sm:items-end"
                         >
                             <div className="grid gap-1.5">
                                 <label
@@ -168,7 +168,7 @@ export default function VehiclesIndex({
                                     {vehicles.data.map((vehicle) => (
                                         <li
                                             key={vehicle.id}
-                                            className="space-y-4 rounded-2xl border border-border bg-card p-4"
+                                            className="space-y-4 rounded-xl border border-border bg-card p-4"
                                         >
                                             <div className="flex items-start justify-between gap-3">
                                                 <PlateChip
@@ -233,7 +233,7 @@ export default function VehiclesIndex({
                                 </ul>
 
                                 {/* Wider screens: a table */}
-                                <div className="hidden overflow-hidden rounded-2xl border border-border bg-card md:block">
+                                <div className="hidden overflow-hidden rounded-xl border border-border bg-card md:block">
                                     <table className="w-full text-left text-sm">
                                         <thead className="border-b border-border bg-muted">
                                             <tr>

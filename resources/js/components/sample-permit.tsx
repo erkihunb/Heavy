@@ -64,7 +64,7 @@ export function SamplePermit({
 
     return (
         <figure className="relative">
-            <div className="overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-raised-brand lg:-rotate-2">
+            <div className="overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-raised-brand">
                 <div className="brand-bar" aria-hidden="true" />
 
                 <div className="space-y-6 p-6 sm:p-7">

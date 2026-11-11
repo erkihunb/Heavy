@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Applicant\OrganizationController;
+use App\Http\Controllers\Applicant\PermitController;
 use App\Http\Controllers\Applicant\VehicleController;
+use App\Models\Permit;
 use App\Models\Vehicle;
 use Illuminate\Support\Facades\Route;
 
@@ -19,5 +21,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['can:viewAny,'.Vehicle::class, 'organization'])->group(function () {
         Route::resource('vehicles', VehicleController::class)
             ->only(['index', 'create', 'store', 'edit', 'update']);
+    });
+
+    Route::middleware(['can:viewAny,'.Permit::class, 'organization'])->group(function () {
+        Route::resource('permits', PermitController::class)
+            ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
+
+        Route::post('permits/{permit}/submit', [PermitController::class, 'submit'])->name('permits.submit');
+        Route::post('permits/{permit}/withdraw', [PermitController::class, 'withdraw'])->name('permits.withdraw');
     });
 });

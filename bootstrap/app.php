@@ -1,7 +1,9 @@
 <?php
 
 use App\Exceptions\DuplicateVehiclePlate;
+use App\Exceptions\PermitException;
 use App\Exceptions\UserAlreadyHasOrganization;
+use App\Exceptions\VehiclePlateLocked;
 use App\Http\Middleware\EnsureUserHasOrganization;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -11,7 +13,9 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -41,5 +45,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'plate' => $e->userMessage(),
         ]));
 
+        $exceptions->map(fn (VehiclePlateLocked $e) => ValidationException::withMessages([
+            'plate' => $e->userMessage(),
+        ]));
+
         $exceptions->map(fn (UserAlreadyHasOrganization $e) => new ConflictHttpException($e->getMessage(), $e));
+
+        // A permit rule stopped an Action (wrong stage, overlapping permit, …):
+        // nothing was changed, and the person is told why on the page they were on.
+        $exceptions->render(fn (PermitException $e, Request $request) => $request->expectsJson()
+            ? response()->json(['message' => $e->userMessage()], Response::HTTP_UNPROCESSABLE_ENTITY)
+            : back()->with('warning', $e->userMessage()));
     })->create();

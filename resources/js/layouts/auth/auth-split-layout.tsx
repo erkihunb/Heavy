@@ -24,9 +24,9 @@ export default function AuthSplitLayout({
     const { t } = useTranslation();
 
     return (
-        <div className="grid min-h-svh bg-background text-foreground lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+        <div className="grid min-h-svh text-foreground lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
             {/* Brand panel (large screens) */}
-            <aside className="relative hidden flex-col justify-between gap-12 surface-asphalt p-10 lg:flex xl:p-14">
+            <aside className="relative hidden flex-col justify-between gap-12 surface-brand p-10 lg:flex xl:p-14">
                 <Link
                     href={home()}
                     className="flex w-fit items-center gap-3 rounded-lg"

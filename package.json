@@ -35,6 +35,7 @@
     },
     "dependencies": {
         "@fontsource-variable/noto-sans-ethiopic": "^5.3.0",
+        "@fontsource/abyssinica-sil": "^5.3.0",
         "@headlessui/react": "^2.2.0",
         "@inertiajs/react": "^2.3.7",
         "@radix-ui/react-avatar": "^1.1.3",

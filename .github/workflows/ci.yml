@@ -61,6 +61,9 @@ jobs:
             - name: Translation types are up to date
               run: php artisan translations:types --check
 
+            - name: Enum types are up to date
+              run: php artisan enums:types --check
+
             - name: Tests (Pest)
               run: vendor/bin/pest
 

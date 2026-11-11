@@ -3,9 +3,17 @@
 return [
     'greeting' => 'Welcome, :name',
     'role_label' => 'Your role',
-    'notice' => [
-        'title' => 'Permit applications are not open yet',
-        'body' => 'You can set up your organisation and register vehicles now. Applications, payments and verification are being added.',
+    'permits' => [
+        'applicant' => [
+            'title' => 'Permit applications',
+            'body' => 'Apply for a permit for a registered vehicle and follow your applications. Payment and the permit document are being added.',
+            'action' => 'Go to permits',
+        ],
+        'staff' => [
+            'title' => 'Review queue',
+            'body' => ':count waiting for review.',
+            'action' => 'Open the queue',
+        ],
     ],
     'account' => [
         'title' => 'Account status',

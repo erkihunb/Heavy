@@ -84,6 +84,8 @@ class VehicleController extends Controller
             'vehicle' => VehicleResource::make($vehicle->load('vehicleType')),
             'vehicleTypes' => $this->vehicleTypes(alwaysInclude: $vehicle->vehicle_type_id),
             'plateRegions' => $this->plateRegions(),
+            // The plate is fixed once the vehicle is on a submitted application.
+            'plateLocked' => $vehicle->hasLockedPlate(),
         ]);
     }
 

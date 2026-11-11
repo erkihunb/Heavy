@@ -3,7 +3,8 @@
 Permit application, review, payment, issuance and verification system for the Addis Ababa
 City Administration Traffic Management Authority.
 
-**Status:** Milestones 1 (Foundation) and 2 (Organizations & Vehicles) of 9 are complete.
+**Status:** Milestones 1 (Foundation), 2 (Organizations & Vehicles) and 3 (Applications &
+Workflow) of 9 are complete.
 See [docs/plans/](docs/plans/) for what exists and [docs/DECISIONS.md](docs/DECISIONS.md)
 for assumptions and open questions.
 
@@ -63,7 +64,8 @@ The test suite always runs against the `heavy_testing` database of the compose
 PostgreSQL service, whatever `.env` says, and refuses to start otherwise.
 
 After changing a language file that is sent to the frontend, regenerate the typed
-translation keys: `php artisan translations:types`.
+translation keys: `php artisan translations:types`. After changing a PHP enum the frontend
+uses, regenerate its TypeScript type: `php artisan enums:types`.
 
 ## Deploying
 

@@ -24,6 +24,7 @@ return [
     ],
     'plate_hint' => 'Choose the region, then enter the code and the number as written on the plate.',
     'plate_preview' => 'Plate as it will be saved',
+    'plate_locked_hint' => 'The plate number is fixed because this vehicle is on a submitted permit application.',
     'choose_type' => 'Choose a type',
     'filters' => [
         'search' => 'Search by plate',
@@ -40,6 +41,7 @@ return [
     'errors' => [
         'plate_invalid' => 'Enter the plate as region, code and number, for example አአ-03-A45301.',
         'plate_duplicate_own' => 'This vehicle is already in your register.',
+        'plate_locked' => 'This vehicle is on a submitted permit application, so its plate number can no longer be changed.',
         'plate_duplicate_other' => 'This plate number is already registered by another organisation. Contact the Authority if you believe this is a mistake.',
     ],
 ];
