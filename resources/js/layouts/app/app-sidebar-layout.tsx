@@ -3,6 +3,7 @@ import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
 import { FlashMessage } from '@/components/flash-message';
+import { SupportContacts } from '@/components/support-contacts';
 import { useTranslation } from '@/lib/i18n';
 import { BreadcrumbsContext } from '@/lib/page-context';
 import type { AppLayoutProps } from '@/types';
@@ -40,9 +41,10 @@ export default function AppSidebarLayout({
                     </BreadcrumbsContext.Provider>
                 </div>
                 <footer className="shrink-0 border-t border-border px-4 py-3 text-xs text-muted-foreground sm:px-6 lg:px-8">
-                    <p className="mx-auto w-full max-w-[1600px]">
-                        {t('common.authority')}
-                    </p>
+                    <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-x-6 gap-y-1">
+                        <p>{t('common.authority')}</p>
+                        <SupportContacts />
+                    </div>
                 </footer>
             </AppContent>
         </AppShell>

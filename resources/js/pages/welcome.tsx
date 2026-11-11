@@ -11,6 +11,7 @@ import { DualDate } from '@/components/dual-date';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ProcessSteps } from '@/components/process-steps';
 import { SamplePermit } from '@/components/sample-permit';
+import { SupportContacts } from '@/components/support-contacts';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n';
 import { dashboard, login, register } from '@/routes';
@@ -34,7 +35,7 @@ const features: {
 ];
 
 export default function Welcome({ canRegister = true, sample }: Props) {
-    const { auth, today } = usePage().props;
+    const { auth, today, appearance } = usePage().props;
     const { t } = useTranslation();
 
     return (
@@ -71,7 +72,9 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                     </Link>
 
                     <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-                        <LanguageSwitcher />
+                        {appearance.showLanguageSwitcher && (
+                            <LanguageSwitcher />
+                        )}
                         {auth.user ? (
                             <Button asChild>
                                 <Link href={dashboard()}>
@@ -265,6 +268,7 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                                 <p className="text-asphalt-muted">
                                     {t('common.authority')}
                                 </p>
+                                <SupportContacts className="mt-1 text-xs" />
                             </div>
                         </div>
                         <DualDate

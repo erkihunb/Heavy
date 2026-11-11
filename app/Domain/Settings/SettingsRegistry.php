@@ -9,7 +9,8 @@ namespace App\Domain\Settings;
  *
  * Types: text (one line), longtext, int (min/max), bool, choice (options),
  * email, url, time (HH:MM), timezone, secret (stored encrypted, never sent
- * back to the browser).
+ * back to the browser), color (#rrggbb), image (an uploaded file, `kind`
+ * logo or favicon; see Branding).
  */
 final class SettingsRegistry
 {
@@ -21,7 +22,7 @@ final class SettingsRegistry
     public const array UI_STYLES = ['swiss', 'classic', 'soft', 'contrast'];
 
     /**
-     * @return array<string, array{section: string, group: string, type: string, required?: bool, min?: int, max?: int, options?: list<string>, pattern?: string}>
+     * @return array<string, array{section: string, group: string, type: string, required?: bool, min?: int, max?: int, options?: list<string>, pattern?: string, kind?: string}>
      */
     public static function all(): array
     {
@@ -38,6 +39,12 @@ final class SettingsRegistry
             'permits.time_windows.full_day.en' => ['section' => 'general', 'group' => 'time_windows', 'type' => 'longtext', 'required' => true],
             'permits.time_windows.pass.am' => ['section' => 'general', 'group' => 'time_windows', 'type' => 'longtext', 'required' => true],
             'permits.time_windows.pass.en' => ['section' => 'general', 'group' => 'time_windows', 'type' => 'longtext', 'required' => true],
+            'permits.branding.logo' => ['section' => 'general', 'group' => 'branding', 'type' => 'image', 'kind' => 'logo'],
+            'permits.branding.favicon' => ['section' => 'general', 'group' => 'branding', 'type' => 'image', 'kind' => 'favicon'],
+            'permits.branding.support_email' => ['section' => 'general', 'group' => 'support', 'type' => 'email'],
+            'permits.branding.support_phone' => ['section' => 'general', 'group' => 'support', 'type' => 'text', 'max' => 40, 'pattern' => '/^\+?[0-9 ()-]{3,40}$/'],
+            'permits.branding.login_message.am' => ['section' => 'general', 'group' => 'login', 'type' => 'longtext'],
+            'permits.branding.login_message.en' => ['section' => 'general', 'group' => 'login', 'type' => 'longtext'],
 
             // Appearance and themes
             'permits.appearance.theme' => ['section' => 'appearance', 'group' => 'theme', 'type' => 'choice', 'options' => self::THEMES],
@@ -52,6 +59,7 @@ final class SettingsRegistry
             'permits.appearance.allow_user_mode' => ['section' => 'appearance', 'group' => 'behaviour', 'type' => 'bool'],
             'permits.appearance.sidebar_compact' => ['section' => 'appearance', 'group' => 'behaviour', 'type' => 'bool'],
             'permits.appearance.show_breadcrumbs' => ['section' => 'appearance', 'group' => 'behaviour', 'type' => 'bool'],
+            'permits.appearance.show_language_switcher' => ['section' => 'appearance', 'group' => 'behaviour', 'type' => 'bool'],
             'permits.appearance.animations' => ['section' => 'appearance', 'group' => 'behaviour', 'type' => 'bool'],
 
             // Notifications
@@ -98,7 +106,7 @@ final class SettingsRegistry
     }
 
     /**
-     * @return array<string, array{section: string, group: string, type: string, required?: bool, min?: int, max?: int, options?: list<string>, pattern?: string}>
+     * @return array<string, array{section: string, group: string, type: string, required?: bool, min?: int, max?: int, options?: list<string>, pattern?: string, kind?: string}>
      */
     public static function section(string $section): array
     {
@@ -116,7 +124,7 @@ final class SettingsRegistry
     /**
      * Validation rules for one setting.
      *
-     * @param  array{type: string, required?: bool, min?: int, max?: int, options?: list<string>, pattern?: string}  $setting
+     * @param  array{type: string, required?: bool, min?: int, max?: int, options?: list<string>, pattern?: string, kind?: string}  $setting
      * @return list<mixed>
      */
     public static function rules(array $setting): array
@@ -135,6 +143,10 @@ final class SettingsRegistry
             'timezone' => ['required', 'timezone:all'],
             'secret' => ['nullable', 'string', 'max:500'],
             'color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            // SVG is refused: a drawing can carry script. Raster files are re-encoded on upload.
+            'image' => ($setting['kind'] ?? 'logo') === 'favicon'
+                ? ['nullable', 'file', 'mimes:png,ico', 'max:512']
+                : ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048', 'dimensions:min_width=32,min_height=32,max_width=4000,max_height=4000'],
             default => ['prohibited'],
         };
 

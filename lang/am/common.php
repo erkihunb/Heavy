@@ -10,6 +10,7 @@ return [
     'status' => 'ሁኔታ',
     'date' => 'ቀን',
     'authority_short' => 'ትራፊክ ማኔጅመንት ባለስልጣን',
+    'support' => 'ድጋፍ',
     'log_in' => 'ይግቡ',
     'register' => 'ይመዝገቡ',
     'today' => 'ዛሬ',

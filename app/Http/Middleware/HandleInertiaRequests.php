@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Settings\Branding;
 use App\Support\EthiopianCalendar;
 use App\Support\FrontendTranslations;
 use Illuminate\Http\Request;
@@ -77,7 +78,10 @@ class HandleInertiaRequests extends Middleware
             'appearance' => [
                 'allowUserMode' => (bool) config('permits.appearance.allow_user_mode', true),
                 'showBreadcrumbs' => (bool) config('permits.appearance.show_breadcrumbs', true),
+                'showLanguageSwitcher' => (bool) config('permits.appearance.show_language_switcher', true),
             ],
+            // Logo, icon, support contacts and the sign-in message (System settings → General).
+            'branding' => fn (): array => Branding::shared(),
         ];
     }
 }

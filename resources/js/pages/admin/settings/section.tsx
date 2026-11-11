@@ -3,6 +3,7 @@ import { Save, Send, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { FormField } from '@/components/form-field';
+import { ImageSettingField } from '@/components/image-setting-field';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -33,7 +34,10 @@ type Field = {
         | 'time'
         | 'timezone'
         | 'secret'
-        | 'color';
+        | 'color'
+        | 'image';
+    kind?: 'logo' | 'favicon';
+    url?: string;
     required: boolean;
     min?: number;
     max?: number;
@@ -50,7 +54,9 @@ type Props = {
     timezones: string[];
 };
 
-type FormValue = string | boolean;
+type FormValue = string | boolean | File | null | string[];
+
+const ACCEPT = { logo: '.png,.jpg,.jpeg,.webp', favicon: '.png,.ico' };
 
 const TESTABLE = ['email', 'sms', 'telegram'];
 
@@ -87,6 +93,9 @@ export default function SettingsSection({
             initial[`${field.field}__clear`] = false;
         } else if (field.type === 'bool') {
             initial[field.field] = Boolean(field.value);
+        } else if (field.type === 'image') {
+            initial[field.field] = null;
+            initial.remove_assets = [];
         } else {
             initial[field.field] = String(field.value ?? '');
         }
@@ -98,7 +107,27 @@ export default function SettingsSection({
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        form.put(update.url({ section }), { preserveScroll: true });
+        const images = fields.filter((field) => field.type === 'image');
+
+        if (images.length === 0) {
+            form.put(update.url({ section }), { preserveScroll: true });
+
+            return;
+        }
+
+        // Files travel as multipart, which only POST carries: Laravel reads _method.
+        form.transform((data) => ({ ...data, _method: 'put' }));
+        form.post(update.url({ section }), {
+            preserveScroll: true,
+            forceFormData: true,
+            onSuccess: () => {
+                for (const field of images) {
+                    form.setData(field.field, null);
+                }
+
+                form.setData('remove_assets', []);
+            },
+        });
     };
 
     const sendTest = (event: FormEvent<HTMLFormElement>) => {
@@ -124,6 +153,36 @@ export default function SettingsSection({
                 {t('admin.settings.changed')}
             </span>
         );
+
+        if (field.type === 'image') {
+            const removals = (form.data.remove_assets as string[]) ?? [];
+
+            return (
+                <ImageSettingField
+                    key={field.url ?? 'none'}
+                    id={field.field}
+                    label={label}
+                    hint={hint}
+                    error={error}
+                    url={field.url}
+                    configured={field.has_value === true}
+                    accept={ACCEPT[field.kind ?? 'logo']}
+                    file={value instanceof File ? value : null}
+                    markedForRemoval={removals.includes(field.field)}
+                    onFileChange={(file) => form.setData(field.field, file)}
+                    onRemoveChange={(remove) =>
+                        form.setData(
+                            'remove_assets',
+                            remove
+                                ? [...removals, field.field]
+                                : removals.filter(
+                                      (name) => name !== field.field,
+                                  ),
+                        )
+                    }
+                />
+            );
+        }
 
         if (field.type === 'bool') {
             return (

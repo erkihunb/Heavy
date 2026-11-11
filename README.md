@@ -55,7 +55,8 @@ Everything is listed in `.env.example`. Project-specific ones:
 | `PERMITS_VERIFY_URL` | `APP_URL` | Public HTTPS address printed in QR codes (`<url>/v/<token>`) |
 | `GOTENBERG_URL` | `http://127.0.0.1:3000` | PDF renderer (`docker compose up -d gotenberg`) |
 | `PERMITS_PDF_RENDERER` | `gotenberg` | `fake` on machines without Gotenberg |
-| `PERMITS_DOCUMENT_LOGO_PATH` | — | Official logo for the PDF (placeholder until set) |
+| `PERMITS_DOCUMENT_LOGO_PATH` | — | Logo file for the PDF; otherwise the logo uploaded in System settings → General is used (placeholder when neither) |
+| `PERMITS_SUPPORT_EMAIL` / `PERMITS_SUPPORT_PHONE` | — | Support contacts shown on every page; also editable in System settings → General |
 | `PERMITS_EXPORTS_KEEP_DAYS` | `7` | Days a spreadsheet export is kept before `exports:prune` deletes it |
 | `TRUSTED_PROXIES` | — | Reverse proxies in front of the app (`*` or a list of IPs) so HTTPS and client IPs are seen |
 | `SENTRY_LARAVEL_DSN` | — | Error tracking; off when empty |

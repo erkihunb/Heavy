@@ -1,5 +1,7 @@
 <?php
 
+use App\Domain\Settings\Branding;
+use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
@@ -9,6 +11,11 @@ use App\Http\Middleware\VerificationHeaders;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+
+// The uploaded logo and browser-tab icon (System settings → General).
+Route::get('branding/{asset}', BrandingController::class)
+    ->whereIn('asset', Branding::ASSETS)
+    ->name('branding');
 
 Route::put('locale', [LocaleController::class, 'update'])
     ->middleware('throttle:30,1')

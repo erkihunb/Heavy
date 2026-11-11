@@ -6,9 +6,11 @@ use App\Domain\Audit\AuditEvent;
 use App\Domain\Audit\AuditLog;
 use App\Models\User;
 use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -147,7 +149,8 @@ final class SystemSettings
                 continue;
             }
 
-            if (! array_key_exists($key, $values)) {
+            // Uploaded files are saved by updateAssets().
+            if ($setting['type'] === 'image' || ! array_key_exists($key, $values)) {
                 continue;
             }
 
@@ -180,6 +183,77 @@ final class SystemSettings
 
             $this->audit->record(AuditEvent::SettingsUpdated, actor: $actor, old: $old, new: $new, context: ['section' => $section]);
         });
+
+        Cache::forget(self::CACHE_KEY);
+        $this->apply();
+
+        return array_keys($writes);
+    }
+
+    /**
+     * Replace or remove the uploaded files of a section (logo, favicon). The
+     * old file is deleted once the new path is saved; the audit log notes
+     * that the file changed, not its content.
+     *
+     * @param  array<string, UploadedFile>  $files  keyed by setting key
+     * @param  list<string>  $remove  setting keys whose file is taken down
+     * @return list<string> the keys that changed
+     */
+    public function updateAssets(string $section, array $files, array $remove, User $actor): array
+    {
+        $writes = [];
+        $previous = [];
+        $old = [];
+        $new = [];
+
+        foreach (SettingsRegistry::section($section) as $key => $setting) {
+            if ($setting['type'] !== 'image') {
+                continue;
+            }
+
+            $asset = Str::afterLast($key, '.');
+            $before = Branding::path($asset);
+
+            if (isset($files[$key])) {
+                $writes[$key] = Branding::store($asset, $files[$key]);
+            } elseif (in_array($key, $remove, true) && $before !== null) {
+                $writes[$key] = null;
+            } else {
+                continue;
+            }
+
+            $previous[$key] = $before;
+            $old[$key] = $before === null ? null : 'file';
+            $new[$key] = $writes[$key] === null ? null : 'file';
+        }
+
+        if ($writes === []) {
+            return [];
+        }
+
+        try {
+            DB::transaction(function () use ($writes, $old, $new, $section, $actor): void {
+                foreach ($writes as $key => $value) {
+                    DB::table('settings')->updateOrInsert(
+                        ['key' => $key],
+                        ['value' => json_encode($value), 'updated_by' => $actor->id, 'updated_at' => now()],
+                    );
+                }
+
+                $this->audit->record(AuditEvent::SettingsUpdated, actor: $actor, old: $old, new: $new, context: ['section' => $section]);
+            });
+        } catch (Throwable $exception) {
+            // Nothing was saved: the files just written are not needed.
+            foreach ($writes as $path) {
+                Branding::delete($path);
+            }
+
+            throw $exception;
+        }
+
+        foreach ($previous as $path) {
+            Branding::delete($path);
+        }
 
         Cache::forget(self::CACHE_KEY);
         $this->apply();

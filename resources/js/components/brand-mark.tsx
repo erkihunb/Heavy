@@ -1,19 +1,44 @@
-import type { SVGAttributes } from 'react';
+import { usePage } from '@inertiajs/react';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 /**
- * Neutral placeholder mark: a heavy vehicle on a sign plate.
- *
- * It is NOT the Authority's logo. The official logo is an open question
- * (docs/DECISIONS.md) and must be supplied, never invented.
+ * The system's logo (EUISIS ApplicationLogo): the one an Admin uploaded in
+ * System settings → General, otherwise the neutral placeholder mark below.
+ * Decorative wherever it is used: the system name always sits next to it.
  */
-export function BrandMark(props: SVGAttributes<SVGElement>) {
+export function BrandMark({ className }: { className?: string }) {
+    const logo = usePage().props.branding?.logo ?? null;
+    const [failed, setFailed] = useState<string | null>(null);
+
+    if (logo && failed !== logo) {
+        return (
+            <img
+                src={logo}
+                alt=""
+                aria-hidden="true"
+                decoding="async"
+                onError={() => setFailed(logo)}
+                className={cn('object-contain', className)}
+            />
+        );
+    }
+
+    return <PlaceholderMark className={className} />;
+}
+
+/**
+ * Neutral placeholder: a heavy vehicle on a sign plate. It is NOT the
+ * Authority's logo, which must be supplied, never invented.
+ */
+function PlaceholderMark({ className }: { className?: string }) {
     return (
         <svg
             viewBox="0 0 64 64"
             xmlns="http://www.w3.org/2000/svg"
             aria-hidden="true"
             focusable="false"
-            {...props}
+            className={className}
         >
             <rect
                 x="2"

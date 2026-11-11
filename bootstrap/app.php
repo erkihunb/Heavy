@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Settings\Branding;
 use App\Exceptions\DuplicateReceipt;
 use App\Exceptions\DuplicateVehiclePlate;
 use App\Exceptions\PermitException;
@@ -107,6 +108,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 'status' => $status,
                 'locale' => app()->getLocale(),
                 'translations' => FrontendTranslations::for(app()->getLocale()),
+                'branding' => Branding::shared(),
             ])
                 ->toResponse($request)
                 ->setStatusCode($status);

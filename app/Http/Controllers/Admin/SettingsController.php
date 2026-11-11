@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Settings\Branding;
 use App\Domain\Settings\SettingsRegistry;
 use App\Domain\Settings\SystemSettings;
 use App\Domain\Sms\SmsGateway;
@@ -20,10 +21,12 @@ use App\Support\EthiopianPhone;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -104,8 +107,14 @@ class SettingsController extends Controller
                     'min' => $setting['min'] ?? null,
                     'max' => $setting['max'] ?? null,
                     'options' => $setting['options'] ?? null,
-                    'value' => $setting['type'] === 'secret' ? null : $current[$key],
-                    'has_value' => $setting['type'] === 'secret' ? $current[$key] : null,
+                    'kind' => $setting['kind'] ?? null,
+                    'value' => in_array($setting['type'], ['secret', 'image'], true) ? null : $current[$key],
+                    'has_value' => match ($setting['type']) {
+                        'secret' => $current[$key],
+                        'image' => Branding::path(Str::afterLast($key, '.')) !== null,
+                        default => null,
+                    },
+                    'url' => $setting['type'] === 'image' ? Branding::url(Str::afterLast($key, '.')) : null,
                 ], fn (mixed $value): bool => $value !== null),
                 array_keys(SettingsRegistry::section($section)),
                 SettingsRegistry::section($section),
@@ -126,7 +135,11 @@ class SettingsController extends Controller
 
         foreach ($definitions as $key => $setting) {
             $field = SettingsRegistry::field($key);
-            $input[$field] = $setting['type'] === 'bool' ? $request->boolean($field) : $request->input($field);
+            $input[$field] = match ($setting['type']) {
+                'bool' => $request->boolean($field),
+                'image' => $request->file($field),
+                default => $request->input($field),
+            };
             $rules[$field] = SettingsRegistry::rules($setting);
             $attributes[$field] = __("admin.settings.fields.{$field}");
         }
@@ -145,7 +158,20 @@ class SettingsController extends Controller
 
         $this->ensureUsable($section, $values, $clear);
 
-        $changed = $settings->update($section, $values, $clear, $request->user());
+        $images = array_keys(array_filter($definitions, fn (array $setting): bool => $setting['type'] === 'image'));
+        $files = array_filter(
+            array_combine($images, array_map(fn (string $key): mixed => $values[$key], $images)),
+            fn (mixed $file): bool => $file instanceof UploadedFile,
+        );
+        $remove = array_values(array_filter(
+            $images,
+            fn (string $key): bool => in_array(SettingsRegistry::field($key), (array) $request->input('remove_assets', []), true),
+        ));
+
+        $changed = [
+            ...$settings->update($section, $values, $clear, $request->user()),
+            ...$settings->updateAssets($section, $files, $remove, $request->user()),
+        ];
 
         return to_route('admin.settings.show', $section)->with(
             'success',

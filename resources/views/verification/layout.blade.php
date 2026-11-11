@@ -7,7 +7,7 @@
     <meta name="referrer" content="no-referrer">
     <meta name="theme-color" content="#122170">
     <title>@yield('title') · {{ __('verification.title') }}</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    {!! \App\Domain\Settings\Branding::faviconTag() !!}
     {{-- Styles only: the page works without JavaScript. --}}
     @vite(['resources/css/app.css'])
     @if ($themeCss = \App\Domain\Settings\ThemeStyle::css())
@@ -23,7 +23,7 @@
         <div class="brand-bar" aria-hidden="true"></div>
         <div class="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 px-4 py-3">
             <div class="flex min-w-0 items-center gap-3">
-                <img src="/favicon.svg" alt="" class="size-8 shrink-0" width="32" height="32">
+                <img src="{{ \App\Domain\Settings\Branding::url('logo') ?? '/favicon.svg' }}" alt="" class="size-8 shrink-0 object-contain" width="32" height="32">
                 <div class="min-w-0">
                     <p class="text-sm font-bold leading-tight">{{ __('common.authority') }}</p>
                     <p class="text-xs text-muted-foreground">{{ __('verification.title') }}</p>
@@ -49,5 +49,18 @@
     <main id="main" class="mx-auto max-w-2xl px-4 py-6 sm:py-10">
         @yield('content')
     </main>
+
+    @php($branding = \App\Domain\Settings\Branding::shared())
+    @if ($branding['supportEmail'] || $branding['supportPhone'])
+        <footer class="mx-auto flex max-w-2xl flex-wrap justify-center gap-x-4 gap-y-1 px-4 pb-8 text-xs text-muted-foreground">
+            <span>{{ __('common.support') }}:</span>
+            @if ($branding['supportEmail'])
+                <a href="mailto:{{ $branding['supportEmail'] }}" class="font-medium text-foreground underline-offset-4 hover:underline" translate="no">{{ $branding['supportEmail'] }}</a>
+            @endif
+            @if ($branding['supportPhone'])
+                <a href="tel:{{ preg_replace('/[^\d+]/', '', $branding['supportPhone']) }}" class="font-medium text-foreground tabular-nums underline-offset-4 hover:underline" translate="no">{{ $branding['supportPhone'] }}</a>
+            @endif
+        </footer>
+    @endif
 </body>
 </html>

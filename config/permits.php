@@ -195,7 +195,32 @@ return [
         'allow_user_mode' => true,
         'sidebar_compact' => false,
         'show_breadcrumbs' => true,
+        'show_language_switcher' => true,
         'animations' => true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Branding
+    |--------------------------------------------------------------------------
+    |
+    | The logo and browser-tab icon an Admin uploads (System settings →
+    | General). Both hold a path on the local disk; empty means the built-in
+    | mark. The logo is shown in the sidebar, the sign-in and public pages and
+    | on the permit document (unless PERMITS_DOCUMENT_LOGO_PATH names a file).
+    | The support contacts and the sign-in message are shown to everyone.
+    |
+    */
+
+    'branding' => [
+        'logo' => null,
+        'favicon' => null,
+        'login_message' => [
+            'am' => null,
+            'en' => null,
+        ],
+        'support_email' => env('PERMITS_SUPPORT_EMAIL'),
+        'support_phone' => env('PERMITS_SUPPORT_PHONE'),
     ],
 
     /*

@@ -1,6 +1,7 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { BrandMark } from '@/components/brand-mark';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { SupportContacts } from '@/components/support-contacts';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useTranslation } from '@/lib/i18n';
 import { home } from '@/routes';
@@ -17,12 +18,14 @@ export default function AuthSplitLayout({
     description,
 }: AuthLayoutProps) {
     const { t } = useTranslation();
+    const { branding, appearance } = usePage().props;
+    const loginMessage = branding?.loginMessage;
 
     return (
         <div className="flex min-h-svh flex-col bg-muted text-foreground">
             <header className="flex items-center justify-end gap-1.5 px-4 py-3 sm:px-6">
                 <ThemeToggle className="flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-card hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none" />
-                <LanguageSwitcher />
+                {appearance.showLanguageSwitcher && <LanguageSwitcher />}
             </header>
 
             <main className="flex flex-1 flex-col items-center justify-center px-4 pb-12">
@@ -49,9 +52,13 @@ export default function AuthSplitLayout({
                     </div>
                 </div>
 
-                <p className="mt-8 max-w-md text-center text-xs text-muted-foreground">
-                    {t('common.authority')}
-                </p>
+                <div className="mt-8 flex max-w-md flex-col items-center gap-1.5 text-center text-xs text-muted-foreground">
+                    <p>{t('common.authority')}</p>
+                    {loginMessage && (
+                        <p className="whitespace-pre-line">{loginMessage}</p>
+                    )}
+                    <SupportContacts className="justify-center" />
+                </div>
             </main>
         </div>
     );

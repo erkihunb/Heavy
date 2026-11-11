@@ -63,8 +63,8 @@
 <div class="page">
     <header>
         <div class="logo">
-            @if (config('permits.document.logo_path') && is_file(config('permits.document.logo_path')))
-                <img src="data:{{ mime_content_type(config('permits.document.logo_path')) }};base64,{{ base64_encode(file_get_contents(config('permits.document.logo_path'))) }}" alt="">
+            @if ($logo = \App\Domain\Settings\Branding::documentLogoPath())
+                <img src="data:{{ mime_content_type($logo) }};base64,{{ base64_encode(file_get_contents($logo)) }}" alt="">
             @else
                 LOGO<br>(placeholder)
             @endif

@@ -28,7 +28,7 @@ const ICON_BUTTON =
  * date in both calendars, theme and language switches, and the account menu.
  */
 export function AppSidebarHeader() {
-    const { auth, today } = usePage().props;
+    const { auth, today, appearance } = usePage().props;
     const { t } = useTranslation();
     const { toggleSidebar, state, isMobile } = useSidebar();
     const [searchOpen, setSearchOpen] = useState(false);
@@ -126,7 +126,7 @@ export function AppSidebarHeader() {
                         <DualDate date={today} />
                     </p>
                     <ThemeToggle className={ICON_BUTTON} />
-                    <LanguageSwitcher />
+                    {appearance.showLanguageSwitcher && <LanguageSwitcher />}
                     <span
                         aria-hidden="true"
                         className="mx-1 hidden h-6 w-px bg-border sm:block"

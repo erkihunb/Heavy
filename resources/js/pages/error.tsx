@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { BrandMark } from '@/components/brand-mark';
+import { SupportContacts } from '@/components/support-contacts';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n';
 import { home } from '@/routes';
@@ -61,6 +62,7 @@ export default function ErrorPage({ status }: { status: number }) {
                         </div>
                     </div>
                 </div>
+                <SupportContacts className="mt-6 justify-center text-xs text-muted-foreground" />
             </main>
         </>
     );

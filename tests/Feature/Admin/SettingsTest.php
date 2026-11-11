@@ -32,31 +32,6 @@ beforeEach(function () {
     $this->admin = staffUser(Role::Admin);
 });
 
-/**
- * The form of a section with its current values, changed by $changes.
- *
- * @param  array<string, mixed>  $changes  keyed by setting key
- * @return array<string, mixed>
- */
-function settingsForm(string $section, array $changes = []): array
-{
-    $form = [];
-
-    foreach (app(SystemSettings::class)->current($section) as $key => $value) {
-        if (SettingsRegistry::all()[$key]['type'] === 'secret') {
-            continue;
-        }
-
-        $form[SettingsRegistry::field($key)] = $value;
-    }
-
-    foreach ($changes as $key => $value) {
-        $form[str_contains($key, '__') ? $key : SettingsRegistry::field($key)] = $value;
-    }
-
-    return $form;
-}
-
 it('is only for admins', function () {
     $this->actingAs(staffUser(Role::Approver))->get(route('admin.settings.overview'))->assertForbidden();
     $this->actingAs(staffUser(Role::Approver))->get(route('admin.settings.show', 'general'))->assertForbidden();

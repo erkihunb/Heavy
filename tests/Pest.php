@@ -2,6 +2,8 @@
 
 use App\Data\PermitData;
 use App\Domain\Permits\ValidityRules;
+use App\Domain\Settings\SettingsRegistry;
+use App\Domain\Settings\SystemSettings;
 use App\Enums\PermitType;
 use App\Enums\Role;
 use App\Models\FeeSchedule;
@@ -158,4 +160,31 @@ function permitVehicleRows(Permit $permit): Collection
 
             return $row;
         });
+}
+
+/**
+ * The System settings form of a section with its current values, changed by
+ * $changes (keyed by setting key or form field). Secrets and uploaded files
+ * are left out, as the browser leaves them out when nothing was typed or chosen.
+ *
+ * @param  array<string, mixed>  $changes
+ * @return array<string, mixed>
+ */
+function settingsForm(string $section, array $changes = []): array
+{
+    $form = [];
+
+    foreach (app(SystemSettings::class)->current($section) as $key => $value) {
+        if (in_array(SettingsRegistry::all()[$key]['type'], ['secret', 'image'], true)) {
+            continue;
+        }
+
+        $form[SettingsRegistry::field($key)] = $value;
+    }
+
+    foreach ($changes as $key => $value) {
+        $form[str_contains($key, '__') ? $key : SettingsRegistry::field($key)] = $value;
+    }
+
+    return $form;
 }

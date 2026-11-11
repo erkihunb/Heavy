@@ -37,7 +37,7 @@
 
         <title inertia>{{ config('app.name') }}</title>
 
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+        {!! \App\Domain\Settings\Branding::faviconTag() !!}
         <meta name="theme-color" content="#122170">
 
         @viteReactRefresh

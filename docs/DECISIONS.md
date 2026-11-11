@@ -815,6 +815,17 @@ The owner asked for the UI/UX and layout of the EUISIS project. Heavy now follow
   error reference, a plain message and a way back, in the system's design and language.
   JSON callers and the debug page in development keep Laravel's own answer; an expired
   form (419) goes back to its page with a notice.
+- **Branding** (EUISIS, System settings → General): an Admin uploads the logo (PNG, JPG or
+  WebP, ≤ 2 MB) and the browser-tab icon (PNG or ICO, ≤ 512 KB), and sets the support
+  e-mail and phone and a sign-in message per language. The logo replaces the placeholder
+  mark in the sidebar, on the sign-in, landing, error and verification pages, and on the
+  permit PDF (a file named by `PERMITS_DOCUMENT_LOGO_PATH` still wins). SVG is refused,
+  since a drawing can carry script; raster files are decoded and written again (PNG, or
+  WebP for photos) under a generated name. Files stay on the private disk (the `storage`
+  volume in production) and are served by `/branding/{logo|favicon}` with a version in the
+  address, so they need no storage link, satisfy the CSP and can be cached for good.
+  Changes are audited as "file" changed, never the content. An Admin can also hide the
+  language switch (Appearance), as in EUISIS.
 - The public verification pages (Blade, no JavaScript) use the same tokens, brand bar and
   radii. The Vite dev server listens on `127.0.0.1`, since a Content-Security-Policy cannot
   name an IPv6 address and the stylesheet of these pages was blocked in development.

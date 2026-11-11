@@ -20,7 +20,19 @@ declare module '@inertiajs/core' {
             /** Today in the display timezone, in both calendars. */
             today: DualDate;
             sidebarOpen: boolean;
-            appearance: { allowUserMode: boolean; showBreadcrumbs: boolean };
+            appearance: {
+                allowUserMode: boolean;
+                showBreadcrumbs: boolean;
+                showLanguageSwitcher: boolean;
+            };
+            /** System settings → General; missing on a page whose middleware never ran. */
+            branding?: {
+                logo: string | null;
+                favicon: string | null;
+                supportEmail: string | null;
+                supportPhone: string | null;
+                loginMessage: string | null;
+            };
             [key: string]: unknown;
         };
     }

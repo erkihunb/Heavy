@@ -10,6 +10,7 @@ return [
     'status' => 'Status',
     'date' => 'Date',
     'authority_short' => 'Traffic Management Authority',
+    'support' => 'Support',
     'log_in' => 'Log in',
     'register' => 'Register',
     'today' => 'Today',
