@@ -2,6 +2,16 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import {
+    EmptyRow,
+    Table,
+    TableCard,
+    TBody,
+    Td,
+    Th,
+    THead,
+    Tr,
+} from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
 import { EthiopianDateInput } from '@/components/ethiopian-date-input';
 import { PageHeader } from '@/components/page-header';
@@ -93,7 +103,7 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('permits.staff.queue_title')} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title={t('permits.staff.queue_title')}
                     description={t('permits.staff.queue_intro')}
@@ -102,7 +112,7 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                 <form
                     role="search"
                     onSubmit={search}
-                    className="grid gap-4 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4"
+                    className="grid gap-4 rounded-card border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4"
                 >
                     <div className="grid content-start gap-1.5">
                         <label htmlFor="filter-status" className={labelClass}>
@@ -222,88 +232,130 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                           })}
                 </p>
 
-                <ul className="grid gap-3">
-                    {permits.data.map((permit) => (
-                        <li
-                            key={permit.id}
-                            className="grid gap-4 rounded-xl border border-border bg-card p-4 sm:p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
-                        >
-                            <div className="space-y-3">
-                                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                                    <StatusBadge
-                                        status={permit.effective_status}
-                                    />
-                                    <span className="font-bold">
-                                        {permit.organization}
+                <TableCard>
+                    <Table>
+                        <THead>
+                            <tr>
+                                <Th>{t('permits.fields.status')}</Th>
+                                <Th>{t('permits.filters.organization')}</Th>
+                                <Th>{t('permits.fields.permit_type')}</Th>
+                                <Th>{t('permits.fields.permit_number')}</Th>
+                                <Th>{t('permits.fields.vehicles')}</Th>
+                                <Th>{t('permits.fields.validity')}</Th>
+                                <Th>{t('permits.fields.submitted')}</Th>
+                                <Th align="right">
+                                    {t('permits.fields.waiting')}
+                                </Th>
+                                <Th align="right">
+                                    <span className="sr-only">
+                                        {t('common.actions')}
                                     </span>
-                                    <span className="text-sm text-muted-foreground">
-                                        {t(
-                                            `permits.types.${permit.permit_type}`,
-                                        )}
-                                    </span>
-                                    {permit.permit_number && (
-                                        <span
-                                            translate="no"
-                                            className="font-extrabold tracking-wide tabular-nums"
-                                        >
-                                            {permit.permit_number}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {(permit.vehicles ?? []).map((vehicle) => (
-                                        <PlateChip
-                                            key={vehicle.id}
-                                            plate={vehicle.plate}
-                                        />
-                                    ))}
-                                </div>
-                                <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
-                                    <div className="flex flex-wrap items-baseline gap-x-2">
-                                        <dt className={labelClass}>
-                                            {t('permits.fields.validity')}
-                                        </dt>
-                                        <dd className="flex flex-wrap items-baseline gap-x-2">
-                                            <DualDate
-                                                date={permit.valid_from}
+                                </Th>
+                            </tr>
+                        </THead>
+                        <TBody>
+                            {permits.data.length === 0 ? (
+                                <EmptyRow colSpan={9}>
+                                    {t('permits.staff.queue_empty')}
+                                </EmptyRow>
+                            ) : (
+                                permits.data.map((permit) => (
+                                    <Tr key={permit.id}>
+                                        <Td>
+                                            <StatusBadge
+                                                status={permit.effective_status}
                                             />
-                                            <span aria-hidden="true">–</span>
-                                            <DualDate date={permit.valid_to} />
-                                        </dd>
-                                    </div>
-                                    {permit.submitted_at && (
-                                        <div className="flex flex-wrap items-baseline gap-x-2">
-                                            <dt className={labelClass}>
-                                                {t('permits.fields.submitted')}
-                                            </dt>
-                                            <dd>
+                                        </Td>
+                                        <Td className="font-medium">
+                                            {permit.organization}
+                                        </Td>
+                                        <Td className="whitespace-nowrap">
+                                            {t(
+                                                `permits.types.${permit.permit_type}`,
+                                            )}
+                                        </Td>
+                                        <Td className="whitespace-nowrap">
+                                            {permit.permit_number ? (
+                                                <span
+                                                    translate="no"
+                                                    className="font-semibold tabular-nums"
+                                                >
+                                                    {permit.permit_number}
+                                                </span>
+                                            ) : (
+                                                <span className="text-muted-foreground">
+                                                    —
+                                                </span>
+                                            )}
+                                        </Td>
+                                        <Td>
+                                            <span className="flex flex-wrap gap-1.5">
+                                                {(permit.vehicles ?? []).map(
+                                                    (vehicle) => (
+                                                        <PlateChip
+                                                            key={vehicle.id}
+                                                            plate={
+                                                                vehicle.plate
+                                                            }
+                                                        />
+                                                    ),
+                                                )}
+                                            </span>
+                                        </Td>
+                                        <Td className="whitespace-nowrap">
+                                            <span className="flex flex-wrap items-baseline gap-x-1.5">
+                                                <DualDate
+                                                    date={permit.valid_from}
+                                                />
+                                                <span aria-hidden="true">
+                                                    –
+                                                </span>
+                                                <DualDate
+                                                    date={permit.valid_to}
+                                                />
+                                            </span>
+                                        </Td>
+                                        <Td className="whitespace-nowrap">
+                                            {permit.submitted_at ? (
                                                 <DualDate
                                                     date={permit.submitted_at}
                                                 />
-                                            </dd>
-                                        </div>
-                                    )}
-                                    {typeof permit.waiting_hours ===
-                                        'number' && (
-                                        <div className="flex items-baseline gap-x-2">
-                                            <dt className={labelClass}>
-                                                {t('permits.fields.waiting')}
-                                            </dt>
-                                            <dd className="font-bold tabular-nums">
-                                                {waiting(permit.waiting_hours)}
-                                            </dd>
-                                        </div>
-                                    )}
-                                </dl>
-                            </div>
-                            <Button asChild variant="outline">
-                                <Link href={show({ permit: permit.id })}>
-                                    {t('permits.actions.view')}
-                                </Link>
-                            </Button>
-                        </li>
-                    ))}
-                </ul>
+                                            ) : (
+                                                <span className="text-muted-foreground">
+                                                    —
+                                                </span>
+                                            )}
+                                        </Td>
+                                        <Td
+                                            numeric
+                                            className="font-semibold whitespace-nowrap"
+                                        >
+                                            {typeof permit.waiting_hours ===
+                                            'number'
+                                                ? waiting(permit.waiting_hours)
+                                                : '—'}
+                                        </Td>
+                                        <Td align="right">
+                                            <Button
+                                                asChild
+                                                variant="outline"
+                                                size="sm"
+                                            >
+                                                <Link
+                                                    href={show({
+                                                        permit: permit.id,
+                                                    })}
+                                                >
+                                                    {t('permits.actions.view')}
+                                                </Link>
+                                            </Button>
+                                        </Td>
+                                    </Tr>
+                                ))
+                            )}
+                        </TBody>
+                    </Table>
+                </TableCard>
 
                 <Pagination links={permits.links} meta={permits.meta} />
             </div>

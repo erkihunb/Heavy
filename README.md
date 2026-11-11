@@ -61,7 +61,7 @@ Everything is listed in `.env.example`. Project-specific ones:
 | `SENTRY_LARAVEL_DSN` | — | Error tracking; off when empty |
 | `SMS_DRIVER` / `SMS_HTTP_*` | `log` | SMS provider defaults (also in System settings → SMS) |
 | `TELEGRAM_*` | off | Staff alert defaults (also in System settings → Telegram) |
-| `PERMITS_THEME` / `PERMITS_DEFAULT_MODE` | `forest` / `system` | Colour theme and default light/dark mode (also in System settings) |
+| `PERMITS_THEME` / `PERMITS_DEFAULT_MODE` | `navy` / `system` | Colour theme and default light/dark mode (also in System settings) |
 
 Most `PERMITS_*`, mail, SMS and Telegram values are only defaults: an Admin can override them
 in **System settings** without a deployment.

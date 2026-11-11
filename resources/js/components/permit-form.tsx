@@ -45,17 +45,17 @@ function Section({
     return (
         <section
             aria-labelledby={`${id}-title`}
-            className="space-y-5 rounded-2xl border border-border bg-card p-6 sm:p-8"
+            className="space-y-5 rounded-card border border-border bg-card p-5 sm:p-6"
         >
             <div className="flex items-start gap-4">
                 <span
                     aria-hidden="true"
-                    className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-highlight font-extrabold text-highlight-foreground tabular-nums"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-card bg-highlight font-extrabold text-highlight-foreground tabular-nums"
                 >
                     {step}
                 </span>
                 <div className="space-y-1">
-                    <h2 id={`${id}-title`} className="text-xl text-display">
+                    <h2 id={`${id}-title`} className="text-section-title">
                         {title}
                     </h2>
                     <p className="text-sm text-muted-foreground">{hint}</p>
@@ -125,7 +125,7 @@ export function PermitForm({
                     {PERMIT_TYPES.map((type) => (
                         <label
                             key={type}
-                            className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border-2 border-input px-4 py-3 text-lg font-bold has-checked:border-primary has-checked:bg-accent has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50"
+                            className="flex min-h-14 cursor-pointer items-center gap-3 rounded-card border-2 border-input px-4 py-3 text-lg font-bold has-checked:border-primary has-checked:bg-accent has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50"
                         >
                             <input
                                 type="radio"

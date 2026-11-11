@@ -2,6 +2,16 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import {
+    EmptyRow,
+    Table,
+    TableCard,
+    TBody,
+    Td,
+    Th,
+    THead,
+    Tr,
+} from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
 import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
@@ -56,7 +66,7 @@ export default function StaffPaymentsIndex({ payments, filters }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('payments.cashier.queue_title')} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title={t('payments.cashier.queue_title')}
                     description={t('payments.cashier.queue_intro')}
@@ -65,7 +75,7 @@ export default function StaffPaymentsIndex({ payments, filters }: Props) {
                 <form
                     role="search"
                     onSubmit={search}
-                    className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] sm:items-end"
+                    className="grid gap-3 rounded-card border border-border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] sm:items-end"
                 >
                     <div className="grid gap-1.5">
                         <label htmlFor="filter-status" className={labelClass}>
@@ -128,67 +138,105 @@ export default function StaffPaymentsIndex({ payments, filters }: Props) {
                           })}
                 </p>
 
-                <ul className="grid gap-3">
-                    {payments.data.map((payment) => (
-                        <li
-                            key={payment.id}
-                            className="grid gap-4 rounded-2xl border border-border bg-card p-4 sm:p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
-                        >
-                            <div className="space-y-3">
-                                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                                    <PaymentStatusBadge
-                                        status={payment.status}
-                                    />
-                                    <span
-                                        translate="no"
-                                        className="font-extrabold tracking-wide tabular-nums"
-                                    >
-                                        {payment.receipt_number}
+                <TableCard>
+                    <Table>
+                        <THead>
+                            <tr>
+                                <Th>{t('payments.fields.status')}</Th>
+                                <Th>{t('payments.fields.receipt_number')}</Th>
+                                <Th align="right">
+                                    {t('payments.fields.amount')}
+                                </Th>
+                                <Th>{t('permits.filters.organization')}</Th>
+                                <Th>{t('permits.fields.permit_number')}</Th>
+                                <Th>{t('permits.fields.vehicles')}</Th>
+                                <Th>{t('payments.fields.submitted')}</Th>
+                                <Th align="right">
+                                    <span className="sr-only">
+                                        {t('common.actions')}
                                     </span>
-                                    <span className="font-bold tabular-nums">
-                                        {payment.amount.formatted}
-                                    </span>
-                                    {payment.permit?.organization && (
-                                        <span className="text-muted-foreground">
-                                            {payment.permit.organization}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    {payment.permit?.permit_number && (
-                                        <span
-                                            translate="no"
-                                            className="font-bold tabular-nums"
-                                        >
-                                            {payment.permit.permit_number}
-                                        </span>
-                                    )}
-                                    {(payment.permit?.vehicles ?? []).map(
-                                        (vehicle) => (
-                                            <PlateChip
-                                                key={vehicle.id}
-                                                plate={vehicle.plate}
+                                </Th>
+                            </tr>
+                        </THead>
+                        <TBody>
+                            {payments.data.length === 0 ? (
+                                <EmptyRow colSpan={8}>
+                                    {t('payments.cashier.empty')}
+                                </EmptyRow>
+                            ) : (
+                                payments.data.map((payment) => (
+                                    <Tr key={payment.id}>
+                                        <Td>
+                                            <PaymentStatusBadge
+                                                status={payment.status}
                                             />
-                                        ),
-                                    )}
-                                </div>
-                                {payment.submitted_at && (
-                                    <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
-                                        <span className={labelClass}>
-                                            {t('payments.fields.submitted')}
-                                        </span>
-                                        <DualDate date={payment.submitted_at} />
-                                    </p>
-                                )}
-                            </div>
-                            <Button asChild variant="outline">
-                                <Link href={show({ payment: payment.id })}>
-                                    {t('permits.actions.view')}
-                                </Link>
-                            </Button>
-                        </li>
-                    ))}
-                </ul>
+                                        </Td>
+                                        <Td
+                                            translate="no"
+                                            className="font-semibold whitespace-nowrap tabular-nums"
+                                        >
+                                            {payment.receipt_number}
+                                        </Td>
+                                        <Td
+                                            numeric
+                                            className="font-semibold whitespace-nowrap"
+                                        >
+                                            {payment.amount.formatted}
+                                        </Td>
+                                        <Td>
+                                            {payment.permit?.organization ??
+                                                '—'}
+                                        </Td>
+                                        <Td
+                                            translate="no"
+                                            className="whitespace-nowrap tabular-nums"
+                                        >
+                                            {payment.permit?.permit_number ??
+                                                '—'}
+                                        </Td>
+                                        <Td>
+                                            <span className="flex flex-wrap gap-1.5">
+                                                {(
+                                                    payment.permit?.vehicles ??
+                                                    []
+                                                ).map((vehicle) => (
+                                                    <PlateChip
+                                                        key={vehicle.id}
+                                                        plate={vehicle.plate}
+                                                    />
+                                                ))}
+                                            </span>
+                                        </Td>
+                                        <Td className="whitespace-nowrap">
+                                            {payment.submitted_at ? (
+                                                <DualDate
+                                                    date={payment.submitted_at}
+                                                />
+                                            ) : (
+                                                '—'
+                                            )}
+                                        </Td>
+                                        <Td align="right">
+                                            <Button
+                                                asChild
+                                                variant="outline"
+                                                size="sm"
+                                            >
+                                                <Link
+                                                    href={show({
+                                                        payment: payment.id,
+                                                    })}
+                                                >
+                                                    {t('permits.actions.view')}
+                                                </Link>
+                                            </Button>
+                                        </Td>
+                                    </Tr>
+                                ))
+                            )}
+                        </TBody>
+                    </Table>
+                </TableCard>
 
                 <Pagination links={payments.links} meta={payments.meta} />
             </div>

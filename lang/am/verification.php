@@ -47,6 +47,7 @@ return [
         'scan_title' => 'ማረጋገጫ',
         'history' => 'የሁኔታ ታሪክ',
         'scans' => 'የቅርብ ጊዜ ማረጋገጫዎች',
+        'channel' => 'መንገድ',
         'scan_by_public' => 'ሕዝብ',
         'channels' => [
             'qr' => 'QR ኮድ',

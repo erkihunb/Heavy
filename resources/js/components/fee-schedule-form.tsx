@@ -47,7 +47,7 @@ export function FeeScheduleForm({
         <form
             onSubmit={onSubmit}
             noValidate
-            className="max-w-3xl space-y-7 rounded-2xl border border-border bg-card p-6 sm:p-8"
+            className="max-w-3xl space-y-7 rounded-card border border-border bg-card p-5 sm:p-6"
         >
             <fieldset className="space-y-2">
                 <legend className="mb-2 text-sm leading-none font-medium">
@@ -57,7 +57,7 @@ export function FeeScheduleForm({
                     {PERMIT_TYPES.map((type) => (
                         <label
                             key={type}
-                            className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border-2 border-input px-4 py-3 font-bold has-checked:border-primary has-checked:bg-accent has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50"
+                            className="flex min-h-12 cursor-pointer items-center gap-3 rounded-card border-2 border-input px-4 py-3 font-bold has-checked:border-primary has-checked:bg-accent has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50"
                         >
                             <input
                                 type="radio"

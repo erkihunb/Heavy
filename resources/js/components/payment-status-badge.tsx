@@ -10,15 +10,18 @@ const PRESENTATION: Record<
 > = {
     submitted: {
         icon: Hourglass,
-        className: 'border-transparent bg-highlight text-highlight-foreground',
+        className:
+            'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900',
     },
     verified: {
         icon: CircleCheck,
-        className: 'border-transparent bg-success text-success-foreground',
+        className:
+            'bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900',
     },
     rejected: {
         icon: CircleX,
-        className: 'border-transparent bg-destructive text-white',
+        className:
+            'bg-red-50 text-red-800 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900',
     },
 };
 
@@ -40,12 +43,12 @@ export function PaymentStatusBadge({
         <span
             data-status={status}
             className={cn(
-                'inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-bold whitespace-nowrap',
+                'inline-flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset',
                 tone,
                 className,
             )}
         >
-            <Icon aria-hidden="true" className="size-4 shrink-0" />
+            <Icon aria-hidden="true" className="size-3.5 shrink-0" />
             {t(`payments.status.${status}`)}
         </span>
     );

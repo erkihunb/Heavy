@@ -17,16 +17,16 @@ export function UserInfo({
 
     return (
         <>
-            <Avatar className="h-9 w-9 overflow-hidden rounded-xl">
+            <Avatar className="size-[30px] overflow-hidden rounded-full ring-1 ring-border">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-xl bg-highlight text-sm font-extrabold text-highlight-foreground">
+                <AvatarFallback className="rounded-full bg-muted text-xs font-semibold text-foreground">
                     {getInitials(user.name)}
                 </AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{user.name}</span>
                 {showRole && (
-                    <span className="truncate text-xs opacity-75">
+                    <span className="mt-0.5 truncate text-[11px] text-muted-foreground">
                         {t(`roles.${user.roles[0] ?? 'none'}.name`)}
                     </span>
                 )}

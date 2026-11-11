@@ -12,12 +12,14 @@ use App\Http\Middleware\RequireTwoFactorForStaff;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\ThrottleAuthForms;
+use App\Support\FrontendTranslations;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
 use Sentry\Laravel\Integration;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -80,4 +82,33 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(fn (PermitException $e, Request $request) => $request->expectsJson()
             ? response()->json(['message' => $e->userMessage()], Response::HTTP_UNPROCESSABLE_ENTITY)
             : back()->with('warning', $e->userMessage()));
+
+        // Error pages in the same design as the rest of the system (EUISIS). An
+        // expired form (419) sends the person back with a notice instead; JSON
+        // callers and the debug page in development keep Laravel's own answer.
+        $exceptions->respond(function (Response $response, Throwable $e, Request $request) {
+            $status = $response->getStatusCode();
+
+            if ($request->expectsJson() || ! in_array($status, [403, 404, 405, 419, 429, 500, 503], true)) {
+                return $response;
+            }
+
+            if ($status >= 500 && config('app.debug')) {
+                return $response;
+            }
+
+            if ($status === 419 && $request->headers->has('referer')) {
+                return back()->with('warning', __('errors.messages.419'));
+            }
+
+            // Pass what the page needs itself: on a URL that matches no route the
+            // web middleware (and so the shared props) never ran.
+            return Inertia::render('error', [
+                'status' => $status,
+                'locale' => app()->getLocale(),
+                'translations' => FrontendTranslations::for(app()->getLocale()),
+            ])
+                ->toResponse($request)
+                ->setStatusCode($status);
+        });
     })->create();

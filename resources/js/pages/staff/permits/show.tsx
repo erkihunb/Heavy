@@ -1,5 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, FileDown, TriangleAlert } from 'lucide-react';
+import { Table, TBody, Td, Th, THead, Tr } from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
 import { PageHeader } from '@/components/page-header';
 import { PermitDetails } from '@/components/permit-details';
@@ -68,7 +69,7 @@ export default function StaffPermitsShow({ permit, vehicleHistory }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('permits.staff.detail_title')} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title={t('permits.staff.detail_title')}
                     description={permit.organization}
@@ -79,7 +80,7 @@ export default function StaffPermitsShow({ permit, vehicleHistory }: Props) {
                     <p
                         key={vehicle.vehicle_id}
                         role="alert"
-                        className="flex items-start gap-3 rounded-xl border-2 border-destructive bg-card px-4 py-3 font-medium"
+                        className="flex items-start gap-3 rounded-card border-2 border-destructive bg-card px-4 py-3 font-medium"
                     >
                         <TriangleAlert
                             aria-hidden="true"
@@ -95,11 +96,11 @@ export default function StaffPermitsShow({ permit, vehicleHistory }: Props) {
                     <div className="space-y-6">
                         <section
                             aria-labelledby="details-title"
-                            className="rounded-2xl border border-border bg-card p-6 sm:p-8"
+                            className="rounded-card border border-border bg-card p-5 sm:p-6"
                         >
                             <h2
                                 id="details-title"
-                                className="mb-2 text-xl text-display"
+                                className="mb-2 text-section-title"
                             >
                                 {t('permits.review.details')}
                             </h2>
@@ -108,11 +109,11 @@ export default function StaffPermitsShow({ permit, vehicleHistory }: Props) {
 
                         <section
                             aria-labelledby="history-title"
-                            className="space-y-5 rounded-2xl border border-border bg-card p-6 sm:p-8"
+                            className="space-y-5 rounded-card border border-border bg-card p-5 sm:p-6"
                         >
                             <h2
                                 id="history-title"
-                                className="text-xl text-display"
+                                className="text-section-title"
                             >
                                 {t('permits.staff.history.title')}
                             </h2>
@@ -127,58 +128,97 @@ export default function StaffPermitsShow({ permit, vehicleHistory }: Props) {
                                             {t('permits.staff.history.none')}
                                         </p>
                                     ) : (
-                                        <ul className="divide-y divide-border rounded-xl border border-border">
-                                            {vehicle.permits.map((other) => (
-                                                <li
-                                                    key={other.id}
-                                                    className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 text-sm"
-                                                >
-                                                    <StatusBadge
-                                                        status={
-                                                            other.effective_status
-                                                        }
-                                                    />
-                                                    <Link
-                                                        href={show({
-                                                            permit: other.id,
-                                                        })}
-                                                        translate="no"
-                                                        className="font-bold tabular-nums underline underline-offset-4"
-                                                    >
-                                                        {other.permit_number ??
-                                                            t(
-                                                                `permits.types.${other.permit_type}`,
-                                                            )}
-                                                    </Link>
-                                                    <span className="flex flex-wrap items-baseline gap-x-2">
-                                                        <DualDate
-                                                            date={
-                                                                other.valid_from
-                                                            }
-                                                        />
-                                                        <span aria-hidden="true">
-                                                            –
-                                                        </span>
-                                                        <DualDate
-                                                            date={
-                                                                other.valid_to
-                                                            }
-                                                        />
-                                                    </span>
-                                                    {other.conflicts && (
-                                                        <span className="inline-flex items-center gap-1 rounded-full bg-destructive px-2.5 py-0.5 text-xs font-bold text-white">
-                                                            <TriangleAlert
-                                                                aria-hidden="true"
-                                                                className="size-3.5"
-                                                            />
+                                        <div className="overflow-hidden rounded-card border border-border">
+                                            <Table>
+                                                <THead>
+                                                    <tr>
+                                                        <Th>
                                                             {t(
-                                                                'permits.staff.history.conflict',
+                                                                'permits.fields.status',
                                                             )}
-                                                        </span>
+                                                        </Th>
+                                                        <Th>
+                                                            {t(
+                                                                'permits.fields.permit_number',
+                                                            )}
+                                                        </Th>
+                                                        <Th>
+                                                            {t(
+                                                                'permits.fields.validity',
+                                                            )}
+                                                        </Th>
+                                                        <Th>
+                                                            <span className="sr-only">
+                                                                {t(
+                                                                    'permits.staff.history.conflict',
+                                                                )}
+                                                            </span>
+                                                        </Th>
+                                                    </tr>
+                                                </THead>
+                                                <TBody>
+                                                    {vehicle.permits.map(
+                                                        (other) => (
+                                                            <Tr key={other.id}>
+                                                                <Td>
+                                                                    <StatusBadge
+                                                                        status={
+                                                                            other.effective_status
+                                                                        }
+                                                                    />
+                                                                </Td>
+                                                                <Td className="whitespace-nowrap">
+                                                                    <Link
+                                                                        href={show(
+                                                                            {
+                                                                                permit: other.id,
+                                                                            },
+                                                                        )}
+                                                                        translate="no"
+                                                                        className="font-semibold text-primary tabular-nums underline-offset-4 hover:underline"
+                                                                    >
+                                                                        {other.permit_number ??
+                                                                            t(
+                                                                                `permits.types.${other.permit_type}`,
+                                                                            )}
+                                                                    </Link>
+                                                                </Td>
+                                                                <Td className="whitespace-nowrap">
+                                                                    <span className="flex flex-wrap items-baseline gap-x-1.5">
+                                                                        <DualDate
+                                                                            date={
+                                                                                other.valid_from
+                                                                            }
+                                                                        />
+                                                                        <span aria-hidden="true">
+                                                                            –
+                                                                        </span>
+                                                                        <DualDate
+                                                                            date={
+                                                                                other.valid_to
+                                                                            }
+                                                                        />
+                                                                    </span>
+                                                                </Td>
+                                                                <Td>
+                                                                    {other.conflicts && (
+                                                                        <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-800 ring-1 ring-red-200 ring-inset dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
+                                                                            <TriangleAlert
+                                                                                aria-hidden="true"
+                                                                                className="size-3.5"
+                                                                            />
+                                                                            {t(
+                                                                                'permits.staff.history.conflict',
+                                                                            )}
+                                                                        </span>
+                                                                    )}
+                                                                </Td>
+                                                            </Tr>
+                                                        ),
                                                     )}
-                                                </li>
-                                            ))}
-                                        </ul>
+                                                </TBody>
+                                            </Table>
+                                        </div>
                                     )}
                                 </div>
                             ))}
@@ -186,11 +226,11 @@ export default function StaffPermitsShow({ permit, vehicleHistory }: Props) {
 
                         <section
                             aria-labelledby="timeline-title"
-                            className="rounded-2xl border border-border bg-card p-6 sm:p-8"
+                            className="rounded-card border border-border bg-card p-5 sm:p-6"
                         >
                             <h2
                                 id="timeline-title"
-                                className="mb-6 text-xl text-display"
+                                className="mb-6 text-section-title"
                             >
                                 {t('permits.timeline.title')}
                             </h2>
@@ -204,19 +244,16 @@ export default function StaffPermitsShow({ permit, vehicleHistory }: Props) {
                         aria-labelledby="decision-title"
                         className="h-fit space-y-4 lg:sticky lg:top-6"
                     >
-                        <h2
-                            id="decision-title"
-                            className="text-xl text-display"
-                        >
+                        <h2 id="decision-title" className="text-section-title">
                             {t('permits.staff.decision')}
                         </h2>
 
                         {recommendation && (
-                            <div className="space-y-2 rounded-xl border border-border bg-muted p-5">
+                            <div className="space-y-2 rounded-card border border-border bg-muted p-5">
                                 <p className="text-eyebrow text-muted-foreground">
                                     {t('permits.staff.recommend.current')}
                                 </p>
-                                <p className="text-lg font-bold">
+                                <p className="text-section-title">
                                     {t(
                                         `permits.staff.recommend.${recommendation.decision}`,
                                     )}
@@ -242,13 +279,13 @@ export default function StaffPermitsShow({ permit, vehicleHistory }: Props) {
                         )}
 
                         {blockedDecision && (
-                            <p className="rounded-xl border border-border bg-card p-5 text-sm font-medium">
+                            <p className="rounded-card border border-border bg-card p-5 text-sm font-medium">
                                 {blockedDecision}
                             </p>
                         )}
 
                         {!hasAction && !blockedDecision && (
-                            <p className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">
+                            <p className="rounded-card border border-border bg-card p-5 text-sm text-muted-foreground">
                                 {t('permits.staff.no_action')}
                             </p>
                         )}

@@ -36,7 +36,7 @@ export default function VehiclesCreate({ vehicleTypes, plateRegions }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('vehicles.register_title')} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader title={t('vehicles.register_title')} />
                 <VehicleForm
                     form={form}

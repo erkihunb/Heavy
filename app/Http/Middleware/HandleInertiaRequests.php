@@ -69,7 +69,15 @@ class HandleInertiaRequests extends Middleware
                 now(config('localization.display_timezone')),
                 app()->getLocale(),
             ),
-            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            // A person's own choice, otherwise the default an Admin set.
+            'sidebarOpen' => $request->hasCookie('sidebar_state')
+                ? $request->cookie('sidebar_state') === 'true'
+                : ! config('permits.appearance.sidebar_compact', false),
+            // How the interface behaves (System settings → Appearance).
+            'appearance' => [
+                'allowUserMode' => (bool) config('permits.appearance.allow_user_mode', true),
+                'showBreadcrumbs' => (bool) config('permits.appearance.show_breadcrumbs', true),
+            ],
         ];
     }
 }

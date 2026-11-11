@@ -58,7 +58,7 @@ export function VerificationResult({
             aria-labelledby="result-title"
             data-result={result}
             className={cn(
-                'rounded-3xl border-4 p-6 text-center sm:p-8',
+                'rounded-panel border-4 p-6 text-center sm:p-8',
                 className,
             )}
         >

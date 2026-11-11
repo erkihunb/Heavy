@@ -2,6 +2,16 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import {
+    EmptyRow,
+    Table,
+    TableCard,
+    TBody,
+    Td,
+    Th,
+    THead,
+    Tr,
+} from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
 import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
@@ -58,7 +68,7 @@ function Changes({ entry }: { entry: AuditEntry }) {
     }
 
     return (
-        <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)]">
+        <dl className="grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs">
             {fields.map((field) => (
                 <div key={field} className="contents">
                     <dt
@@ -136,7 +146,7 @@ export default function AuditLogIndex({ entries, events, filters }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('admin.audit.title')} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title={t('admin.audit.title')}
                     description={t('admin.audit.intro')}
@@ -193,65 +203,107 @@ export default function AuditLogIndex({ entries, events, filters }: Props) {
                     </form>
                 </div>
 
-                {entries.data.length === 0 ? (
-                    <p className="text-muted-foreground">
-                        {t('admin.audit.empty')}
-                    </p>
-                ) : (
-                    <ol className="grid gap-3">
-                        {entries.data.map((entry) => (
-                            <li
-                                key={entry.id}
-                                className="space-y-3 rounded-2xl border border-border bg-card p-4 sm:p-5"
-                            >
-                                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                                    <span className="font-bold">
-                                        {t(
-                                            `admin.audit.events.${entry.event}` as TranslationKey,
-                                        )}
-                                    </span>
-                                    {entry.subject && (
-                                        <span className="text-sm">
-                                            <span className="text-muted-foreground">
-                                                {t(
-                                                    `admin.audit.subjects.${entry.subject.type}`,
-                                                )}
-                                                :{' '}
-                                            </span>
-                                            {entry.subject.url ? (
-                                                <Link
-                                                    href={entry.subject.url}
-                                                    translate="no"
-                                                    className="font-medium underline underline-offset-4"
-                                                >
-                                                    {entry.subject.label}
-                                                </Link>
+                <TableCard>
+                    <Table>
+                        <THead>
+                            <tr>
+                                <Th>{t('common.date')}</Th>
+                                <Th>{t('admin.audit.filter_event')}</Th>
+                                <Th>{t('admin.audit.subject')}</Th>
+                                <Th>{t('admin.audit.filter_actor')}</Th>
+                                <Th>{t('admin.audit.details')}</Th>
+                            </tr>
+                        </THead>
+                        <TBody>
+                            {entries.data.length === 0 ? (
+                                <EmptyRow colSpan={5}>
+                                    {t('admin.audit.empty')}
+                                </EmptyRow>
+                            ) : (
+                                entries.data.map((entry) => (
+                                    <Tr key={entry.id} className="align-top">
+                                        <Td className="align-top whitespace-nowrap">
+                                            {entry.created_at && (
+                                                <>
+                                                    <DualDate
+                                                        date={entry.created_at}
+                                                    />
+                                                    <span className="block text-xs text-muted-foreground tabular-nums">
+                                                        {entry.created_time}
+                                                    </span>
+                                                </>
+                                            )}
+                                        </Td>
+                                        <Td className="align-top font-medium">
+                                            {t(
+                                                `admin.audit.events.${entry.event}` as TranslationKey,
+                                            )}
+                                        </Td>
+                                        <Td className="align-top">
+                                            {entry.subject ? (
+                                                <>
+                                                    <span className="block text-xs text-muted-foreground">
+                                                        {t(
+                                                            `admin.audit.subjects.${entry.subject.type}`,
+                                                        )}
+                                                    </span>
+                                                    {entry.subject.url ? (
+                                                        <Link
+                                                            href={
+                                                                entry.subject
+                                                                    .url
+                                                            }
+                                                            translate="no"
+                                                            className="font-medium text-primary underline-offset-4 hover:underline"
+                                                        >
+                                                            {
+                                                                entry.subject
+                                                                    .label
+                                                            }
+                                                        </Link>
+                                                    ) : (
+                                                        <span translate="no">
+                                                            {
+                                                                entry.subject
+                                                                    .label
+                                                            }
+                                                        </span>
+                                                    )}
+                                                </>
                                             ) : (
-                                                <span translate="no">
-                                                    {entry.subject.label}
+                                                <span className="text-muted-foreground">
+                                                    —
                                                 </span>
                                             )}
-                                        </span>
-                                    )}
-                                    <span className="text-sm text-muted-foreground">
-                                        {entry.actor
-                                            ? `${entry.actor.name} · ${entry.actor.email}`
-                                            : t('admin.audit.system')}
-                                    </span>
-                                    {entry.created_at && (
-                                        <span className="ml-auto flex items-baseline gap-2 text-sm text-muted-foreground">
-                                            <DualDate date={entry.created_at} />
-                                            <span className="tabular-nums">
-                                                {entry.created_time}
-                                            </span>
-                                        </span>
-                                    )}
-                                </div>
-                                <Changes entry={entry} />
-                            </li>
-                        ))}
-                    </ol>
-                )}
+                                        </Td>
+                                        <Td className="align-top">
+                                            {entry.actor ? (
+                                                <>
+                                                    <span className="block">
+                                                        {entry.actor.name}
+                                                    </span>
+                                                    <span
+                                                        translate="no"
+                                                        className="block text-xs text-muted-foreground"
+                                                    >
+                                                        {entry.actor.email}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span className="text-muted-foreground">
+                                                    {t('admin.audit.system')}
+                                                </span>
+                                            )}
+                                        </Td>
+                                        <Td className="min-w-72 align-top">
+                                            <Changes entry={entry} />
+                                        </Td>
+                                    </Tr>
+                                ))
+                            )}
+                        </TBody>
+                    </Table>
+                </TableCard>
 
                 <Pagination links={entries.links} meta={entries.meta} />
             </div>

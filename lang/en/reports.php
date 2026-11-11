@@ -37,6 +37,7 @@ return [
         'download' => 'Download',
         'refresh' => 'Refresh',
         'rows' => ':count rows',
+        'rows_heading' => 'Rows',
         'fields' => [
             'dataset' => 'What to export',
             'format' => 'File type',

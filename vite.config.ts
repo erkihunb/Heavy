@@ -21,6 +21,11 @@ export default defineConfig({
             formVariants: true,
         }),
     ],
+    // An IPv4 address for the dev server: a Content-Security-Policy cannot name
+    // an IPv6 one ([::1]), which blocked the stylesheet of the Blade pages.
+    server: {
+        host: '127.0.0.1',
+    },
     esbuild: {
         jsx: 'automatic',
     },

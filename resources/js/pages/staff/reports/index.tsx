@@ -1,6 +1,15 @@
 import { Head, Link } from '@inertiajs/react';
 import { Download } from 'lucide-react';
-import type { ReactNode } from 'react';
+import {
+    EmptyRow,
+    Table,
+    TableCard,
+    TBody,
+    Td,
+    Th,
+    THead,
+    Tr,
+} from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
 import { PageHeader } from '@/components/page-header';
 import { PlateChip } from '@/components/plate-chip';
@@ -46,40 +55,21 @@ const STATUSES = PERMIT_STATUSES.filter(
     (status) => status !== 'draft' && status !== 'withdrawn',
 );
 
-function Card({
-    id,
-    title,
-    children,
-}: {
-    id: string;
-    title: string;
-    children: ReactNode;
-}) {
-    return (
-        <section
-            aria-labelledby={id}
-            className="space-y-4 rounded-2xl border border-border bg-card p-5 sm:p-6"
-        >
-            <h2 id={id} className="text-lg font-bold">
-                {title}
-            </h2>
-            {children}
-        </section>
-    );
-}
-
 /**
  * A bar whose length shows a share of the largest value. Decorative: the
- * number next to it carries the information.
+ * number beside it carries the information.
  */
 function Bar({ value, max }: { value: number; max: number }) {
     const width =
         max > 0 ? Math.max((value / max) * 100, value > 0 ? 2 : 0) : 0;
 
     return (
-        <span aria-hidden="true" className="block h-2.5 rounded-full bg-muted">
+        <span
+            aria-hidden="true"
+            className="block h-2 min-w-24 rounded-xs bg-muted"
+        >
             <span
-                className="block h-full rounded-full bg-primary"
+                className="block h-full rounded-xs bg-primary"
                 style={{ width: `${width}%` }}
             />
         </span>
@@ -88,11 +78,9 @@ function Bar({ value, max }: { value: number; max: number }) {
 
 function Tile({ label, value }: { label: string; value: string | number }) {
     return (
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-card border border-border bg-card p-5">
             <p className="text-eyebrow text-muted-foreground">{label}</p>
-            <p className="mt-1 text-2xl font-extrabold tabular-nums sm:text-3xl">
-                {value}
-            </p>
+            <p className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
         </div>
     );
 }
@@ -131,7 +119,7 @@ export default function Reports({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('reports.title')} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title={t('reports.title')}
                     description={t('reports.intro', period)}
@@ -168,227 +156,263 @@ export default function Reports({
                     />
                 </div>
 
-                <Card id="monthly-title" title={t('reports.monthly')}>
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-[32rem] text-left text-sm">
-                            <thead>
-                                <tr className="text-eyebrow text-muted-foreground">
-                                    <th scope="col" className="py-2 pr-4">
-                                        {t('reports.month')}
-                                    </th>
-                                    <th scope="col" className="w-2/5 py-2 pr-4">
+                <TableCard title={t('reports.monthly')} titleId="monthly-title">
+                    <Table aria-labelledby="monthly-title">
+                        <THead>
+                            <tr>
+                                <Th>{t('reports.month')}</Th>
+                                <Th align="right">{t('reports.issued')}</Th>
+                                <Th className="w-1/3">
+                                    <span className="sr-only">
                                         {t('reports.issued')}
-                                    </th>
-                                    <th scope="col" className="w-2/5 py-2">
-                                        {t('reports.revenue')}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border">
-                                {monthly.map((row) => (
-                                    <tr key={row.key}>
-                                        <th
-                                            scope="row"
-                                            className="py-2 pr-4 font-medium whitespace-nowrap"
-                                        >
-                                            {row.label}
-                                        </th>
-                                        <td className="py-2 pr-4">
-                                            <span className="grid grid-cols-[3rem_1fr] items-center gap-2">
-                                                <span className="text-right font-bold tabular-nums">
-                                                    {row.issued}
-                                                </span>
-                                                <Bar
-                                                    value={row.issued}
-                                                    max={maxIssued}
-                                                />
-                                            </span>
-                                        </td>
-                                        <td className="py-2">
-                                            <span className="grid grid-cols-[8rem_1fr] items-center gap-2">
-                                                <span className="text-right font-bold whitespace-nowrap tabular-nums">
-                                                    {row.revenue.formatted}
-                                                </span>
-                                                <Bar
-                                                    value={
-                                                        row.revenue.amount_cents
-                                                    }
-                                                    max={maxRevenue}
-                                                />
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </Card>
-
-                <div className="grid gap-6 lg:grid-cols-2">
-                    <Card id="status-title" title={t('reports.by_status')}>
-                        <ul className="space-y-3">
-                            {STATUSES.map((status) => (
-                                <li
-                                    key={status}
-                                    className="grid grid-cols-[minmax(0,11rem)_3rem_1fr] items-center gap-3"
-                                >
-                                    <StatusBadge status={status} />
-                                    <span className="text-right font-bold tabular-nums">
-                                        {byStatus[status]}
                                     </span>
-                                    <Bar
-                                        value={byStatus[status]}
-                                        max={maxStatus}
-                                    />
-                                </li>
-                            ))}
-                        </ul>
-                    </Card>
-
-                    <Card id="types-title" title={t('reports.by_vehicle_type')}>
-                        {byVehicleType.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">
-                                {t('reports.none')}
-                            </p>
-                        ) : (
-                            <ul className="space-y-3">
-                                {byVehicleType.map((row) => (
-                                    <li
-                                        key={row.name}
-                                        className="grid grid-cols-[minmax(0,11rem)_3rem_1fr] items-center gap-3"
-                                    >
-                                        <span className="truncate font-medium">
-                                            {row.name}
-                                        </span>
-                                        <span className="text-right font-bold tabular-nums">
-                                            {row.permits}
-                                        </span>
+                                </Th>
+                                <Th align="right">{t('reports.revenue')}</Th>
+                                <Th className="w-1/3">
+                                    <span className="sr-only">
+                                        {t('reports.revenue')}
+                                    </span>
+                                </Th>
+                            </tr>
+                        </THead>
+                        <TBody>
+                            {monthly.map((row) => (
+                                <Tr key={row.key}>
+                                    <Td className="font-medium whitespace-nowrap">
+                                        {row.label}
+                                    </Td>
+                                    <Td numeric className="font-semibold">
+                                        {row.issued}
+                                    </Td>
+                                    <Td>
                                         <Bar
-                                            value={row.permits}
-                                            max={maxType}
+                                            value={row.issued}
+                                            max={maxIssued}
                                         />
-                                    </li>
+                                    </Td>
+                                    <Td
+                                        numeric
+                                        className="font-semibold whitespace-nowrap"
+                                    >
+                                        {row.revenue.formatted}
+                                    </Td>
+                                    <Td>
+                                        <Bar
+                                            value={row.revenue.amount_cents}
+                                            max={maxRevenue}
+                                        />
+                                    </Td>
+                                </Tr>
+                            ))}
+                        </TBody>
+                    </Table>
+                </TableCard>
+
+                <div className="grid gap-6 xl:grid-cols-2">
+                    <TableCard
+                        title={t('reports.by_status')}
+                        titleId="status-title"
+                    >
+                        <Table aria-labelledby="status-title">
+                            <THead>
+                                <tr>
+                                    <Th>{t('common.status')}</Th>
+                                    <Th align="right">
+                                        {t('reports.permits')}
+                                    </Th>
+                                    <Th className="w-2/5">
+                                        <span className="sr-only">
+                                            {t('reports.permits')}
+                                        </span>
+                                    </Th>
+                                </tr>
+                            </THead>
+                            <TBody>
+                                {STATUSES.map((status) => (
+                                    <Tr key={status}>
+                                        <Td>
+                                            <StatusBadge status={status} />
+                                        </Td>
+                                        <Td numeric className="font-semibold">
+                                            {byStatus[status]}
+                                        </Td>
+                                        <Td>
+                                            <Bar
+                                                value={byStatus[status]}
+                                                max={maxStatus}
+                                            />
+                                        </Td>
+                                    </Tr>
                                 ))}
-                            </ul>
-                        )}
-                    </Card>
+                            </TBody>
+                        </Table>
+                    </TableCard>
+
+                    <TableCard
+                        title={t('reports.by_vehicle_type')}
+                        titleId="types-title"
+                    >
+                        <Table aria-labelledby="types-title">
+                            <THead>
+                                <tr>
+                                    <Th>{t('reports.vehicle_type')}</Th>
+                                    <Th align="right">
+                                        {t('reports.permits')}
+                                    </Th>
+                                    <Th className="w-2/5">
+                                        <span className="sr-only">
+                                            {t('reports.permits')}
+                                        </span>
+                                    </Th>
+                                </tr>
+                            </THead>
+                            <TBody>
+                                {byVehicleType.length === 0 ? (
+                                    <EmptyRow colSpan={3}>
+                                        {t('reports.none')}
+                                    </EmptyRow>
+                                ) : (
+                                    byVehicleType.map((row) => (
+                                        <Tr key={row.name}>
+                                            <Td className="font-medium">
+                                                {row.name}
+                                            </Td>
+                                            <Td
+                                                numeric
+                                                className="font-semibold"
+                                            >
+                                                {row.permits}
+                                            </Td>
+                                            <Td>
+                                                <Bar
+                                                    value={row.permits}
+                                                    max={maxType}
+                                                />
+                                            </Td>
+                                        </Tr>
+                                    ))
+                                )}
+                            </TBody>
+                        </Table>
+                    </TableCard>
                 </div>
 
-                <Card
-                    id="organizations-title"
+                <TableCard
                     title={t('reports.top_organizations')}
+                    titleId="organizations-title"
                 >
-                    {topOrganizations.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                            {t('reports.none')}
-                        </p>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full min-w-[32rem] text-left text-sm">
-                                <thead>
-                                    <tr className="text-eyebrow text-muted-foreground">
-                                        <th scope="col" className="py-2 pr-4">
-                                            {t('reports.organization')}
-                                        </th>
-                                        <th
-                                            scope="col"
-                                            className="w-2/5 py-2 pr-4"
+                    <Table aria-labelledby="organizations-title">
+                        <THead>
+                            <tr>
+                                <Th>{t('reports.organization')}</Th>
+                                <Th align="right">{t('reports.permits')}</Th>
+                                <Th className="w-1/3">
+                                    <span className="sr-only">
+                                        {t('reports.permits')}
+                                    </span>
+                                </Th>
+                                <Th align="right">{t('reports.revenue')}</Th>
+                            </tr>
+                        </THead>
+                        <TBody>
+                            {topOrganizations.length === 0 ? (
+                                <EmptyRow colSpan={4}>
+                                    {t('reports.none')}
+                                </EmptyRow>
+                            ) : (
+                                topOrganizations.map((row) => (
+                                    <Tr key={row.name}>
+                                        <Td className="font-medium">
+                                            {row.name}
+                                        </Td>
+                                        <Td numeric className="font-semibold">
+                                            {row.permits}
+                                        </Td>
+                                        <Td>
+                                            <Bar
+                                                value={row.permits}
+                                                max={maxOrganization}
+                                            />
+                                        </Td>
+                                        <Td
+                                            numeric
+                                            className="font-semibold whitespace-nowrap"
                                         >
-                                            {t('reports.permits')}
-                                        </th>
-                                        <th
-                                            scope="col"
-                                            className="py-2 text-right"
-                                        >
-                                            {t('reports.revenue')}
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-border">
-                                    {topOrganizations.map((row) => (
-                                        <tr key={row.name}>
-                                            <th
-                                                scope="row"
-                                                className="py-2 pr-4 font-medium"
-                                            >
-                                                {row.name}
-                                            </th>
-                                            <td className="py-2 pr-4">
-                                                <span className="grid grid-cols-[3rem_1fr] items-center gap-2">
-                                                    <span className="text-right font-bold tabular-nums">
-                                                        {row.permits}
-                                                    </span>
-                                                    <Bar
-                                                        value={row.permits}
-                                                        max={maxOrganization}
-                                                    />
-                                                </span>
-                                            </td>
-                                            <td className="py-2 text-right font-bold whitespace-nowrap tabular-nums">
-                                                {row.revenue.formatted}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </Card>
-
-                <Card
-                    id="expiring-title"
-                    title={t('reports.expiring', { days: expiring.days })}
-                >
-                    {expiring.count === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                            {t('reports.expiring_none', {
-                                days: expiring.days,
-                            })}
-                        </p>
-                    ) : (
-                        <>
-                            <ul className="divide-y divide-border">
-                                {expiring.permits.map((permit) => (
-                                    <li
-                                        key={permit.id}
-                                        className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3"
-                                    >
-                                        <Link
-                                            href={permitPage({
-                                                permit: permit.id,
-                                            })}
-                                            translate="no"
-                                            className="font-bold tabular-nums underline underline-offset-4"
-                                        >
-                                            {permit.permit_number}
-                                        </Link>
-                                        {permit.plate && (
-                                            <PlateChip plate={permit.plate} />
-                                        )}
-                                        <span className="font-medium">
-                                            {permit.organization}
-                                        </span>
-                                        <span className="flex items-baseline gap-2 text-sm">
-                                            <span className="text-muted-foreground">
-                                                {t('reports.valid_to')}
-                                            </span>
-                                            <DualDate date={permit.valid_to} />
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                            {expiring.count > expiring.permits.length && (
-                                <p className="text-sm text-muted-foreground">
-                                    {t('reports.expiring_more', {
-                                        count:
-                                            expiring.count -
-                                            expiring.permits.length,
-                                    })}
-                                </p>
+                                            {row.revenue.formatted}
+                                        </Td>
+                                    </Tr>
+                                ))
                             )}
-                        </>
-                    )}
-                </Card>
+                        </TBody>
+                    </Table>
+                </TableCard>
+
+                <TableCard
+                    title={t('reports.expiring', { days: expiring.days })}
+                    titleId="expiring-title"
+                    footer={
+                        expiring.count > expiring.permits.length ? (
+                            <p className="text-sm text-muted-foreground">
+                                {t('reports.expiring_more', {
+                                    count:
+                                        expiring.count -
+                                        expiring.permits.length,
+                                })}
+                            </p>
+                        ) : undefined
+                    }
+                >
+                    <Table aria-labelledby="expiring-title">
+                        <THead>
+                            <tr>
+                                <Th>{t('reports.permit_number')}</Th>
+                                <Th>{t('reports.plate')}</Th>
+                                <Th>{t('reports.organization')}</Th>
+                                <Th>{t('reports.valid_to')}</Th>
+                            </tr>
+                        </THead>
+                        <TBody>
+                            {expiring.count === 0 ? (
+                                <EmptyRow colSpan={4}>
+                                    {t('reports.expiring_none', {
+                                        days: expiring.days,
+                                    })}
+                                </EmptyRow>
+                            ) : (
+                                expiring.permits.map((permit) => (
+                                    <Tr key={permit.id}>
+                                        <Td className="whitespace-nowrap">
+                                            <Link
+                                                href={permitPage({
+                                                    permit: permit.id,
+                                                })}
+                                                translate="no"
+                                                className="font-semibold text-primary tabular-nums underline-offset-4 hover:underline"
+                                            >
+                                                {permit.permit_number}
+                                            </Link>
+                                        </Td>
+                                        <Td>
+                                            {permit.plate ? (
+                                                <PlateChip
+                                                    plate={permit.plate}
+                                                />
+                                            ) : (
+                                                '—'
+                                            )}
+                                        </Td>
+                                        <Td className="font-medium">
+                                            {permit.organization}
+                                        </Td>
+                                        <Td className="whitespace-nowrap">
+                                            <DualDate date={permit.valid_to} />
+                                        </Td>
+                                    </Tr>
+                                ))
+                            )}
+                        </TBody>
+                    </Table>
+                </TableCard>
             </div>
         </AppLayout>
     );

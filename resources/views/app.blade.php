@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="{{ $theme ?? config('permits.appearance.theme') }}" data-default-appearance="{{ $defaultAppearance ?? 'system' }}" @class(['dark' => ($appearance ?? 'system') == 'dark'])>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" {!! \App\Domain\Settings\ThemeStyle::attributesHtml() !!} data-default-appearance="{{ $defaultAppearance ?? 'system' }}" data-user-mode="{{ config('permits.appearance.allow_user_mode') ? 'on' : 'off' }}" @class(['dark' => ($appearance ?? 'system') == 'dark'])>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -22,18 +22,23 @@
         {{-- Inline style to set the HTML background color based on our theme in app.css --}}
         <style>
             html {
-                background-color: oklch(0.965 0.012 158);
+                background-color: #f6f6f6;
             }
 
             html.dark {
-                background-color: oklch(0.17 0.012 158);
+                background-color: #111112;
             }
         </style>
+
+        @if ($themeCss = \App\Domain\Settings\ThemeStyle::css())
+            {{-- Colours chosen in System settings → Appearance (validated hex values). --}}
+            <style nonce="{{ Vite::cspNonce() }}">{!! $themeCss !!}</style>
+        @endif
 
         <title inertia>{{ config('app.name') }}</title>
 
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-        <meta name="theme-color" content="#232625">
+        <meta name="theme-color" content="#122170">
 
         @viteReactRefresh
         @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])

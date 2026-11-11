@@ -58,8 +58,10 @@ it('sends HSTS only over HTTPS in production', function () {
 });
 
 it('allows the Vite dev server only locally while it runs', function () {
+    // The suite swaps Vite for a fake that ignores useHotFile(); use the real one.
+    $this->withVite();
     $hot = public_path('hot-test');
-    file_put_contents($hot, 'http://[::1]:5173');
+    file_put_contents($hot, 'http://127.0.0.1:5199');
     Vite::useHotFile($hot);
 
     try {
@@ -72,6 +74,6 @@ it('allows the Vite dev server only locally while it runs', function () {
         @unlink($hot);
     }
 
-    expect($local)->toContain('http://[::1]:5173')->toContain('ws://[::1]:5173')
-        ->and($production)->not->toContain('5173');
+    expect($local)->toContain('http://127.0.0.1:5199')->toContain('ws://127.0.0.1:5199')
+        ->and($production)->not->toContain('5199');
 });

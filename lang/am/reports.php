@@ -37,6 +37,7 @@ return [
         'download' => 'ያውርዱ',
         'refresh' => 'ያድሱ',
         'rows' => ':count ረድፎች',
+        'rows_heading' => 'ረድፎች',
         'fields' => [
             'dataset' => 'የሚወጣው',
             'format' => 'የፋይል ዓይነት',

@@ -180,8 +180,22 @@ return [
     */
 
     'appearance' => [
-        'theme' => env('PERMITS_THEME', 'forest'),
+        // Colour preset; the three colours below override its brand, accent and sidebar.
+        'theme' => env('PERMITS_THEME', 'navy'),
+        'primary_color' => env('PERMITS_PRIMARY_COLOR'),
+        'accent_color' => env('PERMITS_ACCENT_COLOR'),
+        'sidebar_color' => env('PERMITS_SIDEBAR_COLOR'),
+        // Interface style (swiss, classic, soft, contrast), buttons, cards and tables.
+        'ui_style' => env('PERMITS_UI_STYLE', 'swiss'),
+        'button_style' => 'auto',
+        'card_radius' => 'auto',
+        'table_density' => 'comfortable',
         'default_mode' => env('PERMITS_DEFAULT_MODE', 'system'),
+        // Whether people may choose light or dark for themselves.
+        'allow_user_mode' => true,
+        'sidebar_compact' => false,
+        'show_breadcrumbs' => true,
+        'animations' => true,
     ],
 
     /*

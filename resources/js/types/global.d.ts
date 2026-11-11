@@ -20,6 +20,7 @@ declare module '@inertiajs/core' {
             /** Today in the display timezone, in both calendars. */
             today: DualDate;
             sidebarOpen: boolean;
+            appearance: { allowUserMode: boolean; showBreadcrumbs: boolean };
             [key: string]: unknown;
         };
     }

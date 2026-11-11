@@ -17,12 +17,12 @@ class HandleAppearance
     public function handle(Request $request, Closure $next): Response
     {
         // A person's own choice, otherwise the default an Admin set (System settings → Appearance).
-        $choice = $request->cookie('appearance_mode');
+        // When people may not choose (allow_user_mode off), the default always applies.
+        $choice = config('permits.appearance.allow_user_mode', true) ? $request->cookie('appearance_mode') : null;
         $default = (string) config('permits.appearance.default_mode', 'system');
 
         View::share('appearance', in_array($choice, ['light', 'dark', 'system'], true) ? $choice : $default);
         View::share('defaultAppearance', $default);
-        View::share('theme', (string) config('permits.appearance.theme', 'forest'));
 
         return $next($request);
     }

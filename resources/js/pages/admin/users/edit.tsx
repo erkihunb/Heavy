@@ -36,7 +36,7 @@ export default function UsersEdit({ user, roles }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('admin.users.edit_title')} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title={t('admin.users.edit_title')}
                     description={`${user.name} · ${user.email}`}
@@ -46,7 +46,7 @@ export default function UsersEdit({ user, roles }: Props) {
                     <form
                         onSubmit={submit}
                         noValidate
-                        className="max-w-xl space-y-5 rounded-2xl border border-border bg-card p-6"
+                        className="max-w-xl space-y-5 rounded-card border border-border bg-card p-5"
                     >
                         <FormField
                             id="role"
@@ -93,7 +93,7 @@ export default function UsersEdit({ user, roles }: Props) {
                         </div>
                     </form>
                 ) : (
-                    <p className="rounded-2xl border border-border bg-muted p-4 font-medium">
+                    <p className="rounded-card border border-border bg-muted p-4 font-medium">
                         {user.role_locked_reason}
                     </p>
                 )}

@@ -4,6 +4,7 @@ use App\Actions\Permits\SubmitPermit;
 use App\Domain\Audit\AuditEvent;
 use App\Domain\Settings\SettingsRegistry;
 use App\Domain\Settings\SystemSettings;
+use App\Domain\Settings\ThemeStyle;
 use App\Domain\Sms\HttpSmsGateway;
 use App\Domain\Sms\SmsGateway;
 use App\Enums\Role;
@@ -278,10 +279,10 @@ it('sends no alert when Telegram is off or the alert is switched off', function 
 });
 
 it('applies the theme and the default mode to every page', function () {
-    config(['permits.appearance.theme' => 'ocean', 'permits.appearance.default_mode' => 'dark']);
+    config(['permits.appearance.theme' => 'forest', 'permits.appearance.default_mode' => 'dark']);
 
     $this->get(route('home'))
-        ->assertSee('data-theme="ocean"', false)
+        ->assertSee('data-theme="forest"', false)
         ->assertSee('data-default-appearance="dark"', false)
         ->assertSee('class="dark"', false);
 
@@ -295,4 +296,73 @@ it('uses the default language for people who have not chosen one', function () {
     config(['app.locale' => 'en']);
 
     $this->get(route('home'))->assertSee('<html lang="en"', false);
+});
+
+describe('theme management', function () {
+    it('puts the interface style, shapes and density on every page', function () {
+        config(['permits.appearance.ui_style' => 'soft', 'permits.appearance.button_style' => 'pill', 'permits.appearance.card_radius' => 'lg', 'permits.appearance.table_density' => 'compact', 'permits.appearance.animations' => false]);
+
+        $this->get(route('home'))
+            ->assertSee('data-ui-style="soft"', false)
+            ->assertSee('data-button-style="pill"', false)
+            ->assertSee('data-card-radius="lg"', false)
+            ->assertSee('data-table-density="compact"', false)
+            ->assertSee('data-animations="off"', false);
+    });
+
+    it('turns custom colours into light and dark variables with readable text', function () {
+        config(['permits.appearance.primary_color' => '#0B5D1E', 'permits.appearance.sidebar_color' => '#FFFFFF', 'permits.appearance.accent_color' => '#f5c400']);
+
+        $css = ThemeStyle::css();
+
+        expect($css)->toContain(':root:root{--primary:#0b5d1e;')
+            ->toContain('--primary-foreground:#ffffff;')
+            ->toContain('--brand-accent:#f5c400;')
+            ->toContain('--sidebar:#ffffff;--sidebar-foreground:#1f2937;')
+            ->toContain(':root:root.dark{')
+            // A white sidebar is not carried into dark mode.
+            ->and(str($css)->after('.dark{')->toString())->not->toContain('--sidebar:#ffffff');
+
+        expect(ThemeStyle::readable('#fde68a'))->toBe('#141414');
+
+        $this->get(route('home'))->assertSee('--primary:#0b5d1e', false);
+    });
+
+    it('ignores colours that are not hex and sends no style without them', function () {
+        config(['permits.appearance.primary_color' => 'red;}body{display:none']);
+
+        expect(ThemeStyle::css())->toBe('');
+    });
+
+    it('validates colours on save', function () {
+        $this->actingAs($this->admin)
+            ->put(route('admin.settings.update', 'appearance'), settingsForm('appearance', ['permits.appearance.primary_color' => 'blue']))
+            ->assertSessionHasErrors('permits__appearance__primary_color');
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.settings.update', 'appearance'), settingsForm('appearance', ['permits.appearance.primary_color' => '#123456']))
+            ->assertSessionHasNoErrors();
+
+        expect(config('permits.appearance.primary_color'))->toBe('#123456');
+    });
+
+    it('applies the default mode to everyone when people may not choose', function () {
+        config(['permits.appearance.allow_user_mode' => false, 'permits.appearance.default_mode' => 'dark']);
+
+        $this->withUnencryptedCookie('appearance_mode', 'light')
+            ->get(route('home'))
+            ->assertSee('class="dark"', false)
+            ->assertSee('data-user-mode="off"', false);
+    });
+
+    it('starts with the sidebar collapsed only for people who never chose', function () {
+        config(['permits.appearance.sidebar_compact' => true]);
+        $user = staffUser(Role::Approver);
+
+        $this->actingAs($user)->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page->where('sidebarOpen', false)->where('appearance.showBreadcrumbs', true));
+
+        $this->actingAs($user)->withUnencryptedCookie('sidebar_state', 'true')->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page->where('sidebarOpen', true));
+    });
 });

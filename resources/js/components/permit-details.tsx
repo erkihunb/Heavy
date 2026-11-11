@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Table, TBody, Td, Th, THead, Tr } from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
 import { PlateChip } from '@/components/plate-chip';
 import { useTranslation } from '@/lib/i18n';
@@ -56,22 +57,36 @@ export function PermitDetails({ permit }: { permit: Permit }) {
             )}
 
             <Row label={t('permits.fields.vehicles')}>
-                <ul className="space-y-3">
-                    {(permit.vehicles ?? []).map((vehicle) => (
-                        <li
-                            key={vehicle.id}
-                            className="flex flex-wrap items-center gap-x-3 gap-y-1"
-                        >
-                            <PlateChip plate={vehicle.plate} />
-                            <span className="text-sm text-muted-foreground">
-                                {t(`permits.vehicle_roles.${vehicle.role}`)}
-                                {vehicle.vehicle_type &&
-                                    ` · ${vehicle.vehicle_type.name}`}
-                                {` · ${vehicle.owner_name}`}
-                            </span>
-                        </li>
-                    ))}
-                </ul>
+                <div className="overflow-hidden rounded-card border border-border">
+                    <Table>
+                        <THead>
+                            <tr>
+                                <Th>{t('vehicles.fields.plate')}</Th>
+                                <Th>{t('permits.fields.role')}</Th>
+                                <Th>{t('vehicles.fields.vehicle_type')}</Th>
+                                <Th>{t('vehicles.fields.owner_name')}</Th>
+                            </tr>
+                        </THead>
+                        <TBody>
+                            {(permit.vehicles ?? []).map((vehicle) => (
+                                <Tr key={vehicle.id}>
+                                    <Td>
+                                        <PlateChip plate={vehicle.plate} />
+                                    </Td>
+                                    <Td className="whitespace-nowrap">
+                                        {t(
+                                            `permits.vehicle_roles.${vehicle.role}`,
+                                        )}
+                                    </Td>
+                                    <Td muted>
+                                        {vehicle.vehicle_type?.name ?? '—'}
+                                    </Td>
+                                    <Td>{vehicle.owner_name}</Td>
+                                </Tr>
+                            ))}
+                        </TBody>
+                    </Table>
+                </div>
             </Row>
 
             <Row label={t('permits.fields.valid_from')}>

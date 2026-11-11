@@ -1,6 +1,16 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { Download, FileSpreadsheet, RefreshCw } from 'lucide-react';
 import type { FormEvent } from 'react';
+import {
+    EmptyRow,
+    Table,
+    TableCard,
+    TBody,
+    Td,
+    Th,
+    THead,
+    Tr,
+} from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
 import { EthiopianDateInput } from '@/components/ethiopian-date-input';
 import { FormField } from '@/components/form-field';
@@ -47,10 +57,12 @@ type Props = {
 };
 
 const STATUS_TONE: Record<ExportStatus, string> = {
-    pending: 'bg-muted text-muted-foreground',
-    running: 'bg-highlight text-highlight-foreground',
-    completed: 'bg-success text-success-foreground',
-    failed: 'bg-destructive text-white',
+    pending: 'bg-muted text-muted-foreground ring-border',
+    running:
+        'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900',
+    completed:
+        'bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900',
+    failed: 'bg-red-50 text-red-800 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900',
 };
 
 /** Statuses staff can export permits by: never drafts or withdrawn applications. */
@@ -108,7 +120,7 @@ export default function Exports({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('reports.exports.title')} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title={t('reports.exports.title')}
                     description={t('reports.exports.intro', { days: keepDays })}
@@ -118,9 +130,9 @@ export default function Exports({
                     onSubmit={submit}
                     noValidate
                     aria-labelledby="new-export-title"
-                    className="max-w-3xl space-y-5 rounded-2xl border border-border bg-card p-6"
+                    className="max-w-3xl space-y-5 rounded-card border border-border bg-card p-5"
                 >
-                    <h2 id="new-export-title" className="text-lg font-bold">
+                    <h2 id="new-export-title" className="text-section-title">
                         {t('reports.exports.new')}
                     </h2>
 
@@ -253,7 +265,7 @@ export default function Exports({
 
                 <section aria-labelledby="mine-title" className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
-                        <h2 id="mine-title" className="text-xl text-display">
+                        <h2 id="mine-title" className="text-section-title">
                             {t('reports.exports.mine')}
                         </h2>
                         <Button
@@ -266,74 +278,106 @@ export default function Exports({
                         </Button>
                     </div>
 
-                    {exports.data.length === 0 ? (
-                        <p className="text-muted-foreground">
-                            {t('reports.exports.empty')}
-                        </p>
-                    ) : (
-                        <ul className="grid gap-3">
-                            {exports.data.map((row) => (
-                                <li
-                                    key={row.id}
-                                    className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-border bg-card p-4"
-                                >
-                                    <span className="font-extrabold tabular-nums">
-                                        #{row.id}
-                                    </span>
-                                    <span
-                                        className={cn(
-                                            'rounded-full px-2.5 py-0.5 text-xs font-bold',
-                                            STATUS_TONE[row.status],
-                                        )}
-                                    >
-                                        {t(
-                                            `reports.exports.status.${row.status}`,
-                                        )}
-                                    </span>
-                                    <span className="font-medium">
-                                        {t(
-                                            `reports.exports.datasets.${row.dataset}`,
-                                        )}{' '}
-                                        ·{' '}
-                                        {t(
-                                            `reports.exports.formats.${row.format}`,
-                                        )}
-                                    </span>
-                                    {row.rows !== null && (
-                                        <span className="text-sm text-muted-foreground tabular-nums">
-                                            {t('reports.exports.rows', {
-                                                count: row.rows,
-                                            })}
+                    <TableCard>
+                        <Table>
+                            <THead>
+                                <tr>
+                                    <Th align="right">#</Th>
+                                    <Th>{t('common.status')}</Th>
+                                    <Th>
+                                        {t('reports.exports.fields.dataset')}
+                                    </Th>
+                                    <Th>
+                                        {t('reports.exports.fields.format')}
+                                    </Th>
+                                    <Th align="right">
+                                        {t('reports.exports.rows_heading')}
+                                    </Th>
+                                    <Th>{t('common.date')}</Th>
+                                    <Th align="right">
+                                        <span className="sr-only">
+                                            {t('common.actions')}
                                         </span>
-                                    )}
-                                    {row.created_at && (
-                                        <span className="flex items-baseline gap-2 text-sm text-muted-foreground">
-                                            <DualDate date={row.created_at} />
-                                            <span className="tabular-nums">
-                                                {row.created_time}
-                                            </span>
-                                        </span>
-                                    )}
-                                    {row.can_download && (
-                                        <Button
-                                            asChild
-                                            variant="outline"
-                                            className="ml-auto"
-                                        >
-                                            <a
-                                                href={download.url({
-                                                    export: row.id,
-                                                })}
+                                    </Th>
+                                </tr>
+                            </THead>
+                            <TBody>
+                                {exports.data.length === 0 ? (
+                                    <EmptyRow colSpan={7}>
+                                        {t('reports.exports.empty')}
+                                    </EmptyRow>
+                                ) : (
+                                    exports.data.map((row) => (
+                                        <Tr key={row.id}>
+                                            <Td
+                                                numeric
+                                                className="font-semibold"
                                             >
-                                                <Download aria-hidden="true" />
-                                                {t('reports.exports.download')}
-                                            </a>
-                                        </Button>
-                                    )}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
+                                                {row.id}
+                                            </Td>
+                                            <Td>
+                                                <span
+                                                    className={cn(
+                                                        'inline-flex rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset',
+                                                        STATUS_TONE[row.status],
+                                                    )}
+                                                >
+                                                    {t(
+                                                        `reports.exports.status.${row.status}`,
+                                                    )}
+                                                </span>
+                                            </Td>
+                                            <Td className="font-medium">
+                                                {t(
+                                                    `reports.exports.datasets.${row.dataset}`,
+                                                )}
+                                            </Td>
+                                            <Td className="whitespace-nowrap">
+                                                {t(
+                                                    `reports.exports.formats.${row.format}`,
+                                                )}
+                                            </Td>
+                                            <Td numeric>{row.rows ?? '—'}</Td>
+                                            <Td className="whitespace-nowrap">
+                                                {row.created_at && (
+                                                    <span className="flex items-baseline gap-2">
+                                                        <DualDate
+                                                            date={
+                                                                row.created_at
+                                                            }
+                                                        />
+                                                        <span className="text-xs text-muted-foreground tabular-nums">
+                                                            {row.created_time}
+                                                        </span>
+                                                    </span>
+                                                )}
+                                            </Td>
+                                            <Td align="right">
+                                                {row.can_download && (
+                                                    <Button
+                                                        asChild
+                                                        variant="outline"
+                                                        size="sm"
+                                                    >
+                                                        <a
+                                                            href={download.url({
+                                                                export: row.id,
+                                                            })}
+                                                        >
+                                                            <Download aria-hidden="true" />
+                                                            {t(
+                                                                'reports.exports.download',
+                                                            )}
+                                                        </a>
+                                                    </Button>
+                                                )}
+                                            </Td>
+                                        </Tr>
+                                    ))
+                                )}
+                            </TBody>
+                        </Table>
+                    </TableCard>
 
                     <Pagination links={exports.links} meta={exports.meta} />
                 </section>

@@ -192,7 +192,7 @@ final class SystemSettings
         return match ($type) {
             'bool' => (bool) $value,
             'int' => (int) $value,
-            'text', 'longtext', 'email', 'url' => is_string($value) && trim($value) !== '' ? trim($value) : null,
+            'text', 'longtext', 'email', 'url', 'color' => is_string($value) && trim($value) !== '' ? trim($value) : null,
             default => is_string($value) ? trim($value) : $value,
         };
     }

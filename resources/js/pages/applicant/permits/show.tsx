@@ -69,7 +69,7 @@ export default function PermitsShow({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('permits.show_title')} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title={t('permits.show_title')}
                     action={<StatusBadge status={permit.effective_status} />}
@@ -78,12 +78,12 @@ export default function PermitsShow({
                 {canAct && (
                     <section
                         aria-labelledby="review-title"
-                        className="space-y-4 rounded-2xl border-2 border-primary bg-card p-6 sm:p-7"
+                        className="space-y-4 rounded-card border-2 border-primary bg-card p-6 sm:p-7"
                     >
                         <div className="space-y-1.5">
                             <h2
                                 id="review-title"
-                                className="text-2xl text-display"
+                                className="text-section-title"
                             >
                                 {t('permits.review.title')}
                             </h2>
@@ -126,12 +126,12 @@ export default function PermitsShow({
                 {permit.document_url && (
                     <section
                         aria-labelledby="document-title"
-                        className="flex flex-col gap-4 rounded-2xl border-2 border-success bg-card p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7"
+                        className="flex flex-col gap-4 rounded-card border-2 border-success bg-card p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7"
                     >
                         <div className="space-y-1.5">
                             <h2
                                 id="document-title"
-                                className="text-xl text-display"
+                                className="text-section-title"
                             >
                                 {t('permits.actions.download')}
                             </h2>
@@ -155,7 +155,7 @@ export default function PermitsShow({
                 {permit.document_pending && (
                     <p
                         role="status"
-                        className="rounded-2xl border border-border bg-muted px-5 py-4 font-medium"
+                        className="rounded-card border border-border bg-muted px-5 py-4 font-medium"
                     >
                         {t('permits.document.pending')}
                     </p>
@@ -164,7 +164,7 @@ export default function PermitsShow({
                 {pendingPayment && (
                     <p
                         role="status"
-                        className="rounded-2xl border border-border bg-muted px-5 py-4 font-medium"
+                        className="rounded-card border border-border bg-muted px-5 py-4 font-medium"
                     >
                         {t('payments.waiting_notice')}
                     </p>
@@ -173,12 +173,12 @@ export default function PermitsShow({
                 {permit.can.submitPayment && permit.fee && (
                     <section
                         aria-labelledby="payment-title"
-                        className="space-y-5 rounded-2xl border-2 border-primary bg-card p-6 sm:p-7"
+                        className="space-y-5 rounded-card border-2 border-primary bg-card p-6 sm:p-7"
                     >
                         <div className="space-y-1.5">
                             <h2
                                 id="payment-title"
-                                className="text-2xl text-display"
+                                className="text-section-title"
                             >
                                 {t('payments.form.title')}
                             </h2>
@@ -192,7 +192,7 @@ export default function PermitsShow({
                         {lastRejected?.notes && (
                             <p
                                 role="alert"
-                                className="rounded-xl border-2 border-destructive px-4 py-3 font-medium"
+                                className="rounded-card border-2 border-destructive px-4 py-3 font-medium"
                             >
                                 {t('payments.rejected_notice', {
                                     note: lastRejected.notes,
@@ -212,11 +212,11 @@ export default function PermitsShow({
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
                     <section
                         aria-labelledby="details-title"
-                        className="rounded-2xl border border-border bg-card p-6 sm:p-8"
+                        className="rounded-card border border-border bg-card p-5 sm:p-6"
                     >
                         <h2
                             id="details-title"
-                            className="mb-2 text-xl text-display"
+                            className="mb-2 text-section-title"
                         >
                             {t('permits.review.details')}
                         </h2>
@@ -224,7 +224,7 @@ export default function PermitsShow({
 
                         {payments.length > 0 && (
                             <div className="mt-6 space-y-3">
-                                <h3 className="text-lg font-bold">
+                                <h3 className="text-section-title">
                                     {t('payments.history')}
                                 </h3>
                                 <PaymentList
@@ -239,11 +239,11 @@ export default function PermitsShow({
 
                     <section
                         aria-labelledby="timeline-title"
-                        className="h-fit rounded-2xl border border-border bg-card p-6 sm:p-8"
+                        className="h-fit rounded-card border border-border bg-card p-5 sm:p-6"
                     >
                         <h2
                             id="timeline-title"
-                            className="mb-6 text-xl text-display"
+                            className="mb-6 text-section-title"
                         >
                             {t('permits.timeline.title')}
                         </h2>

@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { Table, TBody, Td, Th, THead, Tr } from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
 import { PlateChip } from '@/components/plate-chip';
 import { StaffAction } from '@/components/staff-action';
@@ -99,7 +100,7 @@ export default function OfficerScan({
                     <>
                         <section
                             aria-label={t('verification.details')}
-                            className="rounded-2xl border border-border bg-card p-6"
+                            className="rounded-card border border-border bg-card p-5"
                         >
                             <dl className="divide-y divide-border">
                                 <Row
@@ -124,24 +125,54 @@ export default function OfficerScan({
                                     </span>
                                 </Row>
                                 <Row label={t('verification.fields.vehicles')}>
-                                    <ul className="space-y-2">
-                                        {permit.vehicles.map((vehicle) => (
-                                            <li
-                                                key={vehicle.plate}
-                                                className="flex flex-wrap items-center gap-x-3 gap-y-1"
-                                            >
-                                                <PlateChip
-                                                    plate={vehicle.plate}
-                                                />
-                                                <span className="text-sm text-muted-foreground">
-                                                    {t(
-                                                        `permits.vehicle_roles.${vehicle.role}`,
-                                                    )}{' '}
-                                                    · {vehicle.vehicle_type}
-                                                </span>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                    <div className="overflow-hidden rounded-card border border-border">
+                                        <Table>
+                                            <THead>
+                                                <tr>
+                                                    <Th>
+                                                        {t(
+                                                            'vehicles.fields.plate',
+                                                        )}
+                                                    </Th>
+                                                    <Th>
+                                                        {t(
+                                                            'permits.fields.role',
+                                                        )}
+                                                    </Th>
+                                                    <Th>
+                                                        {t(
+                                                            'vehicles.fields.vehicle_type',
+                                                        )}
+                                                    </Th>
+                                                </tr>
+                                            </THead>
+                                            <TBody>
+                                                {permit.vehicles.map(
+                                                    (vehicle) => (
+                                                        <Tr key={vehicle.plate}>
+                                                            <Td>
+                                                                <PlateChip
+                                                                    plate={
+                                                                        vehicle.plate
+                                                                    }
+                                                                />
+                                                            </Td>
+                                                            <Td className="whitespace-nowrap">
+                                                                {t(
+                                                                    `permits.vehicle_roles.${vehicle.role}`,
+                                                                )}
+                                                            </Td>
+                                                            <Td muted>
+                                                                {
+                                                                    vehicle.vehicle_type
+                                                                }
+                                                            </Td>
+                                                        </Tr>
+                                                    ),
+                                                )}
+                                            </TBody>
+                                        </Table>
+                                    </div>
                                 </Row>
                                 {permit.organization && (
                                     <Row
@@ -183,11 +214,11 @@ export default function OfficerScan({
 
                         <section
                             aria-labelledby="reports-title"
-                            className="space-y-3 rounded-2xl border border-border bg-card p-6"
+                            className="space-y-3 rounded-card border border-border bg-card p-5"
                         >
                             <h2
                                 id="reports-title"
-                                className="text-lg font-bold"
+                                className="text-section-title"
                             >
                                 {t('verification.officer.reports')}
                             </h2>
@@ -196,93 +227,162 @@ export default function OfficerScan({
                                     {t('verification.officer.no_reports')}
                                 </p>
                             ) : (
-                                <ul className="space-y-3">
-                                    {permit.reports.map((report, index) => (
-                                        <li
-                                            key={index}
-                                            className="space-y-1 rounded-xl bg-muted px-4 py-3"
-                                        >
-                                            <p className="whitespace-pre-line">
-                                                {report.note}
-                                            </p>
-                                            <p className="flex flex-wrap gap-x-2 text-sm text-muted-foreground">
-                                                <span>{report.by}</span>
-                                                <When moment={report} />
-                                            </p>
-                                        </li>
-                                    ))}
-                                </ul>
+                                <div className="overflow-hidden rounded-card border border-border">
+                                    <Table>
+                                        <THead>
+                                            <tr>
+                                                <Th>{t('common.date')}</Th>
+                                                <Th>
+                                                    {t(
+                                                        'verification.officer.report.note',
+                                                    )}
+                                                </Th>
+                                                <Th>
+                                                    {t(
+                                                        'permits.timeline.actor',
+                                                    )}
+                                                </Th>
+                                            </tr>
+                                        </THead>
+                                        <TBody>
+                                            {permit.reports.map(
+                                                (report, index) => (
+                                                    <Tr
+                                                        key={index}
+                                                        className="align-top"
+                                                    >
+                                                        <Td className="align-top whitespace-nowrap">
+                                                            <When
+                                                                moment={report}
+                                                            />
+                                                        </Td>
+                                                        <Td className="align-top whitespace-pre-line">
+                                                            {report.note}
+                                                        </Td>
+                                                        <Td
+                                                            muted
+                                                            className="align-top"
+                                                        >
+                                                            {report.by}
+                                                        </Td>
+                                                    </Tr>
+                                                ),
+                                            )}
+                                        </TBody>
+                                    </Table>
+                                </div>
                             )}
                         </section>
 
                         <section
                             aria-labelledby="history-title"
-                            className="space-y-3 rounded-2xl border border-border bg-card p-6"
+                            className="space-y-3 rounded-card border border-border bg-card p-5"
                         >
                             <h2
                                 id="history-title"
-                                className="text-lg font-bold"
+                                className="text-section-title"
                             >
                                 {t('verification.officer.history')}
                             </h2>
-                            <ol className="space-y-3">
-                                {permit.history.map((step, index) => (
-                                    <li key={index} className="space-y-1">
-                                        <p className="font-semibold">
-                                            {step.from === null
-                                                ? t('permits.timeline.created')
-                                                : step.from === step.to
-                                                  ? t(
-                                                        'verification.officer.reissued',
-                                                    )
-                                                  : t(
-                                                        `permits.status.${step.to}`,
+                            <div className="overflow-hidden rounded-card border border-border">
+                                <Table>
+                                    <THead>
+                                        <tr>
+                                            <Th>{t('common.date')}</Th>
+                                            <Th>
+                                                {t('permits.timeline.step')}
+                                            </Th>
+                                            <Th>
+                                                {t('permits.timeline.note')}
+                                            </Th>
+                                        </tr>
+                                    </THead>
+                                    <TBody>
+                                        {permit.history.map((step, index) => (
+                                            <Tr
+                                                key={index}
+                                                className="align-top"
+                                            >
+                                                <Td className="align-top whitespace-nowrap">
+                                                    <When moment={step} />
+                                                </Td>
+                                                <Td className="align-top font-medium">
+                                                    {step.from === null
+                                                        ? t(
+                                                              'permits.timeline.created',
+                                                          )
+                                                        : step.from === step.to
+                                                          ? t(
+                                                                'verification.officer.reissued',
+                                                            )
+                                                          : t(
+                                                                `permits.status.${step.to}`,
+                                                            )}
+                                                </Td>
+                                                <Td className="align-top whitespace-pre-line">
+                                                    {step.note ?? (
+                                                        <span className="text-muted-foreground">
+                                                            —
+                                                        </span>
                                                     )}
-                                        </p>
-                                        <When moment={step} />
-                                        {step.note && (
-                                            <p className="rounded-lg bg-muted px-3 py-2 text-sm whitespace-pre-line">
-                                                {step.note}
-                                            </p>
-                                        )}
-                                    </li>
-                                ))}
-                            </ol>
+                                                </Td>
+                                            </Tr>
+                                        ))}
+                                    </TBody>
+                                </Table>
+                            </div>
                         </section>
 
                         <section
                             aria-labelledby="scans-title"
-                            className="space-y-3 rounded-2xl border border-border bg-card p-6"
+                            className="space-y-3 rounded-card border border-border bg-card p-5"
                         >
-                            <h2 id="scans-title" className="text-lg font-bold">
+                            <h2 id="scans-title" className="text-section-title">
                                 {t('verification.officer.scans')}
                             </h2>
-                            <ul className="divide-y divide-border text-sm">
-                                {permit.scans.map((scan, index) => (
-                                    <li
-                                        key={index}
-                                        className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2"
-                                    >
-                                        <span className="font-bold">
-                                            {t(
-                                                `verification.results.${scan.result}.title`,
-                                            )}
-                                        </span>
-                                        <span>
-                                            {t(
-                                                `verification.officer.channels.${scan.channel}`,
-                                            )}
-                                        </span>
-                                        <span>
-                                            {scan.by ??
-                                                t(
-                                                    'verification.officer.scan_by_public',
+                            <div className="overflow-hidden rounded-card border border-border">
+                                <Table>
+                                    <THead>
+                                        <tr>
+                                            <Th>{t('common.date')}</Th>
+                                            <Th>{t('common.status')}</Th>
+                                            <Th>
+                                                {t(
+                                                    'verification.officer.channel',
                                                 )}
-                                        </span>
-                                        <When moment={scan} />
-                                    </li>
-                                ))}
-                            </ul>
+                                            </Th>
+                                            <Th>
+                                                {t('permits.timeline.actor')}
+                                            </Th>
+                                        </tr>
+                                    </THead>
+                                    <TBody>
+                                        {permit.scans.map((scan, index) => (
+                                            <Tr key={index}>
+                                                <Td className="whitespace-nowrap">
+                                                    <When moment={scan} />
+                                                </Td>
+                                                <Td className="font-medium">
+                                                    {t(
+                                                        `verification.results.${scan.result}.title`,
+                                                    )}
+                                                </Td>
+                                                <Td>
+                                                    {t(
+                                                        `verification.officer.channels.${scan.channel}`,
+                                                    )}
+                                                </Td>
+                                                <Td muted>
+                                                    {scan.by ??
+                                                        t(
+                                                            'verification.officer.scan_by_public',
+                                                        )}
+                                                </Td>
+                                            </Tr>
+                                        ))}
+                                    </TBody>
+                                </Table>
+                            </div>
                         </section>
                     </>
                 )}

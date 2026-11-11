@@ -52,7 +52,7 @@ export default function StaffPaymentsShow({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('payments.cashier.detail_title')} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title={t('payments.cashier.detail_title')}
                     description={permit?.organization}
@@ -63,11 +63,11 @@ export default function StaffPaymentsShow({
                     <div className="space-y-6">
                         <section
                             aria-labelledby="payment-title"
-                            className="rounded-2xl border border-border bg-card p-6 sm:p-8"
+                            className="rounded-card border border-border bg-card p-5 sm:p-6"
                         >
                             <h2
                                 id="payment-title"
-                                className="mb-2 text-xl text-display"
+                                className="mb-2 text-section-title"
                             >
                                 {t('payments.title')}
                             </h2>
@@ -191,11 +191,11 @@ export default function StaffPaymentsShow({
                         {permit && (
                             <section
                                 aria-labelledby="permit-title"
-                                className="rounded-2xl border border-border bg-card p-6 sm:p-8"
+                                className="rounded-card border border-border bg-card p-5 sm:p-6"
                             >
                                 <h2
                                     id="permit-title"
-                                    className="mb-2 text-xl text-display"
+                                    className="mb-2 text-section-title"
                                 >
                                     {t('payments.fields.permit')}
                                 </h2>
@@ -206,11 +206,11 @@ export default function StaffPaymentsShow({
                         {earlier.length > 0 && (
                             <section
                                 aria-labelledby="earlier-title"
-                                className="space-y-3 rounded-2xl border border-border bg-card p-6 sm:p-8"
+                                className="space-y-3 rounded-card border border-border bg-card p-5 sm:p-6"
                             >
                                 <h2
                                     id="earlier-title"
-                                    className="text-xl text-display"
+                                    className="text-section-title"
                                 >
                                     {t('payments.cashier.other_payments')}
                                 </h2>
@@ -228,21 +228,18 @@ export default function StaffPaymentsShow({
                         aria-labelledby="decision-title"
                         className="h-fit space-y-4 lg:sticky lg:top-6"
                     >
-                        <h2
-                            id="decision-title"
-                            className="text-xl text-display"
-                        >
+                        <h2 id="decision-title" className="text-section-title">
                             {t('permits.staff.decision')}
                         </h2>
 
                         {!hasAction && (
-                            <p className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
+                            <p className="rounded-card border border-border bg-card p-5 text-sm text-muted-foreground">
                                 {t('payments.cashier.no_action')}
                             </p>
                         )}
 
                         {hasAction && approvedByViewer && (
-                            <p className="rounded-2xl border border-border bg-card p-5 text-sm font-medium">
+                            <p className="rounded-card border border-border bg-card p-5 text-sm font-medium">
                                 {t('payments.cashier.own_approval')}
                             </p>
                         )}

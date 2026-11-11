@@ -2,6 +2,15 @@ import { Head, Link, router } from '@inertiajs/react';
 import { FileText, Plus, Search } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import {
+    Table,
+    TableCard,
+    TBody,
+    Td,
+    Th,
+    THead,
+    Tr,
+} from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
 import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
@@ -71,7 +80,7 @@ export default function PermitsIndex({ permits, filters, canCreate }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('permits.title')} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title={t('permits.title')}
                     description={t('permits.intro')}
@@ -79,11 +88,11 @@ export default function PermitsIndex({ permits, filters, canCreate }: Props) {
                 />
 
                 {permits.meta.total === 0 && !filtered ? (
-                    <div className="flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-input px-6 py-16 text-center">
-                        <span className="flex size-16 items-center justify-center rounded-xl bg-highlight text-highlight-foreground">
+                    <div className="flex flex-col items-center gap-4 rounded-card border-2 border-dashed border-input px-6 py-16 text-center">
+                        <span className="flex size-16 items-center justify-center rounded-card bg-highlight text-highlight-foreground">
                             <FileText aria-hidden="true" className="size-8" />
                         </span>
-                        <h2 className="text-2xl text-display">
+                        <h2 className="text-section-title">
                             {t('permits.empty.title')}
                         </h2>
                         <p className="max-w-sm text-muted-foreground">
@@ -95,7 +104,7 @@ export default function PermitsIndex({ permits, filters, canCreate }: Props) {
                         <form
                             role="search"
                             onSubmit={search}
-                            className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto_auto] lg:items-end"
+                            className="grid gap-3 rounded-card border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto_auto] lg:items-end"
                         >
                             <div className="grid gap-1.5">
                                 <label
@@ -190,66 +199,109 @@ export default function PermitsIndex({ permits, filters, canCreate }: Props) {
                                   })}
                         </p>
 
-                        <ul className="grid gap-3">
-                            {permits.data.map((permit) => (
-                                <li
-                                    key={permit.id}
-                                    className="grid gap-4 rounded-xl border border-border bg-card p-4 sm:p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
-                                >
-                                    <div className="space-y-3">
-                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                                            <StatusBadge
-                                                status={permit.effective_status}
-                                            />
-                                            <span className="font-bold">
+                        <TableCard>
+                            <Table>
+                                <THead>
+                                    <tr>
+                                        <Th>
+                                            {t('permits.fields.permit_number')}
+                                        </Th>
+                                        <Th>{t('permits.fields.status')}</Th>
+                                        <Th>
+                                            {t('permits.fields.permit_type')}
+                                        </Th>
+                                        <Th>{t('permits.fields.vehicles')}</Th>
+                                        <Th>{t('permits.fields.validity')}</Th>
+                                        <Th align="right">
+                                            <span className="sr-only">
+                                                {t('common.actions')}
+                                            </span>
+                                        </Th>
+                                    </tr>
+                                </THead>
+                                <TBody>
+                                    {permits.data.map((permit) => (
+                                        <Tr key={permit.id}>
+                                            <Td className="whitespace-nowrap">
+                                                {permit.permit_number ? (
+                                                    <Link
+                                                        href={show({
+                                                            permit: permit.id,
+                                                        })}
+                                                        translate="no"
+                                                        className="font-semibold text-primary tabular-nums underline-offset-4 hover:underline"
+                                                    >
+                                                        {permit.permit_number}
+                                                    </Link>
+                                                ) : (
+                                                    <span className="text-muted-foreground">
+                                                        {t(
+                                                            'permits.not_numbered',
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </Td>
+                                            <Td>
+                                                <StatusBadge
+                                                    status={
+                                                        permit.effective_status
+                                                    }
+                                                />
+                                            </Td>
+                                            <Td className="whitespace-nowrap">
                                                 {t(
                                                     `permits.types.${permit.permit_type}`,
                                                 )}
-                                            </span>
-                                            {permit.permit_number ? (
-                                                <span
-                                                    translate="no"
-                                                    className="font-extrabold tracking-wide tabular-nums"
-                                                >
-                                                    {permit.permit_number}
+                                            </Td>
+                                            <Td>
+                                                <span className="flex flex-wrap gap-1.5">
+                                                    {(
+                                                        permit.vehicles ?? []
+                                                    ).map((vehicle) => (
+                                                        <PlateChip
+                                                            key={vehicle.id}
+                                                            plate={
+                                                                vehicle.plate
+                                                            }
+                                                        />
+                                                    ))}
                                                 </span>
-                                            ) : (
-                                                <span className="text-sm text-muted-foreground">
-                                                    {t('permits.not_numbered')}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {(permit.vehicles ?? []).map(
-                                                (vehicle) => (
-                                                    <PlateChip
-                                                        key={vehicle.id}
-                                                        plate={vehicle.plate}
+                                            </Td>
+                                            <Td className="whitespace-nowrap">
+                                                <span className="flex flex-wrap items-baseline gap-x-1.5">
+                                                    <DualDate
+                                                        date={permit.valid_from}
                                                     />
-                                                ),
-                                            )}
-                                        </div>
-                                        <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
-                                            <span className="text-eyebrow text-muted-foreground">
-                                                {t('permits.fields.validity')}
-                                            </span>
-                                            <DualDate
-                                                date={permit.valid_from}
-                                            />
-                                            <span aria-hidden="true">–</span>
-                                            <DualDate date={permit.valid_to} />
-                                        </p>
-                                    </div>
-                                    <Button asChild variant="outline">
-                                        <Link
-                                            href={show({ permit: permit.id })}
-                                        >
-                                            {t('permits.actions.view')}
-                                        </Link>
-                                    </Button>
-                                </li>
-                            ))}
-                        </ul>
+                                                    <span aria-hidden="true">
+                                                        –
+                                                    </span>
+                                                    <DualDate
+                                                        date={permit.valid_to}
+                                                    />
+                                                </span>
+                                            </Td>
+                                            <Td align="right">
+                                                <Button
+                                                    asChild
+                                                    variant="outline"
+                                                    size="sm"
+                                                >
+                                                    <Link
+                                                        href={show({
+                                                            permit: permit.id,
+                                                        })}
+                                                    >
+                                                        {t(
+                                                            'permits.actions.view',
+                                                        )}
+                                                    </Link>
+                                                </Button>
+                                            </Td>
+                                        </Tr>
+                                    ))}
+                                </TBody>
+                            </Table>
+                        </TableCard>
 
                         <Pagination links={permits.links} meta={permits.meta} />
                     </>

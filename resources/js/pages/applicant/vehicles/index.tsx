@@ -66,7 +66,7 @@ export default function VehiclesIndex({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('vehicles.title')} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title={t('vehicles.title')}
                     description={t('vehicles.intro')}
@@ -74,11 +74,11 @@ export default function VehiclesIndex({
                 />
 
                 {vehicles.meta.total === 0 && !filtered ? (
-                    <div className="flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-input px-6 py-16 text-center">
-                        <span className="flex size-16 items-center justify-center rounded-xl bg-highlight text-highlight-foreground">
+                    <div className="flex flex-col items-center gap-4 rounded-card border-2 border-dashed border-input px-6 py-16 text-center">
+                        <span className="flex size-16 items-center justify-center rounded-card bg-highlight text-highlight-foreground">
                             <Truck aria-hidden="true" className="size-8" />
                         </span>
-                        <h2 className="text-2xl text-display">
+                        <h2 className="text-section-title">
                             {t('vehicles.empty.title')}
                         </h2>
                         <p className="max-w-sm text-muted-foreground">
@@ -90,7 +90,7 @@ export default function VehiclesIndex({
                         <form
                             role="search"
                             onSubmit={search}
-                            className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)_auto_auto] sm:items-end"
+                            className="grid gap-3 rounded-card border border-border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)_auto_auto] sm:items-end"
                         >
                             <div className="grid gap-1.5">
                                 <label
@@ -163,77 +163,7 @@ export default function VehiclesIndex({
 
                         {vehicles.data.length > 0 && (
                             <>
-                                {/* Phones: one card per vehicle */}
-                                <ul className="grid gap-3 md:hidden">
-                                    {vehicles.data.map((vehicle) => (
-                                        <li
-                                            key={vehicle.id}
-                                            className="space-y-4 rounded-xl border border-border bg-card p-4"
-                                        >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <PlateChip
-                                                    plate={vehicle.plate}
-                                                />
-                                                <Button
-                                                    asChild
-                                                    variant="outline"
-                                                    size="sm"
-                                                >
-                                                    <Link
-                                                        href={edit({
-                                                            vehicle: vehicle.id,
-                                                        })}
-                                                    >
-                                                        <Pencil aria-hidden="true" />
-                                                        {t('vehicles.edit')}
-                                                    </Link>
-                                                </Button>
-                                            </div>
-                                            <dl className="grid grid-cols-2 gap-3 text-sm">
-                                                <div>
-                                                    <dt className="text-eyebrow text-muted-foreground">
-                                                        {t(
-                                                            'vehicles.fields.vehicle_type',
-                                                        )}
-                                                    </dt>
-                                                    <dd className="font-medium">
-                                                        {
-                                                            vehicle.vehicle_type
-                                                                .name
-                                                        }
-                                                    </dd>
-                                                </div>
-                                                <div>
-                                                    <dt className="text-eyebrow text-muted-foreground">
-                                                        {t(
-                                                            'vehicles.fields.owner_name',
-                                                        )}
-                                                    </dt>
-                                                    <dd className="font-medium">
-                                                        {vehicle.owner_name}
-                                                    </dd>
-                                                </div>
-                                                <div className="col-span-2">
-                                                    <dt className="text-eyebrow text-muted-foreground">
-                                                        {t(
-                                                            'vehicles.fields.registered',
-                                                        )}
-                                                    </dt>
-                                                    <dd>
-                                                        <DualDate
-                                                            date={
-                                                                vehicle.registered_at
-                                                            }
-                                                        />
-                                                    </dd>
-                                                </div>
-                                            </dl>
-                                        </li>
-                                    ))}
-                                </ul>
-
-                                {/* Wider screens: a table */}
-                                <div className="hidden overflow-hidden rounded-xl border border-border bg-card md:block">
+                                <div className="overflow-x-auto rounded-card border border-border bg-card">
                                     <table className="w-full text-left text-sm">
                                         <thead className="border-b border-border bg-muted">
                                             <tr>
@@ -248,7 +178,7 @@ export default function VehiclesIndex({
                                                     <th
                                                         key={field}
                                                         scope="col"
-                                                        className="px-5 py-3.5 text-eyebrow text-muted-foreground"
+                                                        className="px-4 py-3 text-xs font-medium whitespace-nowrap text-muted-foreground"
                                                     >
                                                         {t(
                                                             `vehicles.fields.${field}`,
@@ -257,7 +187,7 @@ export default function VehiclesIndex({
                                                 ))}
                                                 <th
                                                     scope="col"
-                                                    className="px-5 py-3.5"
+                                                    className="px-4 py-3"
                                                 >
                                                     <span className="sr-only">
                                                         {t('vehicles.edit')}
@@ -273,7 +203,7 @@ export default function VehiclesIndex({
                                                 >
                                                     <th
                                                         scope="row"
-                                                        className="px-5 py-4 font-normal"
+                                                        className="px-4 py-3 font-normal"
                                                     >
                                                         <PlateChip
                                                             plate={
@@ -281,16 +211,16 @@ export default function VehiclesIndex({
                                                             }
                                                         />
                                                     </th>
-                                                    <td className="px-5 py-4 font-medium">
+                                                    <td className="px-4 py-3 font-medium">
                                                         {
                                                             vehicle.vehicle_type
                                                                 .name
                                                         }
                                                     </td>
-                                                    <td className="px-5 py-4">
+                                                    <td className="px-4 py-3">
                                                         {vehicle.owner_name}
                                                     </td>
-                                                    <td className="px-5 py-4">
+                                                    <td className="px-4 py-3">
                                                         <DualDate
                                                             date={
                                                                 vehicle.registered_at
@@ -298,7 +228,7 @@ export default function VehiclesIndex({
                                                             stacked
                                                         />
                                                     </td>
-                                                    <td className="px-5 py-4 text-right">
+                                                    <td className="px-4 py-3 text-right">
                                                         <Button
                                                             asChild
                                                             variant="outline"

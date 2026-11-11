@@ -32,7 +32,8 @@ type Field = {
         | 'url'
         | 'time'
         | 'timezone'
-        | 'secret';
+        | 'secret'
+        | 'color';
     required: boolean;
     min?: number;
     max?: number;
@@ -54,10 +55,10 @@ type FormValue = string | boolean;
 const TESTABLE = ['email', 'sms', 'telegram'];
 
 const THEME_SWATCH: Record<string, string> = {
-    forest: 'oklch(0.47 0.125 152)',
-    ocean: 'oklch(0.47 0.13 245)',
-    sunset: 'oklch(0.52 0.15 45)',
-    graphite: 'oklch(0.32 0.01 260)',
+    navy: '#122170',
+    forest: '#166534',
+    sunset: '#b4410f',
+    graphite: '#27272a',
 };
 
 const isPlaceholder = (value: FormValue): boolean =>
@@ -119,7 +120,7 @@ export default function SettingsSection({
         const error = form.errors[field.field];
         const value = form.data[field.field];
         const changed = saved.includes(field.field) && (
-            <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-accent-foreground">
+            <span className="rounded-md bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
                 {t('admin.settings.changed')}
             </span>
         );
@@ -235,6 +236,60 @@ export default function SettingsSection({
                         };
 
                         switch (field.type) {
+                            case 'color':
+                                return (
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <input
+                                            type="color"
+                                            aria-label={label}
+                                            value={
+                                                /^#[0-9a-fA-F]{6}$/.test(
+                                                    String(value),
+                                                )
+                                                    ? String(value)
+                                                    : '#122170'
+                                            }
+                                            onChange={(event) =>
+                                                form.setData(
+                                                    field.field,
+                                                    event.target.value,
+                                                )
+                                            }
+                                            className="h-9 w-12 cursor-pointer rounded-md border border-input bg-card p-1"
+                                        />
+                                        <Input
+                                            {...common}
+                                            translate="no"
+                                            placeholder={t(
+                                                'admin.settings.color_preset',
+                                            )}
+                                            className="w-36 font-mono"
+                                            onChange={(event) =>
+                                                form.setData(
+                                                    field.field,
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                        {String(value) !== '' && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() =>
+                                                    form.setData(
+                                                        field.field,
+                                                        '',
+                                                    )
+                                                }
+                                            >
+                                                {t(
+                                                    'admin.settings.color_reset',
+                                                )}
+                                            </Button>
+                                        )}
+                                    </div>
+                                );
                             case 'longtext':
                                 return (
                                     <Textarea
@@ -404,11 +459,11 @@ export default function SettingsSection({
                         <section
                             key={group}
                             aria-labelledby={`group-${group}`}
-                            className="space-y-5 rounded-2xl border border-border bg-card p-5 sm:p-6"
+                            className="space-y-5 rounded-card border border-border bg-card p-5 sm:p-6"
                         >
                             <h2
                                 id={`group-${group}`}
-                                className="text-lg font-bold"
+                                className="text-section-title"
                             >
                                 {t(
                                     `admin.settings.groups.${group}` as TranslationKey,
@@ -443,10 +498,10 @@ export default function SettingsSection({
                         onSubmit={sendTest}
                         noValidate
                         aria-labelledby="test-title"
-                        className="space-y-4 rounded-2xl border border-dashed border-border p-5 sm:p-6"
+                        className="space-y-4 rounded-card border border-dashed border-border p-5 sm:p-6"
                     >
                         <div className="space-y-1">
-                            <h2 id="test-title" className="text-lg font-bold">
+                            <h2 id="test-title" className="text-section-title">
                                 {t('admin.settings.test.title')}
                             </h2>
                             <p className="text-sm text-muted-foreground">

@@ -29,13 +29,13 @@ export function LanguageSwitcher({ className }: { className?: string }) {
             role="group"
             aria-label={t('common.language')}
             className={cn(
-                'inline-flex items-center gap-0.5 rounded-xl border border-input bg-card p-1 text-sm',
+                'inline-flex h-9 items-center gap-0.5 rounded-md border border-border bg-card p-0.5 text-sm',
                 className,
             )}
         >
             <Languages
                 aria-hidden="true"
-                className="mx-1.5 hidden size-4 text-muted-foreground sm:block"
+                className="mx-1 hidden size-4 text-muted-foreground sm:block"
             />
             {Object.entries(locales).map(([code, label]) => (
                 <button
@@ -45,10 +45,10 @@ export function LanguageSwitcher({ className }: { className?: string }) {
                     aria-pressed={code === locale}
                     onClick={() => switchTo(code)}
                     className={cn(
-                        'min-h-9 rounded-lg px-3 py-1 font-semibold transition-colors duration-200',
+                        'h-full rounded-xs px-2.5 text-xs font-medium transition-colors duration-150',
                         code === locale
-                            ? 'bg-foreground text-background'
-                            : 'text-foreground hover:bg-muted',
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                     )}
                 >
                     {label}

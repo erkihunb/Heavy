@@ -47,6 +47,7 @@ return [
         'scan_title' => 'Verification',
         'history' => 'Status history',
         'scans' => 'Recent checks',
+        'channel' => 'How',
         'scan_by_public' => 'Public',
         'channels' => [
             'qr' => 'QR code',

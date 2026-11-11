@@ -74,7 +74,7 @@ export function FeeEstimate({
     return (
         <div
             aria-live="polite"
-            className="space-y-1 rounded-xl border border-border bg-muted px-4 py-3"
+            className="space-y-1 rounded-card border border-border bg-muted px-4 py-3"
         >
             <p className="text-eyebrow text-muted-foreground">
                 {t('payments.fee_estimate')}

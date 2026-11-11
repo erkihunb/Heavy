@@ -46,6 +46,11 @@ const defaultAppearance = (): Appearance => {
 const getStoredAppearance = (): Appearance => {
     if (typeof window === 'undefined') return 'system';
 
+    // An Admin may decide that everyone sees the default (System settings → Appearance).
+    if (document.documentElement.dataset.userMode === 'off') {
+        return defaultAppearance();
+    }
+
     const stored = localStorage.getItem(STORAGE_KEY);
 
     return isAppearance(stored) ? stored : defaultAppearance();

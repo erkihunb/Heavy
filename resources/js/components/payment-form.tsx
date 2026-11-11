@@ -75,7 +75,7 @@ export function PaymentForm({
                     {methods.map((method) => (
                         <label
                             key={method}
-                            className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border-2 border-input px-4 py-3 font-bold has-checked:border-primary has-checked:bg-accent has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50"
+                            className="flex min-h-12 cursor-pointer items-center gap-3 rounded-card border-2 border-input px-4 py-3 font-bold has-checked:border-primary has-checked:bg-accent has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50"
                         >
                             <input
                                 type="radio"

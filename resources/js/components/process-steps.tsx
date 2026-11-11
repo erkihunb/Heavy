@@ -53,7 +53,7 @@ export function ProcessSteps({
                     >
                         <span
                             className={cn(
-                                'relative flex size-14 shrink-0 items-center justify-center rounded-xl border-2',
+                                'relative flex size-14 shrink-0 items-center justify-center rounded-card border-2',
                                 onAsphalt
                                     ? 'border-highlight/60 bg-white/10 text-highlight'
                                     : 'border-foreground bg-highlight text-highlight-foreground',

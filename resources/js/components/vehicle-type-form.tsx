@@ -39,7 +39,7 @@ export function VehicleTypeForm({
         <form
             onSubmit={onSubmit}
             noValidate
-            className="max-w-xl space-y-5 rounded-2xl border border-border bg-card p-6"
+            className="max-w-xl space-y-5 rounded-card border border-border bg-card p-5"
         >
             <FormField
                 id="code"

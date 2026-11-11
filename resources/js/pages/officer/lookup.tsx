@@ -39,7 +39,7 @@ export default function OfficerLookup() {
                     description={t('verification.officer.lookup_intro')}
                 />
 
-                <p className="flex items-center gap-3 rounded-2xl border border-border bg-muted px-4 py-3 text-sm font-medium">
+                <p className="flex items-center gap-3 rounded-card border border-border bg-muted px-4 py-3 text-sm font-medium">
                     <ScanLine aria-hidden="true" className="size-5 shrink-0" />
                     {t('verification.lookup.intro')}
                 </p>
@@ -47,7 +47,7 @@ export default function OfficerLookup() {
                 <form
                     onSubmit={submit}
                     noValidate
-                    className="space-y-5 rounded-2xl border border-border bg-card p-6"
+                    className="space-y-5 rounded-card border border-border bg-card p-5"
                 >
                     <FormField
                         id="permit_number"

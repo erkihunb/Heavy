@@ -1,5 +1,15 @@
 import { Head, Link } from '@inertiajs/react';
 import { Pencil, Plus } from 'lucide-react';
+import {
+    EmptyRow,
+    Table,
+    TableCard,
+    TBody,
+    Td,
+    Th,
+    THead,
+    Tr,
+} from '@/components/data-table';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
@@ -24,7 +34,7 @@ export default function VehicleTypesIndex({ types }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('admin.vehicle_types.title')} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title={t('admin.vehicle_types.title')}
                     description={t('admin.vehicle_types.intro')}
@@ -38,58 +48,91 @@ export default function VehicleTypesIndex({ types }: Props) {
                     }
                 />
 
-                {types.length === 0 ? (
-                    <p className="text-muted-foreground">
-                        {t('admin.vehicle_types.empty')}
-                    </p>
-                ) : (
-                    <ul className="grid gap-3">
-                        {types.map((type) => (
-                            <li
-                                key={type.id}
-                                className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
-                            >
-                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-                                    <span lang="am" className="font-bold">
-                                        {type.name_am}
+                <TableCard>
+                    <Table>
+                        <THead>
+                            <tr>
+                                <Th>
+                                    {t('admin.vehicle_types.fields.name_am')}
+                                </Th>
+                                <Th>
+                                    {t('admin.vehicle_types.fields.name_en')}
+                                </Th>
+                                <Th>{t('admin.vehicle_types.fields.code')}</Th>
+                                <Th align="right">
+                                    {t('admin.vehicle_types.fields.sort_order')}
+                                </Th>
+                                <Th align="right">{t('nav.vehicles')}</Th>
+                                <Th>{t('common.status')}</Th>
+                                <Th align="right">
+                                    <span className="sr-only">
+                                        {t('common.actions')}
                                     </span>
-                                    <span lang="en">{type.name_en}</span>
-                                    <code
-                                        translate="no"
-                                        className="rounded bg-muted px-1.5 py-0.5 text-sm"
-                                    >
-                                        {type.code}
-                                    </code>
-                                    <span
-                                        className={cn(
-                                            'rounded-full px-2.5 py-0.5 text-xs font-bold',
-                                            type.is_active
-                                                ? 'bg-success text-success-foreground'
-                                                : 'bg-muted text-muted-foreground',
-                                        )}
-                                    >
-                                        {type.is_active
-                                            ? t('admin.vehicle_types.active')
-                                            : t('admin.vehicle_types.inactive')}
-                                    </span>
-                                    <span className="text-sm text-muted-foreground tabular-nums">
-                                        {t('admin.vehicle_types.vehicles', {
-                                            count: type.vehicles,
-                                        })}
-                                    </span>
-                                </div>
-                                <Button asChild variant="outline">
-                                    <Link
-                                        href={edit({ vehicle_type: type.id })}
-                                    >
-                                        <Pencil aria-hidden="true" />
-                                        {t('permits.actions.edit')}
-                                    </Link>
-                                </Button>
-                            </li>
-                        ))}
-                    </ul>
-                )}
+                                </Th>
+                            </tr>
+                        </THead>
+                        <TBody>
+                            {types.length === 0 ? (
+                                <EmptyRow colSpan={7}>
+                                    {t('admin.vehicle_types.empty')}
+                                </EmptyRow>
+                            ) : (
+                                types.map((type) => (
+                                    <Tr key={type.id}>
+                                        <Td lang="am" className="font-medium">
+                                            {type.name_am}
+                                        </Td>
+                                        <Td lang="en">{type.name_en}</Td>
+                                        <Td>
+                                            <code
+                                                translate="no"
+                                                className="rounded-xs bg-muted px-1.5 py-0.5 text-xs"
+                                            >
+                                                {type.code}
+                                            </code>
+                                        </Td>
+                                        <Td numeric>{type.sort_order}</Td>
+                                        <Td numeric>{type.vehicles}</Td>
+                                        <Td>
+                                            <span
+                                                className={cn(
+                                                    'inline-flex rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset',
+                                                    type.is_active
+                                                        ? 'bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900'
+                                                        : 'bg-muted text-muted-foreground ring-border',
+                                                )}
+                                            >
+                                                {type.is_active
+                                                    ? t(
+                                                          'admin.vehicle_types.active',
+                                                      )
+                                                    : t(
+                                                          'admin.vehicle_types.inactive',
+                                                      )}
+                                            </span>
+                                        </Td>
+                                        <Td align="right">
+                                            <Button
+                                                asChild
+                                                variant="outline"
+                                                size="sm"
+                                            >
+                                                <Link
+                                                    href={edit({
+                                                        vehicle_type: type.id,
+                                                    })}
+                                                >
+                                                    <Pencil aria-hidden="true" />
+                                                    {t('permits.actions.edit')}
+                                                </Link>
+                                            </Button>
+                                        </Td>
+                                    </Tr>
+                                ))
+                            )}
+                        </TBody>
+                    </Table>
+                </TableCard>
             </div>
         </AppLayout>
     );

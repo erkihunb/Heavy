@@ -1,10 +1,11 @@
+import { Table, TBody, Td, Th, THead, Tr } from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
 import { useTranslation } from '@/lib/i18n';
 import type { PermitTransition } from '@/types';
 
 /**
- * The history of an application, oldest step first: what happened, when,
- * and the note that was left. Staff also see who did it.
+ * The history of an application as a table, oldest step first: what
+ * happened, when, and the note that was left. Staff also see who did it.
  */
 export function PermitTimeline({
     transitions,
@@ -12,40 +13,51 @@ export function PermitTimeline({
     transitions: PermitTransition[];
 }) {
     const { t } = useTranslation();
+    const showActor = transitions.some((transition) => transition.actor);
 
     return (
-        <ol className="relative space-y-6 border-l-2 border-border pl-6">
-            {transitions.map((transition, index) => (
-                <li key={index} className="relative">
-                    <span
-                        aria-hidden="true"
-                        className="absolute top-1.5 -left-[1.9rem] size-3 rounded-full border-2 border-background bg-primary"
-                    />
-                    <p className="font-bold">
-                        {transition.from === null
-                            ? t('permits.timeline.created')
-                            : transition.from === transition.to
-                              ? t('permits.timeline.reissued')
-                              : t(`permits.status.${transition.to}`)}
-                    </p>
-                    <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-muted-foreground">
-                        <DualDate date={transition.at} />
-                        <span className="tabular-nums">{transition.time}</span>
-                        {transition.actor && (
-                            <span>
-                                {t('permits.timeline.by', {
-                                    name: transition.actor,
-                                })}
-                            </span>
-                        )}
-                    </p>
-                    {transition.note && (
-                        <p className="mt-2 rounded-xl bg-muted px-4 py-3 text-sm leading-relaxed whitespace-pre-line">
-                            {transition.note}
-                        </p>
-                    )}
-                </li>
-            ))}
-        </ol>
+        <div className="overflow-hidden rounded-card border border-border bg-card">
+            <Table>
+                <THead>
+                    <tr>
+                        <Th>{t('common.date')}</Th>
+                        <Th>{t('permits.timeline.step')}</Th>
+                        {showActor && <Th>{t('permits.timeline.actor')}</Th>}
+                        <Th>{t('permits.timeline.note')}</Th>
+                    </tr>
+                </THead>
+                <TBody>
+                    {transitions.map((transition, index) => (
+                        <Tr key={index} className="align-top">
+                            <Td className="align-top whitespace-nowrap">
+                                <DualDate date={transition.at} />
+                                <span className="block text-xs text-muted-foreground tabular-nums">
+                                    {transition.time}
+                                </span>
+                            </Td>
+                            <Td className="align-top font-medium">
+                                {transition.from === null
+                                    ? t('permits.timeline.created')
+                                    : transition.from === transition.to
+                                      ? t('permits.timeline.reissued')
+                                      : t(`permits.status.${transition.to}`)}
+                            </Td>
+                            {showActor && (
+                                <Td muted className="align-top">
+                                    {transition.actor ?? '—'}
+                                </Td>
+                            )}
+                            <Td className="max-w-md align-top whitespace-pre-line">
+                                {transition.note ?? (
+                                    <span className="text-muted-foreground">
+                                        —
+                                    </span>
+                                )}
+                            </Td>
+                        </Tr>
+                    ))}
+                </TBody>
+            </Table>
+        </div>
     );
 }

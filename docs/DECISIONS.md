@@ -749,7 +749,7 @@ Plan: [plans/milestone-9-hardening-deployment.md](plans/milestone-9-hardening-de
   waits for verification or a permit is revoked. Only the permit number (or reference) and
   a link to the back office are sent — no names, plates or phone numbers. Queued, so a slow
   Telegram never delays the person acting.
-- **Themes:** four colour themes (forest — the original —, ocean, sunset, graphite) change
+- **Themes:** four colour themes (navy — the EUISIS look and the default —, forest, sunset, graphite) change
   the brand colour only; success stays green and destructive stays red. The **default light
   / dark mode** applies until a person chooses their own (stored under new names, so earlier
   automatic "system" values do not hide the default).
@@ -778,3 +778,43 @@ Plan: [plans/milestone-9-hardening-deployment.md](plans/milestone-9-hardening-de
 
 - Off-site copying of backups (copy `BACKUP_PATH` to another machine; depends on hosting).
 - Horizon dashboard (see above). Offline verification (Phase 2, ARCHITECTURE.md).
+
+## Interface: the EUISIS design system (owner's decision, 2026-11-12)
+
+The owner asked for the UI/UX and layout of the EUISIS project. Heavy now follows it:
+
+- **Look:** flat "swiss" surfaces in true greys, hairline borders, small radii, navy brand
+  colour (`#122170`) with a red-orange accent, Inter for Latin and Abyssinica SIL for
+  Amharic (more line height for Ethiopic). The shadcn token names are kept, so every
+  component took the new values; the large rounded utilities resolve to the card radius.
+- **Shell:** a white sidebar that collapses to an icon rail, with section labels and the
+  current page marked by a brand-colour edge; a top bar with navigation search (Ctrl/⌘+K),
+  today's date in both calendars, light/dark and language switches and the account menu; a
+  white heading band with breadcrumbs above the page title; messages as toasts; a footer.
+- **Lists are tables** everywhere (EUISIS table style: muted header row, row dividers, hover
+  wash), scrolling sideways on phones instead of switching to cards.
+- **Dashboard** (EUISIS): KPI cards per role, "needs attention" with counts and links, the
+  spread of permits over their statuses, recent activity, and for applicants their recent
+  applications. Staff names are not shown to applicants.
+- **Ethiopian date picker** (EUISIS): one field opening a month grid with the 13 months
+  (Pagume 5 or 6 days), the week days, today marked, a year list, Today and Clear. It still
+  hands the form a Gregorian ISO date and shows it under the field.
+- **Theme management** (System settings → Appearance, as in EUISIS): colour preset (navy,
+  forest, sunset, graphite) with free brand, accent and sidebar colours (dark variants and
+  readable text worked out on the server; only `#rrggbb` accepted), interface style (swiss,
+  classic, soft, contrast), button and card shape, table density, animations, breadcrumbs,
+  compact sidebar by default, the default light/dark mode and whether people may choose
+  their own. Sticky table headers were left out: tables scroll sideways in their card, so a
+  sticky header would not work as expected.
+- Icons: Solar (linear) in the shell and dashboard, as in EUISIS; lucide stays inside pages.
+- **One place for appearance:** the personal Appearance page is gone; it repeated System
+  settings → Appearance. Light/dark is the top-bar switch (when the Admin allows a personal
+  choice). "My account" is one page with tabs (profile, password, two-factor) and section
+  cards, as in EUISIS; all of it is translated.
+- **Error pages** (EUISIS): 403, 404, 405, 419, 429, 500 and 503 show a small card with the
+  error reference, a plain message and a way back, in the system's design and language.
+  JSON callers and the debug page in development keep Laravel's own answer; an expired
+  form (419) goes back to its page with a notice.
+- The public verification pages (Blade, no JavaScript) use the same tokens, brand bar and
+  radii. The Vite dev server listens on `127.0.0.1`, since a Content-Security-Policy cannot
+  name an IPv6 address and the stylesheet of these pages was blocked in development.

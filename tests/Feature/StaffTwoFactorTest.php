@@ -20,7 +20,7 @@ it('blocks every other screen for staff without two-factor authentication', func
     $this->actingAs(userWithRole(Role::Admin))
         ->get(route($route))
         ->assertRedirect(route('two-factor.show'));
-})->with(['home', 'dashboard', 'profile.edit', 'user-password.edit', 'appearance.edit']);
+})->with(['home', 'dashboard', 'profile.edit', 'user-password.edit']);
 
 it('blocks write requests for staff without two-factor authentication', function () {
     $user = userWithRole(Role::Approver);

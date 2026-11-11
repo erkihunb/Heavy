@@ -1,177 +1,105 @@
-import { Link, usePage } from '@inertiajs/react';
-import {
-    Banknote,
-    Building2,
-    ChartColumn,
-    ClipboardList,
-    FileText,
-    LayoutGrid,
-    Receipt,
-    ScanLine,
-    ScrollText,
-    SlidersHorizontal,
-    Tags,
-    Truck,
-    Users,
-} from 'lucide-react';
-import AppLogo from '@/components/app-logo';
-import { NavMain } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
+import { Link } from '@inertiajs/react';
+import { BrandMark } from '@/components/brand-mark';
 import {
     Sidebar,
     SidebarContent,
-    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupLabel,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useCurrentUrl } from '@/hooks/use-current-url';
+import { useNavGroups } from '@/hooks/use-nav-groups';
 import { useTranslation } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
-import { index as auditLog } from '@/routes/admin/audit-log';
-import { index as feeSchedules } from '@/routes/admin/fee-schedules';
-import { overview as systemSettings } from '@/routes/admin/settings';
-import { index as users } from '@/routes/admin/users';
-import { index as vehicleTypes } from '@/routes/admin/vehicle-types';
-import { verify as officerVerify } from '@/routes/officer';
-import { show as organization } from '@/routes/organization';
-import { index as permits } from '@/routes/permits';
-import { index as paymentQueue } from '@/routes/staff/payments';
-import { index as reviewQueue } from '@/routes/staff/permits';
-import { index as reports } from '@/routes/staff/reports';
-import { index as vehicles } from '@/routes/vehicles';
-import type { NavItem } from '@/types';
 
+/**
+ * The EUISIS sidebar: a white column with the brand block on top, sections
+ * with small uppercase labels, and the current page marked by a brand-colour
+ * rule on its start edge and a brand-colour icon. Collapses to an icon rail.
+ */
 export function AppSidebar() {
-    const { auth } = usePage().props;
     const { t } = useTranslation();
-
-    // Which entries are shown is a convenience only; every route is authorised on the server.
-    const isApplicant = auth.user.roles.includes('applicant');
-    // Admins hold every staff permission (docs/DECISIONS.md).
-    const isAdmin = auth.user.roles.includes('admin');
-    const isReviewingStaff =
-        isAdmin ||
-        auth.user.roles.some((role) => ['reviewer', 'approver'].includes(role));
-    const isCashier = isAdmin || auth.user.roles.includes('cashier');
-    const isOfficer = isAdmin || auth.user.roles.includes('traffic_officer');
-    const seesReports =
-        isAdmin ||
-        auth.user.roles.some((role) => ['approver', 'cashier'].includes(role));
-
-    const mainNavItems: NavItem[] = [
-        {
-            title: t('nav.dashboard'),
-            href: dashboard(),
-            icon: LayoutGrid,
-        },
-        ...(isApplicant
-            ? [
-                  {
-                      title: t('nav.organization'),
-                      href: organization(),
-                      icon: Building2,
-                  },
-                  {
-                      title: t('nav.vehicles'),
-                      href: vehicles(),
-                      icon: Truck,
-                  },
-                  {
-                      title: t('nav.permits'),
-                      href: permits(),
-                      icon: FileText,
-                  },
-              ]
-            : []),
-        ...(isReviewingStaff
-            ? [
-                  {
-                      title: t('nav.review_queue'),
-                      href: reviewQueue(),
-                      icon: ClipboardList,
-                  },
-              ]
-            : []),
-        ...(isCashier
-            ? [
-                  {
-                      title: t('nav.payments'),
-                      href: paymentQueue(),
-                      icon: Banknote,
-                  },
-              ]
-            : []),
-        ...(seesReports
-            ? [
-                  {
-                      title: t('nav.reports'),
-                      href: reports(),
-                      icon: ChartColumn,
-                  },
-              ]
-            : []),
-        ...(isOfficer
-            ? [
-                  {
-                      title: t('verification.officer.nav'),
-                      href: officerVerify(),
-                      icon: ScanLine,
-                  },
-              ]
-            : []),
-        ...(isAdmin
-            ? [
-                  {
-                      title: t('nav.fee_schedules'),
-                      href: feeSchedules(),
-                      icon: Receipt,
-                  },
-                  {
-                      title: t('nav.users'),
-                      href: users(),
-                      icon: Users,
-                  },
-                  {
-                      title: t('nav.vehicle_types'),
-                      href: vehicleTypes(),
-                      icon: Tags,
-                  },
-                  {
-                      title: t('nav.system_settings'),
-                      href: systemSettings(),
-                      icon: SlidersHorizontal,
-                  },
-                  {
-                      title: t('nav.audit_log'),
-                      href: auditLog(),
-                      icon: ScrollText,
-                  },
-              ]
-            : []),
-    ];
+    const groups = useNavGroups();
+    const { isCurrentOrParentUrl } = useCurrentUrl();
 
     return (
-        <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
-                                <AppLogo />
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+        <Sidebar collapsible="icon" variant="sidebar">
+            <SidebarHeader className="h-16 justify-center border-b border-sidebar-border px-3 group-data-[collapsible=icon]:px-2">
+                <Link
+                    href={dashboard()}
+                    prefetch
+                    className="flex min-w-0 items-center gap-3 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                >
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-sidebar p-1 ring-1 ring-sidebar-border">
+                        <BrandMark className="size-full" />
+                    </span>
+                    <span className="min-w-0 group-data-[collapsible=icon]:hidden">
+                        <span className="block truncate text-sm leading-tight font-bold text-sidebar-foreground">
+                            {t('common.app_name')}
+                        </span>
+                        <span className="mt-0.5 block truncate text-eyebrow text-sidebar-muted">
+                            {t('common.authority_short')}
+                        </span>
+                    </span>
+                </Link>
             </SidebarHeader>
 
-            <SidebarContent>
-                <NavMain items={mainNavItems} />
-            </SidebarContent>
+            <SidebarContent className="gap-0 px-2 py-3">
+                {groups.map((group, index) => (
+                    <SidebarGroup
+                        key={group.label ?? index}
+                        className="px-0 py-1"
+                    >
+                        {group.label && (
+                            <SidebarGroupLabel className="h-auto px-2.5 pt-3 pb-1.5 text-eyebrow text-sidebar-muted">
+                                {group.label}
+                            </SidebarGroupLabel>
+                        )}
+                        <SidebarMenu className="gap-0.5">
+                            {group.items.map((item) => {
+                                const active = isCurrentOrParentUrl(item.href);
 
-            <SidebarFooter>
-                <NavUser />
-            </SidebarFooter>
+                                return (
+                                    <SidebarMenuItem key={item.title}>
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={active}
+                                            tooltip={{ children: item.title }}
+                                            className={cn(
+                                                'relative h-10 gap-3 px-2.5 font-medium text-sidebar-foreground group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:justify-center',
+                                                'data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold',
+                                            )}
+                                        >
+                                            <Link href={item.href} prefetch>
+                                                {active && (
+                                                    <span
+                                                        aria-hidden="true"
+                                                        className="absolute inset-y-1.5 start-0 w-0.5 rounded-full bg-sidebar-primary"
+                                                    />
+                                                )}
+                                                {item.icon && (
+                                                    <item.icon
+                                                        className={cn(
+                                                            'size-[18px]! shrink-0',
+                                                            active &&
+                                                                'text-sidebar-primary',
+                                                        )}
+                                                    />
+                                                )}
+                                                <span>{item.title}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                );
+                            })}
+                        </SidebarMenu>
+                    </SidebarGroup>
+                ))}
+            </SidebarContent>
         </Sidebar>
     );
 }

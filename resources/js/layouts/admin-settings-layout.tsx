@@ -60,7 +60,7 @@ export default function AdminSettingsLayout({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${title} · ${t('admin.settings.title')}`} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title={t('admin.settings.title')}
                     description={t('admin.settings.intro')}
@@ -88,7 +88,7 @@ export default function AdminSettingsLayout({
                                                 active ? 'page' : undefined
                                             }
                                             className={cn(
-                                                'flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors hover:bg-muted',
+                                                'flex items-center gap-2.5 rounded-card px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors hover:bg-muted',
                                                 active &&
                                                     'bg-primary font-bold text-primary-foreground hover:bg-primary',
                                             )}

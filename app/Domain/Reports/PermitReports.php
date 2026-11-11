@@ -21,9 +21,10 @@ final class PermitReports
      * Permits by status as people see it today: issued permits split into
      * "issued" (not started), "active" and "expired" by their dates.
      *
+     * @param  int|null  $organizationId  only this organization's permits
      * @return array<string, int>
      */
-    public function byStatus(): array
+    public function byStatus(?int $organizationId = null): array
     {
         $today = ValidityRules::today()->toDateString();
         $issued = PermitStatus::Issued->value;
@@ -33,6 +34,7 @@ final class PermitReports
                 'CASE WHEN status = ? AND valid_to < ? THEN ? WHEN status = ? AND valid_from <= ? THEN ? ELSE status END AS effective, COUNT(*) AS total',
                 [$issued, $today, PermitStatus::Expired->value, $issued, $today, PermitStatus::Active->value],
             )
+            ->when($organizationId !== null, fn ($query) => $query->where('organization_id', $organizationId))
             ->groupBy('effective')
             ->pluck('total', 'effective');
 

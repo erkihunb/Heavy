@@ -9,6 +9,16 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import {
+    EmptyRow,
+    Table,
+    TableCard,
+    TBody,
+    Td,
+    Th,
+    THead,
+    Tr,
+} from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
 import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
@@ -57,7 +67,7 @@ export default function UsersIndex({ users, filters }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('admin.users.title')} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title={t('admin.users.title')}
                     description={t('admin.users.intro')}
@@ -125,88 +135,125 @@ export default function UsersIndex({ users, filters }: Props) {
                     </div>
                 </div>
 
-                {users.data.length === 0 ? (
-                    <p className="text-muted-foreground">
-                        {t('admin.users.empty')}
-                    </p>
-                ) : (
-                    <ul className="grid gap-3">
-                        {users.data.map((user) => (
-                            <li
-                                key={user.id}
-                                className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
-                            >
-                                <div className="min-w-0 space-y-1.5">
-                                    <p className="font-bold">{user.name}</p>
-                                    <p
-                                        translate="no"
-                                        className="truncate text-sm text-muted-foreground"
-                                    >
-                                        {user.email}
-                                    </p>
-                                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                                        {user.roles.length === 0 ? (
-                                            <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground">
-                                                {t('admin.users.no_role')}
+                <TableCard>
+                    <Table>
+                        <THead>
+                            <tr>
+                                <Th>{t('admin.users.fields.name')}</Th>
+                                <Th>{t('admin.users.fields.role')}</Th>
+                                <Th>{t('admin.users.two_factor')}</Th>
+                                <Th>{t('admin.users.joined')}</Th>
+                                <Th align="right">
+                                    <span className="sr-only">
+                                        {t('common.actions')}
+                                    </span>
+                                </Th>
+                            </tr>
+                        </THead>
+                        <TBody>
+                            {users.data.length === 0 ? (
+                                <EmptyRow colSpan={5}>
+                                    {t('admin.users.empty')}
+                                </EmptyRow>
+                            ) : (
+                                users.data.map((user) => (
+                                    <Tr key={user.id}>
+                                        <Td>
+                                            <span className="block font-medium">
+                                                {user.name}
                                             </span>
-                                        ) : (
-                                            user.roles.map((role) => (
-                                                <span
-                                                    key={role}
-                                                    className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-accent-foreground"
-                                                >
-                                                    {t(`roles.${role}.name`)}
-                                                </span>
-                                            ))
-                                        )}
-                                        <span className="flex items-center gap-1 text-muted-foreground">
-                                            {user.two_factor ? (
-                                                <ShieldCheck
-                                                    aria-hidden="true"
-                                                    className="size-4"
-                                                />
-                                            ) : (
-                                                <ShieldOff
-                                                    aria-hidden="true"
-                                                    className="size-4"
-                                                />
-                                            )}
-                                            {user.two_factor
-                                                ? t('admin.users.two_factor_on')
-                                                : t(
-                                                      'admin.users.two_factor_off',
-                                                  )}
-                                        </span>
-                                        {user.created_at && (
-                                            <span className="flex items-baseline gap-1.5 text-muted-foreground">
-                                                {t('admin.users.joined')}
+                                            <span
+                                                translate="no"
+                                                className="block text-xs text-muted-foreground"
+                                            >
+                                                {user.email}
+                                            </span>
+                                        </Td>
+                                        <Td>
+                                            <span className="flex flex-wrap gap-1.5">
+                                                {user.roles.length === 0 ? (
+                                                    <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                                                        {t(
+                                                            'admin.users.no_role',
+                                                        )}
+                                                    </span>
+                                                ) : (
+                                                    user.roles.map((role) => (
+                                                        <span
+                                                            key={role}
+                                                            className="rounded-md bg-primary-light px-2 py-0.5 text-xs font-medium text-accent-foreground"
+                                                        >
+                                                            {t(
+                                                                `roles.${role}.name`,
+                                                            )}
+                                                        </span>
+                                                    ))
+                                                )}
+                                            </span>
+                                        </Td>
+                                        <Td muted className="whitespace-nowrap">
+                                            <span className="flex items-center gap-1.5">
+                                                {user.two_factor ? (
+                                                    <ShieldCheck
+                                                        aria-hidden="true"
+                                                        className="size-4 text-success"
+                                                    />
+                                                ) : (
+                                                    <ShieldOff
+                                                        aria-hidden="true"
+                                                        className="size-4"
+                                                    />
+                                                )}
+                                                {user.two_factor
+                                                    ? t(
+                                                          'admin.users.two_factor_on',
+                                                      )
+                                                    : t(
+                                                          'admin.users.two_factor_off',
+                                                      )}
+                                            </span>
+                                        </Td>
+                                        <Td className="whitespace-nowrap">
+                                            {user.created_at && (
                                                 <DualDate
                                                     date={user.created_at}
                                                 />
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                                {user.can_change_role ? (
-                                    <Button asChild variant="outline">
-                                        <Link href={edit({ user: user.id })}>
-                                            <Pencil aria-hidden="true" />
-                                            {t('admin.users.change_role')}
-                                        </Link>
-                                    </Button>
-                                ) : (
-                                    <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <Lock
-                                            aria-hidden="true"
-                                            className="size-4"
-                                        />
-                                        {user.role_locked_reason}
-                                    </p>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
-                )}
+                                            )}
+                                        </Td>
+                                        <Td align="right">
+                                            {user.can_change_role ? (
+                                                <Button
+                                                    asChild
+                                                    variant="outline"
+                                                    size="sm"
+                                                >
+                                                    <Link
+                                                        href={edit({
+                                                            user: user.id,
+                                                        })}
+                                                    >
+                                                        <Pencil aria-hidden="true" />
+                                                        {t(
+                                                            'admin.users.change_role',
+                                                        )}
+                                                    </Link>
+                                                </Button>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                    <Lock
+                                                        aria-hidden="true"
+                                                        className="size-3.5"
+                                                    />
+                                                    {user.role_locked_reason}
+                                                </span>
+                                            )}
+                                        </Td>
+                                    </Tr>
+                                ))
+                            )}
+                        </TBody>
+                    </Table>
+                </TableCard>
 
                 <Pagination links={users.links} meta={users.meta} />
             </div>

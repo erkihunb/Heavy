@@ -42,15 +42,15 @@ export default function PermitsCreate({ vehicles, limits }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('permits.create_title')} />
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader title={t('permits.create_title')} />
 
                 {vehicles.length === 0 ? (
-                    <div className="flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-input px-6 py-16 text-center">
-                        <span className="flex size-16 items-center justify-center rounded-xl bg-highlight text-highlight-foreground">
+                    <div className="flex flex-col items-center gap-4 rounded-card border-2 border-dashed border-input px-6 py-16 text-center">
+                        <span className="flex size-16 items-center justify-center rounded-card bg-highlight text-highlight-foreground">
                             <Truck aria-hidden="true" className="size-8" />
                         </span>
-                        <h2 className="text-2xl text-display">
+                        <h2 className="text-section-title">
                             {t('permits.no_vehicles.title')}
                         </h2>
                         <p className="max-w-sm text-muted-foreground">

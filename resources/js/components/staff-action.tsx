@@ -59,10 +59,10 @@ export function StaffAction({
             onSubmit={submit}
             noValidate
             aria-labelledby={`${id}-title`}
-            className="space-y-4 rounded-xl border border-border bg-card p-5"
+            className="space-y-4 rounded-card border border-border bg-card p-5"
         >
             <div className="space-y-1">
-                <h3 id={`${id}-title`} className="text-lg font-bold">
+                <h3 id={`${id}-title`} className="text-section-title">
                     {title}
                 </h3>
                 <p className="text-sm text-muted-foreground">{hint}</p>
@@ -76,7 +76,7 @@ export function StaffAction({
                     {RECOMMENDATIONS.map((choice) => (
                         <label
                             key={choice}
-                            className="flex cursor-pointer items-center gap-3 rounded-xl border border-input px-4 py-3 font-medium has-checked:border-primary has-checked:bg-accent has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50"
+                            className="flex cursor-pointer items-center gap-3 rounded-card border border-input px-4 py-3 font-medium has-checked:border-primary has-checked:bg-accent has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50"
                         >
                             <input
                                 type="radio"

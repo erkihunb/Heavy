@@ -15,7 +15,10 @@ final class SettingsRegistry
 {
     public const array SECTIONS = ['general', 'appearance', 'notifications', 'email', 'sms', 'telegram', 'security', 'localization'];
 
-    public const array THEMES = ['forest', 'ocean', 'sunset', 'graphite'];
+    public const array THEMES = ['navy', 'forest', 'sunset', 'graphite'];
+
+    /** Interface style presets (EUISIS): radius, depth and contrast. */
+    public const array UI_STYLES = ['swiss', 'classic', 'soft', 'contrast'];
 
     /**
      * @return array<string, array{section: string, group: string, type: string, required?: bool, min?: int, max?: int, options?: list<string>, pattern?: string}>
@@ -38,7 +41,18 @@ final class SettingsRegistry
 
             // Appearance and themes
             'permits.appearance.theme' => ['section' => 'appearance', 'group' => 'theme', 'type' => 'choice', 'options' => self::THEMES],
-            'permits.appearance.default_mode' => ['section' => 'appearance', 'group' => 'theme', 'type' => 'choice', 'options' => ['system', 'light', 'dark']],
+            'permits.appearance.primary_color' => ['section' => 'appearance', 'group' => 'colors', 'type' => 'color'],
+            'permits.appearance.accent_color' => ['section' => 'appearance', 'group' => 'colors', 'type' => 'color'],
+            'permits.appearance.sidebar_color' => ['section' => 'appearance', 'group' => 'colors', 'type' => 'color'],
+            'permits.appearance.ui_style' => ['section' => 'appearance', 'group' => 'style', 'type' => 'choice', 'options' => self::UI_STYLES],
+            'permits.appearance.button_style' => ['section' => 'appearance', 'group' => 'style', 'type' => 'choice', 'options' => ['auto', 'square', 'rounded', 'pill']],
+            'permits.appearance.card_radius' => ['section' => 'appearance', 'group' => 'style', 'type' => 'choice', 'options' => ['auto', 'none', 'sm', 'md', 'lg', 'xl']],
+            'permits.appearance.table_density' => ['section' => 'appearance', 'group' => 'style', 'type' => 'choice', 'options' => ['comfortable', 'compact']],
+            'permits.appearance.default_mode' => ['section' => 'appearance', 'group' => 'behaviour', 'type' => 'choice', 'options' => ['system', 'light', 'dark']],
+            'permits.appearance.allow_user_mode' => ['section' => 'appearance', 'group' => 'behaviour', 'type' => 'bool'],
+            'permits.appearance.sidebar_compact' => ['section' => 'appearance', 'group' => 'behaviour', 'type' => 'bool'],
+            'permits.appearance.show_breadcrumbs' => ['section' => 'appearance', 'group' => 'behaviour', 'type' => 'bool'],
+            'permits.appearance.animations' => ['section' => 'appearance', 'group' => 'behaviour', 'type' => 'bool'],
 
             // Notifications
             'permits.notifications.mail' => ['section' => 'notifications', 'group' => 'channels', 'type' => 'bool'],
@@ -120,6 +134,7 @@ final class SettingsRegistry
             'time' => ['required', 'date_format:H:i'],
             'timezone' => ['required', 'timezone:all'],
             'secret' => ['nullable', 'string', 'max:500'],
+            'color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             default => ['prohibited'],
         };
 

@@ -51,9 +51,9 @@ function Panel({
     return (
         <section
             aria-labelledby={id}
-            className="space-y-4 rounded-2xl border border-border bg-card p-5 sm:p-6"
+            className="space-y-4 rounded-card border border-border bg-card p-5 sm:p-6"
         >
-            <h2 id={id} className="text-lg font-bold">
+            <h2 id={id} className="text-section-title">
                 {title}
             </h2>
             {children}
@@ -182,7 +182,7 @@ export default function SettingsOverview({
                         {Object.entries(counts).map(([key, value]) => (
                             <li
                                 key={key}
-                                className="rounded-xl border border-border p-4"
+                                className="rounded-card border border-border p-4"
                             >
                                 <p className="text-eyebrow text-muted-foreground">
                                     {label(key)}

@@ -1,21 +1,16 @@
 import { Link } from '@inertiajs/react';
-import { CalendarDays, ScanQrCode, ShieldCheck } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { BrandMark } from '@/components/brand-mark';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useTranslation } from '@/lib/i18n';
 import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
 
-const highlights: {
-    key: 'calendar' | 'qr' | 'security';
-    icon: LucideIcon;
-}[] = [
-    { key: 'calendar', icon: CalendarDays },
-    { key: 'qr', icon: ScanQrCode },
-    { key: 'security', icon: ShieldCheck },
-];
-
+/**
+ * Sign-in, registration and password pages (EUISIS guest layout): a single
+ * centered card on the muted page colour, with the brand band on its top
+ * edge, the system name above it and the Authority's name below.
+ */
 export default function AuthSplitLayout({
     children,
     title,
@@ -24,78 +19,40 @@ export default function AuthSplitLayout({
     const { t } = useTranslation();
 
     return (
-        <div className="grid min-h-svh text-foreground lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-            {/* Brand panel (large screens) */}
-            <aside className="relative hidden flex-col justify-between gap-12 surface-brand p-10 lg:flex xl:p-14">
+        <div className="flex min-h-svh flex-col bg-muted text-foreground">
+            <header className="flex items-center justify-end gap-1.5 px-4 py-3 sm:px-6">
+                <ThemeToggle className="flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-card hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none" />
+                <LanguageSwitcher />
+            </header>
+
+            <main className="flex flex-1 flex-col items-center justify-center px-4 pb-12">
                 <Link
                     href={home()}
-                    className="flex w-fit items-center gap-3 rounded-lg"
+                    className="mb-8 flex items-center gap-3 rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                 >
-                    <BrandMark className="size-11 shrink-0" />
-                    <span className="leading-tight font-extrabold">
+                    <BrandMark className="size-10 shrink-0" />
+                    <span className="max-w-xs text-base leading-tight font-bold">
                         {t('common.app_name')}
                     </span>
                 </Link>
 
-                <div className="space-y-9">
-                    <p className="text-4xl text-display xl:text-5xl">
-                        {t('common.welcome.title')}
-                    </p>
-                    <div
-                        className="lane-dash max-w-xs text-highlight"
-                        aria-hidden="true"
-                    />
-                    <ul className="space-y-5">
-                        {highlights.map(({ key, icon: Icon }) => (
-                            <li key={key} className="flex items-center gap-4">
-                                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border-2 border-highlight text-highlight">
-                                    <Icon
-                                        aria-hidden="true"
-                                        className="size-5"
-                                    />
-                                </span>
-                                <span className="font-semibold">
-                                    {t(`landing.features.${key}.title`)}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-
-                <p className="text-sm text-asphalt-muted">
-                    {t('common.authority')}
-                </p>
-            </aside>
-
-            {/* Form side */}
-            <div className="flex min-w-0 flex-col">
-                <div className="brand-bar lg:hidden" aria-hidden="true" />
-
-                <header className="flex items-center justify-between gap-3 px-4 py-4 sm:px-8">
-                    <Link
-                        href={home()}
-                        className="flex items-center gap-2 rounded-lg lg:invisible"
-                    >
-                        <BrandMark className="size-10 shrink-0" />
-                        <span className="sr-only">{t('common.app_name')}</span>
-                    </Link>
-                    <LanguageSwitcher />
-                </header>
-
-                <main className="flex flex-1 items-center justify-center px-4 pt-4 pb-14 sm:px-8">
-                    <div className="w-full max-w-md animate-rise space-y-8">
-                        <div className="space-y-2">
-                            <h1 className="text-3xl text-display sm:text-4xl">
-                                {title}
-                            </h1>
-                            <p className="text-muted-foreground">
+                <div className="w-full max-w-md animate-rise overflow-hidden rounded-panel border border-border bg-card shadow-lg">
+                    <div className="brand-bar" aria-hidden="true" />
+                    <div className="space-y-7 px-6 py-8 sm:px-9">
+                        <div className="space-y-1.5">
+                            <h1 className="text-page-title">{title}</h1>
+                            <p className="text-sm text-muted-foreground">
                                 {description}
                             </p>
                         </div>
                         {children}
                     </div>
-                </main>
-            </div>
+                </div>
+
+                <p className="mt-8 max-w-md text-center text-xs text-muted-foreground">
+                    {t('common.authority')}
+                </p>
+            </main>
         </div>
     );
 }
