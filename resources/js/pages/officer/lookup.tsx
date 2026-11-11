@@ -1,24 +1,46 @@
-import { Head, useForm } from '@inertiajs/react';
-import { ScanLine, Search } from 'lucide-react';
+import { Head, router, useForm } from '@inertiajs/react';
+import { QrCode, Search, TriangleAlert } from 'lucide-react';
+import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { FormField } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
+import { QrScanner } from '@/components/qr-scanner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
+import { permitToken } from '@/lib/permit-qr';
 import { verify } from '@/routes/officer';
 import { lookup } from '@/routes/verification';
 import type { BreadcrumbItem } from '@/types';
 
 /**
- * The traffic officer's manual check: permit number and a plate. Scanning
- * the QR code with the phone camera opens the same result directly.
+ * The traffic officer's check (spec §7): scan the permit's QR code with the
+ * device camera, which opens the officer view of that permit, or type the
+ * permit number and a plate.
  */
-export default function OfficerLookup() {
+export default function OfficerLookup({ verifyBase }: { verifyBase: string }) {
     const { t } = useTranslation();
     const form = useForm({ permit_number: '', plate: '' });
+    const [scanning, setScanning] = useState(false);
+    const [foreign, setForeign] = useState(false);
+
+    const scanned = (text: string): boolean => {
+        const token = permitToken(text, verifyBase, window.location.origin);
+
+        if (token === null) {
+            setForeign(true);
+
+            return false;
+        }
+
+        setForeign(false);
+        setScanning(false);
+        router.visit(`/v/${token}`);
+
+        return true;
+    };
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -39,9 +61,49 @@ export default function OfficerLookup() {
                     description={t('verification.officer.lookup_intro')}
                 />
 
-                <p className="flex items-center gap-3 rounded-card border border-border bg-muted px-4 py-3 text-sm font-medium">
-                    <ScanLine aria-hidden="true" className="size-5 shrink-0" />
-                    {t('verification.lookup.intro')}
+                {scanning ? (
+                    <QrScanner
+                        onResult={scanned}
+                        onClose={() => {
+                            setScanning(false);
+                            setForeign(false);
+                        }}
+                    />
+                ) : (
+                    <Button
+                        type="button"
+                        size="lg"
+                        className="h-16 w-full text-base"
+                        onClick={() => setScanning(true)}
+                    >
+                        <QrCode aria-hidden="true" className="size-6" />
+                        {t('verification.officer.scanner.start')}
+                    </Button>
+                )}
+
+                {foreign && (
+                    <p
+                        role="alert"
+                        className="flex items-center gap-2 rounded-card border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive"
+                    >
+                        <TriangleAlert
+                            aria-hidden="true"
+                            className="size-4 shrink-0"
+                        />
+                        {t('verification.officer.scanner.not_permit')}
+                    </p>
+                )}
+
+                <p className="flex items-center gap-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                    <span
+                        aria-hidden="true"
+                        className="h-px flex-1 bg-border"
+                    />
+                    {t('verification.officer.scanner.or')}
+                    <span
+                        aria-hidden="true"
+                        className="h-px flex-1 bg-border"
+                    />
                 </p>
 
                 <form

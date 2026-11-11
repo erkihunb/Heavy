@@ -73,7 +73,10 @@ it('shows only the result when nothing is found', function () {
 });
 
 it('looks a permit up by number and plate', function () {
-    $this->actingAs($this->officer)->get(route('officer.verify'))->assertOk()->assertInertia(fn (Assert $page) => $page->component('officer/lookup'));
+    $this->actingAs($this->officer)->get(route('officer.verify'))->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->component('officer/lookup')
+        // The in-page scanner accepts only QR codes pointing at this address.
+        ->where('verifyBase', rtrim((string) config('permits.verify_url'), '/')));
 
     $this->actingAs($this->officer)
         ->post(route('verification.lookup'), ['permit_number' => 'TMA-HV-2019-000555', 'plate' => 'አአ-03-A45301'])

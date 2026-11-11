@@ -27,7 +27,8 @@ class SecurityHeaders
             'X-Frame-Options' => 'DENY',
             'X-Content-Type-Options' => 'nosniff',
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
-            'Permissions-Policy' => 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+            // The camera only for this site: traffic officers scan permit QR codes in the page.
+            'Permissions-Policy' => 'camera=(self), microphone=(), geolocation=(), payment=(), usb=()',
             'Cross-Origin-Opener-Policy' => 'same-origin',
         ];
 

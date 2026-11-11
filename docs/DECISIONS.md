@@ -485,6 +485,13 @@ Flows and diagrams: [ARCHITECTURE.md](ARCHITECTURE.md).
   officer view: the public answer plus the status history (with revocation and reissue
   reasons), the last 10 checks and the last 10 officer reports, and a form to **report a
   violation** (`permit_reports`, append-only). Officers also have a manual lookup screen.
+- **Scanning in the page** (owner's decision, 2026-11-12): Verify permit opens the device
+  camera (the back camera on a phone) and reads the QR code with jsQR, on the device; the
+  picture never leaves it. Only a code whose address is `PERMITS_VERIFY_URL/v/<token>` (or
+  this site) is followed; anything else shows "not a permit of this system". The number
+  and plate form stays below for damaged codes. `Permissions-Policy` now allows the camera
+  for this site only (`camera=(self)`); browsers allow the camera only over HTTPS (or on
+  localhost), so production must be served over HTTPS.
 
 ### Permit document (spec §8)
 

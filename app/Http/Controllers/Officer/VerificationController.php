@@ -22,7 +22,10 @@ class VerificationController extends Controller
     {
         Gate::authorize('scan', Permit::class);
 
-        return Inertia::render('officer/lookup');
+        return Inertia::render('officer/lookup', [
+            // QR codes point to <verify_url>/v/<token>; the scanner accepts only those.
+            'verifyBase' => rtrim((string) config('permits.verify_url'), '/'),
+        ]);
     }
 
     public function report(ReportPermitRequest $request, Permit $permit, ReportPermit $reportPermit): RedirectResponse
