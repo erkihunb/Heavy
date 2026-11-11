@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Settings\SettingsRegistry;
+use App\Http\Controllers\Admin\ApplicantController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\FeeScheduleController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -35,6 +36,19 @@ Route::middleware(['auth', 'verified', 'can:viewAny,'.User::class])
             ->name('users.store');
         Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('users/{user}/role', [UserController::class, 'updateRole'])->name('users.role');
+    });
+
+// Applicants registered at the office (Registrar, Admin).
+Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
+    ->prefix('admin')
+    ->name('admin.')
+    ->controller(ApplicantController::class)
+    ->group(function () {
+        Route::get('applicants', 'index')->name('applicants.index');
+        Route::get('applicants/create', 'create')->name('applicants.create');
+        Route::post('applicants', 'store')
+            ->middleware('throttle:30,1')
+            ->name('applicants.store');
     });
 
 // Vehicle types (spec §11).

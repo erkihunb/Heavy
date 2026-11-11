@@ -387,6 +387,7 @@ return [
             'payment.rejected' => 'Payment rejected',
             'fee_schedule.saved' => 'Fee schedule saved',
             'user.created' => 'Staff account created',
+            'applicant.registered' => 'Applicant registered at the office',
             'user.role_changed' => 'Role changed',
             'vehicle_type.created' => 'Vehicle type created',
             'vehicle_type.updated' => 'Vehicle type changed',

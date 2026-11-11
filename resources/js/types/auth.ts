@@ -5,6 +5,7 @@ export type Role =
     | 'approver'
     | 'cashier'
     | 'traffic_officer'
+    | 'registrar'
     | 'admin';
 
 /** The whitelisted user fields shared by HandleInertiaRequests. */

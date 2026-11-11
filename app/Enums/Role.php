@@ -14,6 +14,7 @@ enum Role: string
     case Approver = 'approver';
     case Cashier = 'cashier';
     case TrafficOfficer = 'traffic_officer';
+    case Registrar = 'registrar';
     case Admin = 'admin';
 
     /**
@@ -23,7 +24,7 @@ enum Role: string
      */
     public static function staff(): array
     {
-        return [self::Reviewer, self::Approver, self::Cashier, self::TrafficOfficer, self::Admin];
+        return [self::Reviewer, self::Approver, self::Cashier, self::TrafficOfficer, self::Registrar, self::Admin];
     }
 
     /**
@@ -73,6 +74,9 @@ enum Role: string
             ],
             self::TrafficOfficer => [
                 Permission::ScanPermits,
+            ],
+            self::Registrar => [
+                Permission::RegisterApplicants,
             ],
             self::Admin => array_values(array_filter(
                 Permission::cases(),

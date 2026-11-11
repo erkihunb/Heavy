@@ -387,6 +387,7 @@ return [
             'payment.rejected' => 'ክፍያ ውድቅ ተደረገ',
             'fee_schedule.saved' => 'የክፍያ ተመን ተቀመጠ',
             'user.created' => 'የሠራተኛ መለያ ተፈጠረ',
+            'applicant.registered' => 'አመልካች በአካል ተመዘገበ',
             'user.role_changed' => 'የሥራ ድርሻ ተቀየረ',
             'vehicle_type.created' => 'የተሽከርካሪ ዓይነት ተፈጠረ',
             'vehicle_type.updated' => 'የተሽከርካሪ ዓይነት ተቀየረ',

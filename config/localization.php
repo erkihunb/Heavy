@@ -47,6 +47,7 @@ return [
         'payments',
         'fees',
         'admin',
+        'applicants',
         'errors',
     ],
 

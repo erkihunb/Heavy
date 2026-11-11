@@ -724,6 +724,27 @@ Plan: [plans/milestone-9-hardening-deployment.md](plans/milestone-9-hardening-de
 - `php artisan admin:create email --name=…` opens the first Admin on a new installation and
   prints the password link (e-mail is usually not configured yet).
 
+### Applicants registered at the office (owner's decision, 2026-11-12)
+
+Applicants may come to the office in person. A **Registrar** (a new staff role, with only
+`applicants.register`; Admins hold it too) registers them under Back office → Applicants:
+
+- One form opens the contact person's account (applicant role, chosen language) and the
+  organization profile, validated exactly as the applicant's own form (TIN unique, phone
+  in international form). The applicant owns the profile afterwards and edits it as if
+  they had registered online.
+- **Nobody at the office chooses or sees the password.** The applicant is e-mailed a link
+  to set it (the reset-password link, as for staff accounts); the e-mail is marked
+  verified because the Registrar saw the person and setting the password proves the
+  address. An e-mail address is therefore required; a walk-in without one cannot be
+  registered yet.
+- `users.registered_by` records who registered them (empty for online registrations), the
+  list shows it and can be filtered by it, and the audit log has `applicant.registered`
+  with the organization. The list covers every applicant so the Registrar can search
+  (name, e-mail, organization, TIN, phone) before opening a second account.
+- Registrars are staff: two-factor authentication is required. Run
+  `RolesAndPermissionsSeeder` on deploy to create the role.
+
 ### Vehicle types
 
 - Created, renamed and retired (inactive), never deleted. The **code is fixed** once created.

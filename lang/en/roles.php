@@ -25,8 +25,12 @@ return [
         'name' => 'Traffic officer',
         'summary' => 'Scan permits on the road and see their status and history.',
     ],
+    'registrar' => [
+        'name' => 'Registrar',
+        'summary' => 'Register applicants and their organisation when they come to the office in person.',
+    ],
     'admin' => [
         'name' => 'Administrator',
-        'summary' => 'Manage users, vehicle types, fee schedules and settings, view the audit log and run imports.',
+        'summary' => 'Manage users, vehicle types, fee schedules and settings, register applicants and view the audit log.',
     ],
 ];

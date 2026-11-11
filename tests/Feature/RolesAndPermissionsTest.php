@@ -40,10 +40,11 @@ it('matches the role table in the specification', function (Role $role, array $e
     'approver' => [Role::Approver, ['permits.view-queue', 'permits.approve', 'permits.revoke', 'reports.view']],
     'cashier' => [Role::Cashier, ['payments.verify', 'reports.view']],
     'traffic officer' => [Role::TrafficOfficer, ['verification.scan']],
+    'registrar' => [Role::Registrar, ['applicants.register']],
     'admin' => [Role::Admin, [
         'users.manage', 'vehicle-types.manage', 'fee-schedules.manage', 'settings.manage', 'audit-log.view',
         'permits.view-queue', 'permits.review', 'permits.approve', 'permits.revoke', 'payments.verify', 'verification.scan',
-        'reports.view',
+        'reports.view', 'applicants.register',
     ]],
 ]);
 
@@ -103,7 +104,7 @@ it('revokes a permission that the mapping no longer grants', function () {
 });
 
 it('treats every role except applicant as staff', function () {
-    expect(Role::staff())->toBe([Role::Reviewer, Role::Approver, Role::Cashier, Role::TrafficOfficer, Role::Admin])
+    expect(Role::staff())->toBe([Role::Reviewer, Role::Approver, Role::Cashier, Role::TrafficOfficer, Role::Registrar, Role::Admin])
         ->and(Role::Applicant->isStaff())->toBeFalse();
 
     foreach (Role::staff() as $role) {

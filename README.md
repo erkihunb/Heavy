@@ -39,7 +39,7 @@ history) are enforced by triggers. The tests need a second database on the same 
 `CREATE DATABASE heavy_testing;`
 
 Demo accounts (local only): `applicant@example.test`, `reviewer@…`, `approver@…`,
-`cashier@…`, `traffic_officer@…`, `admin@…` — password `password`. Staff accounts are
+`cashier@…`, `traffic_officer@…`, `registrar@…`, `admin@…` — password `password`. Staff accounts are
 sent to the two-factor setup screen on first sign-in.
 
 ## Environment variables

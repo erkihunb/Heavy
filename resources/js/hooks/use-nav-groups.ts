@@ -10,10 +10,12 @@ import { HistoryIcon } from '@solar-icons/react/linear/history';
 import { QrCodeIcon } from '@solar-icons/react/linear/qr-code';
 import { TagIcon } from '@solar-icons/react/linear/tag';
 import { Tuning2Icon } from '@solar-icons/react/linear/tuning-2';
+import { UserPlusRoundedIcon } from '@solar-icons/react/linear/user-plus-rounded';
 import { UsersGroupRoundedIcon } from '@solar-icons/react/linear/users-group-rounded';
 import { Widget2Icon } from '@solar-icons/react/linear/widget-2';
 import { useTranslation } from '@/lib/i18n';
 import { dashboard } from '@/routes';
+import { index as applicants } from '@/routes/admin/applicants';
 import { index as auditLog } from '@/routes/admin/audit-log';
 import { index as feeSchedules } from '@/routes/admin/fee-schedules';
 import { overview as systemSettings } from '@/routes/admin/settings';
@@ -110,6 +112,15 @@ export function useNavGroups(): NavGroup[] {
                               title: t('nav.reports'),
                               href: reports(),
                               icon: ChartSquareIcon,
+                          },
+                      ]
+                    : []),
+                ...(has('registrar')
+                    ? [
+                          {
+                              title: t('nav.applicants'),
+                              href: applicants(),
+                              icon: UserPlusRoundedIcon,
                           },
                       ]
                     : []),

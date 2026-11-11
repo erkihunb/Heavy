@@ -29,6 +29,9 @@ enum Permission: string
     // Traffic Officer
     case ScanPermits = 'verification.scan';
 
+    // Registrar: register applicants who come to the office in person
+    case RegisterApplicants = 'applicants.register';
+
     // Approver and Cashier: the reporting dashboard and exports
     case ViewReports = 'reports.view';
 

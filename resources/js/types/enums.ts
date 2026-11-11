@@ -40,6 +40,7 @@ export const ROLES = [
     'approver',
     'cashier',
     'traffic_officer',
+    'registrar',
     'admin',
 ] as const;
 

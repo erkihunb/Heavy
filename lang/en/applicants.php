@@ -1,0 +1,40 @@
+<?php
+
+return [
+    'title' => 'Applicants',
+    'intro' => 'Everyone registered as an applicant, online or at the office. Search before registering someone, so nobody gets two accounts.',
+    'new' => 'Register an applicant',
+    'search' => 'Search',
+    'search_placeholder' => 'Name, e-mail, organisation, TIN or phone',
+    'source' => 'Registered',
+    'any_source' => 'Online or at the office',
+    'at_office' => 'At the office',
+    'online' => 'Online, by themselves',
+    'by_staff' => 'At the office, by :name',
+    'registered' => 'Date',
+    'organization' => 'Organisation',
+    'no_organization' => 'No organisation profile yet',
+    'empty' => 'No applicants match.',
+    'create_title' => 'Register an applicant',
+    'create_intro' => 'For a person who came to the office. Check their identification and the organisation\'s documents first.',
+    'contact_title' => 'Contact person',
+    'contact_intro' => 'The person who will sign in and apply for permits.',
+    'organization_intro' => 'The company or owner the vehicles and permits belong to.',
+    'register' => 'Register',
+    'fields' => [
+        'contact_name' => 'Full name',
+        'contact_email' => 'E-mail',
+        'contact_email_hint' => 'They get a link here to choose their own password. Nobody at the office sees or sets it.',
+        'locale' => 'Language',
+    ],
+    'messages' => [
+        'registered' => 'Applicant registered. A link to set the password was sent to :email.',
+    ],
+    'mail' => [
+        'subject' => 'Your :app account',
+        'greeting' => 'Hello :name,',
+        'body' => 'You were registered at the office as an applicant for heavy-vehicle movement permits. Choose a password to sign in, then register your vehicles and apply.',
+        'action' => 'Choose a password',
+        'expiry' => 'This link works for :minutes minutes. After that, use "Forgot password" on the sign-in page.',
+    ],
+];

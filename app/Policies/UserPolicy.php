@@ -23,6 +23,14 @@ class UserPolicy
     }
 
     /**
+     * Registering applicants who come to the office (Registrar, Admin).
+     */
+    public function registerApplicant(User $user): bool
+    {
+        return $user->can(Permission::RegisterApplicants->value);
+    }
+
+    /**
      * An Admin never changes their own role, so the system always keeps at
      * least one Admin and nobody locks themselves out.
      */

@@ -13,6 +13,9 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * @property int|null $registered_by
+ */
 class User extends Authenticatable implements HasLocalePreference, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
@@ -64,6 +67,18 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    /**
+     * The Registrar or Admin who registered this applicant at the office;
+     * null for applicants who registered themselves online. Set only by
+     * the RegisterApplicant action, never from request input.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function registeredBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'registered_by');
     }
 
     /**
