@@ -2,6 +2,7 @@
 
 namespace App\Actions\Permits;
 
+use App\Domain\Notifications\PermitNotifier;
 use App\Domain\Permits\PermitTransitions;
 use App\Enums\PaymentStatus;
 use App\Enums\PermitStatus;
@@ -10,11 +11,15 @@ use App\Exceptions\PermitRuleViolation;
 use App\Models\Payment;
 use App\Models\Permit;
 use App\Models\User;
+use App\Notifications\PaymentRejected;
 use Carbon\CarbonImmutable;
 
 class RejectPayment
 {
-    public function __construct(private readonly PermitTransitions $transitions) {}
+    public function __construct(
+        private readonly PermitTransitions $transitions,
+        private readonly PermitNotifier $notifier,
+    ) {}
 
     /**
      * A cashier refuses the receipt and says why. The permit waits for
@@ -42,6 +47,8 @@ class RejectPayment
             $payment->notes = trim($note);
             $payment->save();
         });
+
+        $this->notifier->send($permit, new PaymentRejected($permit, $note));
 
         return $payment;
     }

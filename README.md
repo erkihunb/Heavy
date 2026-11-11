@@ -4,7 +4,8 @@ Permit application, review, payment, issuance and verification system for the Ad
 City Administration Traffic Management Authority.
 
 **Status:** Milestones 1 (Foundation), 2 (Organizations & Vehicles), 3 (Applications &
-Workflow), 4 (Fees & Payments) and 5 (Issuance, QR, PDF, Verification) of 9 are complete.
+Workflow), 4 (Fees & Payments), 5 (Issuance, QR, PDF, Verification) and 6 (Notifications &
+Scheduling) of 9 are complete.
 See [docs/plans/](docs/plans/) for what exists and [docs/DECISIONS.md](docs/DECISIONS.md)
 for assumptions and open questions.
 
@@ -81,5 +82,22 @@ types are only added, never overwritten. No fees are seeded outside `APP_ENV=loc
 Admin must enter the official fee schedule before the first application can be approved.
 Payment receipts are stored on the private `documents` disk (`storage/app/documents` by
 default, `PERMITS_DOCUMENTS_DISK`); it must never be web-served and must be backed up with
-the database. Queues, scheduler,
-legacy import and the production stack arrive in later milestones.
+the database. The legacy import and the production stack (Horizon, Docker images) arrive
+in later milestones.
+
+## Queue and scheduler
+
+Permit PDFs and all e-mails / SMS are queued. Run a worker and the scheduler:
+
+```bash
+php artisan queue:work               # or `composer dev`, which runs a queue listener
+php artisan schedule:work            # or cron: * * * * * php artisan schedule:run
+```
+
+| When (Africa/Addis_Ababa) | Command | What |
+|---|---|---|
+| 00:05 daily | `permits:expire` | Issued permits whose last day has passed become *expired* |
+| 08:00 daily (`PERMITS_EXPIRING_REMINDER_TIME`) | `permits:notify-expiring` | "Expires soon" e-mail + SMS, once per permit, `PERMITS_EXPIRING_REMINDER_DAYS` (7) days ahead |
+
+Both commands are safe to run by hand at any time. Until an SMS provider is chosen,
+`SMS_DRIVER=log` writes text messages to the log with the number masked.

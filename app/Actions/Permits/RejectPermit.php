@@ -2,6 +2,7 @@
 
 namespace App\Actions\Permits;
 
+use App\Domain\Notifications\PermitNotifier;
 use App\Domain\Permits\ApprovalRules;
 use App\Domain\Permits\PermitTransitions;
 use App\Enums\PermitStatus;
@@ -9,12 +10,14 @@ use App\Exceptions\InvalidPermitTransition;
 use App\Exceptions\PermitRuleViolation;
 use App\Models\Permit;
 use App\Models\User;
+use App\Notifications\PermitRejected;
 
 class RejectPermit
 {
     public function __construct(
         private readonly PermitTransitions $transitions,
         private readonly ApprovalRules $rules,
+        private readonly PermitNotifier $notifier,
     ) {}
 
     /**
@@ -30,12 +33,16 @@ class RejectPermit
             throw new PermitRuleViolation('note_required');
         }
 
-        return $this->transitions->apply(
+        $rejected = $this->transitions->apply(
             $permit,
             PermitStatus::Rejected,
             $approver,
             $note,
             fn (Permit $permit) => $this->rules->ensureMayDecide($permit, $approver),
         );
+
+        $this->notifier->send($rejected, new PermitRejected($rejected, $note));
+
+        return $rejected;
     }
 }

@@ -34,6 +34,11 @@ return [
         'timeout' => (int) env('GOTENBERG_TIMEOUT', 60),
     ],
 
+    // SMS provider (open question §14.7). Only "log" exists until a provider is chosen.
+    'sms' => [
+        'driver' => env('SMS_DRIVER', 'log'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

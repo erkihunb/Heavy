@@ -145,4 +145,22 @@ return [
     // "gotenberg" (Chromium; required in production) or "fake" (tests, machines without Gotenberg).
     'pdf_renderer' => env('PERMITS_PDF_RENDERER', 'gotenberg'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Notifications
+    |--------------------------------------------------------------------------
+    |
+    | Members of the permit's organization are e-mailed; the organization's
+    | phone also gets an SMS when `sms` is on (provider: services.sms). The
+    | "expires soon" reminder goes out once per permit, this many days before
+    | its last day, at this time of day (Africa/Addis_Ababa).
+    |
+    */
+
+    'notifications' => [
+        'sms' => (bool) env('PERMITS_NOTIFY_SMS', true),
+        'expiring_days' => (int) env('PERMITS_EXPIRING_REMINDER_DAYS', 7),
+        'reminder_time' => env('PERMITS_EXPIRING_REMINDER_TIME', '08:00'),
+    ],
+
 ];

@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Domain\Documents\FakePdfRenderer;
 use App\Domain\Documents\GotenbergPdfRenderer;
 use App\Domain\Documents\PdfRenderer;
+use App\Domain\Sms\LogSmsGateway;
+use App\Domain\Sms\SmsGateway;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use InvalidArgumentException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +26,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(SmsGateway::class, fn (): SmsGateway => match (config('services.sms.driver')) {
+            'log' => new LogSmsGateway,
+            default => throw new InvalidArgumentException('Unknown SMS_DRIVER ['.config('services.sms.driver').'].'),
+        });
+
         $this->app->bind(PdfRenderer::class, fn (): PdfRenderer => config('permits.pdf_renderer') === 'fake'
             ? new FakePdfRenderer
             : new GotenbergPdfRenderer(

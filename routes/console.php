@@ -1,8 +1,20 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+/*
+ * Scheduled tasks (spec §16), in the Authority's timezone. Run the scheduler
+ * every minute: `php artisan schedule:run` (cron) or `php artisan schedule:work`.
+ */
+
+Schedule::command('permits:expire')
+    ->dailyAt('00:05')
+    ->timezone(config('localization.display_timezone'))
+    ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::command('permits:notify-expiring')
+    ->dailyAt((string) config('permits.notifications.reminder_time'))
+    ->timezone(config('localization.display_timezone'))
+    ->withoutOverlapping()
+    ->onOneServer();

@@ -2,17 +2,22 @@
 
 namespace App\Actions\Permits;
 
+use App\Domain\Notifications\PermitNotifier;
 use App\Domain\Permits\PermitTransitions;
 use App\Enums\PermitStatus;
 use App\Exceptions\InvalidPermitTransition;
 use App\Exceptions\PermitRuleViolation;
 use App\Models\Permit;
 use App\Models\User;
+use App\Notifications\PermitRevoked;
 use Carbon\CarbonImmutable;
 
 class RevokePermit
 {
-    public function __construct(private readonly PermitTransitions $transitions) {}
+    public function __construct(
+        private readonly PermitTransitions $transitions,
+        private readonly PermitNotifier $notifier,
+    ) {}
 
     /**
      * An Approver cancels an issued permit, giving the reason. It takes
@@ -27,10 +32,14 @@ class RevokePermit
             throw new PermitRuleViolation('revocation_reason_required');
         }
 
-        return $this->transitions->apply($permit, PermitStatus::Revoked, $approver, $reason, function (Permit $permit) use ($approver, $reason): void {
+        $revoked = $this->transitions->apply($permit, PermitStatus::Revoked, $approver, $reason, function (Permit $permit) use ($approver, $reason): void {
             $permit->revoked_by = $approver->id;
             $permit->revoked_at = CarbonImmutable::now();
             $permit->revocation_reason = trim($reason);
         });
+
+        $this->notifier->send($revoked, new PermitRevoked($revoked, $reason));
+
+        return $revoked;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Permits;
 
+use App\Domain\Notifications\PermitNotifier;
 use App\Domain\Permits\ApprovalRules;
 use App\Domain\Permits\FeeCalculator;
 use App\Domain\Permits\OverlapGuard;
@@ -13,6 +14,7 @@ use App\Exceptions\OverlappingPermit;
 use App\Exceptions\PermitRuleViolation;
 use App\Models\Permit;
 use App\Models\User;
+use App\Notifications\PermitApproved;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 
@@ -27,6 +29,7 @@ class ApprovePermit
         private readonly OverlapGuard $overlap,
         private readonly PermitNumberGenerator $numbers,
         private readonly FeeCalculator $fees,
+        private readonly PermitNotifier $notifier,
     ) {}
 
     /**
@@ -40,6 +43,21 @@ class ApprovePermit
      * @throws PermitRuleViolation when the approval rules refuse, or the fee schedule has no line for this permit
      */
     public function handle(Permit $permit, User $approver, ?string $note = null): Permit
+    {
+        $approved = $this->approve($permit, $approver, $note);
+
+        // The organization is told what to pay (queued, after commit).
+        $this->notifier->send($approved, new PermitApproved($approved, $note));
+
+        return $approved;
+    }
+
+    /**
+     * @throws InvalidPermitTransition
+     * @throws OverlappingPermit
+     * @throws PermitRuleViolation
+     */
+    private function approve(Permit $permit, User $approver, ?string $note): Permit
     {
         try {
             return $this->transitions->apply($permit, PermitStatus::AwaitingPayment, $approver, $note, function (Permit $permit) use ($approver): void {

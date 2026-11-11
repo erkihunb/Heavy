@@ -516,3 +516,44 @@ Flows and diagrams: [ARCHITECTURE.md](ARCHITECTURE.md).
   not built (spec §7 Phase 2).
 - Notifications on issue / revoke → Milestone 6. A staff screen listing officer reports
   → later; reports are visible to officers on each scan.
+
+## Milestone 6 — Notifications & Scheduling
+
+Plan: [plans/milestone-6-notifications-scheduling.md](plans/milestone-6-notifications-scheduling.md).
+
+### Who is told what (spec §11)
+
+- **Recipients:** every member of the permit's organization who holds the Applicant role
+  and has **verified their e-mail**, by e-mail in their own language (`users.locale`,
+  falling back to Amharic); and the **organization's phone**, once, by SMS (in Amharic).
+  Staff are not notified. **CONFIRM** whether SMS should go to members' own phones
+  instead.
+- **Messages:** approved (with the fee to pay), changes requested and rejected (with the
+  Authority's note), receipt rejected (with the cashier's reason), issued, revoked (with
+  the reason), and expires soon. The spec's separate *PaymentVerified* is merged into
+  *PermitIssued*: verifying the payment issues the permit in the same step, so two
+  messages would say the same thing. A cashier's remark on a **verified** payment is
+  internal and is not passed on.
+- **No sensitive data in SMS:** permit number, what happened and dates only — no fee,
+  receipt number, names or links. E-mails link to the permit page (sign-in required),
+  never to the verification token.
+- All notifications are **queued**, sent **after the transaction commits** (a refused or
+  rolled-back action sends nothing), 3 tries with back-off.
+- **SMS provider (open question §14.7):** only the `SmsGateway` contract and a `log`
+  driver exist (`SMS_DRIVER=log`), which masks the phone number. A provider is added as a
+  new driver; an unknown driver fails loudly at the first message.
+- The spec's `Jobs/SendPermitNotification` is not needed: the notifications are queued
+  themselves.
+
+### Scheduling (spec §4.9, §16)
+
+- `permits:expire` daily at **00:05 Africa/Addis_Ababa**: issued permits whose last day
+  is **before today** (the last day itself still counts) become `expired`, one short
+  transaction per permit, history row with no actor, vehicles freed. Verification never
+  depended on it: `effectiveStatus()` already answers EXPIRED by date.
+- `permits:notify-expiring` daily at **08:00** (`PERMITS_EXPIRING_REMINDER_TIME`): issued
+  permits ending within `PERMITS_EXPIRING_REMINDER_DAYS` (**7**) days, today included,
+  get one reminder each (`permits.expiry_reminded_at`, claimed before sending so parallel
+  runs cannot send twice).
+- Both use `withoutOverlapping()` and `onOneServer()` (cache locks). Horizon's snapshot and
+  the database backups are scheduled with the production stack (Milestone 9).

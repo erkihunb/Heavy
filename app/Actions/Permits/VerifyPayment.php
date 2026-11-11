@@ -2,6 +2,7 @@
 
 namespace App\Actions\Permits;
 
+use App\Domain\Notifications\PermitNotifier;
 use App\Domain\Permits\PermitTransitions;
 use App\Enums\PaymentStatus;
 use App\Enums\PermitStatus;
@@ -10,6 +11,7 @@ use App\Exceptions\PermitRuleViolation;
 use App\Models\Payment;
 use App\Models\Permit;
 use App\Models\User;
+use App\Notifications\PermitIssued;
 use Carbon\CarbonImmutable;
 
 class VerifyPayment
@@ -17,6 +19,7 @@ class VerifyPayment
     public function __construct(
         private readonly PermitTransitions $transitions,
         private readonly IssuePermit $issuePermit,
+        private readonly PermitNotifier $notifier,
     ) {}
 
     /**
@@ -55,6 +58,9 @@ class VerifyPayment
             $permit->issued_at = $now;
             $this->issuePermit->handle($permit);
         });
+
+        // The cashier's remark on a verified payment is internal: not passed on.
+        $this->notifier->send($permit, new PermitIssued($permit));
 
         return $payment;
     }
