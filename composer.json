@@ -16,6 +16,8 @@
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.9",
         "openspout/openspout": "^4.28",
+        "sentry/sentry-laravel": "^4.15",
+        "spatie/laravel-activitylog": "^4.10",
         "spatie/laravel-permission": "^8.5"
     },
     "require-dev": {

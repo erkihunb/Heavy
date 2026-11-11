@@ -2,6 +2,8 @@
 
 namespace App\Actions\Permits;
 
+use App\Domain\Audit\AuditEvent;
+use App\Domain\Audit\AuditLog;
 use App\Domain\Notifications\PermitNotifier;
 use App\Domain\Permits\PermitTransitions;
 use App\Enums\PaymentStatus;
@@ -20,6 +22,7 @@ class VerifyPayment
         private readonly PermitTransitions $transitions,
         private readonly IssuePermit $issuePermit,
         private readonly PermitNotifier $notifier,
+        private readonly AuditLog $audit,
     ) {}
 
     /**
@@ -54,6 +57,12 @@ class VerifyPayment
             $payment->verified_at = $now;
             $payment->notes = filled($note) ? trim((string) $note) : null;
             $payment->save();
+
+            $this->audit->record(AuditEvent::PaymentVerified, $payment, $cashier,
+                old: ['status' => PaymentStatus::Submitted->value],
+                new: ['status' => PaymentStatus::Verified->value],
+                context: ['receipt_number' => $payment->receipt_number, 'amount_cents' => $payment->amount_cents],
+            );
 
             $permit->issued_at = $now;
             $this->issuePermit->handle($permit);

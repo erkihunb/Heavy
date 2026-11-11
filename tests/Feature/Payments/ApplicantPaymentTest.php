@@ -92,7 +92,7 @@ describe('submitting a receipt', function () {
             ->and(Storage::disk('documents')->allFiles())->toBe([]);
     })->with([
         'no method' => [['method' => ''], 'method'],
-        'legacy is not for applicants' => [['method' => 'legacy'], 'method'],
+        'an unknown method' => [['method' => 'cheque'], 'method'],
         'no receipt number' => [['receipt_number' => ''], 'receipt_number'],
         'odd receipt number' => [['receipt_number' => '#228740'], 'receipt_number'],
         'amount in words' => [['amount' => 'ስድስት ሺህ'], 'amount'],

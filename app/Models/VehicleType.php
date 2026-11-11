@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Database\Factories\VehicleTypeFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * @property int $id
@@ -41,6 +43,32 @@ class VehicleType extends Model
             'is_active' => 'boolean',
             'sort_order' => 'integer',
         ];
+    }
+
+    public const string CACHE_KEY = 'vehicle-types.v1';
+
+    protected static function booted(): void
+    {
+        // The cached list (spec §16) is dropped whenever a type changes.
+        static::saved(fn (): bool => Cache::forget(self::CACHE_KEY));
+        static::deleted(fn (): bool => Cache::forget(self::CACHE_KEY));
+    }
+
+    /**
+     * Every vehicle type, in display order, from the cache.
+     *
+     * @return Collection<int, self>
+     */
+    public static function cachedOrdered(): Collection
+    {
+        /** @var list<array<string, mixed>> $rows */
+        $rows = Cache::rememberForever(self::CACHE_KEY, fn (): array => self::query()
+            ->ordered()
+            ->get()
+            ->map(fn (self $type): array => $type->getAttributes())
+            ->all());
+
+        return self::hydrate($rows);
     }
 
     /**

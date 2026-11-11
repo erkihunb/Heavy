@@ -35,6 +35,7 @@ return [
         'mine' => 'የእኔ ኤክስፖርቶች',
         'empty' => 'እስካሁን ኤክስፖርት የለም።',
         'download' => 'ያውርዱ',
+        'refresh' => 'ያድሱ',
         'rows' => ':count ረድፎች',
         'fields' => [
             'dataset' => 'የሚወጣው',
@@ -84,7 +85,6 @@ return [
             'fee_etb' => 'ክፍያ (ብር)',
             'submitted_at' => 'የቀረበበት',
             'issued_at' => 'የተሰጠበት',
-            'legacy' => 'ምንጭ',
             'receipt_number' => 'የደረሰኝ ቁጥር',
             'method' => 'የክፍያ መንገድ',
             'amount_etb' => 'መጠን (ብር)',

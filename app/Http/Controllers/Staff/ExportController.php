@@ -10,6 +10,7 @@ use App\Http\Requests\Staff\StoreExportRequest;
 use App\Jobs\GenerateExport;
 use App\Models\Export;
 use App\Support\EthiopianCalendar;
+use App\Support\Paginated;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -50,23 +51,7 @@ class ExportController extends Controller
             ]);
 
         return Inertia::render('staff/exports/index', [
-            'exports' => [
-                'data' => $exports->items(),
-                'links' => [
-                    'first' => $exports->url(1),
-                    'last' => $exports->url($exports->lastPage()),
-                    'prev' => $exports->previousPageUrl(),
-                    'next' => $exports->nextPageUrl(),
-                ],
-                'meta' => [
-                    'current_page' => $exports->currentPage(),
-                    'last_page' => $exports->lastPage(),
-                    'per_page' => $exports->perPage(),
-                    'total' => $exports->total(),
-                    'from' => $exports->firstItem(),
-                    'to' => $exports->lastItem(),
-                ],
-            ],
+            'exports' => Paginated::present($exports),
             'datasets' => array_map(fn (ExportDataset $dataset): string => $dataset->value, ExportDataset::cases()),
             'formats' => array_map(fn (ExportFormat $format): string => $format->value, ExportFormat::cases()),
             'keepDays' => (int) config('permits.exports.keep_days'),

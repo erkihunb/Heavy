@@ -4,6 +4,7 @@ return [
     'app_name' => 'Heavy Vehicle Movement Permits',
     'authority' => 'Addis Ababa City Administration Traffic Management Authority',
     'language' => 'Language',
+    'cancel' => 'Cancel',
     'log_in' => 'Log in',
     'register' => 'Register',
     'today' => 'Today',

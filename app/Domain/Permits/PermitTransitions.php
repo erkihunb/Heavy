@@ -2,6 +2,9 @@
 
 namespace App\Domain\Permits;
 
+use App\Domain\Audit\AuditEvent;
+use App\Domain\Audit\AuditLog;
+use App\Domain\Notifications\StaffAlerts;
 use App\Enums\PermitStatus;
 use App\Exceptions\InvalidPermitTransition;
 use App\Models\Permit;
@@ -20,6 +23,8 @@ final class PermitTransitions
     public function __construct(
         private readonly PermitStateMachine $stateMachine,
         private readonly PermitVehicles $vehicles,
+        private readonly AuditLog $audit,
+        private readonly StaffAlerts $alerts,
     ) {}
 
     /**
@@ -64,7 +69,8 @@ final class PermitTransitions
     }
 
     /**
-     * Append a row to the history of the permit.
+     * Append a row to the history of the permit, and to the audit log. A step
+     * from "issued" to "issued" is a reissue (new verification token).
      */
     public function record(Permit $permit, ?PermitStatus $from, PermitStatus $to, ?User $actor, ?string $note = null): void
     {
@@ -76,5 +82,18 @@ final class PermitTransitions
         ]);
 
         $permit->unsetRelation('transitions');
+
+        $this->audit->record(
+            $from === $to ? AuditEvent::PermitReissued : AuditEvent::PermitTransition,
+            $permit,
+            $actor,
+            old: $from === null ? [] : ['status' => $from->value],
+            new: ['status' => $to->value],
+            context: array_filter(['permit_number' => $permit->permit_number]),
+        );
+
+        if ($from !== $to) {
+            $this->alerts->permitChanged($permit, $to);
+        }
     }
 }

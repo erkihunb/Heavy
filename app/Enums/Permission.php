@@ -38,5 +38,4 @@ enum Permission: string
     case ManageFeeSchedules = 'fee-schedules.manage';
     case ManageSettings = 'settings.manage';
     case ViewAuditLog = 'audit-log.view';
-    case RunImports = 'imports.run';
 }

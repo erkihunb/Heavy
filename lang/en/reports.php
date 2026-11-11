@@ -35,6 +35,7 @@ return [
         'mine' => 'My exports',
         'empty' => 'No exports yet.',
         'download' => 'Download',
+        'refresh' => 'Refresh',
         'rows' => ':count rows',
         'fields' => [
             'dataset' => 'What to export',
@@ -84,7 +85,6 @@ return [
             'fee_etb' => 'Fee (ETB)',
             'submitted_at' => 'Submitted',
             'issued_at' => 'Issued',
-            'legacy' => 'Source',
             'receipt_number' => 'Receipt number',
             'method' => 'Method',
             'amount_etb' => 'Amount (ETB)',

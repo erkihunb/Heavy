@@ -9,13 +9,16 @@ use App\Http\Middleware\EnsureUserHasOrganization;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RequireTwoFactorForStaff;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\ThrottleAuthForms;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Sentry\Laravel\Integration;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -26,7 +29,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        $middleware->encryptCookies(except: ['appearance_mode', 'sidebar_state']);
+
+        // Every response, including errors and the health check (spec §15).
+        $middleware->append(SecurityHeaders::class);
+
+        // Behind the reverse proxy that ends TLS, so that HTTPS, the client IP (rate
+        // limits, scan log) and secure cookies are seen correctly (spec §16).
+        $proxies = env('TRUSTED_PROXIES');
+
+        if (is_string($proxies) && $proxies !== '') {
+            $middleware->trustProxies(at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
+        }
 
         $middleware->alias([
             'organization' => EnsureUserHasOrganization::class,
@@ -38,9 +52,13 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+            ThrottleAuthForms::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Error tracking (spec §16); does nothing until SENTRY_LARAVEL_DSN is set.
+        Integration::handles($exceptions);
+
         // Domain exceptions become ordinary HTTP answers, so controllers stay thin.
         $exceptions->map(fn (DuplicateVehiclePlate $e) => ValidationException::withMessages([
             'plate' => $e->userMessage(),

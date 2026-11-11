@@ -10,7 +10,6 @@ return [
     'methods' => [
         'bank_deposit' => 'የባንክ ገቢ',
         'cash' => 'በባለስልጣኑ ገንዘብ ያዥ በጥሬ ገንዘብ',
-        'legacy' => 'ከቀድሞው መዝገብ የመጣ',
     ],
     'status' => [
         'submitted' => 'ማረጋገጫ በመጠባበቅ ላይ',

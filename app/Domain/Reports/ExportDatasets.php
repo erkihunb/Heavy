@@ -32,7 +32,7 @@ final class ExportDatasets
             ExportDataset::Permits => [
                 'permit_number', 'status', 'permit_type', 'organization', 'primary_plate', 'trailer_plates',
                 'vehicle_type', 'valid_from_ec', 'valid_from', 'valid_to_ec', 'valid_to', 'days', 'fee_etb',
-                'submitted_at', 'issued_at', 'legacy',
+                'submitted_at', 'issued_at',
             ],
             ExportDataset::Payments => [
                 'receipt_number', 'status', 'method', 'amount_etb', 'paid_at_ec', 'paid_at',
@@ -112,7 +112,6 @@ final class ExportDatasets
                 $permit->fee_cents === null ? null : $permit->fee_cents / 100,
                 $permit->submitted_at?->setTimezone($timezone)->format('Y-m-d H:i'),
                 $permit->issued_at?->setTimezone($timezone)->format('Y-m-d H:i'),
-                $permit->legacy_source_ref === null ? '' : 'legacy',
             ];
         }
     }

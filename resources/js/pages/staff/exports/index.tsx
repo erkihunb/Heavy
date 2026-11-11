@@ -262,7 +262,7 @@ export default function Exports({
                             onClick={() => router.reload({ only: ['exports'] })}
                         >
                             <RefreshCw aria-hidden="true" />
-                            {t('imports.refresh')}
+                            {t('reports.exports.refresh')}
                         </Button>
                     </div>
 

@@ -9,7 +9,7 @@ use Illuminate\Database\Seeder;
 /**
  * PLACEHOLDER FEES — NOT THE AUTHORITY'S TARIFF.
  *
- * The amounts are the three values that appear in the legacy spreadsheet
+ * The amounts are the three values named in the specification
  * (1,000 / 6,000 / 15,000 ETB) spread over invented duration bands, only so
  * that applications can be approved in development. The real schedule must
  * come from the Authority and be entered by an Admin (docs/DECISIONS.md,

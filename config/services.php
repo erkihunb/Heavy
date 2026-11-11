@@ -34,9 +34,27 @@ return [
         'timeout' => (int) env('GOTENBERG_TIMEOUT', 60),
     ],
 
-    // SMS provider (open question §14.7). Only "log" exists until a provider is chosen.
+    // SMS provider (open question §14.7): "log" writes messages to the log;
+    // "http" posts them as JSON to a provider's endpoint with a bearer token.
     'sms' => [
         'driver' => env('SMS_DRIVER', 'log'),
+        'http' => [
+            'url' => env('SMS_HTTP_URL'),
+            'token' => env('SMS_HTTP_TOKEN'),
+            'sender' => env('SMS_HTTP_SENDER'),
+        ],
+    ],
+
+    // Telegram alerts to a staff group chat (System settings → Telegram).
+    'telegram' => [
+        'enabled' => (bool) env('TELEGRAM_ENABLED', false),
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'chat_id' => env('TELEGRAM_CHAT_ID'),
+        'alerts' => [
+            'submitted' => true,
+            'payment_submitted' => true,
+            'revoked' => true,
+        ],
     ],
 
     'slack' => [

@@ -43,7 +43,6 @@ return new class extends Migration
             // sha256 of the verification token (Milestone 5); the token itself is never stored.
             $table->char('verification_token_hash', 64)->nullable()->unique();
             $table->string('document_path')->nullable();
-            $table->string('legacy_source_ref')->nullable()->unique();
             $table->timestamp('submitted_at')->nullable();
             $table->timestamps();
 

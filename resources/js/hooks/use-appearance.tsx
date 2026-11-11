@@ -9,6 +9,14 @@ export type UseAppearanceReturn = {
     readonly updateAppearance: (mode: Appearance) => void;
 };
 
+/**
+ * Storage and cookie names of a person's own choice. Until they choose, the
+ * default set by an Admin (System settings → Appearance) applies; it arrives
+ * as <html data-default-appearance>.
+ */
+const STORAGE_KEY = 'appearance-mode';
+const COOKIE = 'appearance_mode';
+
 const listeners = new Set<() => void>();
 let currentAppearance: Appearance = 'system';
 
@@ -24,10 +32,23 @@ const setCookie = (name: string, value: string, days = 365): void => {
     document.cookie = `${name}=${value};path=/;max-age=${maxAge};SameSite=Lax`;
 };
 
+const isAppearance = (value: unknown): value is Appearance =>
+    value === 'light' || value === 'dark' || value === 'system';
+
+const defaultAppearance = (): Appearance => {
+    if (typeof document === 'undefined') return 'system';
+
+    const value = document.documentElement.dataset.defaultAppearance;
+
+    return isAppearance(value) ? value : 'system';
+};
+
 const getStoredAppearance = (): Appearance => {
     if (typeof window === 'undefined') return 'system';
 
-    return (localStorage.getItem('appearance') as Appearance) || 'system';
+    const stored = localStorage.getItem(STORAGE_KEY);
+
+    return isAppearance(stored) ? stored : defaultAppearance();
 };
 
 const isDarkMode = (appearance: Appearance): boolean => {
@@ -62,11 +83,6 @@ const handleSystemThemeChange = (): void => applyTheme(currentAppearance);
 export function initializeTheme(): void {
     if (typeof window === 'undefined') return;
 
-    if (!localStorage.getItem('appearance')) {
-        localStorage.setItem('appearance', 'system');
-        setCookie('appearance', 'system');
-    }
-
     currentAppearance = getStoredAppearance();
     applyTheme(currentAppearance);
 
@@ -89,10 +105,10 @@ export function useAppearance(): UseAppearanceReturn {
         currentAppearance = mode;
 
         // Store in localStorage for client-side persistence...
-        localStorage.setItem('appearance', mode);
+        localStorage.setItem(STORAGE_KEY, mode);
 
         // Store in cookie for SSR...
-        setCookie('appearance', mode);
+        setCookie(COOKIE, mode);
 
         applyTheme(mode);
         notify();

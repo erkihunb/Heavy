@@ -5,11 +5,14 @@ import {
     ChartColumn,
     ClipboardList,
     FileText,
-    FileUp,
     LayoutGrid,
     Receipt,
     ScanLine,
+    ScrollText,
+    SlidersHorizontal,
+    Tags,
     Truck,
+    Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -25,8 +28,11 @@ import {
 } from '@/components/ui/sidebar';
 import { useTranslation } from '@/lib/i18n';
 import { dashboard } from '@/routes';
+import { index as auditLog } from '@/routes/admin/audit-log';
 import { index as feeSchedules } from '@/routes/admin/fee-schedules';
-import { index as imports } from '@/routes/admin/imports';
+import { overview as systemSettings } from '@/routes/admin/settings';
+import { index as users } from '@/routes/admin/users';
+import { index as vehicleTypes } from '@/routes/admin/vehicle-types';
 import { verify as officerVerify } from '@/routes/officer';
 import { show as organization } from '@/routes/organization';
 import { index as permits } from '@/routes/permits';
@@ -122,9 +128,24 @@ export function AppSidebar() {
                       icon: Receipt,
                   },
                   {
-                      title: t('nav.imports'),
-                      href: imports(),
-                      icon: FileUp,
+                      title: t('nav.users'),
+                      href: users(),
+                      icon: Users,
+                  },
+                  {
+                      title: t('nav.vehicle_types'),
+                      href: vehicleTypes(),
+                      icon: Tags,
+                  },
+                  {
+                      title: t('nav.system_settings'),
+                      href: systemSettings(),
+                      icon: SlidersHorizontal,
+                  },
+                  {
+                      title: t('nav.audit_log'),
+                      href: auditLog(),
+                      icon: ScrollText,
                   },
               ]
             : []),

@@ -41,7 +41,7 @@ it('matches the role table in the specification', function (Role $role, array $e
     'cashier' => [Role::Cashier, ['payments.verify', 'reports.view']],
     'traffic officer' => [Role::TrafficOfficer, ['verification.scan']],
     'admin' => [Role::Admin, [
-        'users.manage', 'vehicle-types.manage', 'fee-schedules.manage', 'settings.manage', 'audit-log.view', 'imports.run',
+        'users.manage', 'vehicle-types.manage', 'fee-schedules.manage', 'settings.manage', 'audit-log.view',
         'permits.view-queue', 'permits.review', 'permits.approve', 'permits.revoke', 'payments.verify', 'verification.scan',
         'reports.view',
     ]],

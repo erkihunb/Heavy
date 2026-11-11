@@ -5,7 +5,9 @@ City Administration Traffic Management Authority.
 
 **Status:** Milestones 1 (Foundation), 2 (Organizations & Vehicles), 3 (Applications &
 Workflow), 4 (Fees & Payments), 5 (Issuance, QR, PDF, Verification), 6 (Notifications &
-Scheduling), 7 (Legacy Import) and 8 (Reporting & Exports) of 9 are complete.
+Scheduling), 8 (Reporting & Exports) and 9 (Hardening & Deployment) are complete. The legacy
+Google-Form import (Milestone 7) was removed at the owner's request: organizations register
+in this system from scratch.
 See [docs/plans/](docs/plans/) for what exists and [docs/DECISIONS.md](docs/DECISIONS.md)
 for assumptions and open questions.
 
@@ -55,6 +57,14 @@ Everything is listed in `.env.example`. Project-specific ones:
 | `PERMITS_PDF_RENDERER` | `gotenberg` | `fake` on machines without Gotenberg |
 | `PERMITS_DOCUMENT_LOGO_PATH` | — | Official logo for the PDF (placeholder until set) |
 | `PERMITS_EXPORTS_KEEP_DAYS` | `7` | Days a spreadsheet export is kept before `exports:prune` deletes it |
+| `TRUSTED_PROXIES` | — | Reverse proxies in front of the app (`*` or a list of IPs) so HTTPS and client IPs are seen |
+| `SENTRY_LARAVEL_DSN` | — | Error tracking; off when empty |
+| `SMS_DRIVER` / `SMS_HTTP_*` | `log` | SMS provider defaults (also in System settings → SMS) |
+| `TELEGRAM_*` | off | Staff alert defaults (also in System settings → Telegram) |
+| `PERMITS_THEME` / `PERMITS_DEFAULT_MODE` | `forest` / `system` | Colour theme and default light/dark mode (also in System settings) |
+
+Most `PERMITS_*`, mail, SMS and Telegram values are only defaults: an Admin can override them
+in **System settings** without a deployment.
 
 ## Quality checks
 
@@ -77,28 +87,76 @@ uses, regenerate its TypeScript type: `php artisan enums:types`.
 
 ## Deploying
 
-Run `php artisan migrate --force` and `php artisan db:seed --force` on every deploy. The
-seeders are idempotent: roles and permissions are kept in sync with the code, and vehicle
-types are only added, never overwritten. No fees are seeded outside `APP_ENV=local`: an
-Admin must enter the official fee schedule before the first application can be approved.
-Payment receipts are stored on the private `documents` disk (`storage/app/documents` by
-default, `PERMITS_DOCUMENTS_DISK`); it must never be web-served and must be backed up with
-the database. The legacy import and the production stack (Horizon, Docker images) arrive
-in later milestones.
-
-## Importing the legacy Google Form data
-
-Download the sheet "Form Responses 1" as CSV (File → Download → Comma-separated values),
-then either use **Admin → Legacy import** or the command line:
+The production stack is Docker (spec §16): `Dockerfile` builds the `app` image (PHP-FPM,
+also used by the queue worker and the scheduler) and the `web` image (nginx);
+`compose.production.yaml` runs them with MariaDB, Redis, Gotenberg and a backup service.
+TLS ends at the reverse proxy or load balancer in front of `web`.
 
 ```bash
-php artisan legacy:import form-responses.csv --dry-run --user=admin@example.org   # check first
-php artisan legacy:import form-responses.csv --user=admin@example.org             # then import
+cp .env.production.example .env.production     # fill every value marked CHANGE
+docker compose -f compose.production.yaml --env-file .env.production up -d --build
+docker compose -f compose.production.yaml --env-file .env.production run --rm app php artisan migrate --force
+docker compose -f compose.production.yaml --env-file .env.production run --rm app php artisan db:seed --force
 ```
 
-Review the issues CSV of the dry run (path printed at the end; also downloadable on the
-Admin screen), add missing vehicle-type spellings to `database/import/vehicle_type_map.php`,
-and run it again. Re-running never creates duplicates. See docs/DECISIONS.md, Milestone 7.
+Open the first Admin account; the command prints a link to choose its password (demo
+users are seeded only locally):
+
+```bash
+docker compose -f compose.production.yaml --env-file .env.production run --rm app php artisan admin:create admin@example.gov.et --name="Full Name"
+```
+
+Sign in, turn on two-factor authentication, and work through **Admin → System settings**:
+the overview lists what still needs attention (placeholder restricted-hours text, e-mail
+and SMS providers, error tracking). Further staff accounts are opened in **Admin → Users**.
+
+- **Every deploy:** build, `up -d`, then `migrate --force` and `db:seed --force`. The
+  seeders are idempotent: roles and permissions follow the code; vehicle types are only
+  added. No fees are seeded outside `APP_ENV=local`: an Admin enters the official fee
+  schedule before the first application can be approved.
+- **Migrations without downtime:** add columns as nullable or with a default, backfill in a
+  job, and only then make them required; never rename or drop a column in the same deploy
+  that stops using it; build indexes on large tables in a separate deploy.
+- **Private files** (permit PDFs, receipts, exports) live on the `documents` disk in the
+  `storage` volume. It is never web-served.
+- **Health:** `GET /up` checks the database, the cache and the queue connection and answers
+  500 if one is down. The `web` container's health check uses it.
+- **Errors:** set `SENTRY_LARAVEL_DSN` to send errors to Sentry; personal data and SQL
+  values are never sent. Logs are JSON lines on stderr (`LOG_STACK=json`).
+- **Queues:** Redis with the `worker` container (`queue:work`, restarted by Docker). Horizon
+  is not used (owner's decision; see docs/DECISIONS.md, Milestone 9).
+
+### Backups and restore
+
+The `backup` service writes a database dump and an archive of the private files every day
+at `BACKUP_AT` (UTC, default 00:00 = 03:00 in Addis Ababa) to `BACKUP_PATH` (default
+`./backups`), and deletes those older than `BACKUP_RETENTION_DAYS` (30). Copy that folder to
+another machine regularly. A backup on demand:
+
+```bash
+docker compose -f compose.production.yaml --env-file .env.production exec backup /bin/bash /backup/backup.sh
+```
+
+To restore, stop the application, restore, start again and check `/up`:
+
+```bash
+docker compose -f compose.production.yaml --env-file .env.production stop app worker scheduler web
+docker compose -f compose.production.yaml --env-file .env.production exec backup /bin/bash /backup/restore.sh /backups/db-YYYYMMDD-HHMMSS.sql.gz /backups/files-YYYYMMDD-HHMMSS.tar.gz
+docker compose -f compose.production.yaml --env-file .env.production start app worker scheduler web
+```
+
+The procedure was tested on 2026-11-12: a dump of the development database restored into
+an empty database gave the same row counts and all six append-only triggers, and the
+files archive restored the documents folder.
+
+## System settings
+
+Admins change most behaviour without a deployment under **Admin → System settings**:
+general rules and the restricted-hours text, appearance and colour theme, notifications,
+e-mail (SMTP), SMS provider, Telegram staff alerts, security limits and localization. A
+saved value overrides the `.env` default at once (also in running queue workers), is
+recorded in the audit log, and secrets are stored encrypted with `APP_KEY` — rotating the
+key means entering them again. The overview page shows the state of every service.
 
 ## Queue and scheduler
 

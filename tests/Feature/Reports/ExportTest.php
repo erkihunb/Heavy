@@ -178,7 +178,7 @@ describe('building', function () {
 
         expect($rows)->toHaveCount(3)
             ->and($rows[0][0])->toBe('Permit number')
-            ->and($rows[0])->toHaveCount(16)
+            ->and($rows[0])->toHaveCount(15)
             ->and($row[3])->toBe('Abay Haulage')
             ->and($row[4])->toBe($vehicle->plate_normalized)
             ->and($row[5])->toBe($trailer->plate_normalized)

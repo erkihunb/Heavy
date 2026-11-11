@@ -43,10 +43,10 @@ return [
         'vehicles',
         'permits',
         'verification',
-        'imports',
         'reports',
         'payments',
         'fees',
+        'admin',
     ],
 
     /*

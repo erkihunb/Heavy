@@ -407,6 +407,5 @@ it('never exposes a field of the model that is not listed', function () {
         ->not->toContain('verification_token_hash')
         ->not->toContain('document_path')
         ->not->toContain('fee_cents')
-        ->not->toContain('legacy_source_ref')
         ->not->toContain('created_at');
 });

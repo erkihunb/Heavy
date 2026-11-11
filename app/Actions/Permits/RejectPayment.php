@@ -2,6 +2,8 @@
 
 namespace App\Actions\Permits;
 
+use App\Domain\Audit\AuditEvent;
+use App\Domain\Audit\AuditLog;
 use App\Domain\Notifications\PermitNotifier;
 use App\Domain\Permits\PermitTransitions;
 use App\Enums\PaymentStatus;
@@ -19,6 +21,7 @@ class RejectPayment
     public function __construct(
         private readonly PermitTransitions $transitions,
         private readonly PermitNotifier $notifier,
+        private readonly AuditLog $audit,
     ) {}
 
     /**
@@ -46,6 +49,12 @@ class RejectPayment
             $payment->verified_at = CarbonImmutable::now();
             $payment->notes = trim($note);
             $payment->save();
+
+            $this->audit->record(AuditEvent::PaymentRejected, $payment, $cashier,
+                old: ['status' => PaymentStatus::Submitted->value],
+                new: ['status' => PaymentStatus::Rejected->value],
+                context: ['receipt_number' => $payment->receipt_number, 'amount_cents' => $payment->amount_cents],
+            );
         });
 
         $this->notifier->send($permit, new PaymentRejected($permit, $note));

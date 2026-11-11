@@ -560,6 +560,12 @@ Plan: [plans/milestone-6-notifications-scheduling.md](plans/milestone-6-notifica
 
 ## Milestone 7 — Legacy Import
 
+> **Removed in Milestone 9 (owner's decision, 2026-11-12):** the owner does not need the
+> Google-Form data; every organization registers in this system from scratch. The importer,
+> its admin screen, command, tables (`import_batches`, `import_issues`), `permits.legacy_source_ref`,
+> the `legacy` payment method and the `imports.run` permission are gone (migration
+> `2026_11_19_000003_remove_legacy_import`). The notes below are kept as history only.
+
 Plan: [plans/milestone-7-legacy-import.md](plans/milestone-7-legacy-import.md).
 
 ### What is imported and how
@@ -664,3 +670,111 @@ Plan: [plans/milestone-8-reporting-exports.md](plans/milestone-8-reporting-expor
 
 - Charts are simple bars drawn in CSS; no charting library was added. PDF reports and
   scheduled (e-mailed) reports are not built.
+
+## Milestone 9 — Hardening & Deployment
+
+Plan: [plans/milestone-9-hardening-deployment.md](plans/milestone-9-hardening-deployment.md).
+
+### Owner's decisions
+
+- **Redis with plain `queue:work` workers, no Horizon** (deviation from spec §16): Horizon
+  needs the pcntl/posix PHP extensions, which Windows lacks, and the owner develops on
+  Windows. The `worker` container is restarted by Docker; failed jobs are listed with
+  `php artisan queue:failed` and counted on the System settings overview.
+- **The legacy import is removed** (see Milestone 7).
+- **The admin screens of spec §11 are built here:** users and roles, vehicle types, system
+  settings and the audit log viewer.
+
+### Security (spec §15)
+
+- **Headers on every response:** a Content-Security-Policy with a per-request nonce for
+  scripts (Vite adds it; the Vite dev server is allowed only locally), `frame-ancestors
+  'none'`, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy:
+  strict-origin-when-cross-origin` (the verification pages keep `no-referrer`),
+  `Permissions-Policy` without camera, microphone, geolocation or payment, COOP, and HSTS on
+  HTTPS in production. Styles may be inline because React sets style attributes.
+- **Session cookie** `secure` by default when `APP_URL` is HTTPS; `httpOnly` and
+  `sameSite=lax` as before. Behind a TLS-ending proxy set `TRUSTED_PROXIES`.
+- **Rate limits** added for registration, password-reset e-mails, password reset and
+  password confirmation (5 a minute and 20 an hour per form and IP). Login attempts per
+  minute are a setting (default 5).
+- **Audit log** with `spatie/laravel-activitylog`, written explicitly by the Actions (never
+  by model events): every permit transition (including system expiry, with no actor),
+  reissue, payment verification and rejection, fee schedule change, staff account
+  creation, role change, vehicle type change and settings change — who, what, when, before
+  and after. **Append-only:** database triggers refuse updates and deletes, like the permit
+  history. IPs are kept only as a keyed hash; secrets are recorded as "changed", never their
+  value; staff e-mails are not copied into entries. The activity log is always on (not an
+  `.env` switch).
+- **Plate-lock race closed** (Milestone 3 known limit): `UpdateVehicle` and `SubmitPermit`
+  lock the vehicle rows (in id order, so two submissions cannot deadlock).
+- **Staff two-factor authentication** stays a server setting
+  (`PERMITS_STAFF_TWO_FACTOR_REQUIRED`), not an Admin setting: it is non-negotiable in the
+  spec, so it cannot be switched off from the browser. The overview warns if it is off.
+
+### Users and roles
+
+- Admins open **staff** accounts only; applicants register themselves. The account gets a
+  link to choose a password (the reset-password link, valid
+  `auth.passwords.users.expire` minutes; after that "Forgot password"). The e-mail is
+  marked verified because the Admin vouches for it and choosing the password proves it.
+- One role per staff user. "No role" removes access while keeping the account for the
+  history it is part of. **An Admin cannot change their own role**, so there is always at
+  least one Admin and nobody locks themselves out. Applicants' roles are not changed here.
+- `php artisan admin:create email --name=…` opens the first Admin on a new installation and
+  prints the password link (e-mail is usually not configured yet).
+
+### Vehicle types
+
+- Created, renamed and retired (inactive), never deleted. The **code is fixed** once created.
+  The list is cached and the cache is dropped on every save.
+
+### System settings
+
+- One area with an **overview** (system, services, counts, what needs attention, last
+  change) and sections: general, appearance & themes, notifications, e-mail, SMS, Telegram,
+  security, localization (`App\Domain\Settings\SettingsRegistry`).
+- A saved value **overrides the config key** it belongs to, at boot and before every queued
+  job, so the rest of the code keeps reading `config()` and running workers see changes.
+  Defaults stay in `.env` / `config/*.php`. Only changed values are written and audited.
+- **Secrets** (SMTP password, SMS token, Telegram bot token) are encrypted with `APP_KEY`,
+  never sent to the browser, kept when the field is left empty, removable with a
+  checkbox. A secret saved under another key is ignored (the default applies) — after
+  rotating `APP_KEY`, enter them again.
+- **E-mail, SMS and Telegram** have a "send test" button that reports the provider's error.
+- **SMS:** a generic HTTP provider (JSON `{to, message, sender}` with a bearer token) next
+  to "log only". **CONFIRM** the provider (§14.7); one with a different API gets its own
+  class.
+- **Telegram:** alerts to one staff group chat when an application is submitted, a receipt
+  waits for verification or a permit is revoked. Only the permit number (or reference) and
+  a link to the back office are sent — no names, plates or phone numbers. Queued, so a slow
+  Telegram never delays the person acting.
+- **Themes:** four colour themes (forest — the original —, ocean, sunset, graphite) change
+  the brand colour only; success stays green and destructive stays red. The **default light
+  / dark mode** applies until a person chooses their own (stored under new names, so earlier
+  automatic "system" values do not hide the default).
+- **Localization:** the default language for people who have not chosen one, and the
+  display timezone (kept Africa/Addis_Ababa unless told otherwise; it decides calendar days).
+
+### Operations (spec §16)
+
+- **Health:** `/up` also checks the database, the cache and the queue connection.
+- **Error tracking:** `sentry/sentry-laravel`, off until `SENTRY_LARAVEL_DSN` is set; personal
+  data and SQL bindings are never sent (pinned in `config/sentry.php`, not `.env`).
+- **Logs:** a `json` channel (JSON lines on stderr) for production.
+- **Docker:** a multi-stage `Dockerfile` (`app` PHP-FPM 8.4 with opcache, `web` nginx) and
+  `compose.production.yaml` (app, web, worker, scheduler, mariadb, redis, gotenberg, backup).
+  TLS ends at a reverse proxy. `REDIS_QUEUE_RETRY_AFTER` is longer than the longest job.
+- **Backups:** daily database dump (single transaction, triggers included, DEFINERs
+  stripped) and private-files archive, kept 30 days, by the `backup` service; restore script
+  and procedure in README. **Tested on 2026-11-12** against the development database: same
+  row counts and all six triggers after restoring into an empty database.
+- **Caching:** settings, vehicle types and fee schedules are cached and dropped on change;
+  verification results are never cached.
+- **CONFIRM** the hosting environment and data residency (§14.8): the stack runs anywhere
+  Docker does, on-premises included.
+
+### Not built
+
+- Off-site copying of backups (copy `BACKUP_PATH` to another machine; depends on hosting).
+- Horizon dashboard (see above). Offline verification (Phase 2, ARCHITECTURE.md).

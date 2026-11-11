@@ -16,7 +16,13 @@ class HandleAppearance
      */
     public function handle(Request $request, Closure $next): Response
     {
-        View::share('appearance', $request->cookie('appearance') ?? 'system');
+        // A person's own choice, otherwise the default an Admin set (System settings → Appearance).
+        $choice = $request->cookie('appearance_mode');
+        $default = (string) config('permits.appearance.default_mode', 'system');
+
+        View::share('appearance', in_array($choice, ['light', 'dark', 'system'], true) ? $choice : $default);
+        View::share('defaultAppearance', $default);
+        View::share('theme', (string) config('permits.appearance.theme', 'forest'));
 
         return $next($request);
     }

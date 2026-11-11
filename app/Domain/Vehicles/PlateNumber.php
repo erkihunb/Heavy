@@ -18,7 +18,7 @@ final readonly class PlateNumber implements Stringable
 {
     /**
      * Characters treated as a separator between the three parts: every Unicode
-     * dash, whitespace and the underscore (seen in the legacy sheet).
+     * dash, whitespace and the underscore (as people type them).
      */
     private const string SEPARATORS = '/[\p{Pd}\x{2212}\s_]+/u';
 

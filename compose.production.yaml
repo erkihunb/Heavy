@@ -1,0 +1,119 @@
+# Production-like stack (spec §16). Run with the production environment file:
+#
+#   docker compose -f compose.production.yaml --env-file .env.production up -d --build
+#   docker compose -f compose.production.yaml --env-file .env.production run --rm app php artisan migrate --force
+#
+# Services: app (PHP-FPM), web (nginx), worker (queue), scheduler, mariadb,
+# redis, gotenberg (PDF) and backup (daily dump + files, 30 days).
+# TLS ends at a reverse proxy in front of "web" (set TRUSTED_PROXIES).
+# See README.md → Deploying.
+
+name: heavy
+
+x-app: &app
+    image: heavy-app:${APP_VERSION:-latest}
+    build:
+        context: .
+        target: app
+    env_file: .env.production
+    restart: unless-stopped
+    volumes:
+        - storage:/var/www/html/storage
+    depends_on:
+        mariadb:
+            condition: service_healthy
+        redis:
+            condition: service_healthy
+
+services:
+    app:
+        <<: *app
+
+    worker:
+        <<: *app
+        # Longer than any job's timeout (exports: 30 minutes), so a job is never run twice.
+        command: ['php', 'artisan', 'queue:work', 'redis', '--sleep=3', '--tries=3', '--max-time=3600', '--memory=256']
+        stop_grace_period: 60s
+        healthcheck:
+            disable: true
+
+    scheduler:
+        <<: *app
+        command: ['php', 'artisan', 'schedule:work']
+        healthcheck:
+            disable: true
+
+    web:
+        image: heavy-web:${APP_VERSION:-latest}
+        build:
+            context: .
+            target: web
+        restart: unless-stopped
+        ports:
+            - '${HTTP_BIND:-127.0.0.1}:${HTTP_PORT:-8080}:80'
+        depends_on:
+            - app
+        healthcheck:
+            test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1/up']
+            interval: 30s
+            timeout: 5s
+            retries: 3
+
+    mariadb:
+        image: mariadb:10.11
+        restart: unless-stopped
+        environment:
+            MARIADB_DATABASE: ${DB_DATABASE}
+            MARIADB_USER: ${DB_USERNAME}
+            MARIADB_PASSWORD: ${DB_PASSWORD}
+            MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+        command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
+        volumes:
+            - mariadb-data:/var/lib/mysql
+        healthcheck:
+            test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+            interval: 10s
+            timeout: 5s
+            retries: 10
+
+    redis:
+        image: redis:7-alpine
+        restart: unless-stopped
+        command: ['redis-server', '--appendonly', 'yes', '--requirepass', '${REDIS_PASSWORD}']
+        volumes:
+            - redis-data:/data
+        healthcheck:
+            test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning ping | grep PONG']
+            interval: 10s
+            timeout: 5s
+            retries: 10
+        environment:
+            REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+    gotenberg:
+        image: gotenberg/gotenberg:8
+        restart: unless-stopped
+
+    backup:
+        image: mariadb:10.11
+        restart: unless-stopped
+        entrypoint: ['/bin/bash', '/backup/backup.sh', '--loop']
+        environment:
+            DB_HOST: mariadb
+            DB_DATABASE: ${DB_DATABASE}
+            DB_USERNAME: ${DB_USERNAME}
+            DB_PASSWORD: ${DB_PASSWORD}
+            BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+            BACKUP_AT: ${BACKUP_AT:-00:00}
+        volumes:
+            - ./docker/backup:/backup:ro
+            - storage:/storage
+            - ${BACKUP_PATH:-./backups}:/backups
+        depends_on:
+            mariadb:
+                condition: service_healthy
+
+volumes:
+    storage:
+    mariadb-data:
+    redis-data:

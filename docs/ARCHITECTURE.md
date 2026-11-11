@@ -120,6 +120,41 @@ sequenceDiagram
   traffic officer (or Admin) gets the Inertia officer view of the same scan, with
   history, recent scans, reports and a report form.
 
+## Audit log and settings
+
+```mermaid
+flowchart LR
+    A[Action<br/>ApprovePermit, VerifyPayment,<br/>ChangeUserRole, SystemSettings…] -->|in the same transaction| H[(permit_status_transitions)]
+    A -->|AuditLog::record| L[(activity_log<br/>append-only triggers)]
+    A -->|after commit| N[Notifications<br/>mail · SMS]
+    A -->|after commit| T[SendTelegramMessage job]
+    S[(settings)] -->|boot + every queued job| C[config&#40;&#41;]
+    C --> A
+```
+
+- Actions record who, what, before and after; database triggers refuse updates and deletes.
+- Saved settings override `config()` keys; secrets are encrypted with `APP_KEY`.
+
+## Deployment
+
+```mermaid
+flowchart LR
+    U[Browser / phone] -->|HTTPS| P[Reverse proxy<br/>TLS]
+    P -->|HTTP| W[web<br/>nginx]
+    W -->|FastCGI| APP[app<br/>PHP-FPM]
+    APP --> DB[(mariadb)]
+    APP --> R[(redis<br/>cache · sessions · queue)]
+    WK[worker<br/>queue:work] --> R
+    WK --> DB
+    WK --> G[gotenberg<br/>PDF]
+    SC[scheduler<br/>schedule:work] --> R
+    APP & WK & SC --- V[(storage volume<br/>private documents)]
+    B[backup<br/>daily dump + files] --> DB
+    B --- V
+```
+
+`/up` checks the database, the cache and the queue. Errors go to Sentry when a DSN is set.
+
 ## Phase 2: offline verification (designed, not built)
 
 For roadside checks without a network, the QR code would carry a compact signed payload

@@ -3,7 +3,10 @@
 namespace App\Actions\Fees;
 
 use App\Data\FeeScheduleData;
+use App\Domain\Audit\AuditEvent;
+use App\Domain\Audit\AuditLog;
 use App\Models\FeeSchedule;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -22,7 +25,9 @@ class SaveFeeSchedule
      *
      * @throws ValidationException when the line overlaps another
      */
-    public function handle(FeeScheduleData $data, ?FeeSchedule $schedule = null): FeeSchedule
+    public function __construct(private readonly AuditLog $audit) {}
+
+    public function handle(FeeScheduleData $data, ?FeeSchedule $schedule = null, ?User $actor = null): FeeSchedule
     {
         // Serialise changes to the schedule so two Admins cannot both pass the
         // overlap check. A named lock is used because LOCK TABLES would end the
@@ -32,15 +37,15 @@ class SaveFeeSchedule
         }
 
         try {
-            return $this->save($data, $schedule);
+            return $this->save($data, $schedule, $actor);
         } finally {
             DB::scalar('SELECT RELEASE_LOCK(?)', [self::LOCK]);
         }
     }
 
-    private function save(FeeScheduleData $data, ?FeeSchedule $schedule): FeeSchedule
+    private function save(FeeScheduleData $data, ?FeeSchedule $schedule, ?User $actor): FeeSchedule
     {
-        return DB::transaction(function () use ($data, $schedule): FeeSchedule {
+        return DB::transaction(function () use ($data, $schedule, $actor): FeeSchedule {
             if ($this->overlaps($data, $schedule)) {
                 throw ValidationException::withMessages([
                     'min_days' => __('fees.errors.overlap'),
@@ -48,6 +53,7 @@ class SaveFeeSchedule
             }
 
             $schedule ??= new FeeSchedule;
+            $old = $schedule->exists ? $this->audited($schedule) : [];
 
             $schedule->fill([
                 'permit_type' => $data->permitType,
@@ -59,8 +65,26 @@ class SaveFeeSchedule
                 'effective_to' => $data->effectiveTo?->toDateString(),
             ])->save();
 
+            $this->audit->record(AuditEvent::FeeScheduleSaved, $schedule, $actor, old: $old, new: $this->audited($schedule->refresh()));
+
             return $schedule;
         });
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function audited(FeeSchedule $schedule): array
+    {
+        return [
+            'permit_type' => $schedule->permit_type->value,
+            'vehicle_type_id' => $schedule->vehicle_type_id,
+            'min_days' => $schedule->min_days,
+            'max_days' => $schedule->max_days,
+            'amount_cents' => $schedule->amount_cents,
+            'effective_from' => $schedule->effective_from->toDateString(),
+            'effective_to' => $schedule->effective_to?->toDateString(),
+        ];
     }
 
     private function overlaps(FeeScheduleData $data, ?FeeSchedule $except): bool

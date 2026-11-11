@@ -41,7 +41,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $revocation_reason
  * @property string|null $verification_token_hash
  * @property string|null $document_path
- * @property string|null $legacy_source_ref
  * @property CarbonImmutable|null $submitted_at
  * @property CarbonImmutable|null $created_at
  */

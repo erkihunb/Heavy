@@ -239,6 +239,119 @@
     --sidebar-ring: oklch(0.76 0.16 150);
 }
 
+/*
+ * Colour themes (System settings → Appearance), set on <html data-theme>.
+ * "forest" is the default above. A theme changes the brand colour only:
+ * success stays green and destructive stays red, because they carry meaning.
+ */
+:root[data-theme='ocean'] {
+    --primary: oklch(0.47 0.13 245);
+    --ring: oklch(0.47 0.13 245);
+    --accent: oklch(0.6 0.13 245 / 0.18);
+    --accent-foreground: oklch(0.3 0.09 245);
+    --highlight: oklch(0.82 0.11 230);
+    --brand-surface: oklch(0.31 0.07 245);
+    --chart-1: oklch(0.47 0.13 245);
+    --chart-3: oklch(0.7 0.12 235);
+    --chart-5: oklch(0.82 0.07 235);
+    --backdrop-a: oklch(0.84 0.1 235 / 0.75);
+    --backdrop-c: oklch(0.8 0.11 250 / 0.5);
+    --glass-shadow: oklch(0.3 0.06 245 / 0.16);
+    --sidebar-primary: oklch(0.47 0.13 245);
+    --sidebar-accent: oklch(0.6 0.13 245 / 0.16);
+    --sidebar-accent-foreground: oklch(0.24 0.04 245);
+    --sidebar-ring: oklch(0.47 0.13 245);
+}
+
+:root[data-theme='ocean'].dark {
+    --primary: oklch(0.75 0.13 240);
+    --primary-foreground: oklch(0.18 0.03 245);
+    --ring: oklch(0.75 0.13 240);
+    --accent: oklch(0.7 0.13 240 / 0.18);
+    --accent-foreground: oklch(0.93 0.05 240);
+    --brand-surface: oklch(0.25 0.055 245);
+    --chart-1: oklch(0.75 0.13 240);
+    --backdrop-a: oklch(0.45 0.11 245 / 0.55);
+    --backdrop-c: oklch(0.5 0.12 250 / 0.3);
+    --sidebar-primary: oklch(0.75 0.13 240);
+    --sidebar-primary-foreground: oklch(0.18 0.03 245);
+    --sidebar-accent: oklch(0.7 0.13 240 / 0.16);
+    --sidebar-accent-foreground: oklch(0.985 0.002 240);
+    --sidebar-ring: oklch(0.75 0.13 240);
+}
+
+:root[data-theme='sunset'] {
+    --primary: oklch(0.52 0.15 45);
+    --ring: oklch(0.52 0.15 45);
+    --accent: oklch(0.65 0.14 55 / 0.2);
+    --accent-foreground: oklch(0.32 0.09 45);
+    --highlight: oklch(0.85 0.14 80);
+    --brand-surface: oklch(0.33 0.08 45);
+    --chart-1: oklch(0.52 0.15 45);
+    --chart-3: oklch(0.72 0.14 60);
+    --chart-5: oklch(0.85 0.08 70);
+    --backdrop-a: oklch(0.86 0.11 70 / 0.75);
+    --backdrop-c: oklch(0.82 0.1 40 / 0.5);
+    --glass-shadow: oklch(0.32 0.06 45 / 0.16);
+    --sidebar-primary: oklch(0.52 0.15 45);
+    --sidebar-accent: oklch(0.65 0.14 55 / 0.16);
+    --sidebar-accent-foreground: oklch(0.26 0.05 45);
+    --sidebar-ring: oklch(0.52 0.15 45);
+}
+
+:root[data-theme='sunset'].dark {
+    --primary: oklch(0.78 0.14 60);
+    --primary-foreground: oklch(0.2 0.04 45);
+    --ring: oklch(0.78 0.14 60);
+    --accent: oklch(0.72 0.14 55 / 0.18);
+    --accent-foreground: oklch(0.94 0.05 60);
+    --brand-surface: oklch(0.26 0.06 45);
+    --chart-1: oklch(0.78 0.14 60);
+    --backdrop-a: oklch(0.47 0.11 50 / 0.55);
+    --backdrop-c: oklch(0.5 0.12 35 / 0.3);
+    --sidebar-primary: oklch(0.78 0.14 60);
+    --sidebar-primary-foreground: oklch(0.2 0.04 45);
+    --sidebar-accent: oklch(0.72 0.14 55 / 0.16);
+    --sidebar-accent-foreground: oklch(0.985 0.002 60);
+    --sidebar-ring: oklch(0.78 0.14 60);
+}
+
+:root[data-theme='graphite'] {
+    --primary: oklch(0.32 0.01 260);
+    --ring: oklch(0.32 0.01 260);
+    --accent: oklch(0.5 0.01 260 / 0.14);
+    --accent-foreground: oklch(0.26 0.01 260);
+    --highlight: oklch(0.86 0.02 260);
+    --brand-surface: oklch(0.27 0.01 260);
+    --chart-1: oklch(0.32 0.01 260);
+    --chart-3: oklch(0.6 0.01 260);
+    --chart-5: oklch(0.82 0.01 260);
+    --backdrop-a: oklch(0.86 0.01 260 / 0.75);
+    --backdrop-c: oklch(0.82 0.01 260 / 0.5);
+    --glass-shadow: oklch(0.3 0.01 260 / 0.16);
+    --sidebar-primary: oklch(0.32 0.01 260);
+    --sidebar-accent: oklch(0.5 0.01 260 / 0.12);
+    --sidebar-accent-foreground: oklch(0.24 0.01 260);
+    --sidebar-ring: oklch(0.32 0.01 260);
+}
+
+:root[data-theme='graphite'].dark {
+    --primary: oklch(0.88 0.005 260);
+    --primary-foreground: oklch(0.2 0.005 260);
+    --ring: oklch(0.88 0.005 260);
+    --accent: oklch(0.8 0.005 260 / 0.14);
+    --accent-foreground: oklch(0.95 0.005 260);
+    --brand-surface: oklch(0.24 0.005 260);
+    --chart-1: oklch(0.88 0.005 260);
+    --backdrop-a: oklch(0.4 0.01 260 / 0.5);
+    --backdrop-c: oklch(0.45 0.01 260 / 0.3);
+    --sidebar-primary: oklch(0.88 0.005 260);
+    --sidebar-primary-foreground: oklch(0.2 0.005 260);
+    --sidebar-accent: oklch(0.8 0.005 260 / 0.12);
+    --sidebar-accent-foreground: oklch(0.985 0.002 260);
+    --sidebar-ring: oklch(0.88 0.005 260);
+}
+
 @layer base {
     * {
         @apply border-border;

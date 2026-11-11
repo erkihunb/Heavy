@@ -114,12 +114,9 @@ class VehicleController extends Controller
     private function vehicleTypes(?int $alwaysInclude = null): AnonymousResourceCollection
     {
         return VehicleTypeResource::collection(
-            VehicleType::query()
-                ->where(fn (Builder $query) => $query
-                    ->where('is_active', true)
-                    ->when($alwaysInclude !== null, fn (Builder $query) => $query->orWhere('id', $alwaysInclude)))
-                ->ordered()
-                ->get(),
+            VehicleType::cachedOrdered()
+                ->filter(fn (VehicleType $type): bool => $type->is_active || $type->id === $alwaysInclude)
+                ->values(),
         );
     }
 

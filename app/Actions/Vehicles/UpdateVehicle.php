@@ -27,6 +27,10 @@ class UpdateVehicle
 
         try {
             DB::transaction(function () use ($vehicle, $data): void {
+                // SubmitPermit locks the same row, so a plate change and the submission of
+                // an application with this vehicle cannot interleave.
+                Vehicle::query()->whereKey($vehicle->id)->lockForUpdate()->first();
+
                 if ($data->plate->normalized !== $vehicle->plate_normalized && $vehicle->hasLockedPlate()) {
                     throw new VehiclePlateLocked($vehicle->plate_normalized);
                 }

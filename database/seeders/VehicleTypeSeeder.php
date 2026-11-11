@@ -7,8 +7,8 @@ use Illuminate\Database\Seeder;
 
 /**
  * PLACEHOLDER LIST. These are only the vehicle types named in the
- * specification's legacy-import mapping; the full list must come from the
- * Authority (docs/DECISIONS.md) and will be maintained by an Admin.
+ * specification; the full list must come from the
+ * Authority (docs/DECISIONS.md) and is maintained by an Admin.
  *
  * Idempotent: a type that already exists is left untouched, so edits made by
  * an Admin survive re-seeding.

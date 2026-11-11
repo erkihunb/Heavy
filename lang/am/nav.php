@@ -11,6 +11,9 @@ return [
     'review_queue' => 'የግምገማ ወረፋ',
     'payments' => 'ክፍያዎች',
     'fee_schedules' => 'የክፍያ ተመን',
-    'imports' => 'የቀድሞ መዝገብ',
     'reports' => 'ሪፖርቶች',
+    'users' => 'ተጠቃሚዎች',
+    'vehicle_types' => 'የተሽከርካሪ ዓይነቶች',
+    'system_settings' => 'የሥርዓት ቅንብሮች',
+    'audit_log' => 'የኦዲት መዝገብ',
 ];

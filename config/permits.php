@@ -163,9 +163,40 @@ return [
     ],
 
     'notifications' => [
+        'mail' => (bool) env('PERMITS_NOTIFY_MAIL', true),
         'sms' => (bool) env('PERMITS_NOTIFY_SMS', true),
         'expiring_days' => (int) env('PERMITS_EXPIRING_REMINDER_DAYS', 7),
         'reminder_time' => env('PERMITS_EXPIRING_REMINDER_TIME', '08:00'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Appearance
+    |--------------------------------------------------------------------------
+    |
+    | The colour theme of the whole system and the light / dark mode a person
+    | sees until they choose their own (System settings → Appearance).
+    |
+    */
+
+    'appearance' => [
+        'theme' => env('PERMITS_THEME', 'forest'),
+        'default_mode' => env('PERMITS_DEFAULT_MODE', 'system'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Security
+    |--------------------------------------------------------------------------
+    |
+    | Password length required in production and login attempts allowed per
+    | minute for one e-mail address and IP (spec §15).
+    |
+    */
+
+    'security' => [
+        'password_min_length' => (int) env('PERMITS_PASSWORD_MIN_LENGTH', 12),
+        'login_per_minute' => (int) env('PERMITS_LOGIN_PER_MINUTE', 5),
     ],
 
 ];

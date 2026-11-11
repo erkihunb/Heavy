@@ -10,7 +10,6 @@ return [
     'methods' => [
         'bank_deposit' => 'Bank deposit',
         'cash' => 'Cash at the Authority',
-        'legacy' => 'Imported record',
     ],
     'status' => [
         'submitted' => 'Waiting for verification',

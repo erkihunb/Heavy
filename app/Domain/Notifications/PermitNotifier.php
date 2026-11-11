@@ -23,7 +23,7 @@ final class PermitNotifier
             ->role(Role::Applicant->value)
             ->get();
 
-        if ($members->isNotEmpty()) {
+        if (config('permits.notifications.mail') && $members->isNotEmpty()) {
             Notification::send($members, $notification);
         }
 

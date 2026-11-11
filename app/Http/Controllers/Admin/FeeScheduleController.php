@@ -60,7 +60,7 @@ class FeeScheduleController extends Controller
 
     public function store(FeeScheduleRequest $request, SaveFeeSchedule $saveFeeSchedule): RedirectResponse
     {
-        $saveFeeSchedule->handle($request->toData());
+        $saveFeeSchedule->handle($request->toData(), actor: $request->user());
 
         return to_route('admin.fee-schedules.index')->with('success', __('fees.messages.saved'));
     }
@@ -77,13 +77,13 @@ class FeeScheduleController extends Controller
 
     public function update(FeeScheduleRequest $request, FeeSchedule $feeSchedule, SaveFeeSchedule $saveFeeSchedule): RedirectResponse
     {
-        $saveFeeSchedule->handle($request->toData(), $feeSchedule);
+        $saveFeeSchedule->handle($request->toData(), $feeSchedule, $request->user());
 
         return to_route('admin.fee-schedules.index')->with('success', __('fees.messages.saved'));
     }
 
     private function vehicleTypes(): AnonymousResourceCollection
     {
-        return VehicleTypeResource::collection(VehicleType::query()->ordered()->get());
+        return VehicleTypeResource::collection(VehicleType::cachedOrdered());
     }
 }

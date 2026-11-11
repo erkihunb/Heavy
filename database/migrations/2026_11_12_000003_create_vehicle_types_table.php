@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('vehicle_types', function (Blueprint $table) {
             $table->id();
-            // Stable machine name, e.g. "cargo"; referenced by fee schedules and the legacy import.
+            // Stable machine name, e.g. "cargo"; never changes once created.
             $table->string('code', 50)->unique();
             $table->string('name_am');
             $table->string('name_en');
