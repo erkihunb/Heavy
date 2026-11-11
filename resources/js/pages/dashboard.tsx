@@ -48,7 +48,7 @@ function StatusLine({
                     'flex size-10 shrink-0 items-center justify-center rounded-xl',
                     ok
                         ? 'bg-accent text-accent-foreground'
-                        : 'bg-signal text-signal-foreground',
+                        : 'bg-highlight text-highlight-foreground',
                 )}
             >
                 <Icon aria-hidden="true" className="size-5" />
@@ -78,7 +78,7 @@ export default function Dashboard({ account, registration }: Props) {
                 {/* Greeting */}
                 <section className="flex animate-rise flex-col gap-6 rounded-3xl border border-transparent surface-asphalt p-6 sm:p-8 dark:border-border">
                     <div className="space-y-4">
-                        <p className="inline-flex items-center gap-2 rounded-full bg-signal px-3 py-1.5 text-eyebrow text-signal-foreground">
+                        <p className="inline-flex items-center gap-2 rounded-full bg-highlight px-3 py-1.5 text-eyebrow text-highlight-foreground">
                             <UserRound
                                 aria-hidden="true"
                                 className="size-3.5"
@@ -89,13 +89,13 @@ export default function Dashboard({ account, registration }: Props) {
                             {t('dashboard.greeting', { name: auth.user.name })}
                         </h1>
                         <div
-                            className="hidden lane-dash w-48 text-signal md:block"
+                            className="hidden lane-dash w-48 text-highlight md:block"
                             aria-hidden="true"
                         />
                     </div>
 
                     <div className="space-y-1 md:hidden">
-                        <p className="text-eyebrow text-signal">
+                        <p className="text-eyebrow text-highlight">
                             {t('common.today')}
                         </p>
                         <p className="text-2xl font-extrabold">
@@ -113,7 +113,7 @@ export default function Dashboard({ account, registration }: Props) {
                 {registration && (
                     <section
                         aria-labelledby="next-title"
-                        className="flex animate-rise flex-col gap-5 rounded-3xl border-2 border-foreground bg-card p-6 [animation-delay:60ms] sm:flex-row sm:items-center sm:justify-between sm:p-7"
+                        className="flex animate-rise flex-col gap-5 rounded-3xl border border-border bg-card p-6 [animation-delay:60ms] sm:flex-row sm:items-center sm:justify-between sm:p-7"
                     >
                         <div className="space-y-1.5">
                             <p className="text-eyebrow text-muted-foreground">
@@ -138,7 +138,7 @@ export default function Dashboard({ account, registration }: Props) {
                         <Button
                             asChild
                             size="lg"
-                            className="shrink-0 shadow-plate hover:-translate-y-0.5"
+                            className="shrink-0 shadow-raised hover:-translate-y-0.5"
                         >
                             {registration.hasOrganization ? (
                                 <Link href={registerVehicle()}>
@@ -158,7 +158,7 @@ export default function Dashboard({ account, registration }: Props) {
                 {/* What is not available yet */}
                 <section
                     aria-labelledby="notice-title"
-                    className="flex animate-rise gap-4 rounded-2xl border-2 border-foreground bg-signal/20 p-5 [animation-delay:80ms]"
+                    className="flex animate-rise gap-4 rounded-2xl border border-border bg-muted p-5 [animation-delay:80ms]"
                 >
                     <Info
                         aria-hidden="true"

@@ -41,7 +41,7 @@ export function ProcessSteps({
                 aria-hidden="true"
                 className={cn(
                     'absolute top-[1.625rem] right-[10%] left-[10%] hidden lane-dash lg:block',
-                    onAsphalt ? 'text-signal/70' : 'text-foreground/25',
+                    onAsphalt ? 'text-highlight/70' : 'text-foreground/25',
                 )}
             />
 
@@ -55,8 +55,8 @@ export function ProcessSteps({
                             className={cn(
                                 'relative flex size-14 shrink-0 items-center justify-center rounded-2xl border-2',
                                 onAsphalt
-                                    ? 'border-signal bg-asphalt text-signal'
-                                    : 'border-foreground bg-signal text-signal-foreground',
+                                    ? 'border-highlight bg-asphalt text-highlight'
+                                    : 'border-foreground bg-highlight text-highlight-foreground',
                             )}
                         >
                             <Icon aria-hidden="true" className="size-6" />
@@ -65,7 +65,7 @@ export function ProcessSteps({
                                 className={cn(
                                     'absolute -top-2.5 -right-2.5 flex size-6 items-center justify-center rounded-full text-xs font-extrabold tabular-nums',
                                     onAsphalt
-                                        ? 'bg-signal text-signal-foreground'
+                                        ? 'bg-highlight text-highlight-foreground'
                                         : 'bg-foreground text-background',
                                 )}
                             >

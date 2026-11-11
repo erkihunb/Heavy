@@ -15,7 +15,7 @@ export function PlateChip({
         <span
             translate="no"
             className={cn(
-                'inline-flex items-center rounded-lg border-2 border-foreground bg-card px-3 py-1 text-base font-extrabold tracking-[0.08em] whitespace-nowrap text-foreground tabular-nums',
+                'inline-flex items-center rounded-lg border border-border bg-card px-3 py-1 text-base font-extrabold tracking-[0.08em] whitespace-nowrap text-foreground tabular-nums',
                 className,
             )}
         >

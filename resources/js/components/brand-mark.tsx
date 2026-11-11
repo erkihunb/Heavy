@@ -21,7 +21,7 @@ export function BrandMark(props: SVGAttributes<SVGElement>) {
                 width="60"
                 height="60"
                 rx="14"
-                fill="var(--signal)"
+                fill="var(--highlight)"
                 stroke="var(--asphalt)"
                 strokeWidth="4"
             />
@@ -31,7 +31,7 @@ export function BrandMark(props: SVGAttributes<SVGElement>) {
                 <circle cx="20" cy="43" r="5" />
                 <circle cx="44" cy="43" r="5" />
             </g>
-            <g fill="var(--signal)">
+            <g fill="var(--highlight)">
                 <circle cx="20" cy="43" r="2" />
                 <circle cx="44" cy="43" r="2" />
             </g>

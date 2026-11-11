@@ -42,13 +42,13 @@ export default function AuthSplitLayout({
                         {t('common.welcome.title')}
                     </p>
                     <div
-                        className="lane-dash max-w-xs text-signal"
+                        className="lane-dash max-w-xs text-highlight"
                         aria-hidden="true"
                     />
                     <ul className="space-y-5">
                         {highlights.map(({ key, icon: Icon }) => (
                             <li key={key} className="flex items-center gap-4">
-                                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border-2 border-signal text-signal">
+                                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border-2 border-highlight text-highlight">
                                     <Icon
                                         aria-hidden="true"
                                         className="size-5"
@@ -69,7 +69,7 @@ export default function AuthSplitLayout({
 
             {/* Form side */}
             <div className="flex min-w-0 flex-col">
-                <div className="hazard-stripe lg:hidden" aria-hidden="true" />
+                <div className="brand-bar lg:hidden" aria-hidden="true" />
 
                 <header className="flex items-center justify-between gap-3 px-4 py-4 sm:px-8">
                     <Link

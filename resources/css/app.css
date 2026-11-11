@@ -11,12 +11,11 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Visual language: road signage.
- * Asphalt neutrals, a permit green for primary actions, and one signal amber
- * used sparingly as the accent. Shapes are sign-like: generous corner radius,
- * confident borders, hard (unblurred) shadows on the few elements that should
- * feel like physical plates. The lane-dash and hazard-stripe motifs replace
- * generic decoration.
+ * Visual language: brand green on neutral gray.
+ * Graphite grays carry structure and text, the brand green marks primary
+ * actions and active state, and a brighter green is the highlight on dark
+ * surfaces. Shapes are calm: hairline borders, soft shadows, generous radius.
+ * The lane-dash divider is the one road motif that remains.
  */
 @theme {
     --font-sans:
@@ -60,8 +59,8 @@
     --color-ring: var(--ring);
 
     /* Brand colours beyond the component tokens. */
-    --color-signal: var(--signal);
-    --color-signal-foreground: var(--signal-foreground);
+    --color-highlight: var(--highlight);
+    --color-highlight-foreground: var(--highlight-foreground);
     --color-asphalt: var(--asphalt);
     --color-asphalt-foreground: var(--asphalt-foreground);
     --color-asphalt-muted: var(--asphalt-muted);
@@ -100,107 +99,107 @@
 }
 
 :root {
-    /* Warm paper, asphalt ink. */
-    --background: oklch(0.985 0.006 95);
-    --foreground: oklch(0.21 0.015 255);
+    /* Near-white gray paper, graphite ink. */
+    --background: oklch(0.985 0.002 160);
+    --foreground: oklch(0.24 0.006 160);
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.21 0.015 255);
+    --card-foreground: oklch(0.24 0.006 160);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.21 0.015 255);
+    --popover-foreground: oklch(0.24 0.006 160);
 
-    /* Permit green. */
-    --primary: oklch(0.42 0.105 158);
-    --primary-foreground: oklch(0.99 0.01 158);
+    /* Brand green. */
+    --primary: oklch(0.47 0.125 152);
+    --primary-foreground: oklch(0.99 0.01 152);
 
-    --secondary: oklch(0.955 0.008 95);
-    --secondary-foreground: oklch(0.21 0.015 255);
-    --muted: oklch(0.955 0.008 95);
-    --muted-foreground: oklch(0.47 0.015 255);
-    --accent: oklch(0.945 0.03 158);
-    --accent-foreground: oklch(0.27 0.07 158);
+    --secondary: oklch(0.955 0.003 160);
+    --secondary-foreground: oklch(0.24 0.006 160);
+    --muted: oklch(0.955 0.003 160);
+    --muted-foreground: oklch(0.47 0.006 160);
+    --accent: oklch(0.95 0.035 152);
+    --accent-foreground: oklch(0.3 0.08 152);
 
     --destructive: oklch(0.53 0.21 27);
     --destructive-foreground: oklch(0.53 0.21 27);
 
-    --border: oklch(0.89 0.008 95);
-    --input: oklch(0.82 0.01 95);
-    --ring: oklch(0.42 0.105 158);
+    --border: oklch(0.9 0.003 160);
+    --input: oklch(0.82 0.004 160);
+    --ring: oklch(0.47 0.125 152);
 
-    /* Signal amber (always paired with asphalt text) and the asphalt surface. */
-    --signal: oklch(0.83 0.165 84);
-    --signal-foreground: oklch(0.21 0.015 255);
-    --asphalt: oklch(0.21 0.015 255);
-    --asphalt-foreground: oklch(0.97 0.006 95);
-    --asphalt-muted: oklch(0.78 0.012 255);
-    --success: oklch(0.42 0.105 158);
-    --success-foreground: oklch(0.99 0.01 158);
+    /* Bright green highlight (always paired with graphite text) and the graphite surface. */
+    --highlight: oklch(0.82 0.16 150);
+    --highlight-foreground: oklch(0.24 0.006 160);
+    --asphalt: oklch(0.24 0.006 160);
+    --asphalt-foreground: oklch(0.97 0.002 160);
+    --asphalt-muted: oklch(0.78 0.004 160);
+    --success: oklch(0.47 0.125 152);
+    --success-foreground: oklch(0.99 0.01 152);
 
-    --chart-1: oklch(0.42 0.105 158);
-    --chart-2: oklch(0.83 0.165 84);
-    --chart-3: oklch(0.45 0.08 240);
-    --chart-4: oklch(0.62 0.17 40);
-    --chart-5: oklch(0.55 0.02 255);
+    --chart-1: oklch(0.47 0.125 152);
+    --chart-2: oklch(0.55 0.006 160);
+    --chart-3: oklch(0.7 0.15 150);
+    --chart-4: oklch(0.36 0.006 160);
+    --chart-5: oklch(0.82 0.07 150);
 
-    --radius: 0.875rem;
+    --radius: 0.75rem;
 
-    /* The sidebar is asphalt in both themes. */
-    --sidebar: oklch(0.21 0.015 255);
-    --sidebar-foreground: oklch(0.93 0.006 95);
-    --sidebar-primary: oklch(0.83 0.165 84);
-    --sidebar-primary-foreground: oklch(0.21 0.015 255);
-    --sidebar-accent: oklch(0.29 0.015 255);
-    --sidebar-accent-foreground: oklch(0.985 0.006 95);
-    --sidebar-border: oklch(0.32 0.015 255);
-    --sidebar-ring: oklch(0.83 0.165 84);
+    /* The sidebar is graphite in both themes. */
+    --sidebar: oklch(0.24 0.006 160);
+    --sidebar-foreground: oklch(0.93 0.002 160);
+    --sidebar-primary: oklch(0.82 0.16 150);
+    --sidebar-primary-foreground: oklch(0.24 0.006 160);
+    --sidebar-accent: oklch(0.31 0.006 160);
+    --sidebar-accent-foreground: oklch(0.985 0.002 160);
+    --sidebar-border: oklch(0.34 0.006 160);
+    --sidebar-ring: oklch(0.82 0.16 150);
 }
 
 .dark {
-    --background: oklch(0.17 0.012 255);
-    --foreground: oklch(0.96 0.006 95);
-    --card: oklch(0.215 0.014 255);
-    --card-foreground: oklch(0.96 0.006 95);
-    --popover: oklch(0.215 0.014 255);
-    --popover-foreground: oklch(0.96 0.006 95);
+    --background: oklch(0.18 0.004 160);
+    --foreground: oklch(0.96 0.002 160);
+    --card: oklch(0.225 0.005 160);
+    --card-foreground: oklch(0.96 0.002 160);
+    --popover: oklch(0.225 0.005 160);
+    --popover-foreground: oklch(0.96 0.002 160);
 
-    --primary: oklch(0.76 0.15 158);
-    --primary-foreground: oklch(0.18 0.03 158);
+    --primary: oklch(0.76 0.16 150);
+    --primary-foreground: oklch(0.18 0.03 152);
 
-    --secondary: oklch(0.27 0.014 255);
-    --secondary-foreground: oklch(0.96 0.006 95);
-    --muted: oklch(0.27 0.014 255);
-    --muted-foreground: oklch(0.76 0.012 255);
-    --accent: oklch(0.3 0.04 158);
-    --accent-foreground: oklch(0.93 0.05 158);
+    --secondary: oklch(0.28 0.005 160);
+    --secondary-foreground: oklch(0.96 0.002 160);
+    --muted: oklch(0.28 0.005 160);
+    --muted-foreground: oklch(0.76 0.004 160);
+    --accent: oklch(0.3 0.045 152);
+    --accent-foreground: oklch(0.93 0.06 152);
 
     --destructive: oklch(0.62 0.2 27);
     --destructive-foreground: oklch(0.72 0.17 27);
 
-    --border: oklch(0.31 0.014 255);
-    --input: oklch(0.38 0.014 255);
-    --ring: oklch(0.76 0.15 158);
+    --border: oklch(0.32 0.005 160);
+    --input: oklch(0.39 0.005 160);
+    --ring: oklch(0.76 0.16 150);
 
-    --signal: oklch(0.83 0.165 84);
-    --signal-foreground: oklch(0.21 0.015 255);
-    --asphalt: oklch(0.13 0.01 255);
-    --asphalt-foreground: oklch(0.97 0.006 95);
-    --asphalt-muted: oklch(0.78 0.012 255);
-    --success: oklch(0.76 0.15 158);
-    --success-foreground: oklch(0.18 0.03 158);
+    --highlight: oklch(0.82 0.16 150);
+    --highlight-foreground: oklch(0.2 0.006 160);
+    --asphalt: oklch(0.14 0.004 160);
+    --asphalt-foreground: oklch(0.97 0.002 160);
+    --asphalt-muted: oklch(0.78 0.004 160);
+    --success: oklch(0.76 0.16 150);
+    --success-foreground: oklch(0.18 0.03 152);
 
-    --chart-1: oklch(0.76 0.15 158);
-    --chart-2: oklch(0.83 0.165 84);
-    --chart-3: oklch(0.7 0.1 240);
-    --chart-4: oklch(0.72 0.16 40);
-    --chart-5: oklch(0.7 0.02 255);
+    --chart-1: oklch(0.76 0.16 150);
+    --chart-2: oklch(0.7 0.005 160);
+    --chart-3: oklch(0.6 0.13 152);
+    --chart-4: oklch(0.5 0.005 160);
+    --chart-5: oklch(0.88 0.08 150);
 
-    --sidebar: oklch(0.13 0.01 255);
-    --sidebar-foreground: oklch(0.93 0.006 95);
-    --sidebar-primary: oklch(0.83 0.165 84);
-    --sidebar-primary-foreground: oklch(0.21 0.015 255);
-    --sidebar-accent: oklch(0.25 0.014 255);
-    --sidebar-accent-foreground: oklch(0.985 0.006 95);
-    --sidebar-border: oklch(0.27 0.014 255);
-    --sidebar-ring: oklch(0.83 0.165 84);
+    --sidebar: oklch(0.14 0.004 160);
+    --sidebar-foreground: oklch(0.93 0.002 160);
+    --sidebar-primary: oklch(0.82 0.16 150);
+    --sidebar-primary-foreground: oklch(0.2 0.006 160);
+    --sidebar-accent: oklch(0.26 0.005 160);
+    --sidebar-accent-foreground: oklch(0.985 0.002 160);
+    --sidebar-border: oklch(0.28 0.005 160);
+    --sidebar-ring: oklch(0.82 0.16 150);
 }
 
 @layer base {
@@ -221,14 +220,14 @@
     }
 
     ::selection {
-        background: var(--signal);
-        color: var(--signal-foreground);
+        background: var(--highlight);
+        color: var(--highlight-foreground);
     }
 }
 
 /* Display type: heavy and tight, like lettering on a sign. */
 @utility text-display {
-    font-weight: 800;
+    font-weight: 750;
     letter-spacing: -0.02em;
     line-height: 1.12;
     text-wrap: balance;
@@ -242,13 +241,17 @@
     text-transform: uppercase;
 }
 
-/* A hard, unblurred shadow: the element reads as a physical plate. */
-@utility shadow-plate {
-    box-shadow: 5px 5px 0 0 var(--foreground);
+/* Soft elevation for the few elements that should lift off the page. */
+@utility shadow-raised {
+    box-shadow:
+        0 1px 2px 0 color-mix(in oklch, var(--asphalt) 10%, transparent),
+        0 6px 16px -4px color-mix(in oklch, var(--asphalt) 16%, transparent);
 }
 
-@utility shadow-plate-signal {
-    box-shadow: 6px 6px 0 0 var(--signal);
+@utility shadow-raised-brand {
+    box-shadow:
+        0 1px 2px 0 color-mix(in oklch, var(--asphalt) 10%, transparent),
+        0 18px 40px -12px color-mix(in oklch, var(--primary) 38%, transparent);
 }
 
 /* The centre line of a road: use on an empty element as a divider. */
@@ -262,24 +265,24 @@
     );
 }
 
-/* Hazard chevrons: a thin band that marks the top edge of the product. */
-@utility hazard-stripe {
-    height: 8px;
-    background-image: repeating-linear-gradient(
-        -45deg,
-        var(--signal) 0 14px,
-        var(--asphalt) 14px 28px
+/* A thin green-to-graphite band that marks the top edge of the product. */
+@utility brand-bar {
+    height: 4px;
+    background-image: linear-gradient(
+        90deg,
+        var(--primary) 0 68%,
+        var(--asphalt) 68% 100%
     );
 }
 
-/* Asphalt surface with a faint aggregate texture (inline SVG noise, no request). */
+/* Graphite surface with a faint aggregate texture (inline SVG noise, no request). */
 @utility surface-asphalt {
     color: var(--asphalt-foreground);
     background-color: var(--asphalt);
     background-image:
         radial-gradient(
             120% 80% at 100% 0%,
-            color-mix(in oklch, var(--signal) 16%, transparent),
+            color-mix(in oklch, var(--highlight) 14%, transparent),
             transparent 60%
         ),
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");

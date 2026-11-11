@@ -43,13 +43,13 @@ export default function Welcome({ canRegister = true, sample }: Props) {
 
             <a
                 href="#main"
-                className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-signal focus:px-4 focus:py-2 focus:font-semibold focus:text-signal-foreground"
+                className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-highlight focus:px-4 focus:py-2 focus:font-semibold focus:text-highlight-foreground"
             >
                 {t('common.skip_to_content')}
             </a>
 
             <div className="flex min-h-svh flex-col bg-background text-foreground">
-                <div className="hazard-stripe" aria-hidden="true" />
+                <div className="brand-bar" aria-hidden="true" />
 
                 <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
                     <Link
@@ -82,7 +82,7 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                             <Button
                                 asChild
                                 variant="outline"
-                                className="border-2 border-foreground"
+                                className="border border-border"
                             >
                                 <Link href={login()}>{t('common.log_in')}</Link>
                             </Button>
@@ -94,7 +94,7 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                     {/* Hero */}
                     <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pt-8 pb-16 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16 lg:pt-14 lg:pb-24">
                         <div className="space-y-7">
-                            <p className="inline-flex animate-rise items-center gap-2 rounded-full border-2 border-foreground bg-signal px-3.5 py-1.5 text-eyebrow text-signal-foreground">
+                            <p className="inline-flex animate-rise items-center gap-2 rounded-full bg-highlight px-3.5 py-1.5 text-eyebrow text-highlight-foreground">
                                 <span
                                     className="size-2 rounded-full bg-asphalt"
                                     aria-hidden="true"
@@ -115,7 +115,7 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                                     <Button
                                         asChild
                                         size="lg"
-                                        className="shadow-plate hover:-translate-y-0.5"
+                                        className="shadow-raised hover:-translate-y-0.5"
                                     >
                                         <Link href={dashboard()}>
                                             {t('nav.dashboard')}
@@ -128,7 +128,7 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                                             <Button
                                                 asChild
                                                 size="lg"
-                                                className="shadow-plate hover:-translate-y-0.5"
+                                                className="shadow-raised hover:-translate-y-0.5"
                                             >
                                                 <Link href={register()}>
                                                     {t('common.register')}
@@ -140,7 +140,7 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                                             asChild
                                             size="lg"
                                             variant="outline"
-                                            className="border-2 border-foreground"
+                                            className="border border-border"
                                         >
                                             <Link href={login()}>
                                                 {t('common.log_in')}
@@ -198,7 +198,7 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                             {features.map(({ key, icon: Icon }, index) => (
                                 <li
                                     key={key}
-                                    className="group relative flex flex-col gap-4 rounded-3xl border-2 border-foreground bg-card p-6 transition-[transform,box-shadow] duration-300 ease-snap hover:-translate-y-1 hover:shadow-plate sm:p-7"
+                                    className="group relative flex flex-col gap-4 rounded-3xl border border-border bg-card p-6 transition-[transform,box-shadow] duration-300 ease-snap hover:-translate-y-1 hover:shadow-raised sm:p-7"
                                 >
                                     <div className="flex items-center justify-between">
                                         <span className="flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
@@ -209,7 +209,7 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                                         </span>
                                         <span
                                             aria-hidden="true"
-                                            className="text-4xl font-extrabold text-foreground/15 tabular-nums transition-colors duration-300 group-hover:text-signal"
+                                            className="text-4xl font-extrabold text-foreground/15 tabular-nums transition-colors duration-300 group-hover:text-highlight"
                                         >
                                             0{index + 1}
                                         </span>
@@ -231,7 +231,7 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                             aria-labelledby="cta-title"
                             className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:pb-24"
                         >
-                            <div className="flex flex-col gap-6 rounded-3xl border-2 border-foreground bg-signal p-7 text-signal-foreground sm:p-10 md:flex-row md:items-center md:justify-between">
+                            <div className="flex flex-col gap-6 rounded-3xl bg-highlight p-7 text-highlight-foreground sm:p-10 md:flex-row md:items-center md:justify-between">
                                 <div className="space-y-2">
                                     <h2
                                         id="cta-title"

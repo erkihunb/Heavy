@@ -28,7 +28,7 @@ function QrMotif({ label }: { label: string }) {
             aria-label={label}
             viewBox="0 0 13 13"
             shapeRendering="crispEdges"
-            className="size-24 rounded-lg border-2 border-foreground bg-white p-1.5 text-asphalt sm:size-28"
+            className="size-24 rounded-lg border border-border bg-white p-1.5 text-asphalt sm:size-28"
         >
             {QR_CELLS.flatMap((row, y) =>
                 [...row].map((cell, x) =>
@@ -64,8 +64,8 @@ export function SamplePermit({
 
     return (
         <figure className="relative">
-            <div className="overflow-hidden rounded-3xl border-2 border-foreground bg-card text-card-foreground shadow-plate-signal lg:-rotate-2">
-                <div className="hazard-stripe" aria-hidden="true" />
+            <div className="overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-raised-brand lg:-rotate-2">
+                <div className="brand-bar" aria-hidden="true" />
 
                 <div className="space-y-6 p-6 sm:p-7">
                     <div className="flex items-start justify-between gap-4">

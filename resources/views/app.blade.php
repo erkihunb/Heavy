@@ -22,18 +22,18 @@
         {{-- Inline style to set the HTML background color based on our theme in app.css --}}
         <style>
             html {
-                background-color: oklch(0.985 0.006 95);
+                background-color: oklch(0.985 0.002 160);
             }
 
             html.dark {
-                background-color: oklch(0.17 0.012 255);
+                background-color: oklch(0.18 0.004 160);
             }
         </style>
 
         <title inertia>{{ config('app.name') }}</title>
 
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-        <meta name="theme-color" content="#1c2230">
+        <meta name="theme-color" content="#232625">
 
         @viteReactRefresh
         @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])

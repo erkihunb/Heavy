@@ -75,7 +75,7 @@ export default function VehiclesIndex({
 
                 {vehicles.meta.total === 0 && !filtered ? (
                     <div className="flex flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-input px-6 py-16 text-center">
-                        <span className="flex size-16 items-center justify-center rounded-2xl border-2 border-foreground bg-signal text-signal-foreground">
+                        <span className="flex size-16 items-center justify-center rounded-2xl bg-highlight text-highlight-foreground">
                             <Truck aria-hidden="true" className="size-8" />
                         </span>
                         <h2 className="text-2xl text-display">

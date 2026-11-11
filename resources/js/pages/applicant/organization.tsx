@@ -77,7 +77,7 @@ export default function OrganizationPage({ organization, canUpdate }: Props) {
                 />
 
                 {!canUpdate && (
-                    <p className="flex items-center gap-3 rounded-2xl border-2 border-foreground bg-signal/25 px-4 py-3 font-medium">
+                    <p className="flex items-center gap-3 rounded-2xl border border-border bg-muted px-4 py-3 font-medium">
                         <Lock aria-hidden="true" className="size-5 shrink-0" />
                         {t('organization.read_only')}
                     </p>
