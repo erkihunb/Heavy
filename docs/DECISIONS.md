@@ -762,6 +762,13 @@ Applicants may come to the office in person. A **Registrar** (a new staff role, 
   for an applicant's own applications and in the same stages as the applicant; a Registrar
   may download issued and expired permits to print them. Reviewing, approving and
   verifying payments stay with their own roles.
+- **One page, as the paper form** (owner's follow-up): "Register an applicant" holds the
+  person, the organization, the vehicle with its trailers and the permit (type, period,
+  reason), and is saved as a draft or submitted for review in one step, by the same
+  Actions as online inside one transaction — all of it or nothing; the password e-mail
+  goes out only after it is saved. Plates must be in nobody's register yet (the
+  organization is new) and not given twice. The permit part can be switched off to
+  register only the person; more vehicles and applications are added from their page.
 
 ### Vehicle types
 

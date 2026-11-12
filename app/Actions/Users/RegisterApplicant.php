@@ -22,8 +22,10 @@ class RegisterApplicant
      * the contact person's account and their organization, in one step.
      * Nobody chooses or sees the password: the applicant is e-mailed a link
      * to set their own, as staff are.
+     *
+     * @param  bool  $notify  false when the caller sends the link once its own work is saved
      */
-    public function handle(string $name, string $email, string $locale, OrganizationData $organization, User $registrar): User
+    public function handle(string $name, string $email, string $locale, OrganizationData $organization, User $registrar, bool $notify = true): User
     {
         $user = DB::transaction(function () use ($name, $email, $locale, $organization, $registrar): User {
             $user = new User([
@@ -56,8 +58,18 @@ class RegisterApplicant
             return $user;
         });
 
-        $user->notify(new ApplicantAccountCreated(Password::broker()->createToken($user)));
+        if ($notify) {
+            $this->sendPasswordLink($user);
+        }
 
         return $user;
+    }
+
+    /**
+     * E-mail the applicant the link to choose their password.
+     */
+    public function sendPasswordLink(User $user): void
+    {
+        $user->notify(new ApplicantAccountCreated(Password::broker()->createToken($user)));
     }
 }

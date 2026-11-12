@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Actions\Users\RegisterApplicant;
+use App\Actions\Users\RegisterWalkInApplication;
+use App\Domain\Permits\ValidityRules;
+use App\Enums\PermitStatus;
+use App\Enums\PlateRegion;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\RegisterApplicantRequest;
+use App\Http\Resources\VehicleTypeResource;
 use App\Models\User;
+use App\Models\VehicleType;
 use App\Support\EthiopianCalendar;
 use App\Support\Paginated;
 use Illuminate\Database\Eloquent\Builder;
@@ -77,20 +82,38 @@ class ApplicantController extends Controller
 
         return Inertia::render('admin/applicants/create', [
             'locales' => config('localization.supported'),
+            // The vehicle and permit parts of the one-page form.
+            'vehicleTypes' => VehicleTypeResource::collection(VehicleType::cachedOrdered()->filter(fn (VehicleType $type): bool => $type->is_active)->values()),
+            'plateRegions' => array_map(
+                fn (PlateRegion $region): array => ['value' => $region->value, 'latin' => $region->latinCode()],
+                PlateRegion::cases(),
+            ),
+            'limits' => [
+                'max_trailers' => (int) config('permits.max_trailers'),
+                'max_duration_days' => ValidityRules::maxDurationDays(),
+            ],
         ]);
     }
 
-    public function store(RegisterApplicantRequest $request, RegisterApplicant $registerApplicant): RedirectResponse
+    public function store(RegisterApplicantRequest $request, RegisterWalkInApplication $register): RedirectResponse
     {
-        $user = $registerApplicant->handle(
+        ['applicant' => $user, 'permit' => $permit] = $register->handle(
             $request->string('contact_name')->toString(),
             $request->string('contact_email')->toString(),
             $request->string('locale')->toString(),
             $request->toData(),
+            $request->vehicles(),
+            $request->permit(),
             $request->user(),
         );
 
-        // Straight on to the vehicles and the application.
-        return to_route('admin.applicants.show', $user)->with('success', __('applicants.messages.registered', ['email' => $user->email]));
+        $message = __('applicants.messages.registered', ['email' => $user->email]);
+
+        // To the application when there is one, otherwise on to the vehicles and the application.
+        return $permit === null
+            ? to_route('admin.applicants.show', $user)->with('success', $message)
+            : to_route('admin.applicants.permits.show', [$user, $permit])->with('success', $message.' '.__(
+                $permit->status === PermitStatus::Submitted ? 'applicants.messages.submitted' : 'applicants.messages.draft',
+            ));
     }
 }
