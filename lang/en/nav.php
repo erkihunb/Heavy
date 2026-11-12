@@ -15,6 +15,7 @@ return [
     'users' => 'Users',
     'applicants' => 'Applicants',
     'vehicle_types' => 'Vehicle types',
+    'branches' => 'Branches',
     'system_settings' => 'System settings',
     'audit_log' => 'Audit log',
     'sections' => [

@@ -48,10 +48,22 @@ final class PermitVerifier
             ->first();
     }
 
+    /**
+     * A permit in force today still lets its vehicles move only in its hours:
+     * outside them the answer is "not allowed at this time".
+     */
     public function result(?Permit $permit, ?CarbonImmutable $at = null): ScanResult
     {
-        return $permit === null
-            ? ScanResult::NotFound
-            : ScanResult::forStatus($permit->effectiveStatus($at ?? CarbonImmutable::now()));
+        if ($permit === null) {
+            return ScanResult::NotFound;
+        }
+
+        $at ??= CarbonImmutable::now();
+        $result = ScanResult::forStatus($permit->effectiveStatus($at));
+        $hours = $permit->movementHours();
+
+        return $result === ScanResult::Valid && $hours !== null && ! $hours->allows($at)
+            ? ScanResult::OutsideHours
+            : $result;
     }
 }

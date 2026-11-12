@@ -10,7 +10,8 @@ use Illuminate\Auth\Access\Response;
 
 /**
  * Applicants see the payments of their own organization's permits; cashiers
- * see every payment and decide on those awaiting verification. Whether a
+ * see the payments of their branch's permits (every payment for Admins and
+ * head-office staff) and decide on those awaiting verification. Whether a
  * payment is still awaiting verification is checked inside the Action, so a
  * stale page gets an explanation instead of a 403.
  */
@@ -26,7 +27,7 @@ class PaymentPolicy
 
     public function view(User $user, Payment $payment): Response
     {
-        return $this->isCashier($user) || $this->isOwnedByOrganizationOf($user, $payment)
+        return $this->isCashierFor($user, $payment) || $this->isOwnedByOrganizationOf($user, $payment)
             ? Response::allow()
             : Response::denyAsNotFound();
     }
@@ -41,17 +42,29 @@ class PaymentPolicy
 
     public function verify(User $user, Payment $payment): Response
     {
-        return $this->isCashier($user) ? Response::allow() : Response::denyAsNotFound();
+        return $this->isCashierFor($user, $payment) ? Response::allow() : Response::denyAsNotFound();
     }
 
     public function reject(User $user, Payment $payment): Response
     {
-        return $this->isCashier($user) ? Response::allow() : Response::denyAsNotFound();
+        return $this->isCashierFor($user, $payment) ? Response::allow() : Response::denyAsNotFound();
     }
 
-    private function isCashier(User $user): bool
+    private function isCashierFor(User $user, Payment $payment): bool
     {
-        return $user->can(Permission::VerifyPayments->value);
+        if (! $user->can(Permission::VerifyPayments->value)) {
+            return false;
+        }
+
+        $scope = $user->branchScope();
+
+        if ($scope->everywhere) {
+            return true;
+        }
+
+        $permitBranch = Permit::query()->whereKey($payment->permit_id)->value('branch_id');
+
+        return $scope->allows($permitBranch === null ? null : (int) $permitBranch);
     }
 
     private function isOwnedByOrganizationOf(User $user, Payment $payment): bool

@@ -45,6 +45,7 @@ function onePageForm(array $overrides = []): array
         'address' => 'Bole, Addis Ababa',
         'apply' => true,
         'submit' => true,
+        'confirmed' => true,
         'vehicles' => [
             ['plate' => 'ኢት-03-40134', 'vehicle_type_id' => $type, 'owner_name' => 'አበበ ከበደ'],
             ['plate' => 'ኢት-03-40135', 'vehicle_type_id' => $type, 'owner_name' => 'አበበ ከበደ'],
@@ -54,15 +55,16 @@ function onePageForm(array $overrides = []): array
         'valid_from' => $today->addDays(3)->toDateString(),
         'valid_to' => $today->addDays(12)->toDateString(),
         'reason' => 'የግንባታ ዕቃ ማጓጓዝ',
+        ...letterFields(),
         ...$overrides,
     ];
 }
 
 it('offers the vehicle types, plate regions and limits', function () {
     $this->actingAs($this->registrar)
-        ->get(route('admin.applicants.create'))
+        ->get(route('admin.permits.create'))
         ->assertInertia(fn (Assert $page) => $page
-            ->component('admin/applicants/create')
+            ->component('admin/permits/create')
             ->has('vehicleTypes', 1)
             ->has('plateRegions')
             ->where('limits.max_trailers', (int) config('permits.max_trailers')));
@@ -70,7 +72,7 @@ it('offers the vehicle types, plate regions and limits', function () {
 
 it('registers the person, the organization, the vehicles and submits the permit in one step', function () {
     $response = $this->actingAs($this->registrar)
-        ->post(route('admin.applicants.store'), onePageForm())
+        ->post(route('admin.permits.store'), onePageForm())
         ->assertSessionHasNoErrors();
 
     $user = User::query()->where('email', 'abebe@example.test')->sole();
@@ -90,7 +92,7 @@ it('registers the person, the organization, the vehicles and submits the permit 
 
 it('can keep the application as a draft', function () {
     $this->actingAs($this->registrar)
-        ->post(route('admin.applicants.store'), onePageForm(['submit' => false]))
+        ->post(route('admin.permits.store'), onePageForm(['submit' => false]))
         ->assertSessionHasNoErrors();
 
     expect(Permit::query()->sole()->status)->toBe(PermitStatus::Draft);
@@ -98,7 +100,7 @@ it('can keep the application as a draft', function () {
 
 it('registers only the person when the permit part is off', function () {
     $this->actingAs($this->registrar)
-        ->post(route('admin.applicants.store'), onePageForm(['apply' => false, 'vehicles' => [], 'permit_type' => '']))
+        ->post(route('admin.permits.store'), onePageForm(['apply' => false, 'vehicles' => [], 'permit_type' => '']))
         ->assertSessionHasNoErrors();
 
     expect(User::query()->where('email', 'abebe@example.test')->exists())->toBeTrue()
@@ -110,7 +112,7 @@ it('saves nothing when a part is wrong', function (array $overrides, string $fie
     Vehicle::factory()->withPlate('ኢት-03-77777')->create();
 
     $this->actingAs($this->registrar)
-        ->post(route('admin.applicants.store'), onePageForm($overrides))
+        ->post(route('admin.permits.store'), onePageForm($overrides))
         ->assertSessionHasErrors($field);
 
     expect(User::query()->where('email', 'abebe@example.test')->exists())->toBeFalse()
@@ -135,6 +137,6 @@ it('accepts at most the allowed number of trailers', function () {
     $rows = array_map(fn (int $n): array => ['plate' => 'ኢት-03-5000'.$n, 'vehicle_type_id' => $type, 'owner_name' => 'A'], range(1, 2 + (int) config('permits.max_trailers')));
 
     $this->actingAs($this->registrar)
-        ->post(route('admin.applicants.store'), onePageForm(['vehicles' => $rows]))
+        ->post(route('admin.permits.store'), onePageForm(['vehicles' => $rows]))
         ->assertSessionHasErrors('vehicles');
 });

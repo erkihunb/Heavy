@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Permits\ApprovePermit;
+use App\Actions\Permits\IssuePaidPermit;
 use App\Actions\Permits\RejectPayment;
 use App\Actions\Permits\RejectPermit;
 use App\Actions\Permits\RequestChanges;
@@ -93,6 +94,10 @@ it('tells the organization when the permit is issued, without the cashier\'s int
     $payment = Payment::factory()->forPermit($permit)->create();
 
     app(VerifyPayment::class)->handle($payment, $this->cashier, 'Checked against bank statement.');
+    // Confirming the payment says nothing yet; issuing does.
+    Notification::assertNothingSent();
+
+    app(IssuePaidPermit::class)->handle($permit->refresh(), userWithRole(Role::Issuer));
 
     assertOrganizationNotified(PermitIssued::class, $permit);
 });

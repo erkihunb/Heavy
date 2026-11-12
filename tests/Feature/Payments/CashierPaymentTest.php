@@ -98,13 +98,14 @@ describe('queue', function () {
 });
 
 describe('decisions', function () {
-    it('verifies a payment and issues the permit', function () {
+    it('verifies a payment and sends the application on to the Issuer', function () {
         $this->actingAs($this->cashier)
             ->post(route('staff.payments.verify', $this->payment), ['note' => ''])
             ->assertRedirect(route('staff.payments.show', $this->payment))
             ->assertSessionHas('success', __('payments.messages.verified'));
 
-        expect($this->permit->refresh()->status)->toBe(PermitStatus::Issued)
+        expect($this->permit->refresh()->status)->toBe(PermitStatus::PaymentConfirmed)
+            ->and($this->permit->issued_at)->toBeNull()
             ->and($this->payment->refresh()->status)->toBe(PaymentStatus::Verified)
             ->and($this->payment->notes)->toBeNull();
     });
@@ -159,7 +160,7 @@ describe('decisions', function () {
             ->post(route('staff.payments.verify', $this->payment))
             ->assertSessionHas('success');
 
-        expect($this->permit->refresh()->status)->toBe(PermitStatus::Issued);
+        expect($this->permit->refresh()->status)->toBe(PermitStatus::PaymentConfirmed);
 
         $permit = Permit::factory()->paymentSubmitted()->create(['approved_by' => $admin->id]);
         $payment = Payment::factory()->forPermit($permit)->create();

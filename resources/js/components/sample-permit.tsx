@@ -77,7 +77,7 @@ export function SamplePermit({
                                 translate="no"
                                 className="text-lg font-extrabold tracking-wide tabular-nums"
                             >
-                                TMA-HV-0000-000000
+                                AACRA-0000-000000
                             </p>
                         </div>
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-success px-3 py-1.5 text-sm font-bold text-success-foreground">

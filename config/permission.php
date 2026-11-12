@@ -1,8 +1,8 @@
 <?php
 
+use App\Models\Role;
 use Spatie\Permission\DefaultTeamResolver;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 return [
 
@@ -28,6 +28,7 @@ return [
          * `Spatie\Permission\Contracts\Role` contract.
          */
 
+        // Editable roles with an Amharic name, a scope type and is_system (EUISIS RBAC).
         'role' => Role::class,
 
         /*

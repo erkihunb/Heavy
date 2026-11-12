@@ -31,11 +31,20 @@ export default function WalkInPermitCreate({
         valid_from: '',
         valid_to: '',
         reason: '',
+        any_time: true,
+        move_from: '',
+        move_to: '',
+        letter_number: '',
+        letter_date: '',
+        letter_file: null,
     });
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        form.post(store.url(applicant.id), { preserveScroll: true });
+        form.post(store.url(applicant.id), {
+            forceFormData: true,
+            preserveScroll: true,
+        });
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -62,6 +71,7 @@ export default function WalkInPermitCreate({
                     limits={limits}
                     cancelHref={show.url(applicant.id)}
                     estimateUrl={feeEstimate.url(applicant.id)}
+                    letter={{ hasStoredScan: false }}
                 />
             </div>
         </AppLayout>

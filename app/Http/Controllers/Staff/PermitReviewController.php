@@ -11,6 +11,7 @@ use App\Actions\Permits\RevokePermit;
 use App\Actions\Permits\StartReview;
 use App\Domain\Permits\OverlapGuard;
 use App\Domain\Vehicles\PlateNumber;
+use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Enums\PermitType;
 use App\Http\Controllers\Controller;
@@ -24,6 +25,7 @@ use App\Http\Requests\Staff\StartReviewRequest;
 use App\Http\Resources\PermitResource;
 use App\Http\Resources\VehiclePermitHistoryResource;
 use App\Models\Permit;
+use App\Models\User;
 use App\Models\Vehicle;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -63,14 +65,13 @@ class PermitReviewController extends Controller
         $like = fn (string $term): string => '%'.addcslashes($term, '%_\\').'%';
 
         $permits = Permit::query()
-            ->with(['vehicles.vehicleType', 'organization', 'applicant', 'recommender'])
+            ->with(['vehicles.vehicleType', 'organization', 'branch', 'applicant', 'recommender'])
             ->whereNotIn('status', [PermitStatus::Draft, PermitStatus::Withdrawn])
+            // Staff placed at a branch work on that branch's applications only.
+            ->inBranchOf($request->user())
             ->when($status !== null, fn (Builder $query) => $query->inEffectiveStatus($status))
-            // Unless asked otherwise, the queue is what is waiting for the Authority.
-            ->when($status === null && ! $all, fn (Builder $query) => $query->whereIn('status', [
-                PermitStatus::Submitted,
-                PermitStatus::UnderReview,
-            ]))
+            // Unless asked otherwise, the queue is what waits for this person's desk.
+            ->when($status === null && ! $all, fn (Builder $query) => $query->whereIn('status', $this->desk($request->user())))
             ->when($permitType !== null, fn (Builder $query) => $query->where('permit_type', $permitType))
             ->when($plate !== '', fn (Builder $query) => $query->whereHas('vehicles', fn (Builder $query) => $query
                 ->whereLike('plate_normalized', $like(PlateNumber::searchTerm($plate)))))
@@ -99,15 +100,40 @@ class PermitReviewController extends Controller
         ]);
     }
 
+    /**
+     * What waits for the person's desk: review, payment or issuing. The head
+     * office, which only oversees, sees everything in progress.
+     *
+     * @return list<PermitStatus>
+     */
+    private function desk(User $user): array
+    {
+        return match (true) {
+            $user->can(Permission::ReviewPermits->value) || $user->can(Permission::ApprovePermits->value) => [PermitStatus::Submitted, PermitStatus::UnderReview],
+            $user->can(Permission::VerifyPayments->value) => [PermitStatus::AwaitingPayment, PermitStatus::PaymentSubmitted],
+            $user->can(Permission::IssuePermits->value) => [PermitStatus::PaymentConfirmed],
+            default => [
+                PermitStatus::Submitted,
+                PermitStatus::UnderReview,
+                PermitStatus::ChangesRequested,
+                PermitStatus::AwaitingPayment,
+                PermitStatus::PaymentSubmitted,
+                PermitStatus::PaymentConfirmed,
+            ],
+        };
+    }
+
     public function show(Permit $permit, OverlapGuard $overlap): Response
     {
         Gate::authorize('view', $permit);
 
-        $permit->load(['vehicles.vehicleType', 'organization', 'applicant', 'recommender', 'transitions.actor', 'payments']);
+        $permit->load(['vehicles.vehicleType', 'organization', 'branch', 'applicant', 'recommender', 'issuer', 'comments.author', 'transitions.actor', 'payments']);
 
         return Inertia::render('staff/permits/show', [
             'permit' => PermitResource::make($permit),
             'vehicleHistory' => $this->vehicleHistory($permit, $overlap),
+            // For the cashier's payment form.
+            'receiptMaxKilobytes' => (int) config('permits.receipt_max_kilobytes'),
         ]);
     }
 

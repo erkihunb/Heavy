@@ -1,10 +1,12 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, FileDown, Pencil, Send } from 'lucide-react';
+import { ArrowLeft, Pencil, Send } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { PaymentForm } from '@/components/payment-form';
 import { PaymentList } from '@/components/payment-list';
 import { PermitDetails } from '@/components/permit-details';
+import { PermitDocumentLinks } from '@/components/permit-document-links';
+import { PermitLetter } from '@/components/permit-letter';
 import { PermitTimeline } from '@/components/permit-timeline';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
@@ -135,7 +137,7 @@ export default function WalkInPermitShow({
                     </section>
                 )}
 
-                {permit.document_url && (
+                {permit.document_urls && (
                     <section
                         aria-labelledby="document-title"
                         className="flex flex-col gap-4 rounded-card border-2 border-success bg-card p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7"
@@ -151,16 +153,10 @@ export default function WalkInPermitShow({
                                 {t('applicants.print_intro')}
                             </p>
                         </div>
-                        <Button asChild size="lg" className="shrink-0">
-                            <a
-                                href={permit.document_url}
-                                target="_blank"
-                                rel="noopener"
-                            >
-                                <FileDown aria-hidden="true" />
-                                {t('permits.actions.download')}
-                            </a>
-                        </Button>
+                        <PermitDocumentLinks
+                            urls={permit.document_urls}
+                            size="lg"
+                        />
                     </section>
                 )}
 
@@ -234,6 +230,12 @@ export default function WalkInPermitShow({
                             {t('permits.review.details')}
                         </h2>
                         <PermitDetails permit={permit} />
+
+                        {permit.letter && (
+                            <div className="mt-6">
+                                <PermitLetter letter={permit.letter} />
+                            </div>
+                        )}
 
                         {payments.length > 0 && (
                             <div className="mt-6 space-y-3">

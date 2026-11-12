@@ -109,13 +109,16 @@
         "skipLibCheck": true /* Skip type checking all .d.ts files. */,
         "baseUrl": ".",
         "paths": {
-            "@/*": ["./resources/js/*"]
+            "@/*": ["./resources/js/*"],
+            "@app/ui": ["./packages/app-ui/src/index.ts"]
         },
         "jsx": "react-jsx"
     },
     "include": [
         "resources/js/**/*.ts",
         "resources/js/**/*.d.ts",
-        "resources/js/**/*.tsx"
+        "resources/js/**/*.tsx",
+        "packages/app-ui/src/**/*.ts",
+        "packages/app-ui/src/**/*.tsx"
     ]
 }

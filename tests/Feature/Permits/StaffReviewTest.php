@@ -279,7 +279,7 @@ describe('access', function () {
         expect($permit->refresh()->status)->toBe(PermitStatus::Submitted);
     });
 
-    it('is closed to staff who neither review nor approve', function (Role $role) {
+    it('is closed to staff who do not work on applications', function (Role $role) {
         $permit = Permit::factory()->forVehicles($this->vehicle)->submitted()->create();
         $staff = staffUser($role);
 
@@ -289,7 +289,19 @@ describe('access', function () {
         $this->actingAs($staff)->post(route('staff.permits.approve', $permit))->assertForbidden();
 
         expect($permit->refresh()->status)->toBe(PermitStatus::Submitted);
-    })->with([Role::Cashier, Role::TrafficOfficer]);
+    })->with([Role::TrafficOfficer, Role::Registrar]);
+
+    it('lets the cashier, the Issuer and the head office open applications, but not review them', function (Role $role) {
+        $permit = Permit::factory()->forVehicles($this->vehicle)->submitted()->create();
+        $staff = staffUser($role);
+
+        $this->actingAs($staff)->get(route('staff.permits.index'))->assertOk();
+        $this->actingAs($staff)->get(route('staff.permits.show', $permit))->assertOk();
+        $this->actingAs($staff)->post(route('staff.permits.start-review', $permit))->assertForbidden();
+        $this->actingAs($staff)->post(route('staff.permits.approve', $permit))->assertForbidden();
+
+        expect($permit->refresh()->status)->toBe(PermitStatus::Submitted);
+    })->with([Role::Cashier, Role::Issuer, Role::Supervisor]);
 
     it('blocks staff who have not confirmed two-factor authentication', function (Role $role) {
         $permit = Permit::factory()->forVehicles($this->vehicle)->recommended()->create();
@@ -633,7 +645,7 @@ describe('approving', function () {
         $history = PermitStatusTransition::sole();
 
         expect($this->permit->status)->toBe(PermitStatus::AwaitingPayment)
-            ->and($this->permit->permit_number)->toMatch('/^TMA-HV-\d{4}-000001$/')
+            ->and($this->permit->permit_number)->toMatch('/^AACRA-\d{4}-000001$/')
             ->and($this->permit->approved_by)->toBe($this->approver->id)
             ->and($this->permit->approved_at)->not->toBeNull()
             ->and($history->from_status)->toBe(PermitStatus::UnderReview)
@@ -660,11 +672,27 @@ describe('approving', function () {
         expect($this->permit->refresh()->status)->toBe(PermitStatus::UnderReview);
     });
 
-    it('is not for Reviewers', function () {
-        $this->actingAs($this->reviewer)->post(route('staff.permits.approve', $this->permit))->assertForbidden();
+    it('is not for the Reviewer who recorded the recommendation (two-step approval)', function () {
+        $this->actingAs($this->reviewer)
+            ->from(route('staff.permits.show', $this->permit))
+            ->post(route('staff.permits.approve', $this->permit))
+            ->assertRedirect(route('staff.permits.show', $this->permit))
+            ->assertSessionHas('warning', __('permits.errors.approver_is_recommender'));
 
         expect($this->permit->refresh()->status)->toBe(PermitStatus::UnderReview)
             ->and($this->permit->permit_number)->toBeNull();
+    });
+
+    it('lets a Reviewer decide alone when two-step approval is switched off', function () {
+        config(['permits.two_step_approval' => false]);
+        $permit = Permit::factory()->forVehicles($this->vehicle)->underReview()->create();
+
+        $this->actingAs($this->reviewer)
+            ->post(route('staff.permits.approve', $permit))
+            ->assertSessionHas('success', __('permits.messages.approved'));
+
+        expect($permit->refresh()->status)->toBe(PermitStatus::AwaitingPayment)
+            ->and($permit->approved_by)->toBe($this->reviewer->id);
     });
 
     it('explains instead of failing when no recommendation has been recorded', function () {
@@ -792,10 +820,11 @@ describe('rejecting', function () {
         expect($this->permit->refresh()->status)->toBe(PermitStatus::UnderReview);
     })->with([null, '', '   ']);
 
-    it('is not for Reviewers', function () {
+    it('is not for the Reviewer who recorded the recommendation (two-step approval)', function () {
         $this->actingAs($this->reviewer)
+            ->from(route('staff.permits.show', $this->permit))
             ->post(route('staff.permits.reject', $this->permit), ['note' => 'ምክንያት'])
-            ->assertForbidden();
+            ->assertSessionHas('warning', __('permits.errors.approver_is_recommender'));
 
         expect($this->permit->refresh()->status)->toBe(PermitStatus::UnderReview);
     });

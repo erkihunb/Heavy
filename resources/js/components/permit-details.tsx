@@ -23,6 +23,11 @@ export function PermitDetails({ permit }: { permit: Permit }) {
 
     return (
         <dl className="divide-y divide-border">
+            {permit.branch && (
+                <Row label={t('permits.fields.branch')}>
+                    {permit.branch.name}
+                </Row>
+            )}
             <Row label={t('permits.fields.permit_number')}>
                 {permit.permit_number ? (
                     <span
@@ -103,6 +108,11 @@ export function PermitDetails({ permit }: { permit: Permit }) {
                         count: permit.duration_days,
                     })}
                 </span>
+            </Row>
+            <Row label={t('permits.hours.title')}>
+                {permit.hours
+                    ? permit.hours.label
+                    : t('permits.hours.any_time')}
             </Row>
 
             {permit.fee && (

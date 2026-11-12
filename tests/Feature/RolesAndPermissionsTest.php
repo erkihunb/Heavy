@@ -36,15 +36,19 @@ it('matches the role table in the specification', function (Role $role, array $e
     expect(permissionValues($role))->toBe($expected);
 })->with([
     'applicant' => [Role::Applicant, ['organization.manage-own', 'vehicles.manage-own', 'permits.apply', 'payments.submit', 'permits.download-own']],
-    'reviewer' => [Role::Reviewer, ['permits.view-queue', 'permits.review']],
+    'reviewer' => [Role::Reviewer, ['permits.view-queue', 'permits.review', 'permits.approve']],
     'approver' => [Role::Approver, ['permits.view-queue', 'permits.approve', 'permits.revoke', 'reports.view']],
-    'cashier' => [Role::Cashier, ['payments.verify', 'reports.view']],
+    'cashier' => [Role::Cashier, ['permits.view-queue', 'payments.verify', 'reports.view']],
     'traffic officer' => [Role::TrafficOfficer, ['verification.scan']],
     'registrar' => [Role::Registrar, ['applicants.register']],
+    'issuer' => [Role::Issuer, ['permits.view-queue', 'permits.issue']],
+    'supervisor' => [Role::Supervisor, ['permits.view-queue', 'permits.comment', 'reports.view']],
     'admin' => [Role::Admin, [
-        'users.manage', 'vehicle-types.manage', 'fee-schedules.manage', 'settings.manage', 'audit-log.view',
-        'permits.view-queue', 'permits.review', 'permits.approve', 'permits.revoke', 'payments.verify', 'verification.scan',
-        'reports.view', 'applicants.register',
+        'users.view', 'users.create', 'users.update', 'users.deactivate', 'users.assign-roles',
+        'roles.view', 'roles.create', 'roles.update', 'roles.delete', 'permissions.view',
+        'vehicle-types.manage', 'fee-schedules.manage', 'settings.manage', 'audit-log.view',
+        'permits.view-queue', 'permits.review', 'permits.approve', 'permits.revoke', 'payments.verify', 'permits.issue',
+        'permits.comment', 'verification.scan', 'reports.view', 'applicants.register',
     ]],
 ]);
 
@@ -95,16 +99,28 @@ it('is idempotent', function () {
         ->and(PermissionModel::count())->toBe(count(Permission::cases()));
 });
 
-it('revokes a permission that the mapping no longer grants', function () {
-    RoleModel::findByName(Role::Cashier->value)->givePermissionTo(Permission::ApprovePermits->value);
+it('keeps what administrators changed on a role when it seeds again', function () {
+    $cashier = RoleModel::findByName(Role::Cashier->value);
+    $cashier->givePermissionTo(Permission::ApprovePermits->value);
+    $cashier->revokePermissionTo(Permission::ViewReports->value);
 
     $this->seed(RolesAndPermissionsSeeder::class);
 
-    expect(RoleModel::findByName(Role::Cashier->value)->hasPermissionTo(Permission::ApprovePermits->value))->toBeFalse();
+    $cashier = RoleModel::findByName(Role::Cashier->value);
+    expect($cashier->hasPermissionTo(Permission::ApprovePermits->value))->toBeTrue()
+        ->and($cashier->hasPermissionTo(Permission::ViewReports->value))->toBeFalse();
+});
+
+it('always gives the administrator role every staff permission', function () {
+    RoleModel::findByName(Role::Admin->value)->revokePermissionTo(Permission::ManageSettings->value);
+
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    expect(RoleModel::findByName(Role::Admin->value)->hasPermissionTo(Permission::ManageSettings->value))->toBeTrue();
 });
 
 it('treats every role except applicant as staff', function () {
-    expect(Role::staff())->toBe([Role::Reviewer, Role::Approver, Role::Cashier, Role::TrafficOfficer, Role::Registrar, Role::Admin])
+    expect(Role::staff())->toBe([Role::Reviewer, Role::Approver, Role::Cashier, Role::TrafficOfficer, Role::Registrar, Role::Issuer, Role::Supervisor, Role::Admin])
         ->and(Role::Applicant->isStaff())->toBeFalse();
 
     foreach (Role::staff() as $role) {

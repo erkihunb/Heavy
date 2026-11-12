@@ -1,10 +1,19 @@
 import { router, useForm } from '@inertiajs/react';
-import { Save, Send, TriangleAlert } from 'lucide-react';
-import { useState } from 'react';
+import { Send, TriangleAlert } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { FormField } from '@/components/form-field';
 import { ImageSettingField } from '@/components/image-setting-field';
 import InputError from '@/components/input-error';
+import { CodeRulesPreview } from '@/components/settings/code-rules-preview';
+import type { CodePreview } from '@/components/settings/code-rules-preview';
+import {
+    BrandingPreview,
+    MailInUsePanel,
+    ThemePreview,
+} from '@/components/settings/settings-previews';
+import type { MailInUse } from '@/components/settings/settings-previews';
+import { SettingsSaveBar } from '@/components/settings/settings-save-bar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -49,9 +58,16 @@ type Field = {
 type Props = {
     section: string;
     sections: string[];
+    categories: Record<string, string[]>;
     fields: Field[];
     saved: string[];
     timezones: string[];
+    /** Code rules: what the live preview builds the next codes from. */
+    preview: CodePreview | null;
+    /** E-mail: the values in effect now and where they come from. */
+    inUse: MailInUse[] | null;
+    /** General: the saved logo and favicon, for the branding preview. */
+    branding: { logo: string | null; favicon: string | null } | null;
 };
 
 type FormValue = string | boolean | File | null | string[];
@@ -74,9 +90,13 @@ const isPlaceholder = (value: FormValue): boolean =>
 export default function SettingsSection({
     section,
     sections,
+    categories,
     fields,
     saved,
     timezones,
+    preview,
+    inUse,
+    branding,
 }: Props) {
     const { t } = useTranslation();
     const optional = (key: string): string | undefined => {
@@ -104,13 +124,77 @@ export default function SettingsSection({
     const form = useForm<Record<string, FormValue>>(initial);
     const [phone, setPhone] = useState('');
     const [testing, setTesting] = useState(false);
+    const formRef = useRef<HTMLFormElement>(null);
+    const dirty = form.isDirty;
+
+    // Ctrl+S (⌘S on a Mac) saves the section, as in EUISIS.
+    useEffect(() => {
+        const onKey = (event: KeyboardEvent) => {
+            if (
+                (event.ctrlKey || event.metaKey) &&
+                event.key.toLowerCase() === 's'
+            ) {
+                event.preventDefault();
+
+                if (dirty && !form.processing) {
+                    formRef.current?.requestSubmit();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', onKey);
+
+        return () => window.removeEventListener('keydown', onKey);
+    }, [dirty, form.processing]);
+
+    // Leaving with unsaved changes asks first: another section, or closing the tab.
+    useEffect(() => {
+        if (!dirty) {
+            return;
+        }
+
+        const onBeforeUnload = (event: BeforeUnloadEvent) => {
+            event.preventDefault();
+        };
+        const removeRouterGuard = router.on('before', (event) => {
+            const visit = event.detail.visit;
+
+            if (visit.method !== 'get') {
+                return;
+            }
+
+            if (!window.confirm(t('admin.settings.unsaved.leave'))) {
+                event.preventDefault();
+            }
+        });
+
+        window.addEventListener('beforeunload', onBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', onBeforeUnload);
+            removeRouterGuard();
+        };
+    }, [dirty, t]);
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const images = fields.filter((field) => field.type === 'image');
 
         if (images.length === 0) {
-            form.put(update.url({ section }), { preserveScroll: true });
+            form.put(update.url({ section }), {
+                preserveScroll: true,
+                // What was saved becomes the new starting point for "unsaved changes".
+                onSuccess: () => {
+                    form.setDefaults();
+
+                    // The interface style, theme and colours are written on <html> and in
+                    // a <style> when a page is first loaded, which Inertia's page swaps
+                    // never redo: load the page again so the new look shows at once.
+                    if (section === 'appearance') {
+                        window.location.reload();
+                    }
+                },
+            });
 
             return;
         }
@@ -126,6 +210,7 @@ export default function SettingsSection({
                 }
 
                 form.setData('remove_assets', []);
+                form.setDefaults();
             },
         });
     };
@@ -382,12 +467,31 @@ export default function SettingsSection({
                                 return (
                                     <NativeSelect
                                         {...common}
-                                        onChange={(event) =>
+                                        onChange={(event) => {
+                                            // A new interface style brings its own corners: let the
+                                            // button and card corners follow it ("auto") again.
+                                            if (
+                                                field.key ===
+                                                'permits.appearance.ui_style'
+                                            ) {
+                                                form.setData((data) => ({
+                                                    ...data,
+                                                    [field.field]:
+                                                        event.target.value,
+                                                    permits__appearance__button_style:
+                                                        'auto',
+                                                    permits__appearance__card_radius:
+                                                        'auto',
+                                                }));
+
+                                                return;
+                                            }
+
                                             form.setData(
                                                 field.field,
                                                 event.target.value,
-                                            )
-                                        }
+                                            );
+                                        }}
                                     >
                                         {options.map((option) => (
                                             <option key={option} value={option}>
@@ -501,7 +605,11 @@ export default function SettingsSection({
     };
 
     return (
-        <AdminSettingsLayout current={section} sections={sections}>
+        <AdminSettingsLayout
+            current={section}
+            sections={sections}
+            categories={categories}
+        >
             <div className="flex flex-col gap-6">
                 <p className="text-muted-foreground">
                     {t(
@@ -510,10 +618,24 @@ export default function SettingsSection({
                 </p>
 
                 <form
+                    ref={formRef}
                     onSubmit={submit}
                     noValidate
                     className="flex flex-col gap-6"
                 >
+                    {section === 'codes' && preview && (
+                        <CodeRulesPreview
+                            values={form.data}
+                            preview={preview}
+                        />
+                    )}
+                    {section === 'general' && branding && (
+                        <BrandingPreview values={form.data} saved={branding} />
+                    )}
+                    {section === 'appearance' && (
+                        <ThemePreview values={form.data} />
+                    )}
+
                     {groups.map((group) => (
                         <section
                             key={group}
@@ -536,21 +658,16 @@ export default function SettingsSection({
                         </section>
                     ))}
 
-                    <div>
-                        <Button
-                            type="submit"
-                            size="lg"
-                            disabled={form.processing}
-                        >
-                            {form.processing ? (
-                                <Spinner />
-                            ) : (
-                                <Save aria-hidden="true" />
-                            )}
-                            {t('admin.settings.save')}
-                        </Button>
-                    </div>
+                    <SettingsSaveBar
+                        dirty={dirty}
+                        processing={form.processing}
+                        onDiscard={() => form.reset()}
+                    />
                 </form>
+
+                {section === 'email' && inUse && (
+                    <MailInUsePanel rows={inUse} />
+                )}
 
                 {TESTABLE.includes(section) && (
                     <form
@@ -588,10 +705,15 @@ export default function SettingsSection({
                                 <InputError message={form.errors.phone} />
                             </div>
                         )}
+                        {dirty && (
+                            <p className="text-sm font-medium text-destructive">
+                                {t('admin.settings.unsaved.test_disabled')}
+                            </p>
+                        )}
                         <Button
                             type="submit"
                             variant="outline"
-                            disabled={testing}
+                            disabled={testing || dirty}
                         >
                             {testing ? (
                                 <Spinner />

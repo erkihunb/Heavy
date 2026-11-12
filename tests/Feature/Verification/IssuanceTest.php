@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Permits\IssuePaidPermit;
 use App\Actions\Permits\ReissuePermit;
 use App\Actions\Permits\VerifyPayment;
 use App\Domain\Permits\PermitVerifier;
@@ -12,6 +13,7 @@ use App\Jobs\GeneratePermitDocument;
 use App\Models\Payment;
 use App\Models\Permit;
 use App\Models\PermitStatusTransition;
+use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
@@ -19,7 +21,8 @@ use Illuminate\Support\Facades\Storage;
 /*
  * Issuing a permit gives it a verification token (spec §7) and queues its
  * document (spec §8); reissuing rotates the token; revoking takes effect for
- * verification at once (spec §4.8).
+ * verification at once (spec §4.8). A cashier confirms the payment, then an
+ * Issuer issues the permit.
  */
 
 beforeEach(function () {
@@ -34,6 +37,12 @@ beforeEach(function () {
 /**
  * The token the queued document job was given for the permit.
  */
+function payAndIssue(Payment $payment, User $cashier): void
+{
+    app(VerifyPayment::class)->handle($payment, $cashier);
+    app(IssuePaidPermit::class)->handle($payment->permit()->firstOrFail(), userWithRole(Role::Issuer));
+}
+
 function queuedToken(Permit $permit): string
 {
     $token = null;
@@ -53,7 +62,7 @@ function queuedToken(Permit $permit): string
 
 describe('issuing', function () {
     it('gives the permit a token whose hash only is stored, and queues its document', function () {
-        app(VerifyPayment::class)->handle($this->payment, $this->cashier);
+        payAndIssue($this->payment, $this->cashier);
 
         $this->permit->refresh();
         $token = queuedToken($this->permit);
@@ -82,8 +91,8 @@ describe('issuing', function () {
         $other = Permit::factory()->paymentSubmitted()->create();
         $otherPayment = Payment::factory()->forPermit($other)->create();
 
-        app(VerifyPayment::class)->handle($this->payment, $this->cashier);
-        app(VerifyPayment::class)->handle($otherPayment, $this->cashier);
+        payAndIssue($this->payment, $this->cashier);
+        payAndIssue($otherPayment, $this->cashier);
 
         expect(queuedToken($this->permit))->not->toBe(queuedToken($other));
     });
@@ -91,14 +100,15 @@ describe('issuing', function () {
 
 describe('reissuing', function () {
     beforeEach(function () {
-        app(VerifyPayment::class)->handle($this->payment, $this->cashier);
+        payAndIssue($this->payment, $this->cashier);
         $this->oldToken = queuedToken($this->permit->refresh());
         $this->approver = userWithRole(Role::Approver);
     });
 
     it('rotates the token: the old QR code stops working, the new one works', function () {
         Storage::disk('documents')->put('permits/old.pdf', '%PDF');
-        $this->permit->forceFill(['document_path' => 'permits/old.pdf'])->save();
+        Storage::disk('documents')->put('permits/old-en.pdf', '%PDF');
+        $this->permit->forceFill(['document_path' => 'permits/old.pdf', 'document_path_en' => 'permits/old-en.pdf'])->save();
         Bus::fake([GeneratePermitDocument::class]);
 
         app(ReissuePermit::class)->handle($this->permit, $this->approver, 'Driver lost the paper.');
@@ -111,9 +121,10 @@ describe('reissuing', function () {
             ->and($verifier->result($verifier->byToken($this->oldToken)))->toBe(ScanResult::NotFound)
             ->and($verifier->byToken($newToken)?->id)->toBe($this->permit->id)
             ->and($this->permit->refresh()->status)->toBe(PermitStatus::Issued)
-            ->and($this->permit->document_path)->toBeNull();
+            ->and($this->permit->document_path)->toBeNull()
+            ->and($this->permit->document_path_en)->toBeNull();
 
-        Storage::disk('documents')->assertMissing('permits/old.pdf');
+        Storage::disk('documents')->assertMissing(['permits/old.pdf', 'permits/old-en.pdf']);
 
         $step = PermitStatusTransition::query()->where('permit_id', $this->permit->id)->latest('id')->first();
 
@@ -163,7 +174,7 @@ describe('reissuing', function () {
 
 describe('revoking', function () {
     beforeEach(function () {
-        app(VerifyPayment::class)->handle($this->payment, $this->cashier);
+        payAndIssue($this->payment, $this->cashier);
         $this->token = queuedToken($this->permit->refresh());
     });
 

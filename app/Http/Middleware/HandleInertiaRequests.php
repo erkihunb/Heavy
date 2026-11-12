@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Domain\Settings\Branding;
+use App\Domain\Settings\ShellSettings;
 use App\Support\EthiopianCalendar;
 use App\Support\FrontendTranslations;
 use Illuminate\Http\Request;
@@ -56,6 +57,9 @@ class HandleInertiaRequests extends Middleware
                     'roles' => $user->getRoleNames()->values()->all(),
                 ],
                 'mustEnableTwoFactor' => (bool) $user?->mustEnableTwoFactor(),
+                // For showing or hiding navigation only (resources/js/config/navigation.ts).
+                'permissions' => $user === null ? [] : $user->getAllPermissions()->pluck('name')->values()->all(),
+                'isSuperAdmin' => false,
             ],
             // One-off messages set by the previous request.
             'flash' => [
@@ -82,6 +86,8 @@ class HandleInertiaRequests extends Middleware
             ],
             // Logo, icon, support contacts and the sign-in message (System settings → General).
             'branding' => fn (): array => Branding::shared(),
+            // What the signed-in shell (resources/js/shell) reads, keyed as in the source kit.
+            'settings' => fn (): array => ShellSettings::shared(),
         ];
     }
 }

@@ -9,7 +9,10 @@ return [
     'fee_days' => 'for :days days',
     'methods' => [
         'bank_deposit' => 'Bank deposit',
+        'bank_transfer' => 'Bank transfer',
+        'mobile_money' => 'Mobile money (telebirr, CBE Birr …)',
         'cash' => 'Cash at the Authority',
+        'other' => 'Other',
     ],
     'status' => [
         'submitted' => 'Waiting for verification',
@@ -44,7 +47,7 @@ return [
     'waiting_notice' => 'Your receipt is waiting for a cashier to verify it.',
     'messages' => [
         'submitted' => 'Receipt submitted. A cashier will verify it.',
-        'verified' => 'Payment verified. The permit is issued.',
+        'verified' => 'Payment verified. The application now goes to the Issuer.',
         'rejected' => 'Payment rejected. The applicant has been asked to pay again.',
     ],
     'errors' => [
@@ -77,8 +80,8 @@ return [
         'no_action' => 'This payment has been decided.',
         'verify' => [
             'title' => 'Verify payment',
-            'hint' => 'The receipt is genuine and covers the fee. The permit is issued.',
-            'submit' => 'Verify and issue',
+            'hint' => 'The receipt is genuine and covers the fee. The application then goes to the Issuer, who issues and prints the permit.',
+            'submit' => 'Verify payment',
         ],
         'reject' => [
             'title' => 'Reject payment',
@@ -86,5 +89,9 @@ return [
             'submit' => 'Reject payment',
         ],
         'other_payments' => 'Earlier payments for this permit',
+    ],
+    'intake' => [
+        'forwarded' => 'The receipt taken with the request went to the cashier.',
+        'amount_differs' => 'The receipt taken with the request is for :paid; the fee is :fee. It was not accepted.',
     ],
 ];

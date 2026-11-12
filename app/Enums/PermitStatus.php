@@ -21,6 +21,8 @@ enum PermitStatus: string
     case Rejected = 'rejected';
     case AwaitingPayment = 'awaiting_payment';
     case PaymentSubmitted = 'payment_submitted';
+    // Paid and confirmed by a cashier; waiting for an Issuer to issue and print it.
+    case PaymentConfirmed = 'payment_confirmed';
     case Issued = 'issued';
     case Active = 'active';
     case Expired = 'expired';
@@ -40,7 +42,7 @@ enum PermitStatus: string
      */
     public function blocksVehicles(): bool
     {
-        return in_array($this, [self::AwaitingPayment, self::PaymentSubmitted, self::Issued, self::Active], true);
+        return in_array($this, [self::AwaitingPayment, self::PaymentSubmitted, self::PaymentConfirmed, self::Issued, self::Active], true);
     }
 
     /**

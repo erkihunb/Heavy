@@ -6,6 +6,7 @@ use App\Exceptions\DuplicateVehiclePlate;
 use App\Exceptions\PermitException;
 use App\Exceptions\UserAlreadyHasOrganization;
 use App\Exceptions\VehiclePlateLocked;
+use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureUserHasOrganization;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -51,6 +52,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             SetLocale::class,
+            EnsureAccountIsActive::class,
             RequireTwoFactorForStaff::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,

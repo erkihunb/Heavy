@@ -6,6 +6,7 @@ use App\Domain\Permits\PermitTransitions;
 use App\Domain\Permits\ValidityRules;
 use App\Enums\PermitStatus;
 use App\Exceptions\InvalidPermitTransition;
+use App\Jobs\StampPermitDocument;
 use App\Models\Permit;
 
 class ExpirePermits
@@ -41,6 +42,9 @@ class ExpirePermits
                         // No actor: the system expires the permit.
                         $this->transitions->apply($permit, PermitStatus::Expired, null);
                         $expired++;
+
+                        // Print its PDFs again, stamped "expired" in both languages.
+                        StampPermitDocument::dispatch($permit->id)->afterCommit();
                     } catch (InvalidPermitTransition) {
                         // Changed (e.g. revoked) since it was selected: nothing to do.
                     }

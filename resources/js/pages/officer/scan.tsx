@@ -27,6 +27,7 @@ type Verification = {
     result: ScanResult;
     checked_at: DualDateValue;
     checked_time: string;
+    checked_time_ethiopian: string;
     permit: {
         id: string;
         permit_number: string;
@@ -36,6 +37,8 @@ type Verification = {
         valid_from: DualDateValue;
         valid_to: DualDateValue;
         time_window_rules: string | null;
+        /** The hours of the day it lets the vehicles move; null for any time of day. */
+        hours: { from: string; to: string; label: string } | null;
         history: ({
             from: PermitStatus | null;
             to: PermitStatus;
@@ -94,6 +97,8 @@ export default function OfficerScan({
                     result={verification.result}
                     checkedAt={verification.checked_at}
                     checkedTime={verification.checked_time}
+                    checkedTimeEthiopian={verification.checked_time_ethiopian}
+                    hours={permit?.hours}
                 />
 
                 {permit && (
@@ -188,6 +193,13 @@ export default function OfficerScan({
                                         <DualDate date={permit.valid_from} />
                                         <span aria-hidden="true">–</span>
                                         <DualDate date={permit.valid_to} />
+                                    </span>
+                                </Row>
+                                <Row label={t('verification.hours.title')}>
+                                    <span className="font-semibold">
+                                        {permit.hours
+                                            ? permit.hours.label
+                                            : t('permits.hours.any_time')}
                                     </span>
                                 </Row>
                                 {permit.time_window_rules && (

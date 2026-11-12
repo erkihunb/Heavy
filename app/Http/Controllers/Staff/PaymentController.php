@@ -6,6 +6,7 @@ use App\Actions\Permits\RejectPayment;
 use App\Actions\Permits\VerifyPayment;
 use App\Domain\Payments\ReceiptNumber;
 use App\Enums\PaymentStatus;
+use App\Enums\PermitStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\RejectPaymentRequest;
 use App\Http\Requests\Staff\VerifyPaymentRequest;
@@ -42,7 +43,11 @@ class PaymentController extends Controller
 
         $payments = Payment::query()
             ->with(['permit.organization', 'permit.vehicles.vehicleType', 'submitter', 'verifier'])
+            // Staff placed at a branch see the payments of that branch's permits only.
+            ->whereHas('permit', fn (Builder $query) => $query->inBranchOf($request->user()))
             ->when($status !== null, fn (Builder $query) => $query->where('status', $status))
+            // A receipt taken with the request waits for the decision before it is the cashier's.
+            ->when($status === PaymentStatus::Submitted, fn (Builder $query) => $query->whereHas('permit', fn (Builder $query) => $query->where('status', PermitStatus::PaymentSubmitted)))
             ->when($receipt !== '', fn (Builder $query) => $query->whereLike('receipt_number', '%'.addcslashes($receipt, '%_\\').'%'))
             // Oldest first: the payment that has waited longest is on top.
             ->orderBy('created_at')

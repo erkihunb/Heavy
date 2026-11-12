@@ -1,18 +1,24 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { Pencil, Plus, Search, Truck } from 'lucide-react';
-import { useState } from 'react';
-import type { FormEvent } from 'react';
+import { Head, Link } from '@inertiajs/react';
 import { DualDate } from '@/components/dual-date';
-import { PageHeader } from '@/components/page-header';
-import { Pagination } from '@/components/pagination';
 import { PlateChip } from '@/components/plate-chip';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { NativeSelect } from '@/components/ui/native-select';
-import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
 import { create, edit, index } from '@/routes/vehicles';
-import type { BreadcrumbItem, Paginated, Vehicle, VehicleType } from '@/types';
+import { Plus } from '@/shell/Components/Icons';
+import { DeliveryIcon } from '@/shell/Components/NavIcons';
+import PageHeader from '@/shell/Components/PageHeader';
+import {
+    AppDataTable,
+    AppFilterBar,
+    Button,
+    Card,
+    EmptyState,
+    FilterField,
+    Input,
+    Select,
+    createColumnHelper,
+} from '@/shell/Components/ui';
+import AuthenticatedLayout from '@/shell/Layouts/AuthenticatedLayout';
+import type { Paginated, Vehicle, VehicleType } from '@/types';
 
 type Props = {
     vehicles: Paginated<Vehicle>;
@@ -23,246 +29,167 @@ type Props = {
     vehicleTypes: VehicleType[];
 };
 
+const column = createColumnHelper<Vehicle>();
+
+/**
+ * The applicant's vehicles, in the admin shell: filter panel, data table
+ * (sortable headers, column and density tools) and numbered pagination.
+ */
 export default function VehiclesIndex({
     vehicles,
     filters,
     vehicleTypes,
 }: Props) {
     const { t } = useTranslation();
-    const [plate, setPlate] = useState(filters.plate);
-    const [vehicleType, setVehicleType] = useState(
-        filters.vehicle_type === null ? '' : String(filters.vehicle_type),
-    );
-
     const filtered = filters.plate !== '' || filters.vehicle_type !== null;
 
-    const search = (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-
-        router.get(
-            index.url(),
-            {
-                ...(plate.trim() !== '' && { plate: plate.trim() }),
-                ...(vehicleType !== '' && { vehicle_type: vehicleType }),
-            },
-            { preserveState: true, replace: true },
-        );
-    };
-
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: t('vehicles.title'), href: index() },
+    const columns = [
+        column.accessor('plate', {
+            header: t('vehicles.fields.plate'),
+            cell: ({ row }) => <PlateChip plate={row.original.plate} />,
+        }),
+        column.accessor((vehicle) => vehicle.vehicle_type.name, {
+            id: 'vehicle_type',
+            header: t('vehicles.fields.vehicle_type'),
+            cell: ({ getValue }) => (
+                <span className="font-medium">{getValue()}</span>
+            ),
+        }),
+        column.accessor('owner_name', {
+            header: t('vehicles.fields.owner_name'),
+        }),
+        column.display({
+            id: 'registered',
+            header: t('vehicles.fields.registered'),
+            cell: ({ row }) => (
+                <DualDate date={row.original.registered_at} stacked />
+            ),
+        }),
+        column.display({
+            id: 'actions',
+            header: () => <span className="sr-only">{t('vehicles.edit')}</span>,
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <Button
+                        as={Link}
+                        href={edit({ vehicle: row.original.id }).url}
+                        variant="outline"
+                        size="sm"
+                        aria-label={`${t('vehicles.edit')} ${row.original.plate}`}
+                    >
+                        {t('vehicles.edit')}
+                    </Button>
+                </div>
+            ),
+        }),
     ];
 
-    const registerButton = (
-        <Button asChild size="lg" className="w-full sm:w-auto">
-            <Link href={create()}>
-                <Plus aria-hidden="true" />
-                {t('vehicles.register')}
-            </Link>
-        </Button>
-    );
-
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={t('vehicles.title')} />
-
-            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+        <AuthenticatedLayout
+            header={
                 <PageHeader
                     title={t('vehicles.title')}
                     description={t('vehicles.intro')}
-                    action={registerButton}
+                    actions={
+                        <Button
+                            as={Link}
+                            href={create().url}
+                            size="lg"
+                            icon={<Plus />}
+                            className="w-full sm:w-auto"
+                        >
+                            {t('vehicles.register')}
+                        </Button>
+                    }
                 />
+            }
+        >
+            <Head title={t('vehicles.title')} />
 
-                {vehicles.meta.total === 0 && !filtered ? (
-                    <div className="flex flex-col items-center gap-4 rounded-card border-2 border-dashed border-input px-6 py-16 text-center">
-                        <span className="flex size-16 items-center justify-center rounded-card bg-highlight text-highlight-foreground">
-                            <Truck aria-hidden="true" className="size-8" />
-                        </span>
-                        <h2 className="text-section-title">
-                            {t('vehicles.empty.title')}
-                        </h2>
-                        <p className="max-w-sm text-muted-foreground">
-                            {t('vehicles.empty.body')}
-                        </p>
-                    </div>
-                ) : (
-                    <>
-                        <form
-                            role="search"
-                            onSubmit={search}
-                            className="grid gap-3 rounded-card border border-border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)_auto_auto] sm:items-end"
-                        >
-                            <div className="grid gap-1.5">
-                                <label
-                                    htmlFor="filter-plate"
-                                    className="text-eyebrow text-muted-foreground"
-                                >
-                                    {t('vehicles.filters.search')}
-                                </label>
-                                <Input
-                                    id="filter-plate"
-                                    type="search"
-                                    value={plate}
-                                    maxLength={50}
-                                    onChange={(event) =>
-                                        setPlate(event.target.value)
-                                    }
-                                />
-                            </div>
-                            <div className="grid gap-1.5">
-                                <label
-                                    htmlFor="filter-type"
-                                    className="text-eyebrow text-muted-foreground"
-                                >
-                                    {t('vehicles.fields.vehicle_type')}
-                                </label>
-                                <NativeSelect
-                                    id="filter-type"
-                                    value={vehicleType}
-                                    onChange={(event) =>
-                                        setVehicleType(event.target.value)
-                                    }
-                                >
-                                    <option value="">
-                                        {t('vehicles.filters.all_types')}
+            {vehicles.meta.total === 0 && !filtered ? (
+                <Card>
+                    <EmptyState
+                        icon={
+                            <span className="flex size-16 items-center justify-center rounded-card bg-highlight text-highlight-foreground">
+                                <DeliveryIcon className="size-8" />
+                            </span>
+                        }
+                        title={t('vehicles.empty.title')}
+                        description={t('vehicles.empty.body')}
+                    />
+                </Card>
+            ) : (
+                <div className="flex flex-col gap-4">
+                    <AppFilterBar
+                        href={index.url()}
+                        filters={{
+                            plate: filters.plate,
+                            vehicle_type:
+                                filters.vehicle_type === null
+                                    ? null
+                                    : String(filters.vehicle_type),
+                        }}
+                        label={t('vehicles.filters.search')}
+                    >
+                        <FilterField label={t('vehicles.filters.search')} wide>
+                            <Input
+                                type="search"
+                                name="plate"
+                                maxLength={50}
+                                defaultValue={filters.plate}
+                            />
+                        </FilterField>
+                        <FilterField label={t('vehicles.fields.vehicle_type')}>
+                            <Select
+                                name="vehicle_type"
+                                defaultValue={
+                                    filters.vehicle_type === null
+                                        ? ''
+                                        : String(filters.vehicle_type)
+                                }
+                            >
+                                <option value="">
+                                    {t('vehicles.filters.all_types')}
+                                </option>
+                                {vehicleTypes.map((type) => (
+                                    <option key={type.id} value={type.id}>
+                                        {type.name}
                                     </option>
-                                    {vehicleTypes.map((type) => (
-                                        <option key={type.id} value={type.id}>
-                                            {type.name}
-                                        </option>
-                                    ))}
-                                </NativeSelect>
-                            </div>
-                            <Button type="submit" className="h-11">
-                                <Search aria-hidden="true" />
-                                {t('vehicles.filters.apply')}
-                            </Button>
-                            {filtered && (
-                                <Button
-                                    asChild
-                                    variant="outline"
-                                    className="h-11"
-                                >
-                                    <Link href={index()}>
-                                        {t('vehicles.filters.clear')}
-                                    </Link>
-                                </Button>
-                            )}
-                        </form>
+                                ))}
+                            </Select>
+                        </FilterField>
+                    </AppFilterBar>
 
-                        <p
-                            className="text-sm text-muted-foreground tabular-nums"
-                            aria-live="polite"
-                        >
-                            {vehicles.meta.total === 0
-                                ? t('vehicles.no_results')
-                                : t('vehicles.count', {
-                                      count: vehicles.meta.total,
-                                  })}
-                        </p>
+                    {/* Announced after every search; with no match the table's empty state shows the same words. */}
+                    <p
+                        className={
+                            vehicles.meta.total === 0
+                                ? 'sr-only'
+                                : 'text-sm text-(--app-muted-foreground) tabular-nums'
+                        }
+                        aria-live="polite"
+                    >
+                        {vehicles.meta.total === 0
+                            ? t('vehicles.no_results')
+                            : t('vehicles.count', {
+                                  count: vehicles.meta.total,
+                              })}
+                    </p>
 
-                        {vehicles.data.length > 0 && (
-                            <>
-                                <div className="overflow-x-auto rounded-card border border-border bg-card">
-                                    <table className="w-full text-left text-sm">
-                                        <thead className="border-b border-border bg-muted">
-                                            <tr>
-                                                {(
-                                                    [
-                                                        'plate',
-                                                        'vehicle_type',
-                                                        'owner_name',
-                                                        'registered',
-                                                    ] as const
-                                                ).map((field) => (
-                                                    <th
-                                                        key={field}
-                                                        scope="col"
-                                                        className="px-4 py-3 text-xs font-medium whitespace-nowrap text-muted-foreground"
-                                                    >
-                                                        {t(
-                                                            `vehicles.fields.${field}`,
-                                                        )}
-                                                    </th>
-                                                ))}
-                                                <th
-                                                    scope="col"
-                                                    className="px-4 py-3"
-                                                >
-                                                    <span className="sr-only">
-                                                        {t('vehicles.edit')}
-                                                    </span>
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-border">
-                                            {vehicles.data.map((vehicle) => (
-                                                <tr
-                                                    key={vehicle.id}
-                                                    className="transition-colors hover:bg-muted/60"
-                                                >
-                                                    <th
-                                                        scope="row"
-                                                        className="px-4 py-3 font-normal"
-                                                    >
-                                                        <PlateChip
-                                                            plate={
-                                                                vehicle.plate
-                                                            }
-                                                        />
-                                                    </th>
-                                                    <td className="px-4 py-3 font-medium">
-                                                        {
-                                                            vehicle.vehicle_type
-                                                                .name
-                                                        }
-                                                    </td>
-                                                    <td className="px-4 py-3">
-                                                        {vehicle.owner_name}
-                                                    </td>
-                                                    <td className="px-4 py-3">
-                                                        <DualDate
-                                                            date={
-                                                                vehicle.registered_at
-                                                            }
-                                                            stacked
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <Button
-                                                            asChild
-                                                            variant="outline"
-                                                            size="sm"
-                                                        >
-                                                            <Link
-                                                                href={edit({
-                                                                    vehicle:
-                                                                        vehicle.id,
-                                                                })}
-                                                                aria-label={`${t('vehicles.edit')} ${vehicle.plate}`}
-                                                            >
-                                                                <Pencil aria-hidden="true" />
-                                                                {t(
-                                                                    'vehicles.edit',
-                                                                )}
-                                                            </Link>
-                                                        </Button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </>
-                        )}
-
-                        <Pagination
-                            links={vehicles.links}
-                            meta={vehicles.meta}
-                        />
-                    </>
-                )}
-            </div>
-        </AppLayout>
+                    <AppDataTable
+                        id="applicant-vehicles"
+                        data={vehicles.data}
+                        columns={columns}
+                        meta={vehicles.meta}
+                        filters={{
+                            plate: filters.plate,
+                            vehicle_type: filters.vehicle_type,
+                        }}
+                        href={index.url()}
+                        emptyTitle={t('vehicles.no_results')}
+                    />
+                </div>
+            )}
+        </AuthenticatedLayout>
     );
 }

@@ -26,6 +26,7 @@ const PRESENTATION: Record<PermitStatus, { tone: Tone; icon: LucideIcon }> = {
     changes_requested: { tone: 'attention', icon: PencilLine },
     awaiting_payment: { tone: 'attention', icon: Clock },
     payment_submitted: { tone: 'progress', icon: Hourglass },
+    payment_confirmed: { tone: 'progress', icon: Hourglass },
     issued: { tone: 'valid', icon: CircleCheck },
     active: { tone: 'valid', icon: CircleCheck },
     rejected: { tone: 'stopped', icon: CircleX },

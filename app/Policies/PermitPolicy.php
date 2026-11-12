@@ -28,9 +28,14 @@ class PermitPolicy
         return $user->can(Permission::ApplyForPermits->value);
     }
 
+    /**
+     * Applying online. Paused while requests come in by letter at the office
+     * (System settings → Permits → online applications).
+     */
     public function create(User $user): bool
     {
-        return $user->can(Permission::ApplyForPermits->value)
+        return (bool) config('permits.online_applications')
+            && $user->can(Permission::ApplyForPermits->value)
             && $user->organization_id !== null;
     }
 
@@ -65,7 +70,8 @@ class PermitPolicy
             return Response::denyAsNotFound();
         }
 
-        return $user->can(Permission::SubmitPayments->value) && $permit->status === PermitStatus::AwaitingPayment
+        return (bool) config('permits.online_applications')
+            && $user->can(Permission::SubmitPayments->value) && $permit->status === PermitStatus::AwaitingPayment
             ? Response::allow()
             : Response::deny();
     }
@@ -103,6 +109,45 @@ class PermitPolicy
         return $this->staffWith($user, $permit, Permission::ApprovePermits);
     }
 
+    /**
+     * A cashier recording a payment taken at the office or checked with the bank.
+     */
+    public function recordPayment(User $user, Permit $permit): Response
+    {
+        return $this->staffAt($user, $permit, Permission::VerifyPayments);
+    }
+
+    /**
+     * An Issuer issuing and printing a paid permit.
+     */
+    public function issue(User $user, Permit $permit): Response
+    {
+        return $this->staffAt($user, $permit, Permission::IssuePermits);
+    }
+
+    /**
+     * The scanned request letter: staff who handle the application, and the
+     * Registrar who took it, at its branch.
+     */
+    public function viewLetter(User $user, Permit $permit): Response
+    {
+        if ($this->isVisibleToStaff($user, $permit)) {
+            return Response::allow();
+        }
+
+        return $user->can(Permission::RegisterApplicants->value) && $permit->isInBranchOf($user)
+            ? Response::allow()
+            : Response::denyAsNotFound();
+    }
+
+    /**
+     * The head office commenting on an application.
+     */
+    public function comment(User $user, Permit $permit): Response
+    {
+        return $this->staffAt($user, $permit, Permission::CommentOnPermits);
+    }
+
     public function revoke(User $user, Permit $permit): Response
     {
         return $this->staffWith($user, $permit, Permission::RevokePermits);
@@ -132,6 +177,7 @@ class PermitPolicy
 
         // A Registrar prints the issued permit for an applicant who came to the office.
         if ($user->can(Permission::RegisterApplicants->value)
+            && $permit->isInBranchOf($user)
             && in_array($permit->status, [PermitStatus::Issued, PermitStatus::Expired], true)) {
             return Response::allow();
         }
@@ -193,7 +239,8 @@ class PermitPolicy
         if (! $user->can(Permission::RegisterApplicants->value)
             || ! $applicant->can(Permission::ApplyForPermits->value)
             || $applicant->organization_id === null
-            || $applicant->organization_id !== $permit->organization_id) {
+            || $applicant->organization_id !== $permit->organization_id
+            || ! $permit->isInBranchOf($user)) {
             return Response::denyAsNotFound();
         }
 
@@ -208,12 +255,14 @@ class PermitPolicy
     }
 
     /**
-     * Drafts and withdrawn applications are the applicant's business only.
+     * Drafts and withdrawn applications are the applicant's business only,
+     * and staff placed at a branch see that branch's applications only.
      */
     private function isVisibleToStaff(User $user, Permit $permit): bool
     {
         return $user->can(Permission::ViewReviewQueue->value)
-            && $permit->status->isVisibleToStaff();
+            && $permit->status->isVisibleToStaff()
+            && $permit->isInBranchOf($user);
     }
 
     /**
@@ -231,6 +280,24 @@ class PermitPolicy
         return in_array($permit->status, $statuses, true)
             ? Response::allow()
             : Response::deny();
+    }
+
+    /**
+     * Staff who do not work the review queue (cashiers, issuers): the
+     * permission itself, for applications of their own branch.
+     */
+    private function staffAt(User $user, Permit $permit, Permission $permission): Response
+    {
+        if (! $permit->status->isVisibleToStaff() || ! $permit->isInBranchOf($user)) {
+            return Response::denyAsNotFound();
+        }
+
+        if ($user->can($permission->value)) {
+            return Response::allow();
+        }
+
+        // Someone who can see the application is told no; anyone else is not told it exists.
+        return $this->isVisibleToStaff($user, $permit) ? Response::deny() : Response::denyAsNotFound();
     }
 
     private function staffWith(User $user, Permit $permit, Permission $permission): Response

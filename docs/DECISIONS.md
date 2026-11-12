@@ -163,7 +163,7 @@ Defaults that later milestones will implement as configuration. None is built ye
 - **Dates in the page chrome.** Today's date in both calendars is a shared Inertia prop
   (`today`), computed in the display timezone, and shown in the app header.
 - **Landing page content.** The sample permit card is an illustration with placeholder
-  values (`TMA-HV-0000-000000`, `አአ-00-A00000`), labelled as such; its dates are real
+  values (`AACRA-0000-000000`, `አአ-00-A00000`), labelled as such; its dates are real
   calendar conversions. The "how a permit is issued" steps and the three feature
   statements describe the finished service (QR verification and the audit trail arrive in
   later milestones). **CONFIRM** the wording with the Authority.
@@ -282,10 +282,38 @@ Plan: [plans/milestone-3-applications-workflow.md](plans/milestone-3-application
   the staff detail page shows the vehicle's other permits and flags conflicts.
 - **The plate of a vehicle is locked** once it is on any application that is not a draft
   or withdrawn: the plate on a submitted or issued permit must not change underneath it.
-- **Permit number** `TMA-HV-<Ethiopian year>-<6 digits>` is assigned at approval from
+- **Permit number** `AACRA-<Ethiopian year>-<6 digits>` is assigned at approval from
   `permit_number_sequences` under a row lock. The year is the Ethiopian *calendar* year
   of the approval date. **CONFIRM** calendar year vs fiscal year (spec says either), and
   the prefix (`permits.number_prefix`).
+- **The number rule is a setting** (2026-11-12, System settings → General → Permit
+  numbers): prefix, the order of `{prefix}`, `{year}`, `{seq}` (`permits.number_format`)
+  and the counter's digits (4–8). `{year}` and `{seq}` are mandatory because the counter
+  is per year; only capitals, digits and hyphens are allowed (look-ups upper-case their
+  input, the number is a file name). A change applies to later approvals only.
+- **Branch offices** (owner's request, 2026-11-12; Administration → Branches): a code of
+  2–6 capitals/digits fixed at creation, names in both languages, closed rather than
+  deleted. Managed by whoever holds `settings.manage` (no new permission).
+- **Branch scope** (owner's request, 2026-11-12). Staff are placed at one branch or none
+  by an Admin (`users.branch_id`, audited as `user.branch_changed`). **Admins and staff
+  with no branch (the head office) see the whole institution; everyone else sees and
+  acts on their own branch only** (`User::branchScope()`, `Permit::scopeInBranchOf()`):
+  review queue, permit pages and actions, payment queue and decisions, reports, the
+  dashboard and exports (the branch is written into the export by the server). Another
+  branch's permit or payment answers 404.
+  - An application gets its branch when it is started (`permits.branch_id`): the
+    applicant chooses it on the form (empty = head office), a walk-in application takes
+    the Registrar's branch. A head-office application is seen by the head office only.
+  - `{branch}` in the number rule prints that branch's code (`AACRA-BOL-2018-000123`,
+    the default rule) and is dropped with its hyphen for the head office. The counter
+    stays **one per Ethiopian year for all branches**, so numbers are unique whatever
+    the rule says.
+  - Not scoped on purpose: traffic officers (the roadside is not a branch), the public
+    verification page, the applicant directory of Registrars (a carrier may go to any
+    branch; the applications inside it are scoped), and the "other permits of this
+    vehicle" list on the review page (overlaps must be seen across branches).
+  - **CONFIRM** with the Authority: whether each branch should count from 1 on its
+    own, and whether an online applicant must choose a branch.
 - **Validity** (spec §4.6): `valid_from <= valid_to` (also a CHECK constraint), at most
   `permits.max_duration_days` (default 90, counted inclusively), not starting before
   today in the display timezone. The staff override for past dates is deferred until
@@ -493,19 +521,78 @@ Flows and diagrams: [ARCHITECTURE.md](ARCHITECTURE.md).
   for this site only (`camera=(self)`); browsers allow the camera only over HTTPS (or on
   localhost), so production must be served over HTTPS.
 
+### Requests by letter at the office (owner's decision, 2026-11-12)
+
+- **Online sign-up and applying are paused.** `permits.online_applications` (System settings →
+  Permits, default off): the register page and its endpoint answer 404, the login and home pages
+  hide "Register", applicants cannot start applications or report payments. Turning it on brings
+  the online flow back unchanged. The test suite runs with it on (phpunit.xml) because most tests
+  cover that flow; `tests/Feature/Workflow/OfficeWorkflowTest.php` covers the office flow with it off.
+- **The letter.** Applicants hand a letter to a branch or the head office. The Registrar records
+  the request with the letter's number, date and a scanned copy (PDF/JPG/PNG, required; on an edit
+  only when none is stored) and sends it on. Scans are on the private documents disk under
+  `letters/`, served by `staff.permits.letter` to staff who see the application and to Registrars
+  of its branch; never to the applicant.
+- **The Reviewer decides alone.** Two-step approval now defaults to off, and Reviewers hold
+  `permits.approve`. With two-step approval on, a Reviewer still cannot decide on a recommendation
+  they recorded. Revoking and reissuing stay with Approvers.
+- **Payment at the cashier's desk.** A cashier takes the fee or checks a bank/mobile payment and
+  records the receipt (`RecordPayment`): the payment is created verified and the application moves
+  to the new status `payment_confirmed`. Methods: bank deposit, bank transfer, mobile money, cash,
+  other. Verifying a receipt an applicant sent in (online flow) also ends in `payment_confirmed`.
+- **The Issuer issues and prints.** New role `issuer` (`permits.issue`): checks the paid request,
+  issues it (`IssuePaidPermit`: token, document, `issued_by`) and prints it. Verifying a payment no
+  longer issues the permit.
+- **The head office.** New role `supervisor` (`permits.view-queue`, `reports.view`,
+  `permits.comment`), placed at the head office (no branch), sees every branch's applications,
+  decisions, permits and revenue and leaves comments. Comments (`permit_comments`, append-only,
+  audited) are internal: staff see them, the applicant never does.
+- Cashiers and Issuers also hold `permits.view-queue` to open applications; the queue's default
+  filter follows the desk (review, payment, issue).
+
+### Movement hours (owner's decision, 2026-11-12)
+
+- Each permit may let its vehicles move only between two times of the day (`move_from`,
+  `move_to`, Addis Ababa time, 24-hour clock; both empty = any time of day). They are
+  entered on the application (applicant, Registrar, one-page office form) and seen by the
+  reviewer and approver like the rest of the application. A window may run past midnight;
+  the start is included, the end is not. Choosing a Pass switches the form to a window,
+  but the server does not require one (a form that sends no hours means any time).
+- Every time is also shown on the Ethiopian clock (hours counted from 06:00 and 18:00;
+  ከቀኑ for 06:00–17:59, ከምሽቱ until midnight, ከሌሊቱ after): 11:00–14:00 is
+  "ከቀኑ 5:00 – ከቀኑ 8:00".
+- A verification of a permit in force today, made outside its hours, answers
+  **"Not allowed now"** (`ScanResult::OutsideHours`, amber), with the allowed hours and the
+  time of the check in both clocks; it is logged like any other result. Expired, revoked
+  and not-yet-valid answers are unchanged. The hours are printed on the permit (entry 7).
+
 ### Permit document (spec §8)
+
+- **Broken documents** (2026-11-12): a stored PDF that is missing or smaller than 1 KB (the
+  test renderer's placeholder) is never handed out; the permit shows "being prepared".
+  `permits:documents` rebuilds those of issued, expired and revoked permits with a new
+  verification token (the QR code is printed in the PDF and only the token's hash is kept;
+  a placeholder had no QR code anyone could scan), audited as
+  `permit.document_regenerated`. It refuses to run while the fake renderer is configured.
 
 - Rendered by a **queued job** with **Gotenberg** (headless Chromium over HTTP, its own
   container, `GOTENBERG_URL`) rather than Browsershot, so the PHP image needs neither
   Node nor Chrome. No new PHP package: Laravel's HTTP client posts the HTML.
-- The HTML is self-contained: Noto Sans Ethiopic (OFL, copied to `resources/fonts` with
-  its licence) is embedded as data URIs, the QR code inline as SVG. A4, Amharic first with
-  English beside it, both calendars.
-- **Left out of the PDF on purpose**: the fee, receipt, contact details and staff names —
-  the paper travels with the driver and is shown at the roadside. "Issued by" is the
-  Authority, not a person. **CONFIRM** the legal wording; the time-window rules text
-  (`config/permits.php`) and the logo (`PERMITS_DOCUMENT_LOGO_PATH`) are **PLACEHOLDERS**
-  until the Authority provides them (open questions §14.2, §14.6).
+- The HTML is self-contained: Abyssinica SIL (OFL, copied to `resources/fonts` with
+  its licence; one weight, bold is synthesised) is embedded as data URIs, the QR code
+  inline as SVG. One **A4 landscape** page (owner's request, 2026-11-12).
+- **Two PDFs per permit, one per language** (owner's request, 2026-11-12): Amharic in
+  `document_path`, English in `document_path_en`, both carrying the same QR code. The
+  permit page offers a download button for each; neither is offered until both exist.
+- **Content follows the Authority's paper permit** (owner's request, 2026-11-12; the
+  visual design is our own): № and date, the nine numbered entries — requesting
+  organisation, vehicle owner, permitted time (full day / pass), vehicle type, plate,
+  reason, validity, **payment receipt number**, **issuer's name with a signature line** —
+  then the ማሳሰቢያ notes (`permits.document.notes`), plus the QR code and a stamp box.
+  This reverses the earlier choice to leave the receipt number and staff names out; the
+  fee, contact details and the token are still never printed. **CONFIRM** the English
+  wording of the notes; the logo (`PERMITS_DOCUMENT_LOGO_PATH`) is a **PLACEHOLDER** until
+  the Authority provides it (open question §14.6).
 - Stored on the private `documents` disk under a random name. The job is idempotent: it
   does nothing if the token was rotated meanwhile, and attaches the file only if the token
   still matches. 3 tries, back-off 30 s / 2 min / 10 min; `failed()` logs without the

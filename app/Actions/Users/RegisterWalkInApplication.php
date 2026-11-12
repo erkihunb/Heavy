@@ -4,8 +4,10 @@ namespace App\Actions\Users;
 
 use App\Actions\Permits\CreateDraftPermit;
 use App\Actions\Permits\SubmitPermit;
+use App\Actions\Permits\TakeReceiptAtIntake;
 use App\Actions\Vehicles\RegisterVehicle;
 use App\Data\OrganizationData;
+use App\Data\PaymentData;
 use App\Data\VehicleData;
 use App\Data\WalkInPermitData;
 use App\Models\Organization;
@@ -20,6 +22,7 @@ class RegisterWalkInApplication
         private readonly RegisterVehicle $registerVehicle,
         private readonly CreateDraftPermit $createDraftPermit,
         private readonly SubmitPermit $submitPermit,
+        private readonly TakeReceiptAtIntake $takeReceipt,
     ) {}
 
     /**
@@ -39,8 +42,9 @@ class RegisterWalkInApplication
         array $vehicles,
         ?WalkInPermitData $permit,
         User $registrar,
+        ?PaymentData $payment = null,
     ): array {
-        [$applicant, $application] = DB::transaction(function () use ($name, $email, $locale, $organization, $vehicles, $permit, $registrar): array {
+        [$applicant, $application] = DB::transaction(function () use ($name, $email, $locale, $organization, $vehicles, $permit, $registrar, $payment): array {
             $applicant = $this->registerApplicant->handle($name, $email, $locale, $organization, $registrar, notify: false);
 
             /** @var Organization $profile */
@@ -64,6 +68,11 @@ class RegisterWalkInApplication
 
             if ($permit->submit) {
                 $application = $this->submitPermit->handle($application, $registrar);
+
+                // The receipt brought with the request waits for the decision.
+                if ($payment !== null) {
+                    $this->takeReceipt->handle($application, $registrar, $payment);
+                }
             }
 
             return [$applicant, $application];

@@ -263,7 +263,7 @@ describe('starting an application', function () {
         $this->actingAs($this->user)->post(route('permits.store'), applicationForm($this->user, $this->vehicle, [
             'id' => '01JAAAAAAAAAAAAAAAAAAAAAAA',
             'status' => 'issued',
-            'permit_number' => 'TMA-HV-2019-000001',
+            'permit_number' => 'AACRA-2019-000001',
             'organization_id' => $other->id,
             'applicant_id' => $someone->id,
             'approved_by' => $someone->id,
@@ -568,7 +568,7 @@ describe('changing an application', function () {
         $this->actingAs($this->user)
             ->put(route('permits.update', $permit), applicationForm($this->user, $this->vehicle, [
                 'status' => 'issued',
-                'permit_number' => 'TMA-HV-2019-000001',
+                'permit_number' => 'AACRA-2019-000001',
                 'organization_id' => $other->id,
             ]))
             ->assertSessionHasNoErrors();

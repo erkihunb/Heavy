@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\Permit;
 use App\Models\Vehicle;
 use App\Support\EthiopianCalendar;
+use App\Support\Rbac\BranchScope;
 use Carbon\CarbonImmutable;
 use Generator;
 use Illuminate\Database\Eloquent\Builder;
@@ -87,6 +88,7 @@ final class ExportDatasets
             ->with(['organization:id,name_am,name_en', 'vehicles.vehicleType'])
             // Drafts and withdrawn applications are the applicant's business only.
             ->whereNotIn('status', [PermitStatus::Draft, PermitStatus::Withdrawn])
+            ->tap(fn (Builder $query) => BranchScope::fromFilters($filters)->apply($query, 'branch_id'))
             ->when($status !== null, fn (Builder $query) => $query->inEffectiveStatus($status))
             ->when(isset($filters['from']), fn (Builder $query) => $query->where('valid_to', '>=', $filters['from']))
             ->when(isset($filters['to']), fn (Builder $query) => $query->where('valid_from', '<=', $filters['to']))
@@ -128,6 +130,7 @@ final class ExportDatasets
         $query = Payment::query()
             ->with(['permit:id,permit_number,organization_id', 'permit.organization:id,name_am,name_en'])
             ->when($status !== null, fn (Builder $query) => $query->where('status', $status))
+            ->when(! BranchScope::fromFilters($filters)->everywhere, fn (Builder $query) => $query->whereHas('permit', fn (Builder $query) => BranchScope::fromFilters($filters)->apply($query, 'branch_id')))
             ->when(isset($filters['from']), fn (Builder $query) => $query->where('paid_at', '>=', $filters['from']))
             ->when(isset($filters['to']), fn (Builder $query) => $query->where('paid_at', '<=', $filters['to']))
             ->orderBy('id');

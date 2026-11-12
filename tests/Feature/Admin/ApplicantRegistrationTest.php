@@ -42,7 +42,7 @@ function walkIn(array $overrides = []): array
 
 it('registers the applicant and their organization in one step', function () {
     $this->actingAs($this->registrar)
-        ->post(route('admin.applicants.store'), walkIn())
+        ->post(route('admin.permits.store'), walkIn())
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('admin.applicants.show', User::query()->where('email', 'abebe@example.test')->value('id')))
         ->assertSessionHas('success');
@@ -69,7 +69,7 @@ it('registers the applicant and their organization in one step', function () {
 });
 
 it('never lets the office choose or see the password', function () {
-    $this->actingAs($this->registrar)->post(route('admin.applicants.store'), walkIn(['password' => 'secret-123']));
+    $this->actingAs($this->registrar)->post(route('admin.permits.store'), walkIn(['password' => 'secret-123']));
 
     $user = User::query()->where('email', 'abebe@example.test')->sole();
 
@@ -77,7 +77,7 @@ it('never lets the office choose or see the password', function () {
 });
 
 it('lets the applicant set a password from the e-mailed link and sign in', function () {
-    $this->actingAs($this->registrar)->post(route('admin.applicants.store'), walkIn());
+    $this->actingAs($this->registrar)->post(route('admin.permits.store'), walkIn());
     auth()->logout();
 
     $user = User::query()->where('email', 'abebe@example.test')->sole();
@@ -105,7 +105,7 @@ it('validates the form', function (array $overrides, string $field) {
     User::factory()->create(['email' => 'taken@example.test']);
 
     $this->actingAs($this->registrar)
-        ->post(route('admin.applicants.store'), walkIn($overrides))
+        ->post(route('admin.permits.store'), walkIn($overrides))
         ->assertSessionHasErrors($field);
 
     expect(User::query()->where('email', 'abebe@example.test')->exists())->toBeFalse();
@@ -122,8 +122,8 @@ it('is for registrars and admins only', function (Role $role, bool $allowed) {
     $user = staffUser($role);
 
     $this->actingAs($user)->get(route('admin.applicants.index'))->assertStatus($allowed ? 200 : 403);
-    $this->actingAs($user)->get(route('admin.applicants.create'))->assertStatus($allowed ? 200 : 403);
-    $this->actingAs($user)->post(route('admin.applicants.store'), walkIn())->assertStatus($allowed ? 302 : 403);
+    $this->actingAs($user)->get(route('admin.permits.create'))->assertStatus($allowed ? 200 : 403);
+    $this->actingAs($user)->post(route('admin.permits.store'), walkIn())->assertStatus($allowed ? 302 : 403);
 })->with([
     'registrar' => [Role::Registrar, true],
     'admin' => [Role::Admin, true],
@@ -138,7 +138,7 @@ it('keeps applicants out', function () {
 });
 
 it('lists applicants with where they registered, and finds them', function () {
-    $this->actingAs($this->registrar)->post(route('admin.applicants.store'), walkIn());
+    $this->actingAs($this->registrar)->post(route('admin.permits.store'), walkIn());
     applicantWithOrganization(['name_am' => 'ሌላ ተቋም', 'tin' => '0055555555']);
 
     $this->actingAs($this->registrar)

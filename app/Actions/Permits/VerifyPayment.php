@@ -4,7 +4,6 @@ namespace App\Actions\Permits;
 
 use App\Domain\Audit\AuditEvent;
 use App\Domain\Audit\AuditLog;
-use App\Domain\Notifications\PermitNotifier;
 use App\Domain\Permits\PermitTransitions;
 use App\Enums\PaymentStatus;
 use App\Enums\PermitStatus;
@@ -13,22 +12,19 @@ use App\Exceptions\PermitRuleViolation;
 use App\Models\Payment;
 use App\Models\Permit;
 use App\Models\User;
-use App\Notifications\PermitIssued;
 use Carbon\CarbonImmutable;
 
 class VerifyPayment
 {
     public function __construct(
         private readonly PermitTransitions $transitions,
-        private readonly IssuePermit $issuePermit,
-        private readonly PermitNotifier $notifier,
         private readonly AuditLog $audit,
     ) {}
 
     /**
-     * A cashier confirms that the receipt is genuine and covers the fee. The
-     * permit is issued: it gets its verification token, and its document is
-     * queued once the transaction commits.
+     * A cashier confirms that a receipt sent in is genuine and covers the
+     * fee. The application moves on to an Issuer, who issues and prints the
+     * permit (IssuePaidPermit).
      *
      * @throws InvalidPermitTransition
      * @throws PermitRuleViolation when the cashier approved this permit, or the payment is not the one awaiting verification
@@ -38,7 +34,7 @@ class VerifyPayment
         /** @var Permit $permit */
         $permit = $payment->permit()->firstOrFail();
 
-        $this->transitions->apply($permit, PermitStatus::Issued, $cashier, $note, function (Permit $permit) use ($payment, $cashier, $note): void {
+        $this->transitions->apply($permit, PermitStatus::PaymentConfirmed, $cashier, $note, function (Permit $permit) use ($payment, $cashier, $note): void {
             $payment->refresh();
 
             if ($payment->status !== PaymentStatus::Submitted) {
@@ -50,11 +46,9 @@ class VerifyPayment
                 throw new PermitRuleViolation('verifier_is_approver');
             }
 
-            $now = CarbonImmutable::now();
-
             $payment->status = PaymentStatus::Verified;
             $payment->verified_by = $cashier->id;
-            $payment->verified_at = $now;
+            $payment->verified_at = CarbonImmutable::now();
             $payment->notes = filled($note) ? trim((string) $note) : null;
             $payment->save();
 
@@ -63,13 +57,7 @@ class VerifyPayment
                 new: ['status' => PaymentStatus::Verified->value],
                 context: ['receipt_number' => $payment->receipt_number, 'amount_cents' => $payment->amount_cents],
             );
-
-            $permit->issued_at = $now;
-            $this->issuePermit->handle($permit);
         });
-
-        // The cashier's remark on a verified payment is internal: not passed on.
-        $this->notifier->send($permit, new PermitIssued($permit));
 
         return $payment;
     }

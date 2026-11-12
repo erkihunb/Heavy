@@ -2,6 +2,7 @@ import {
     Ban,
     CircleCheck,
     CircleDashed,
+    ClockAlert,
     Hourglass,
     SearchX,
 } from 'lucide-react';
@@ -18,6 +19,10 @@ const PRESENTATION: Record<
     valid: {
         icon: CircleCheck,
         className: 'border-success bg-success text-success-foreground',
+    },
+    outside_hours: {
+        icon: ClockAlert,
+        className: 'border-warning bg-warning text-white',
     },
     not_yet_valid: {
         icon: Hourglass,
@@ -45,10 +50,16 @@ export function VerificationResult({
     result,
     checkedAt,
     checkedTime,
+    checkedTimeEthiopian,
+    hours,
 }: {
     result: ScanResult;
     checkedAt: DualDate;
     checkedTime: string;
+    /** The time of the check on the Ethiopian clock. */
+    checkedTimeEthiopian?: string;
+    /** The permit's movement hours, shown when it is checked outside them. */
+    hours?: { label: string } | null;
 }) {
     const { t } = useTranslation();
     const { icon: Icon, className } = PRESENTATION[result];
@@ -72,6 +83,26 @@ export function VerificationResult({
             <p className="mt-2 text-lg font-medium">
                 {t(`verification.results.${result}.body`)}
             </p>
+            {result === 'outside_hours' && hours && (
+                <dl className="mx-auto mt-4 grid max-w-md gap-2 rounded-card bg-black/15 px-4 py-3 text-left text-base sm:grid-cols-2">
+                    <div>
+                        <dt className="text-xs font-semibold uppercase opacity-80">
+                            {t('verification.hours.allowed')}
+                        </dt>
+                        <dd className="font-bold">{hours.label}</dd>
+                    </div>
+                    <div>
+                        <dt className="text-xs font-semibold uppercase opacity-80">
+                            {t('verification.hours.now')}
+                        </dt>
+                        <dd className="font-bold">
+                            {checkedTimeEthiopian
+                                ? `${checkedTimeEthiopian} (${checkedTime})`
+                                : checkedTime}
+                        </dd>
+                    </div>
+                </dl>
+            )}
             <p className="mt-3 text-sm opacity-80">
                 {t('verification.checked_at', {
                     date: checkedAt.ethiopian_label,

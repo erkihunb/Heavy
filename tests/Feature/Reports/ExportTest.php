@@ -87,7 +87,8 @@ describe('requesting', function () {
             ->and($export->dataset)->toBe(ExportDataset::Permits)
             ->and($export->format)->toBe(ExportFormat::Xlsx)
             ->and($export->status)->toBe(ExportStatus::Pending)
-            ->and($export->filters)->toBe(['status' => 'active', 'from' => '2026-11-01', 'to' => '2026-11-30']);
+            // Where the person may see is fixed with the request: here the head office (no branch exists).
+            ->and($export->filters)->toBe(['status' => 'active', 'from' => '2026-11-01', 'to' => '2026-11-30', 'scope' => ['head_office' => true, 'branch_ids' => []]]);
 
         Queue::assertPushed(GenerateExport::class, fn (GenerateExport $job): bool => $job->exportId === $export->id);
     });

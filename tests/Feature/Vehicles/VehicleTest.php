@@ -307,6 +307,7 @@ describe('listing', function () {
                     'region_code' => 'ኢት',
                     'owner_name' => 'አበበ ከበደ',
                     'vehicle_type' => ['id' => $type->id, 'code' => 'cargo', 'name' => 'የጭነት'],
+                    'type_detail' => null,
                     'registered_at' => [
                         'gregorian' => '2025-10-08',
                         'ethiopian' => '28/01/2018',

@@ -1,0 +1,258 @@
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { logout } from '@/routes';
+import { edit as profileEdit } from '@/routes/profile';
+import LanguageSwitcher from '@/shell/Components/LanguageSwitcher';
+import {
+    MenuIcon,
+    ChevronDown,
+    LogOut,
+    SettingsIcon,
+    SearchIcon as Search,
+    SidebarIcon,
+} from '@/shell/Components/NavIcons';
+import NotificationBell from '@/shell/Components/NotificationBell';
+import ThemeToggle from '@/shell/Components/ThemeToggle';
+import AppCommandPalette from '@/shell/Components/ui/AppCommandPalette';
+import UserAvatar from '@/shell/Components/UserAvatar';
+import { useLocale } from '@/shell/hooks/useLocale';
+
+interface Props {
+    /** Opens the navigation drawer (below the lg breakpoint). */
+    onMenuClick: () => void;
+    /** Collapses the desktop sidebar to its icon rail and back; absent on layouts without one. */
+    onToggleSidebar?: () => void;
+    sidebarCollapsed?: boolean;
+}
+
+const focusRing =
+    'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-(--app-surface)';
+/* Every toolbar control is 36px on the control radius, so the row reads as one instrument. */
+const iconButton =
+    'flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-(--app-muted-foreground) transition-colors duration-150 hover:bg-(--app-surface-muted) hover:text-(--app-foreground)';
+
+/** The top bar: menu and sidebar toggles, the command palette, the bell, appearance, language and the account menu. */
+export default function AppHeader({
+    onMenuClick,
+    onToggleSidebar,
+    sidebarCollapsed = false,
+}: Props) {
+    const { auth } = usePage().props;
+    const user = auth.user;
+    const { t } = useLocale();
+    // Role names in the current language (lang/{en,am}/roles.php).
+    const roles = (user?.roles ?? []).map((role) => t(`roles.${role}.name`));
+    const [paletteOpen, setPaletteOpen] = useState(false);
+    const [shortcut] = useState(() =>
+        typeof navigator !== 'undefined' &&
+        /Mac|iPhone|iPad/.test(navigator.platform)
+            ? '⌘ K'
+            : 'Ctrl K',
+    );
+    const displayName = user?.name ?? t('shell.common.user');
+
+    useEffect(() => {
+        function onKey(event: KeyboardEvent) {
+            if (
+                (event.ctrlKey || event.metaKey) &&
+                event.key.toLowerCase() === 'k' &&
+                !event.repeat
+            ) {
+                event.preventDefault();
+                setPaletteOpen((open) => !open);
+            }
+        }
+        document.addEventListener('keydown', onKey);
+        return () => document.removeEventListener('keydown', onKey);
+    }, []);
+
+    return (
+        <>
+            <AppCommandPalette
+                open={paletteOpen}
+                onClose={() => setPaletteOpen(false)}
+            />
+            <header
+                data-admin-header
+                className="sticky top-0 z-20 flex h-16 min-w-0 shrink-0 items-center justify-between gap-2 border-b border-(--app-border) bg-(--app-surface) px-3 sm:gap-4 sm:px-6 lg:px-8"
+            >
+                <div className="flex min-w-0 items-center gap-1 sm:flex-1 sm:gap-2">
+                    <button
+                        type="button"
+                        onClick={onMenuClick}
+                        aria-label={t('shell.nav.open_menu')}
+                        className={[iconButton, 'lg:hidden', focusRing].join(
+                            ' ',
+                        )}
+                    >
+                        <MenuIcon className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    {onToggleSidebar && (
+                        <button
+                            type="button"
+                            onClick={onToggleSidebar}
+                            aria-label={t(
+                                sidebarCollapsed
+                                    ? 'shell.nav.expand_sidebar'
+                                    : 'shell.nav.collapse_sidebar',
+                            )}
+                            aria-expanded={!sidebarCollapsed}
+                            className={[
+                                iconButton,
+                                'hidden lg:flex',
+                                focusRing,
+                            ].join(' ')}
+                        >
+                            <SidebarIcon
+                                className="h-5 w-5"
+                                aria-hidden="true"
+                            />
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => setPaletteOpen(true)}
+                        aria-label={t('shell.nav.command_menu')}
+                        aria-haspopup="dialog"
+                        className={[iconButton, 'sm:hidden', focusRing].join(
+                            ' ',
+                        )}
+                    >
+                        <Search className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setPaletteOpen(true)}
+                        aria-label={t('shell.nav.command_menu')}
+                        aria-haspopup="dialog"
+                        aria-keyshortcuts="Control+k Meta+k"
+                        className={
+                            'hidden h-9 w-full max-w-sm items-center gap-2.5 rounded-md border border-(--app-border) bg-(--app-surface-muted) px-3 text-sm text-(--app-muted-foreground) transition-colors duration-150 hover:border-(--app-border-strong) hover:bg-(--app-surface) hover:text-(--app-foreground) sm:flex ' +
+                            focusRing
+                        }
+                    >
+                        <Search
+                            className="h-4 w-4 shrink-0"
+                            aria-hidden="true"
+                        />
+                        <span className="min-w-0 flex-1 truncate text-start">
+                            {t('shell.nav.search_navigation')}
+                        </span>
+                        <kbd
+                            aria-hidden="true"
+                            className="hidden shrink-0 rounded-sm border border-(--app-border) bg-(--app-surface) px-1.5 py-0.5 font-sans text-[10px] font-medium text-(--app-muted-foreground) lg:inline"
+                        >
+                            {shortcut}
+                        </kbd>
+                    </button>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+                    <NotificationBell />
+                    <ThemeToggle variant="toolbar" />
+                    <LanguageSwitcher variant="toolbar" />
+                    <span
+                        aria-hidden="true"
+                        className="mx-1 hidden h-6 w-px bg-(--app-border) sm:block"
+                    />
+                    <Menu>
+                        <MenuButton
+                            aria-label={
+                                t('shell.account.menu') + ': ' + displayName
+                            }
+                            className={
+                                'flex h-10 items-center gap-2.5 rounded-md px-1 text-start text-(--app-foreground) transition-colors duration-150 hover:bg-(--app-surface-muted) sm:px-1.5 ' +
+                                focusRing
+                            }
+                        >
+                            <UserAvatar
+                                src={user?.avatar}
+                                name={displayName}
+                                size={30}
+                                className="bg-(--app-surface-muted)! text-(--app-foreground)! ring-1 ring-(--app-border)"
+                            />
+                            <span className="hidden min-w-0 lg:block">
+                                <span className="block max-w-40 truncate text-sm leading-snug font-semibold">
+                                    {displayName}
+                                </span>
+                                {roles[0] && (
+                                    <span className="mt-0.5 block max-w-40 truncate text-[11px] leading-snug text-(--app-muted-foreground)">
+                                        {roles[0]}
+                                    </span>
+                                )}
+                            </span>
+                            <ChevronDown
+                                className="hidden h-4 w-4 shrink-0 text-(--app-muted-foreground) sm:block"
+                                aria-hidden="true"
+                            />
+                        </MenuButton>
+                        <MenuItems
+                            anchor="bottom end"
+                            transition
+                            className="z-50 w-72 max-w-[calc(100vw-1rem)] overflow-hidden rounded-panel border border-(--app-border) bg-(--app-surface) text-(--app-foreground) shadow-lg outline-hidden transition duration-100 ease-out [--anchor-gap:8px] [--anchor-padding:8px] data-closed:scale-[0.98] data-closed:opacity-0"
+                        >
+                            <div className="border-b border-(--app-border) bg-(--app-surface-muted) px-4 py-3.5">
+                                <p className="mb-1 text-[11px] font-semibold tracking-wide text-(--app-muted-foreground) uppercase">
+                                    {t('shell.account.signed_in_as')}
+                                </p>
+                                <p className="text-sm font-semibold wrap-break-word">
+                                    {displayName}
+                                </p>
+                                {user?.email && (
+                                    <p className="mt-0.5 text-xs break-all text-(--app-muted-foreground)">
+                                        {user.email}
+                                    </p>
+                                )}
+                                {roles.length > 0 && (
+                                    <div className="mt-2.5 flex flex-wrap gap-1.5">
+                                        {roles.map((role) => (
+                                            <span
+                                                key={role}
+                                                className="rounded-md border border-(--app-border) bg-(--app-surface) px-2 py-0.5 text-xs text-(--app-muted-foreground)"
+                                            >
+                                                {role}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="p-1.5">
+                                <MenuItem>
+                                    <Link
+                                        href={profileEdit().url}
+                                        className="flex min-h-10 items-center gap-3 rounded-md px-3 text-sm data-focus:bg-(--app-surface-muted)"
+                                    >
+                                        <SettingsIcon
+                                            className="h-[18px] w-[18px] text-(--app-muted-foreground)"
+                                            aria-hidden="true"
+                                        />
+                                        {t('shell.account.profile_settings')}
+                                    </Link>
+                                </MenuItem>
+                            </div>
+                            <div className="border-t border-(--app-border) p-1.5">
+                                <MenuItem>
+                                    <Link
+                                        href={logout().url}
+                                        method="post"
+                                        as="button"
+                                        // Signed out, no page from this session may come back from the cache.
+                                        onClick={() => router.flushAll()}
+                                        className="flex min-h-10 w-full items-center gap-3 rounded-md px-3 text-start text-sm text-red-700 data-focus:bg-red-50 dark:text-red-400 dark:data-focus:bg-red-950/40"
+                                    >
+                                        <LogOut
+                                            className="h-[18px] w-[18px]"
+                                            aria-hidden="true"
+                                        />
+                                        {t('shell.account.sign_out')}
+                                    </Link>
+                                </MenuItem>
+                            </div>
+                        </MenuItems>
+                    </Menu>
+                </div>
+            </header>
+        </>
+    );
+}

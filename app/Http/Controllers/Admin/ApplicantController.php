@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Actions\Users\RegisterWalkInApplication;
+use App\Domain\Permits\FeeCalculator;
 use App\Domain\Permits\ValidityRules;
 use App\Enums\PermitStatus;
+use App\Enums\PermitType;
 use App\Enums\PlateRegion;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
@@ -13,11 +15,15 @@ use App\Http\Resources\VehicleTypeResource;
 use App\Models\User;
 use App\Models\VehicleType;
 use App\Support\EthiopianCalendar;
+use App\Support\Money;
 use App\Support\Paginated;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -80,7 +86,7 @@ class ApplicantController extends Controller
     {
         Gate::authorize('registerApplicant', User::class);
 
-        return Inertia::render('admin/applicants/create', [
+        return Inertia::render('admin/permits/create', [
             'locales' => config('localization.supported'),
             // The vehicle and permit parts of the one-page form.
             'vehicleTypes' => VehicleTypeResource::collection(VehicleType::cachedOrdered()->filter(fn (VehicleType $type): bool => $type->is_active)->values()),
@@ -92,6 +98,33 @@ class ApplicantController extends Controller
                 'max_trailers' => (int) config('permits.max_trailers'),
                 'max_duration_days' => ValidityRules::maxDurationDays(),
             ],
+            'receiptMaxKilobytes' => (int) config('permits.receipt_max_kilobytes'),
+        ]);
+    }
+
+    /**
+     * What the request on the one-page form would cost by today's schedule,
+     * from the type of its vehicle; the amount on the receipt must match it.
+     */
+    public function feeEstimate(Request $request, FeeCalculator $fees): JsonResponse
+    {
+        Gate::authorize('registerApplicant', User::class);
+
+        $validated = $request->validate([
+            'permit_type' => ['required', Rule::enum(PermitType::class)],
+            'vehicle_type_id' => ['required', 'integer', Rule::exists(VehicleType::class, 'id')],
+            'valid_from' => ['bail', 'required', 'date_format:Y-m-d'],
+            'valid_to' => ['bail', 'required', 'date_format:Y-m-d', 'after_or_equal:valid_from'],
+        ]);
+
+        $from = CarbonImmutable::createFromFormat('!Y-m-d', $validated['valid_from'], 'UTC');
+        $to = CarbonImmutable::createFromFormat('!Y-m-d', $validated['valid_to'], 'UTC');
+        $days = (int) $from->diffInDays($to) + 1;
+        $amount = $fees->amountFor(PermitType::from($validated['permit_type']), (int) $validated['vehicle_type_id'], $days, ValidityRules::today());
+
+        return response()->json([
+            'days' => $days,
+            'fee' => $amount === null ? null : Money::present($amount),
         ]);
     }
 
@@ -105,6 +138,7 @@ class ApplicantController extends Controller
             $request->vehicles(),
             $request->permit(),
             $request->user(),
+            $request->payment(),
         );
 
         $message = __('applicants.messages.registered', ['email' => $user->email]);

@@ -58,7 +58,8 @@ class SecurityHeaders
             'img-src' => ["'self'", 'data:', 'blob:', $dev],
             'font-src' => ["'self'", 'data:', $dev],
             'connect-src' => ["'self'", $dev, $devSocket],
-            'frame-src' => ["'self'"],
+            // blob: so a permit PDF fetched by the page can be printed from a hidden frame.
+            'frame-src' => ["'self'", 'blob:'],
             'frame-ancestors' => ["'none'"],
             'base-uri' => ["'self'"],
             'form-action' => ["'self'"],

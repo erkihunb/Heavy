@@ -3,6 +3,7 @@
 use App\Http\Controllers\Officer\VerificationController as OfficerVerificationController;
 use App\Http\Controllers\Staff\ExportController;
 use App\Http\Controllers\Staff\PaymentController;
+use App\Http\Controllers\Staff\PermitDeskController;
 use App\Http\Controllers\Staff\PermitReviewController;
 use App\Http\Controllers\Staff\ReportController;
 use App\Models\Payment;
@@ -29,6 +30,27 @@ Route::middleware(['auth', 'verified', 'can:viewQueue,'.Permit::class])
         Route::post('permits/{permit}/revoke', 'revoke')->name('permits.revoke');
         Route::post('permits/{permit}/reissue', 'reissue')->name('permits.reissue');
     });
+
+/*
+ * After the decision: payment at the cashier's desk, issuing and printing,
+ * the head office's comments, and the scanned request letter.
+ */
+Route::middleware(['auth', 'verified', 'can:viewQueue,'.Permit::class])
+    ->prefix('staff')
+    ->name('staff.')
+    ->controller(PermitDeskController::class)
+    ->group(function () {
+        Route::post('permits/{permit}/payment', 'recordPayment')
+            ->middleware('throttle:30,1')
+            ->name('permits.record-payment');
+        Route::post('permits/{permit}/issue', 'issue')->name('permits.issue');
+        Route::post('permits/{permit}/comments', 'comment')->name('permits.comments.store');
+    });
+
+// The scanned letter: also for the Registrar who took the request (PermitPolicy::viewLetter).
+Route::middleware(['auth', 'verified'])
+    ->get('staff/permits/{permit}/letter', [PermitDeskController::class, 'letter'])
+    ->name('staff.permits.letter');
 
 /*
  * The traffic officer's tools (spec §7). Scanning a QR code opens the public

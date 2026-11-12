@@ -25,6 +25,11 @@ declare module '@inertiajs/core' {
                 showBreadcrumbs: boolean;
                 showLanguageSwitcher: boolean;
             };
+            /**
+             * Settings the admin shell reads, flat and keyed as in the source kit
+             * ('appearance.primary_color', …); missing on a page whose middleware never ran.
+             */
+            settings?: Record<string, unknown>;
             /** System settings → General; missing on a page whose middleware never ran. */
             branding?: {
                 logo: string | null;

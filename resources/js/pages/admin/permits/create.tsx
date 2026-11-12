@@ -1,0 +1,1400 @@
+import { Head, Link, useForm } from '@inertiajs/react';
+import {
+    Check,
+    ChevronDown,
+    CircleAlert,
+    MailCheck,
+    Save,
+    Send,
+    UserPlus,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { FormEvent, ReactNode } from 'react';
+import { EthiopianDateInput } from '@/components/ethiopian-date-input';
+import { FormField } from '@/components/form-field';
+import InputError from '@/components/input-error';
+import { LetterFields } from '@/components/letter-fields';
+import type { LetterValue } from '@/components/letter-fields';
+import { MovementHoursField } from '@/components/movement-hours-field';
+import { PageHeader } from '@/components/page-header';
+import { PlateInput } from '@/components/plate-input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
+import AppLayout from '@/layouts/app-layout';
+import { useTranslation } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
+import { create, index, intakeFee, store } from '@/routes/admin/permits';
+import type {
+    BreadcrumbItem,
+    Money,
+    PlateRegionOption,
+    VehicleType,
+} from '@/types';
+import { PERMIT_TYPES } from '@/types/enums';
+import type { TranslationKey } from '@/types/translations';
+
+/** The vehicle type whose vehicles are described in words (App\Models\VehicleType::OTHER). */
+const OTHER_TYPE = 'other';
+/** The type a trailer plate is registered with (App\Models\VehicleType::TRAILER). */
+const TRAILER_TYPE = 'trailer';
+
+type Props = {
+    /** Supported languages: code => name written in that language. */
+    locales: Record<string, string>;
+    vehicleTypes: VehicleType[];
+    plateRegions: PlateRegionOption[];
+    limits: { max_trailers: number; max_duration_days: number };
+    receiptMaxKilobytes: number;
+};
+
+type FormData = {
+    // 1. The applicant.
+    contact_email: string;
+    contact_name: string;
+    phone: string;
+    name_am: string;
+    tin: string;
+    // More about the organization (optional).
+    name_en: string;
+    email: string;
+    address: string;
+    locale: string;
+    apply: boolean;
+    submit: boolean;
+    // 2. The vehicle, and its trailer if any.
+    owner_name: string;
+    vehicle_type_id: string;
+    type_detail: string;
+    plate: string;
+    trailer_plate: string;
+    // 3. The permit.
+    permit_type: string;
+    reason: string;
+    valid_from: string;
+    valid_to: string;
+    any_time: boolean;
+    move_from: string;
+    move_to: string;
+    // 4. The payment.
+    amount: string;
+    receipt_number: string;
+    paid_at: string;
+    receipt_file: File | null;
+    // 5. The confirmation.
+    confirmed: boolean;
+} & LetterValue;
+
+type StepKey = 'applicant' | 'vehicle' | 'permit' | 'payment' | 'confirm';
+
+type StepState = 'done' | 'todo' | 'optional' | 'error';
+
+const filled = (...values: string[]) =>
+    values.every((value) => value.trim() !== '');
+
+/** Which form fields belong to which step, to mark a step that has errors. */
+const STEP_FIELDS: Record<StepKey, (field: string) => boolean> = {
+    applicant: (field) =>
+        [
+            'contact_name',
+            'contact_email',
+            'locale',
+            'name_am',
+            'name_en',
+            'tin',
+            'phone',
+            'email',
+            'address',
+        ].includes(field),
+    vehicle: (field) => field.startsWith('vehicles'),
+    permit: (field) =>
+        [
+            'permit_type',
+            'valid_from',
+            'valid_to',
+            'reason',
+            'any_time',
+            'move_from',
+            'move_to',
+            'letter_number',
+            'letter_date',
+            'letter_file',
+        ].includes(field),
+    payment: (field) =>
+        ['amount', 'receipt_number', 'paid_at', 'receipt_file'].includes(field),
+    confirm: (field) => field === 'confirmed',
+};
+
+/** Fields the organization's details hide under "more", to open them on an error. */
+const MORE_FIELDS = ['name_en', 'email', 'address', 'locale'];
+
+/**
+ * One numbered part of the form (EUISIS form section): the number — a tick
+ * once it is complete, a warning when something is wrong — the title, a
+ * line on what it is for, and the fields.
+ */
+function Step({
+    id,
+    number,
+    title,
+    description,
+    state,
+    children,
+}: {
+    id: StepKey;
+    number: number;
+    title: string;
+    description: string;
+    state: StepState;
+    children: ReactNode;
+}) {
+    return (
+        <section
+            id={`step-${id}`}
+            aria-labelledby={`step-${id}-title`}
+            className={cn(
+                'scroll-mt-24 overflow-hidden rounded-card border bg-card',
+                state === 'error' ? 'border-destructive/60' : 'border-border',
+            )}
+        >
+            <header className="flex flex-wrap items-start gap-4 border-b border-border px-5 py-4 sm:px-6">
+                <StepNumber number={number} state={state} />
+                <div className="min-w-0 flex-1 basis-56">
+                    <h2 id={`step-${id}-title`} className="text-section-title">
+                        {title}
+                    </h2>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                        {description}
+                    </p>
+                </div>
+            </header>
+            <div className="p-5 sm:p-6">{children}</div>
+        </section>
+    );
+}
+
+function StepNumber({ number, state }: { number: number; state: StepState }) {
+    return (
+        <span
+            aria-hidden="true"
+            className={cn(
+                'flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold tabular-nums',
+                state === 'done' && 'bg-success text-success-foreground',
+                state === 'error' && 'bg-destructive text-white',
+                (state === 'todo' || state === 'optional') &&
+                    'bg-primary/10 text-primary',
+            )}
+        >
+            {state === 'done' ? (
+                <Check className="size-4" strokeWidth={3} />
+            ) : state === 'error' ? (
+                <CircleAlert className="size-4" strokeWidth={2.5} />
+            ) : (
+                number
+            )}
+        </span>
+    );
+}
+
+/**
+ * What the request would cost by today's schedule, asked of the server once
+ * the type, the vehicle type and both dates are chosen. The amount on the
+ * receipt must match it; one click copies it into the amount.
+ */
+function useFeeEstimate(
+    permitType: string,
+    vehicleTypeId: string,
+    validFrom: string,
+    validTo: string,
+): { days: number; fee: Money | null } | null {
+    const [estimate, setEstimate] = useState<{
+        key: string;
+        days: number;
+        fee: Money | null;
+    } | null>(null);
+    const complete =
+        filled(permitType, vehicleTypeId, validFrom, validTo) &&
+        validFrom <= validTo;
+    const key = [permitType, vehicleTypeId, validFrom, validTo].join('|');
+
+    useEffect(() => {
+        if (!complete) {
+            return;
+        }
+
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => {
+            fetch(
+                intakeFee.url({
+                    query: {
+                        permit_type: permitType,
+                        vehicle_type_id: vehicleTypeId,
+                        valid_from: validFrom,
+                        valid_to: validTo,
+                    },
+                }),
+                {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin',
+                    signal: controller.signal,
+                },
+            )
+                .then((response) => (response.ok ? response.json() : null))
+                .then((body: { days: number; fee: Money | null } | null) =>
+                    setEstimate(body === null ? null : { key, ...body }),
+                )
+                .catch(() => {
+                    // Aborted or offline: the estimate only helps.
+                });
+        }, 300);
+
+        return () => {
+            window.clearTimeout(timer);
+            controller.abort();
+        };
+    }, [complete, key, permitType, vehicleTypeId, validFrom, validTo]);
+
+    return complete && estimate?.key === key ? estimate : null;
+}
+
+/**
+ * The office's application form, in the order of the Authority's form:
+ * the applicant, the vehicle, the permit asked for, the payment and the
+ * confirmation. Saved together — as a draft, or submitted for review with
+ * the receipt, which the cashier verifies once the request is approved. A
+ * sticky panel shows how far the form is and keeps the buttons in reach.
+ * The permit part can be switched off to register only the person.
+ */
+export default function ApplicantsCreate({
+    locales,
+    vehicleTypes,
+    plateRegions,
+    limits,
+    receiptMaxKilobytes,
+}: Props) {
+    const { t, locale } = useTranslation();
+    const form = useForm<FormData>({
+        contact_email: '',
+        contact_name: '',
+        phone: '',
+        name_am: '',
+        tin: '',
+        name_en: '',
+        email: '',
+        address: '',
+        locale,
+        apply: true,
+        submit: true,
+        owner_name: '',
+        vehicle_type_id: '',
+        type_detail: '',
+        plate: '',
+        trailer_plate: '',
+        permit_type: '',
+        reason: '',
+        valid_from: '',
+        valid_to: '',
+        any_time: true,
+        move_from: '',
+        move_to: '',
+        letter_number: '',
+        letter_date: '',
+        letter_file: null,
+        amount: '',
+        receipt_number: '',
+        paid_at: '',
+        receipt_file: null,
+        confirmed: false,
+    });
+    // Errors for the vehicles arrive under keys such as "vehicles.1.plate".
+    const errors = form.errors as Partial<Record<string, string>>;
+    const errorFields = Object.keys(errors);
+    const { data } = form;
+    const [moreOpen, setMoreOpen] = useState(false);
+    const showMore =
+        moreOpen || MORE_FIELDS.some((field) => errors[field] !== undefined);
+
+    const typeCode = vehicleTypes.find(
+        (type) => String(type.id) === data.vehicle_type_id,
+    )?.code;
+    const trailerType = vehicleTypes.find((type) => type.code === TRAILER_TYPE);
+    const canTow = limits.max_trailers > 0 && trailerType !== undefined;
+    const estimate = useFeeEstimate(
+        data.permit_type,
+        data.vehicle_type_id,
+        data.valid_from,
+        data.valid_to,
+    );
+
+    const save = (submitNow: boolean) => (event?: FormEvent) => {
+        event?.preventDefault();
+        form.transform((current) => {
+            const {
+                owner_name,
+                vehicle_type_id,
+                type_detail,
+                plate,
+                trailer_plate,
+                ...rest
+            } = current;
+            const vehicles = [
+                {
+                    plate,
+                    vehicle_type_id,
+                    owner_name,
+                    type_detail: typeCode === OTHER_TYPE ? type_detail : '',
+                },
+                // The trailer belongs to the same owner and is registered as a trailer.
+                ...(canTow && trailer_plate.trim() !== ''
+                    ? [
+                          {
+                              plate: trailer_plate,
+                              vehicle_type_id: String(trailerType.id),
+                              owner_name,
+                              type_detail: '',
+                          },
+                      ]
+                    : []),
+            ];
+
+            return { ...rest, vehicles, submit: submitNow };
+        });
+        form.post(store.url(), {
+            // The scanned letter and the receipt travel as files.
+            forceFormData: true,
+            preserveScroll: true,
+            onError: (failed) => {
+                // Bring the first wrong part into view.
+                const first = (Object.keys(STEP_FIELDS) as StepKey[]).find(
+                    (step) => Object.keys(failed).some(STEP_FIELDS[step]),
+                );
+
+                if (first) {
+                    document.getElementById(`step-${first}`)?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start',
+                    });
+                }
+            },
+        });
+    };
+
+    const stateOf = (
+        step: StepKey,
+        complete: boolean,
+        optional = false,
+    ): StepState =>
+        errorFields.some(STEP_FIELDS[step])
+            ? 'error'
+            : complete
+              ? 'done'
+              : optional
+                ? 'optional'
+                : 'todo';
+
+    const states: Record<StepKey, StepState> = {
+        applicant: stateOf(
+            'applicant',
+            filled(
+                data.contact_email,
+                data.contact_name,
+                data.phone,
+                data.name_am,
+                data.tin,
+            ),
+        ),
+        vehicle: stateOf(
+            'vehicle',
+            filled(data.owner_name, data.vehicle_type_id, data.plate) &&
+                (typeCode !== OTHER_TYPE || filled(data.type_detail)),
+        ),
+        permit: stateOf(
+            'permit',
+            filled(
+                data.permit_type,
+                data.valid_from,
+                data.valid_to,
+                data.reason,
+                data.letter_number,
+                data.letter_date,
+            ) && data.letter_file !== null,
+        ),
+        payment: stateOf(
+            'payment',
+            filled(data.amount, data.receipt_number, data.paid_at) &&
+                data.receipt_file !== null,
+            // A receipt the applicant did not bring is recorded by the cashier later.
+            true,
+        ),
+        confirm: stateOf('confirm', data.confirmed),
+    };
+
+    const steps: { key: StepKey; title: TranslationKey }[] = [
+        {
+            key: 'applicant',
+            title: 'applicants.intake.sections.applicant.title',
+        },
+        ...(data.apply
+            ? ([
+                  {
+                      key: 'vehicle',
+                      title: 'applicants.intake.sections.vehicle.title',
+                  },
+                  {
+                      key: 'permit',
+                      title: 'applicants.intake.sections.permit.title',
+                  },
+                  {
+                      key: 'payment',
+                      title: 'applicants.intake.sections.payment.title',
+                  },
+                  {
+                      key: 'confirm',
+                      title: 'applicants.intake.sections.confirm.title',
+                  },
+              ] as { key: StepKey; title: TranslationKey }[])
+            : []),
+    ];
+    const required = steps.filter((step) => step.key !== 'payment');
+    const completed = required.filter(
+        (step) => states[step.key] === 'done',
+    ).length;
+
+    const text = (
+        field:
+            | 'contact_name'
+            | 'name_am'
+            | 'name_en'
+            | 'address'
+            | 'owner_name'
+            | 'type_detail'
+            | 'receipt_number',
+        label: string,
+        extra: {
+            lang?: string;
+            maxLength?: number;
+            autoComplete?: string;
+            hint?: string;
+            error?: string;
+            translate?: 'no';
+        } = {},
+    ) => {
+        const { hint, error, ...input } = extra;
+
+        return (
+            <FormField
+                id={field}
+                label={label}
+                hint={hint}
+                error={error ?? errors[field]}
+            >
+                {(control) => (
+                    <Input
+                        {...control}
+                        {...input}
+                        value={data[field]}
+                        onChange={(event) =>
+                            form.setData(field, event.target.value)
+                        }
+                    />
+                )}
+            </FormField>
+        );
+    };
+
+    const buttons = (stacked: boolean) => (
+        <div
+            className={cn(
+                'flex gap-2',
+                stacked ? 'flex-col' : 'flex-col-reverse sm:flex-row',
+            )}
+        >
+            {data.apply ? (
+                <>
+                    <Button type="submit" size="lg" disabled={form.processing}>
+                        {form.processing ? (
+                            <Spinner />
+                        ) : (
+                            <Send aria-hidden="true" />
+                        )}
+                        {t('applicants.intake.submit')}
+                    </Button>
+                    <Button
+                        type="button"
+                        size="lg"
+                        variant="outline"
+                        disabled={form.processing}
+                        onClick={() => save(false)()}
+                    >
+                        <Save aria-hidden="true" />
+                        {t('applicants.intake.save_draft')}
+                    </Button>
+                </>
+            ) : (
+                <Button type="submit" size="lg" disabled={form.processing}>
+                    {form.processing ? (
+                        <Spinner />
+                    ) : (
+                        <UserPlus aria-hidden="true" />
+                    )}
+                    {t('applicants.form.register_only')}
+                </Button>
+            )}
+            <Button asChild variant="ghost" size={stacked ? 'default' : 'lg'}>
+                <Link href={index()}>{t('applicants.intake.cancel')}</Link>
+            </Button>
+        </div>
+    );
+
+    // Under Permits: a new permit taken at the office, with its applicant.
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: t('register.title'), href: index() },
+        { title: t('register.add_new'), href: create() },
+    ];
+
+    return (
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title={t('register.add_new')} />
+
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+                <PageHeader
+                    title={t('register.add_new')}
+                    description={t('applicants.create_intro')}
+                />
+
+                <form
+                    onSubmit={save(data.apply)}
+                    noValidate
+                    className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_19rem] xl:grid-cols-[minmax(0,1fr)_21rem]"
+                >
+                    <div className="flex min-w-0 flex-col gap-6">
+                        {/* 1. The applicant. */}
+                        <Step
+                            id="applicant"
+                            number={1}
+                            title={t(
+                                'applicants.intake.sections.applicant.title',
+                            )}
+                            description={t(
+                                'applicants.intake.sections.applicant.intro',
+                            )}
+                            state={states.applicant}
+                        >
+                            <div className="grid gap-5 md:grid-cols-2">
+                                <FormField
+                                    id="contact_email"
+                                    label={t('applicants.intake.fields.email')}
+                                    hint={t(
+                                        'applicants.fields.contact_email_hint',
+                                    )}
+                                    error={errors.contact_email}
+                                >
+                                    {(control) => (
+                                        <Input
+                                            {...control}
+                                            type="email"
+                                            autoComplete="off"
+                                            translate="no"
+                                            maxLength={255}
+                                            value={data.contact_email}
+                                            onChange={(event) =>
+                                                form.setData(
+                                                    'contact_email',
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                    )}
+                                </FormField>
+                                {text(
+                                    'contact_name',
+                                    t('applicants.intake.fields.name'),
+                                    { maxLength: 255, autoComplete: 'off' },
+                                )}
+                                <FormField
+                                    id="phone"
+                                    label={t('applicants.intake.fields.phone')}
+                                    hint={t('organization.fields.phone_hint')}
+                                    error={errors.phone}
+                                >
+                                    {(control) => (
+                                        <Input
+                                            {...control}
+                                            type="tel"
+                                            maxLength={30}
+                                            className="tabular-nums"
+                                            value={data.phone}
+                                            onChange={(event) =>
+                                                form.setData(
+                                                    'phone',
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                    )}
+                                </FormField>
+                                {text(
+                                    'name_am',
+                                    t('applicants.intake.fields.organization'),
+                                    { lang: 'am', maxLength: 255 },
+                                )}
+                                <FormField
+                                    id="tin"
+                                    label={t('applicants.intake.fields.tin')}
+                                    hint={t('organization.fields.tin_hint')}
+                                    error={errors.tin}
+                                >
+                                    {(control) => (
+                                        <Input
+                                            {...control}
+                                            inputMode="numeric"
+                                            className="tabular-nums"
+                                            value={data.tin}
+                                            onChange={(event) =>
+                                                form.setData(
+                                                    'tin',
+                                                    event.target.value
+                                                        .replace(/\D/g, '')
+                                                        .slice(0, 10),
+                                                )
+                                            }
+                                        />
+                                    )}
+                                </FormField>
+                            </div>
+
+                            <div className="mt-5 rounded-card border border-border">
+                                <button
+                                    type="button"
+                                    aria-expanded={showMore}
+                                    aria-controls="organization-more"
+                                    onClick={() => setMoreOpen(!showMore)}
+                                    className="flex w-full items-center gap-3 rounded-card px-4 py-3 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                                >
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block text-sm font-semibold">
+                                            {t('applicants.intake.more')}
+                                        </span>
+                                        <span className="block text-xs text-muted-foreground">
+                                            {t('applicants.intake.more_hint')}
+                                        </span>
+                                    </span>
+                                    <ChevronDown
+                                        aria-hidden="true"
+                                        className={cn(
+                                            'size-4 shrink-0 transition-transform',
+                                            showMore && 'rotate-180',
+                                        )}
+                                    />
+                                </button>
+                                {showMore && (
+                                    <div
+                                        id="organization-more"
+                                        className="grid gap-5 border-t border-border p-4 md:grid-cols-2"
+                                    >
+                                        {text(
+                                            'name_en',
+                                            t('organization.fields.name_en'),
+                                            { lang: 'en', maxLength: 255 },
+                                        )}
+                                        <FormField
+                                            id="email"
+                                            label={t(
+                                                'organization.fields.email',
+                                            )}
+                                            hint={t(
+                                                'applicants.intake.org_email_hint',
+                                            )}
+                                            error={errors.email}
+                                        >
+                                            {(control) => (
+                                                <Input
+                                                    {...control}
+                                                    type="email"
+                                                    translate="no"
+                                                    maxLength={255}
+                                                    value={data.email}
+                                                    onChange={(event) =>
+                                                        form.setData(
+                                                            'email',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                />
+                                            )}
+                                        </FormField>
+                                        {text(
+                                            'address',
+                                            t('organization.fields.address'),
+                                            { maxLength: 500 },
+                                        )}
+                                        <FormField
+                                            id="locale"
+                                            label={t(
+                                                'applicants.fields.locale',
+                                            )}
+                                            error={errors.locale}
+                                        >
+                                            {(control) => (
+                                                <NativeSelect
+                                                    {...control}
+                                                    value={data.locale}
+                                                    onChange={(event) =>
+                                                        form.setData(
+                                                            'locale',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                >
+                                                    {Object.entries(
+                                                        locales,
+                                                    ).map(([code, name]) => (
+                                                        <option
+                                                            key={code}
+                                                            value={code}
+                                                        >
+                                                            {name}
+                                                        </option>
+                                                    ))}
+                                                </NativeSelect>
+                                            )}
+                                        </FormField>
+                                    </div>
+                                )}
+                            </div>
+                        </Step>
+
+                        {data.apply && (
+                            <>
+                                {/* 2. The vehicle. */}
+                                <Step
+                                    id="vehicle"
+                                    number={2}
+                                    title={t(
+                                        'applicants.intake.sections.vehicle.title',
+                                    )}
+                                    description={t(
+                                        'applicants.intake.sections.vehicle.intro',
+                                    )}
+                                    state={states.vehicle}
+                                >
+                                    <div className="space-y-5">
+                                        <div className="grid gap-5 md:grid-cols-2">
+                                            {text(
+                                                'owner_name',
+                                                t(
+                                                    'applicants.intake.fields.owner',
+                                                ),
+                                                {
+                                                    maxLength: 255,
+                                                    autoComplete: 'off',
+                                                    error: errors[
+                                                        'vehicles.0.owner_name'
+                                                    ],
+                                                },
+                                            )}
+                                            <FormField
+                                                id="vehicle_type_id"
+                                                label={t(
+                                                    'applicants.intake.fields.vehicle_type',
+                                                )}
+                                                error={
+                                                    errors[
+                                                        'vehicles.0.vehicle_type_id'
+                                                    ]
+                                                }
+                                            >
+                                                {(control) => (
+                                                    <NativeSelect
+                                                        {...control}
+                                                        value={
+                                                            data.vehicle_type_id
+                                                        }
+                                                        onChange={(event) =>
+                                                            form.setData(
+                                                                'vehicle_type_id',
+                                                                event.target
+                                                                    .value,
+                                                            )
+                                                        }
+                                                    >
+                                                        <option value="">
+                                                            {t(
+                                                                'vehicles.choose_type',
+                                                            )}
+                                                        </option>
+                                                        {vehicleTypes.map(
+                                                            (type) => (
+                                                                <option
+                                                                    key={
+                                                                        type.id
+                                                                    }
+                                                                    value={
+                                                                        type.id
+                                                                    }
+                                                                >
+                                                                    {type.name}
+                                                                </option>
+                                                            ),
+                                                        )}
+                                                    </NativeSelect>
+                                                )}
+                                            </FormField>
+                                            {typeCode === OTHER_TYPE && (
+                                                <div className="md:col-span-2">
+                                                    {text(
+                                                        'type_detail',
+                                                        t(
+                                                            'applicants.intake.type_detail',
+                                                        ),
+                                                        {
+                                                            maxLength: 100,
+                                                            autoComplete: 'off',
+                                                            error: errors[
+                                                                'vehicles.0.type_detail'
+                                                            ],
+                                                        },
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <PlateInput
+                                            id="plate"
+                                            label={t(
+                                                'applicants.intake.fields.plate',
+                                            )}
+                                            value={data.plate}
+                                            regions={plateRegions}
+                                            error={errors['vehicles.0.plate']}
+                                            onChange={(plate) =>
+                                                form.setData('plate', plate)
+                                            }
+                                        />
+                                        {canTow && (
+                                            <PlateInput
+                                                id="trailer_plate"
+                                                label={t(
+                                                    'applicants.intake.fields.trailer_plate',
+                                                )}
+                                                value={data.trailer_plate}
+                                                regions={plateRegions}
+                                                error={
+                                                    errors['vehicles.1.plate']
+                                                }
+                                                onChange={(plate) =>
+                                                    form.setData(
+                                                        'trailer_plate',
+                                                        plate,
+                                                    )
+                                                }
+                                            />
+                                        )}
+                                        <InputError message={errors.vehicles} />
+                                    </div>
+                                </Step>
+
+                                {/* 3. The permit. */}
+                                <Step
+                                    id="permit"
+                                    number={3}
+                                    title={t(
+                                        'applicants.intake.sections.permit.title',
+                                    )}
+                                    description={t(
+                                        'applicants.intake.sections.permit.intro',
+                                        {
+                                            max: String(
+                                                limits.max_duration_days,
+                                            ),
+                                        },
+                                    )}
+                                    state={states.permit}
+                                >
+                                    <div className="space-y-5">
+                                        <LetterFields
+                                            value={{
+                                                letter_number:
+                                                    data.letter_number,
+                                                letter_date: data.letter_date,
+                                                letter_file: data.letter_file,
+                                            }}
+                                            errors={errors}
+                                            onChange={(next) =>
+                                                form.setData((current) => ({
+                                                    ...current,
+                                                    ...next,
+                                                }))
+                                            }
+                                        />
+                                        <fieldset
+                                            aria-describedby={
+                                                errors.permit_type
+                                                    ? 'permit_type-error'
+                                                    : undefined
+                                            }
+                                        >
+                                            <legend className="mb-2 text-sm font-medium">
+                                                {t(
+                                                    'applicants.intake.fields.movement',
+                                                )}
+                                            </legend>
+                                            <div className="grid gap-3 sm:grid-cols-2">
+                                                {PERMIT_TYPES.map((type) => (
+                                                    <label
+                                                        key={type}
+                                                        className="flex min-h-12 cursor-pointer items-center gap-3 rounded-card border-2 border-input px-4 py-2.5 font-semibold transition-colors hover:border-primary/50 has-checked:border-primary has-checked:bg-primary/5 has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50"
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name="permit_type"
+                                                            value={type}
+                                                            checked={
+                                                                data.permit_type ===
+                                                                type
+                                                            }
+                                                            onChange={() =>
+                                                                // A pass is for restricted hours: it always has a window.
+                                                                form.setData(
+                                                                    (
+                                                                        current,
+                                                                    ) => ({
+                                                                        ...current,
+                                                                        permit_type:
+                                                                            type,
+                                                                        any_time:
+                                                                            type ===
+                                                                            'pass'
+                                                                                ? false
+                                                                                : current.any_time,
+                                                                    }),
+                                                                )
+                                                            }
+                                                            className="size-5 accent-primary"
+                                                        />
+                                                        {t(
+                                                            `permits.types.${type}`,
+                                                        )}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            <InputError
+                                                id="permit_type-error"
+                                                role="alert"
+                                                message={errors.permit_type}
+                                                className="mt-2"
+                                            />
+                                        </fieldset>
+
+                                        <FormField
+                                            id="reason"
+                                            label={t(
+                                                'applicants.intake.fields.reason',
+                                            )}
+                                            error={errors.reason}
+                                        >
+                                            {(control) => (
+                                                <Textarea
+                                                    {...control}
+                                                    rows={3}
+                                                    maxLength={2000}
+                                                    value={data.reason}
+                                                    onChange={(event) =>
+                                                        form.setData(
+                                                            'reason',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                />
+                                            )}
+                                        </FormField>
+
+                                        <div className="grid gap-5 md:grid-cols-2">
+                                            <EthiopianDateInput
+                                                id="valid_from"
+                                                label={t(
+                                                    'applicants.intake.fields.valid_from',
+                                                )}
+                                                value={data.valid_from}
+                                                error={errors.valid_from}
+                                                onChange={(iso) =>
+                                                    form.setData(
+                                                        'valid_from',
+                                                        iso,
+                                                    )
+                                                }
+                                            />
+                                            <EthiopianDateInput
+                                                id="valid_to"
+                                                label={t(
+                                                    'applicants.intake.fields.valid_to',
+                                                )}
+                                                value={data.valid_to}
+                                                error={errors.valid_to}
+                                                onChange={(iso) =>
+                                                    form.setData(
+                                                        'valid_to',
+                                                        iso,
+                                                    )
+                                                }
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <p className="text-sm font-medium">
+                                                {t('permits.hours.title')}
+                                            </p>
+                                            <MovementHoursField
+                                                idPrefix="walkin_hours"
+                                                value={{
+                                                    any_time: data.any_time,
+                                                    move_from: data.move_from,
+                                                    move_to: data.move_to,
+                                                }}
+                                                errors={errors}
+                                                onChange={(next) =>
+                                                    form.setData((current) => ({
+                                                        ...current,
+                                                        ...next,
+                                                    }))
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                </Step>
+
+                                {/* 4. The payment. */}
+                                <Step
+                                    id="payment"
+                                    number={4}
+                                    title={t(
+                                        'applicants.intake.sections.payment.title',
+                                    )}
+                                    description={t(
+                                        'applicants.intake.sections.payment.intro',
+                                    )}
+                                    state={states.payment}
+                                >
+                                    <div className="space-y-5">
+                                        {estimate && (
+                                            <div
+                                                aria-live="polite"
+                                                className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-card border border-border bg-muted px-4 py-3"
+                                            >
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-eyebrow text-muted-foreground">
+                                                        {t(
+                                                            'applicants.intake.fee',
+                                                        )}
+                                                    </p>
+                                                    {estimate.fee ? (
+                                                        <p className="flex flex-wrap items-baseline gap-x-2">
+                                                            <span className="text-xl font-extrabold tabular-nums">
+                                                                {
+                                                                    estimate.fee
+                                                                        .formatted
+                                                                }
+                                                            </span>
+                                                            <span className="text-sm text-muted-foreground">
+                                                                {t(
+                                                                    'payments.fee_days',
+                                                                    {
+                                                                        days: estimate.days,
+                                                                    },
+                                                                )}
+                                                            </span>
+                                                        </p>
+                                                    ) : (
+                                                        <p className="font-medium">
+                                                            {t(
+                                                                'payments.fee_unknown',
+                                                            )}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                {estimate.fee && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            form.setData(
+                                                                'amount',
+                                                                (
+                                                                    (estimate
+                                                                        .fee
+                                                                        ?.amount_cents ??
+                                                                        0) / 100
+                                                                ).toFixed(2),
+                                                            )
+                                                        }
+                                                    >
+                                                        {t(
+                                                            'applicants.intake.use_fee',
+                                                        )}
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <div className="grid gap-5 md:grid-cols-2">
+                                            <FormField
+                                                id="amount"
+                                                label={t(
+                                                    'applicants.intake.fields.amount',
+                                                )}
+                                                error={errors.amount}
+                                            >
+                                                {(control) => (
+                                                    <Input
+                                                        {...control}
+                                                        inputMode="decimal"
+                                                        autoComplete="off"
+                                                        className="tabular-nums"
+                                                        value={data.amount}
+                                                        onChange={(event) =>
+                                                            form.setData(
+                                                                'amount',
+                                                                event.target
+                                                                    .value,
+                                                            )
+                                                        }
+                                                    />
+                                                )}
+                                            </FormField>
+                                            {text(
+                                                'receipt_number',
+                                                t(
+                                                    'applicants.intake.fields.receipt_number',
+                                                ),
+                                                {
+                                                    maxLength: 64,
+                                                    autoComplete: 'off',
+                                                    translate: 'no',
+                                                },
+                                            )}
+                                            <EthiopianDateInput
+                                                id="paid_at"
+                                                label={t(
+                                                    'applicants.intake.fields.paid_at',
+                                                )}
+                                                value={data.paid_at}
+                                                error={errors.paid_at}
+                                                onChange={(iso) =>
+                                                    form.setData('paid_at', iso)
+                                                }
+                                            />
+                                            <FormField
+                                                id="receipt_file"
+                                                label={t(
+                                                    'applicants.intake.fields.receipt_file',
+                                                )}
+                                                hint={t(
+                                                    'applicants.intake.fields.receipt_file_hint',
+                                                    {
+                                                        max: String(
+                                                            Math.floor(
+                                                                receiptMaxKilobytes /
+                                                                    1024,
+                                                            ),
+                                                        ),
+                                                    },
+                                                )}
+                                                error={errors.receipt_file}
+                                            >
+                                                {(control) => (
+                                                    <Input
+                                                        {...control}
+                                                        type="file"
+                                                        accept="application/pdf,image/jpeg,image/png"
+                                                        className="h-auto py-2"
+                                                        onChange={(event) =>
+                                                            form.setData(
+                                                                'receipt_file',
+                                                                event.target
+                                                                    .files?.[0] ??
+                                                                    null,
+                                                            )
+                                                        }
+                                                    />
+                                                )}
+                                            </FormField>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            {t(
+                                                'applicants.intake.payment_draft_note',
+                                            )}
+                                        </p>
+                                    </div>
+                                </Step>
+
+                                {/* 5. The confirmation. */}
+                                <Step
+                                    id="confirm"
+                                    number={5}
+                                    title={t(
+                                        'applicants.intake.sections.confirm.title',
+                                    )}
+                                    description={t(
+                                        'applicants.intake.sections.confirm.intro',
+                                    )}
+                                    state={states.confirm}
+                                >
+                                    <div className="space-y-5">
+                                        <div>
+                                            <label className="flex cursor-pointer items-start gap-3 rounded-card border-2 border-input p-4 font-semibold has-checked:border-primary has-checked:bg-primary/5 has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50">
+                                                <input
+                                                    id="confirmed"
+                                                    type="checkbox"
+                                                    checked={data.confirmed}
+                                                    aria-invalid={
+                                                        errors.confirmed
+                                                            ? true
+                                                            : undefined
+                                                    }
+                                                    aria-describedby={
+                                                        errors.confirmed
+                                                            ? 'confirmed-error'
+                                                            : undefined
+                                                    }
+                                                    onChange={(event) =>
+                                                        form.setData(
+                                                            'confirmed',
+                                                            event.target
+                                                                .checked,
+                                                        )
+                                                    }
+                                                    className="mt-0.5 size-5 shrink-0 accent-primary"
+                                                />
+                                                {t('applicants.intake.confirm')}
+                                            </label>
+                                            <InputError
+                                                id="confirmed-error"
+                                                role="alert"
+                                                message={errors.confirmed}
+                                                className="mt-2"
+                                            />
+                                        </div>
+                                        {buttons(false)}
+                                    </div>
+                                </Step>
+                            </>
+                        )}
+                    </div>
+
+                    <aside
+                        aria-label={t('applicants.form.panel')}
+                        className="flex flex-col gap-4 lg:sticky lg:top-20"
+                    >
+                        <div className="overflow-hidden rounded-card border border-border bg-card">
+                            <div className="brand-bar" aria-hidden="true" />
+                            <div className="space-y-4 p-5">
+                                <div>
+                                    <p className="text-eyebrow text-muted-foreground">
+                                        {t('applicants.form.progress')}
+                                    </p>
+                                    <p className="mt-1 text-sm font-semibold tabular-nums">
+                                        {t('applicants.form.progress_count', {
+                                            done: String(completed),
+                                            total: String(required.length),
+                                        })}
+                                    </p>
+                                    <div
+                                        className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"
+                                        aria-hidden="true"
+                                    >
+                                        <div
+                                            className="h-full rounded-full bg-primary transition-[width]"
+                                            style={{
+                                                width: `${(completed / Math.max(required.length, 1)) * 100}%`,
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <ol className="space-y-1">
+                                    {steps.map((step, position) => (
+                                        <li key={step.key}>
+                                            <a
+                                                href={`#step-${step.key}`}
+                                                className="flex items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                                            >
+                                                <StepNumber
+                                                    number={position + 1}
+                                                    state={states[step.key]}
+                                                />
+                                                <span className="min-w-0 flex-1 truncate font-medium">
+                                                    {t(step.title)}
+                                                </span>
+                                                {states[step.key] ===
+                                                    'optional' && (
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {t(
+                                                            'applicants.form.optional',
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </a>
+                                        </li>
+                                    ))}
+                                </ol>
+
+                                {errorFields.length > 0 && (
+                                    <p
+                                        role="alert"
+                                        className="flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive"
+                                    >
+                                        <CircleAlert
+                                            aria-hidden="true"
+                                            className="mt-0.5 size-4 shrink-0"
+                                        />
+                                        {t('applicants.form.errors', {
+                                            count: String(errorFields.length),
+                                        })}
+                                    </p>
+                                )}
+
+                                <label className="flex cursor-pointer items-start gap-3 rounded-md border border-border p-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={data.apply}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'apply',
+                                                event.target.checked,
+                                            )
+                                        }
+                                        aria-describedby="apply-hint"
+                                        className="mt-0.5 size-4 accent-primary"
+                                    />
+                                    <span className="grid gap-0.5">
+                                        <span className="text-sm font-semibold">
+                                            {t('applicants.form.apply')}
+                                        </span>
+                                        <span
+                                            id="apply-hint"
+                                            className="text-xs text-muted-foreground"
+                                        >
+                                            {t('applicants.form.apply_hint')}
+                                        </span>
+                                    </span>
+                                </label>
+
+                                {buttons(true)}
+                            </div>
+                        </div>
+
+                        <p className="flex items-start gap-2 px-1 text-xs text-muted-foreground">
+                            <MailCheck
+                                aria-hidden="true"
+                                className="mt-0.5 size-4 shrink-0"
+                            />
+                            {t('applicants.fields.contact_email_hint')}
+                        </p>
+                    </aside>
+                </form>
+            </div>
+        </AppLayout>
+    );
+}

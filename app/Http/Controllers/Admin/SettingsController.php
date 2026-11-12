@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Permits\PermitNumberGenerator;
 use App\Domain\Settings\Branding;
 use App\Domain\Settings\SettingsRegistry;
 use App\Domain\Settings\SystemSettings;
@@ -11,6 +12,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\PermitStatus;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\Permit;
@@ -18,6 +20,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Support\EthiopianCalendar;
 use App\Support\EthiopianPhone;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -85,6 +88,7 @@ class SettingsController extends Controller
                 'time' => $lastChange->created_at?->setTimezone($timezone)->format('H:i'),
             ],
             'sections' => SettingsRegistry::SECTIONS,
+            'categories' => SettingsRegistry::CATEGORIES,
         ]);
     }
 
@@ -97,6 +101,7 @@ class SettingsController extends Controller
         return Inertia::render('admin/settings/section', [
             'section' => $section,
             'sections' => SettingsRegistry::SECTIONS,
+            'categories' => SettingsRegistry::CATEGORIES,
             'fields' => array_map(
                 fn (string $key, array $setting): array => array_filter([
                     'key' => $key,
@@ -121,7 +126,54 @@ class SettingsController extends Controller
             ),
             'saved' => array_map(SettingsRegistry::field(...), $settings->savedKeys($section)),
             'timezones' => $section === 'localization' ? ['Africa/Addis_Ababa', 'UTC'] : [],
+            'preview' => $section === 'codes' ? $this->codePreview() : null,
+            'inUse' => $section === 'email' ? $this->mailInUse($settings) : null,
+            'branding' => $section === 'general' ? ['logo' => Branding::url('logo'), 'favicon' => Branding::url('favicon')] : null,
         ]);
+    }
+
+    /**
+     * What the live preview on Code rules builds the next codes from: the
+     * Ethiopian year now, the last counter value under each reset rule (null
+     * while that counter has not started, so the page shows the first value
+     * set in the form), and a branch code to show {branch} with.
+     *
+     * @return array{year: int, last: array{yearly: int|null, never: int|null}, branch: string|null}
+     */
+    private function codePreview(): array
+    {
+        $year = PermitNumberGenerator::year(CarbonImmutable::now());
+        $last = fn (int $row): ?int => ($value = DB::table('permit_number_sequences')->where('year', $row)->value('last_number')) === null ? null : (int) $value;
+
+        return [
+            'year' => $year,
+            'last' => ['yearly' => $last($year), 'never' => $last(PermitNumberGenerator::NEVER_RESETS)],
+            'branch' => Branch::query()->where('is_active', true)->orderBy('code')->value('code'),
+        ];
+    }
+
+    /**
+     * The mail settings in effect now and where each one comes from: saved
+     * here, or the server configuration (.env). Secrets only say whether
+     * they are set.
+     *
+     * @return list<array{field: string, value: string|null, set: bool, source: string}>
+     */
+    private function mailInUse(SystemSettings $settings): array
+    {
+        $saved = $settings->savedKeys('email');
+
+        return array_map(function (string $key) use ($saved): array {
+            $type = SettingsRegistry::all()[$key]['type'];
+            $value = config($key);
+
+            return [
+                'field' => SettingsRegistry::field($key),
+                'value' => $type === 'secret' ? null : ($value === null || $value === '' ? null : (string) $value),
+                'set' => filled($value),
+                'source' => in_array($key, $saved, true) ? 'settings' : 'server',
+            ];
+        }, array_keys(SettingsRegistry::section('email')));
     }
 
     public function update(Request $request, SystemSettings $settings, string $section): RedirectResponse

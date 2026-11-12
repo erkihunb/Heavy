@@ -5,6 +5,9 @@ import { EthiopianDateInput } from '@/components/ethiopian-date-input';
 import { FeeEstimate } from '@/components/fee-estimate';
 import { FormField } from '@/components/form-field';
 import InputError from '@/components/input-error';
+import { LetterFields } from '@/components/letter-fields';
+import { MovementHoursField } from '@/components/movement-hours-field';
+import type { MovementHoursValue } from '@/components/movement-hours-field';
 import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Spinner } from '@/components/ui/spinner';
@@ -22,7 +25,13 @@ export type PermitFormData = {
     valid_from: string;
     valid_to: string;
     reason: string;
-};
+    /** The branch applied to; empty for the head office. Only applicants choose it. */
+    branch_id?: string;
+    /** The request letter: only when a Registrar records a request taken at the office. */
+    letter_number?: string;
+    letter_date?: string;
+    letter_file?: File | null;
+} & MovementHoursValue;
 
 export type PermitLimits = {
     max_trailers: number;
@@ -78,6 +87,8 @@ export function PermitForm({
     limits,
     cancelHref,
     estimateUrl,
+    branches = [],
+    letter,
 }: {
     form: InertiaFormProps<PermitFormData>;
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -86,6 +97,10 @@ export function PermitForm({
     cancelHref: string;
     /** The fee estimate address when a Registrar fills the form for an applicant. */
     estimateUrl?: string;
+    /** The branches an applicant may apply to; none hides the choice. */
+    branches?: { id: number; code: string; name: string }[];
+    /** Ask for the request letter (a Registrar at the office); `hasStoredScan` on an edit. */
+    letter?: { hasStoredScan: boolean };
 }) {
     const { t } = useTranslation();
     // Errors for array items arrive under keys such as "trailer_vehicle_ids.0".
@@ -110,6 +125,20 @@ export function PermitForm({
 
     return (
         <form onSubmit={onSubmit} noValidate className="max-w-3xl space-y-5">
+            {letter && (
+                <LetterFields
+                    value={{
+                        letter_number: form.data.letter_number ?? '',
+                        letter_date: form.data.letter_date ?? '',
+                        letter_file: form.data.letter_file ?? null,
+                    }}
+                    errors={errors}
+                    hasStoredScan={letter.hasStoredScan}
+                    onChange={(next) =>
+                        form.setData((current) => ({ ...current, ...next }))
+                    }
+                />
+            )}
             <Section
                 id="section-type"
                 step={1}
@@ -136,7 +165,15 @@ export function PermitForm({
                                 value={type}
                                 checked={form.data.permit_type === type}
                                 onChange={() =>
-                                    form.setData('permit_type', type)
+                                    // A pass is for restricted hours: it always has a window.
+                                    form.setData((data) => ({
+                                        ...data,
+                                        permit_type: type,
+                                        any_time:
+                                            type === 'pass'
+                                                ? false
+                                                : data.any_time,
+                                    }))
                                 }
                                 className="size-5 accent-primary"
                             />
@@ -270,8 +307,27 @@ export function PermitForm({
             </Section>
 
             <Section
-                id="section-reason"
+                id="section-hours"
                 step={4}
+                title={t('permits.hours.title')}
+                hint={t('permits.hours.intro')}
+            >
+                <MovementHoursField
+                    value={{
+                        any_time: form.data.any_time,
+                        move_from: form.data.move_from,
+                        move_to: form.data.move_to,
+                    }}
+                    errors={errors}
+                    onChange={(next) =>
+                        form.setData((data) => ({ ...data, ...next }))
+                    }
+                />
+            </Section>
+
+            <Section
+                id="section-reason"
+                step={5}
                 title={t('permits.form.sections.reason.title')}
                 hint={t('permits.form.sections.reason.hint')}
             >
@@ -292,6 +348,37 @@ export function PermitForm({
                         />
                     )}
                 </FormField>
+
+                {branches.length > 0 && (
+                    <FormField
+                        id="branch_id"
+                        label={t('permits.fields.branch')}
+                        hint={t('permits.fields.branch_hint')}
+                        error={errors.branch_id}
+                    >
+                        {(control) => (
+                            <NativeSelect
+                                {...control}
+                                value={form.data.branch_id ?? ''}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'branch_id',
+                                        event.target.value,
+                                    )
+                                }
+                            >
+                                <option value="">
+                                    {t('permits.fields.head_office')}
+                                </option>
+                                {branches.map((branch) => (
+                                    <option key={branch.id} value={branch.id}>
+                                        {branch.name}
+                                    </option>
+                                ))}
+                            </NativeSelect>
+                        )}
+                    </FormField>
+                )}
             </Section>
 
             <div className="space-y-4">

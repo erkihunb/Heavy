@@ -2,14 +2,14 @@
 
 return [
     'app_name' => 'Heavy Vehicle Movement Permits',
-    'authority' => 'Addis Ababa City Administration Traffic Management Authority',
+    'authority' => 'Addis Ababa City Roads Authority',
     'language' => 'Language',
     'cancel' => 'Cancel',
     'close' => 'Close',
     'actions' => 'Actions',
     'status' => 'Status',
     'date' => 'Date',
-    'authority_short' => 'Traffic Management Authority',
+    'authority_short' => 'Roads Authority',
     'support' => 'Support',
     'log_in' => 'Log in',
     'register' => 'Register',

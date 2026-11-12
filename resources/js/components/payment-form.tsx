@@ -6,6 +6,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/lib/i18n';
 import { store } from '@/routes/permits/payments';
 import type { Money } from '@/types';
@@ -18,11 +19,14 @@ type PaymentFormData = {
     /** Gregorian ISO date; the date picker converts from the Ethiopian calendar. */
     paid_at: string;
     receipt_file: File | null;
+    note: string;
 };
 
 /**
  * The applicant reports the fee of an approved permit as paid: how, the
- * receipt number, the amount, the date and a scan of the receipt. The server
+ * receipt number, the amount, the date and a scan of the receipt. A cashier
+ * uses the same form to record a payment taken at the desk (`forCashier`):
+ * the scan is then optional and an internal note can be added. The server
  * checks everything again, including that the amount is exactly the fee.
  */
 export function PaymentForm({
@@ -31,6 +35,7 @@ export function PaymentForm({
     methods,
     maxKilobytes,
     action,
+    forCashier = false,
 }: {
     permitId: string;
     fee: Money;
@@ -38,6 +43,8 @@ export function PaymentForm({
     maxKilobytes: number;
     /** Where to send it; the applicant's own address unless a Registrar hands it in. */
     action?: string;
+    /** A cashier records the payment: scan optional, internal note, amount filled in. */
+    forCashier?: boolean;
 }) {
     const { t } = useTranslation();
     const maxMegabytes = Math.floor(maxKilobytes / 1024);
@@ -45,9 +52,10 @@ export function PaymentForm({
     const form = useForm<PaymentFormData>({
         method: methods.length === 1 ? methods[0] : '',
         receipt_number: '',
-        amount: '',
+        amount: forCashier ? (fee.amount_cents / 100).toFixed(2) : '',
         paid_at: '',
         receipt_file: null,
+        note: '',
     });
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -157,7 +165,11 @@ export function PaymentForm({
 
             <FormField
                 id="receipt_file"
-                label={t('payments.fields.receipt_file')}
+                label={
+                    forCashier
+                        ? t('permits.staff.record_payment.receipt_file')
+                        : t('payments.fields.receipt_file')
+                }
                 hint={t('payments.form.file_hint', { max: maxMegabytes })}
                 error={form.errors.receipt_file}
             >
@@ -177,9 +189,31 @@ export function PaymentForm({
                 )}
             </FormField>
 
+            {forCashier && (
+                <FormField
+                    id="payment_note"
+                    label={t('permits.staff.record_payment.note')}
+                    error={form.errors.note}
+                >
+                    {(control) => (
+                        <Textarea
+                            {...control}
+                            rows={2}
+                            maxLength={1000}
+                            value={form.data.note}
+                            onChange={(event) =>
+                                form.setData('note', event.target.value)
+                            }
+                        />
+                    )}
+                </FormField>
+            )}
+
             <Button type="submit" size="lg" disabled={form.processing}>
                 {form.processing && <Spinner />}
-                {t('payments.form.submit')}
+                {forCashier
+                    ? t('permits.staff.record_payment.submit')
+                    : t('payments.form.submit')}
             </Button>
         </form>
     );

@@ -3,12 +3,19 @@
 use App\Domain\Settings\SettingsRegistry;
 use App\Http\Controllers\Admin\ApplicantController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\FeeScheduleController;
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\PermitRegisterController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\UserBranchScopeController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VehicleTypeController;
 use App\Http\Controllers\Admin\WalkInController;
+use App\Models\Branch;
 use App\Models\FeeSchedule;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\VehicleType;
 use Illuminate\Support\Facades\Route;
@@ -25,10 +32,11 @@ Route::middleware(['auth', 'verified', 'can:viewAny,'.FeeSchedule::class])
             ->only(['index', 'create', 'store', 'edit', 'update']);
     });
 
-// Users and roles (spec §11).
+// Users: accounts, roles, branch scopes, deactivation (EUISIS RBAC; each action checked by UserPolicy).
 Route::middleware(['auth', 'verified', 'can:viewAny,'.User::class])
     ->prefix('admin')
     ->name('admin.')
+    ->whereNumber('user')
     ->group(function () {
         Route::get('users', [UserController::class, 'index'])->name('users.index');
         Route::get('users/create', [UserController::class, 'create'])->name('users.create');
@@ -36,7 +44,32 @@ Route::middleware(['auth', 'verified', 'can:viewAny,'.User::class])
             ->middleware('throttle:20,1')
             ->name('users.store');
         Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
-        Route::put('users/{user}/role', [UserController::class, 'updateRole'])->name('users.role');
+        Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::put('users/{user}/roles', [UserController::class, 'updateRoles'])->name('users.roles');
+        Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
+        Route::post('users/{user}/restore', [UserController::class, 'restore'])->name('users.restore');
+        Route::post('users/{user}/branch-scopes', [UserBranchScopeController::class, 'store'])->name('users.branch-scopes.store');
+        Route::delete('users/{user}/branch-scopes/{scope}', [UserBranchScopeController::class, 'destroy'])
+            ->whereNumber('scope')
+            ->name('users.branch-scopes.destroy');
+    });
+
+// Roles, editable (RolePolicy), and the read-only permission catalogue.
+Route::middleware(['auth', 'verified', 'can:viewAny,'.Role::class])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::resource('roles', RoleController::class)->except(['show'])->whereNumber('role');
+    });
+
+Route::middleware(['auth', 'verified', 'can:permissions.view'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('permissions', [PermissionController::class, 'index'])->name('permissions.index');
+        Route::get('permissions/{permission}', [PermissionController::class, 'show'])
+            ->where('permission', '[a-z][a-z0-9\-]*\.[a-z][a-z0-9\-]*')
+            ->name('permissions.show');
     });
 
 // Applicants registered at the office (Registrar, Admin).
@@ -46,11 +79,29 @@ Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
     ->controller(ApplicantController::class)
     ->group(function () {
         Route::get('applicants', 'index')->name('applicants.index');
-        Route::get('applicants/create', 'create')->name('applicants.create');
-        Route::post('applicants', 'store')
-            ->middleware('throttle:30,1')
-            ->name('applicants.store');
     });
+
+// A new permit taken at the office: the one-page form registers the applicant, their
+// vehicles and the application together (Registrar, Admin). Reached from Permits.
+Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
+    ->prefix('admin')
+    ->name('admin.')
+    ->controller(ApplicantController::class)
+    ->group(function () {
+        Route::get('permits/create', 'create')->name('permits.create');
+        // The fee of the request on the form, by vehicle type, before anything is saved.
+        Route::get('permits/intake-fee', 'feeEstimate')
+            ->middleware('throttle:60,1')
+            ->name('permits.intake-fee');
+        Route::post('permits', 'store')
+            ->middleware('throttle:30,1')
+            ->name('permits.store');
+    });
+
+// The register of all permits (review roles, Admins, Registrars; checked in the controller).
+Route::middleware(['auth', 'verified'])
+    ->get('admin/permits', PermitRegisterController::class)
+    ->name('admin.permits.index');
 
 // The whole application for a walk-in applicant: vehicles, permit, payment.
 Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
@@ -82,6 +133,15 @@ Route::middleware(['auth', 'verified', 'can:viewAny,'.VehicleType::class])
     ->name('admin.')
     ->group(function () {
         Route::resource('vehicle-types', VehicleTypeController::class)
+            ->only(['index', 'create', 'store', 'edit', 'update']);
+    });
+
+// Branch offices.
+Route::middleware(['auth', 'verified', 'can:viewAny,'.Branch::class])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::resource('branches', BranchController::class)
             ->only(['index', 'create', 'store', 'edit', 'update']);
     });
 

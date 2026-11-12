@@ -21,7 +21,8 @@ import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
-import { create, index, show } from '@/routes/admin/applicants';
+import { index, show } from '@/routes/admin/applicants';
+import { create } from '@/routes/admin/permits';
 import type {
     BreadcrumbItem,
     DualDate as DualDateValue,

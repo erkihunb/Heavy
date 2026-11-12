@@ -163,7 +163,7 @@ class PermitFactory extends Factory
     {
         return $this->submitted()->state(fn (): array => [
             'status' => PermitStatus::AwaitingPayment,
-            'permit_number' => 'TMA-HV-2019-'.fake()->unique()->numerify('9#####'),
+            'permit_number' => 'AACRA-2019-'.fake()->unique()->numerify('9#####'),
             'approved_by' => User::factory(),
             'approved_at' => now()->subHour(),
             // Santim; the fee is copied onto the permit at approval.

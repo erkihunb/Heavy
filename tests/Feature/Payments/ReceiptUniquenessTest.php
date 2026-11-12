@@ -28,7 +28,7 @@ beforeEach(function () {
     $this->otherPermit = Permit::factory()
         ->forVehicles(Vehicle::factory()->for($this->otherOrganization)->create())
         ->paymentSubmitted()
-        ->create(['permit_number' => 'TMA-HV-2019-777777']);
+        ->create(['permit_number' => 'AACRA-2019-777777']);
 });
 
 /**

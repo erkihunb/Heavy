@@ -65,7 +65,7 @@ it('checks the plate against the applicant\'s register', function () {
 });
 
 it('starts, edits and submits the application for the applicant', function () {
-    $payload = permitPayload($this->applicant);
+    $payload = [...permitPayload($this->applicant), ...letterFields()];
 
     $this->actingAs($this->registrar)
         ->post(route('admin.applicants.permits.store', $this->applicant), $payload)
@@ -108,7 +108,7 @@ it('offers only the applicant\'s own vehicles', function () {
     $foreign = Vehicle::factory()->create();
 
     $this->actingAs($this->registrar)
-        ->post(route('admin.applicants.permits.store', $this->applicant), permitPayload($this->applicant, ['primary_vehicle_id' => $foreign->id]))
+        ->post(route('admin.applicants.permits.store', $this->applicant), [...permitPayload($this->applicant, ['primary_vehicle_id' => $foreign->id]), ...letterFields()])
         ->assertSessionHasErrors('primary_vehicle_id');
 });
 
@@ -177,7 +177,7 @@ it('is for registrars and admins only', function (Role $role, int $status) {
         ->assertStatus($status);
 
     $this->actingAs(staffUser($role))
-        ->post(route('admin.applicants.permits.store', $this->applicant), permitPayload($this->applicant))
+        ->post(route('admin.applicants.permits.store', $this->applicant), [...permitPayload($this->applicant), ...letterFields()])
         ->assertStatus($status === 200 ? 302 : $status);
 })->with([
     'registrar' => [Role::Registrar, 200],
@@ -188,7 +188,7 @@ it('is for registrars and admins only', function (Role $role, int $status) {
 ]);
 
 it('keeps the applicant\'s own portal working on what the office started', function () {
-    $this->actingAs($this->registrar)->post(route('admin.applicants.permits.store', $this->applicant), permitPayload($this->applicant));
+    $this->actingAs($this->registrar)->post(route('admin.applicants.permits.store', $this->applicant), [...permitPayload($this->applicant), ...letterFields()]);
     $permit = Permit::query()->sole();
 
     $this->actingAs($this->applicant)

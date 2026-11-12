@@ -9,6 +9,10 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./resources/js', import.meta.url)),
+            // The shell's UI kit (packages/app-ui), as in vite.config.ts.
+            '@app/ui': fileURLToPath(
+                new URL('./packages/app-ui/src/index.ts', import.meta.url),
+            ),
         },
     },
     test: {

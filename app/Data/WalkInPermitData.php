@@ -2,6 +2,7 @@
 
 namespace App\Data;
 
+use App\Domain\Permits\MovementHours;
 use App\Enums\PermitType;
 use Carbon\CarbonImmutable;
 
@@ -18,6 +19,10 @@ final readonly class WalkInPermitData
         public string $reason,
         /** Hand it to the Authority now, instead of keeping a draft. */
         public bool $submit,
+        /** The hours of the day the vehicles may move; null for any time of day. */
+        public ?MovementHours $hours = null,
+        /** The letter the request came in with. */
+        public ?LetterData $letter = null,
     ) {}
 
     /**
@@ -25,6 +30,6 @@ final readonly class WalkInPermitData
      */
     public function withVehicles(string $primaryVehicleId, array $trailerVehicleIds): PermitData
     {
-        return new PermitData($this->permitType, $primaryVehicleId, $trailerVehicleIds, $this->validFrom, $this->validTo, $this->reason);
+        return new PermitData($this->permitType, $primaryVehicleId, $trailerVehicleIds, $this->validFrom, $this->validTo, $this->reason, hours: $this->hours, letter: $this->letter);
     }
 }

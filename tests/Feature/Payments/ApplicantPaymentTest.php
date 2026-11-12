@@ -173,7 +173,7 @@ describe('the permit page', function () {
             ->assertInertia(fn (Assert $page) => $page
                 ->component('applicant/permits/show')
                 ->where('permit.can.submitPayment', true)
-                ->where('paymentMethods', ['bank_deposit', 'cash'])
+                ->where('paymentMethods', ['bank_deposit', 'bank_transfer', 'mobile_money', 'cash', 'other'])
                 ->where('receiptMaxKilobytes', 5120)
                 ->has('permit.payments', 0));
     });

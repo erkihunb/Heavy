@@ -9,6 +9,7 @@ export const PERMIT_STATUSES = [
     'rejected',
     'awaiting_payment',
     'payment_submitted',
+    'payment_confirmed',
     'issued',
     'active',
     'expired',
@@ -41,6 +42,8 @@ export const ROLES = [
     'cashier',
     'traffic_officer',
     'registrar',
+    'issuer',
+    'supervisor',
     'admin',
 ] as const;
 
@@ -52,13 +55,20 @@ export const PAYMENT_STATUSES = ['submitted', 'verified', 'rejected'] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
 /** Mirrors App\Enums\PaymentMethod. */
-export const PAYMENT_METHODS = ['bank_deposit', 'cash'] as const;
+export const PAYMENT_METHODS = [
+    'bank_deposit',
+    'bank_transfer',
+    'mobile_money',
+    'cash',
+    'other',
+] as const;
 
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 /** Mirrors App\Enums\ScanResult. */
 export const SCAN_RESULTS = [
     'valid',
+    'outside_hours',
     'not_yet_valid',
     'expired',
     'revoked',

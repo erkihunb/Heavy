@@ -10,7 +10,6 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useNavGroups } from '@/hooks/use-nav-groups';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -24,7 +23,6 @@ import { dashboard } from '@/routes';
 export function AppSidebar() {
     const { t } = useTranslation();
     const groups = useNavGroups();
-    const { isCurrentOrParentUrl } = useCurrentUrl();
 
     return (
         <Sidebar collapsible="icon" variant="sidebar">
@@ -61,7 +59,7 @@ export function AppSidebar() {
                         )}
                         <SidebarMenu className="gap-0.5">
                             {group.items.map((item) => {
-                                const active = isCurrentOrParentUrl(item.href);
+                                const active = item.isActive;
 
                                 return (
                                     <SidebarMenuItem key={item.title}>

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Permits;
 
+use App\Domain\Documents\StoredDocument;
 use App\Domain\Permits\VerificationTokenService;
 use App\Jobs\GeneratePermitDocument;
 use App\Models\Permit;
@@ -23,15 +24,16 @@ class IssuePermit
     public function handle(Permit $permit): string
     {
         ['token' => $token, 'hash' => $hash] = $this->tokens->generate();
-        $oldDocument = $permit->document_path;
+        $oldDocuments = StoredDocument::paths($permit);
 
         $permit->verification_token_hash = $hash;
         $permit->document_path = null;
+        $permit->document_path_en = null;
         $permit->save();
 
-        DB::afterCommit(function () use ($oldDocument): void {
-            if ($oldDocument !== null) {
-                Storage::disk(config('permits.documents_disk'))->delete($oldDocument);
+        DB::afterCommit(function () use ($oldDocuments): void {
+            if ($oldDocuments !== []) {
+                Storage::disk(config('permits.documents_disk'))->delete($oldDocuments);
             }
         });
 

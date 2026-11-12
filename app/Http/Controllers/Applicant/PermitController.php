@@ -18,6 +18,7 @@ use App\Http\Requests\Applicant\UpdatePermitRequest;
 use App\Http\Requests\Applicant\WithdrawPermitRequest;
 use App\Http\Resources\PermitResource;
 use App\Http\Resources\VehicleResource;
+use App\Models\Branch;
 use App\Models\Organization;
 use App\Models\Permit;
 use App\Models\Vehicle;
@@ -46,7 +47,7 @@ class PermitController extends Controller
 
         $permits = Permit::query()
             ->whereBelongsTo($this->organization($request))
-            ->with(['vehicles.vehicleType', 'organization'])
+            ->with(['vehicles.vehicleType', 'organization', 'branch'])
             ->when($status !== null, fn (Builder $query) => $query->inEffectiveStatus($status))
             ->when($permitType !== null, fn (Builder $query) => $query->where('permit_type', $permitType))
             ->when($plate !== '', fn (Builder $query) => $query->whereHas('vehicles', fn (Builder $query) => $query->whereLike(
@@ -76,6 +77,7 @@ class PermitController extends Controller
         return Inertia::render('applicant/permits/create', [
             'vehicles' => $this->vehicles($this->organization($request)),
             'limits' => $this->limits(),
+            'branches' => $this->branches(),
         ]);
     }
 
@@ -91,7 +93,7 @@ class PermitController extends Controller
         Gate::authorize('view', $permit);
 
         return Inertia::render('applicant/permits/show', [
-            'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'transitions', 'payments'])),
+            'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'branch', 'transitions', 'payments'])),
             'paymentMethods' => array_map(fn (PaymentMethod $method): string => $method->value, PaymentMethod::selectable()),
             'receiptMaxKilobytes' => (int) config('permits.receipt_max_kilobytes'),
         ]);
@@ -102,9 +104,10 @@ class PermitController extends Controller
         Gate::authorize('update', $permit);
 
         return Inertia::render('applicant/permits/edit', [
-            'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'transitions'])),
+            'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'branch', 'transitions'])),
             'vehicles' => $this->vehicles($this->organization($request)),
             'limits' => $this->limits(),
+            'branches' => $this->branches($permit->branch_id),
         ]);
     }
 
@@ -146,6 +149,26 @@ class PermitController extends Controller
     private function text(Request $request, string $key): string
     {
         return is_string($request->query($key)) ? trim($request->query($key)) : '';
+    }
+
+    /**
+     * The branches an applicant can apply to: the open ones, and the one the
+     * application is already at.
+     *
+     * @return list<array{id: int, code: string, name: string}>
+     */
+    private function branches(?int $currentId = null): array
+    {
+        return Branch::query()
+            ->where(fn (Builder $query) => $query->where('is_active', true)->when($currentId, fn (Builder $query) => $query->orWhere('id', $currentId)))
+            ->orderBy('code')
+            ->get()
+            ->map(fn (Branch $branch): array => [
+                'id' => $branch->id,
+                'code' => $branch->code,
+                'name' => $branch->localizedName(app()->getLocale()),
+            ])
+            ->all();
     }
 
     /**

@@ -24,8 +24,11 @@ final class PermitStateMachine
             PermitStatus::AwaitingPayment,
         ],
         PermitStatus::ChangesRequested->value => [PermitStatus::Submitted],
-        PermitStatus::AwaitingPayment->value => [PermitStatus::PaymentSubmitted],
-        PermitStatus::PaymentSubmitted->value => [PermitStatus::Issued, PermitStatus::AwaitingPayment],
+        // A receipt sent in for verification, or a payment a cashier takes and records.
+        PermitStatus::AwaitingPayment->value => [PermitStatus::PaymentSubmitted, PermitStatus::PaymentConfirmed],
+        PermitStatus::PaymentSubmitted->value => [PermitStatus::PaymentConfirmed, PermitStatus::AwaitingPayment],
+        // An Issuer checks the paid application, then issues and prints the permit.
+        PermitStatus::PaymentConfirmed->value => [PermitStatus::Issued],
         PermitStatus::Issued->value => [PermitStatus::Expired, PermitStatus::Revoked],
         PermitStatus::Active->value => [PermitStatus::Expired, PermitStatus::Revoked],
         // Terminal.

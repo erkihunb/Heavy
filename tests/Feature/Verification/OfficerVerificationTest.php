@@ -23,7 +23,7 @@ beforeEach(function () {
     $this->permit = Permit::factory()
         ->forVehicles(Vehicle::factory()->withPlate('አአ-03-A45301')->create())
         ->active()
-        ->create(['verification_token_hash' => $hash, 'permit_number' => 'TMA-HV-2019-000555']);
+        ->create(['verification_token_hash' => $hash, 'permit_number' => 'AACRA-2019-000555']);
 });
 
 it('shows a signed-in officer the officer view of a scanned permit', function () {
@@ -35,15 +35,16 @@ it('shows a signed-in officer the officer view of a scanned permit', function ()
         ->assertInertia(fn (Assert $page) => $page
             ->component('officer/scan')
             ->where('verification.result', 'valid')
-            ->where('verification.permit.permit_number', 'TMA-HV-2019-000555')
+            ->where('verification.permit.permit_number', 'AACRA-2019-000555')
             ->where('verification.permit.id', $this->permit->id)
             ->has('verification.permit.history')
             ->has('verification.permit.scans', 1)
             ->where('verification.permit.scans.0.by', $this->officer->name)
             ->has('verification.permit.reports', 1)
             ->where('verification.permit.reports.0.note', 'Earlier stop: fine.')
-            ->missing('verification.permit.fee')
-            ->missing('verification.permit.reason'));
+            // The reason is printed on the permit and shown to anyone who checks it; the fee never is.
+            ->has('verification.permit.reason')
+            ->missing('verification.permit.fee'));
 });
 
 it('logs the officer who scanned', function () {
@@ -79,7 +80,7 @@ it('looks a permit up by number and plate', function () {
         ->where('verifyBase', rtrim((string) config('permits.verify_url'), '/')));
 
     $this->actingAs($this->officer)
-        ->post(route('verification.lookup'), ['permit_number' => 'TMA-HV-2019-000555', 'plate' => 'አአ-03-A45301'])
+        ->post(route('verification.lookup'), ['permit_number' => 'AACRA-2019-000555', 'plate' => 'አአ-03-A45301'])
         ->assertInertia(fn (Assert $page) => $page->component('officer/scan')->where('verification.result', 'valid'));
 });
 

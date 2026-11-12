@@ -26,23 +26,23 @@ it('sends the notification\'s text to the routed number through the gateway', fu
         }
     });
 
-    $permit = Permit::factory()->revoked()->create(['permit_number' => 'TMA-HV-2019-000001']);
+    $permit = Permit::factory()->revoked()->create(['permit_number' => 'AACRA-2019-000001']);
 
     Notification::route('sms', '0911223344')->notifyNow(new PermitRevoked($permit, 'x'));
 
     expect($sent)->toHaveCount(1)
         ->and($sent[0][0])->toBe('0911223344')
-        ->and($sent[0][1])->toContain('TMA-HV-2019-000001');
+        ->and($sent[0][1])->toContain('AACRA-2019-000001');
 });
 
 it('logs messages with the phone number masked', function () {
     Log::spy();
 
-    (new LogSmsGateway)->send('+251 911 223 344', 'TMA: permit TMA-HV-2019-000001 revoked.');
+    (new LogSmsGateway)->send('+251 911 223 344', 'TMA: permit AACRA-2019-000001 revoked.');
 
     Log::shouldHaveReceived('info')->once()->withArgs(fn (string $message, array $context): bool => $context['to'] === '*********344'
         && ! str_contains(json_encode($context), '911223')
-        && $context['message'] === 'TMA: permit TMA-HV-2019-000001 revoked.');
+        && $context['message'] === 'TMA: permit AACRA-2019-000001 revoked.');
 });
 
 it('masks short and oddly written numbers', function (string $phone, string $masked) {

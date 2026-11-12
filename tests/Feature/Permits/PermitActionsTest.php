@@ -506,7 +506,7 @@ describe('ApprovePermit', function () {
         $permit->refresh();
 
         expect($permit->status)->toBe(PermitStatus::AwaitingPayment)
-            ->and($permit->permit_number)->toMatch('/^TMA-HV-\d{4}-000001$/')
+            ->and($permit->permit_number)->toMatch('/^AACRA-\d{4}-000001$/')
             ->and($permit->approved_by)->toBe($this->approver->id)
             ->and($permit->approved_at?->equalTo(now()))->toBeTrue()
             ->and($permit->issued_at)->toBeNull()

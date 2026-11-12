@@ -141,7 +141,7 @@ describe('SubmitPayment', function () {
 });
 
 describe('VerifyPayment', function () {
-    it('verifies the payment and issues the permit', function () {
+    it('verifies the payment and leaves the issuing to an Issuer', function () {
         [$permit, $payment] = submittedPayment();
         $this->freezeSecond();
 
@@ -150,13 +150,14 @@ describe('VerifyPayment', function () {
         $permit->refresh();
         $payment->refresh();
 
-        expect($permit->status)->toBe(PermitStatus::Issued)
-            ->and($permit->issued_at?->equalTo(now()))->toBeTrue()
+        expect($permit->status)->toBe(PermitStatus::PaymentConfirmed)
+            ->and($permit->issued_at)->toBeNull()
+            ->and($permit->verification_token_hash)->toBeNull()
             ->and($payment->status)->toBe(PaymentStatus::Verified)
             ->and($payment->verified_by)->toBe($this->cashier->id)
             ->and($payment->verified_at?->equalTo(now()))->toBeTrue()
             ->and($payment->notes)->toBe('ደረሰኙ ተረጋግጧል')
-            ->and(paymentHistory($permit))->toBe([['payment_submitted', 'issued', $this->cashier->id, 'ደረሰኙ ተረጋግጧል']]);
+            ->and(paymentHistory($permit))->toBe([['payment_submitted', 'payment_confirmed', $this->cashier->id, 'ደረሰኙ ተረጋግጧል']]);
     });
 
     it('does not let the person who approved the permit verify its payment', function () {
@@ -176,7 +177,7 @@ describe('VerifyPayment', function () {
 
         app(VerifyPayment::class)->handle($payment, $this->cashier);
 
-        expect($permit->refresh()->status)->toBe(PermitStatus::Issued);
+        expect($permit->refresh()->status)->toBe(PermitStatus::PaymentConfirmed);
     });
 
     it('refuses a payment that is no longer waiting', function () {

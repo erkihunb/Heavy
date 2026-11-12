@@ -44,7 +44,7 @@ use Inertia\Response;
  */
 class WalkInController extends Controller
 {
-    public function show(User $applicant): Response
+    public function show(Request $request, User $applicant): Response
     {
         $organization = $this->organization($applicant);
 
@@ -67,7 +67,8 @@ class WalkInController extends Controller
             'permits' => PermitResource::collection(
                 Permit::query()
                     ->whereBelongsTo($organization)
-                    ->with(['vehicles.vehicleType', 'organization'])
+                    ->inBranchOf($request->user())
+                    ->with(['vehicles.vehicleType', 'organization', 'branch'])
                     ->latest()
                     ->orderByDesc('id')
                     ->limit(50)
@@ -121,7 +122,7 @@ class WalkInController extends Controller
 
         return Inertia::render('admin/applicants/permit-show', [
             'applicant' => $this->summary($applicant),
-            'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'transitions', 'payments'])),
+            'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'branch', 'transitions', 'payments'])),
             'actions' => [
                 'update' => $may('updateFor'),
                 'submit' => $may('submitFor'),
@@ -138,7 +139,7 @@ class WalkInController extends Controller
 
         return Inertia::render('admin/applicants/permit-edit', [
             'applicant' => $this->summary($applicant),
-            'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'transitions'])),
+            'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'branch', 'transitions'])),
             'vehicles' => $this->vehicles($this->organization($applicant)),
             'limits' => $this->limits(),
         ]);
@@ -146,7 +147,7 @@ class WalkInController extends Controller
 
     public function updatePermit(UpdatePermitForApplicantRequest $request, User $applicant, Permit $permit, UpdateDraftPermit $updateDraftPermit): RedirectResponse
     {
-        $updateDraftPermit->handle($permit, $request->toData());
+        $updateDraftPermit->handle($permit, $request->toData(), keepBranch: true);
 
         return to_route('admin.applicants.permits.show', [$applicant, $permit])->with('success', __('permits.messages.draft_saved'));
     }

@@ -24,8 +24,9 @@ Route::put('locale', [LocaleController::class, 'update'])
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
-    // The permit PDF: a temporary signed link, and the policy is checked again (spec §8).
-    Route::get('permits/{permit}/document', PermitDocumentController::class)
+    // The permit PDF, Amharic or English: a temporary signed link, and the policy is checked again (spec §8).
+    Route::get('permits/{permit}/document/{language?}', PermitDocumentController::class)
+        ->whereIn('language', ['am', 'en'])
         ->middleware('signed')
         ->name('permits.document');
 });
@@ -46,3 +47,4 @@ require __DIR__.'/applicant.php';
 require __DIR__.'/staff.php';
 require __DIR__.'/admin.php';
 require __DIR__.'/settings.php';
+require __DIR__.'/ui-kit.php';

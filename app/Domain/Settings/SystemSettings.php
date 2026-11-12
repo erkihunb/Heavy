@@ -97,7 +97,9 @@ final class SystemSettings
                 'bool' => (bool) $value,
                 'int' => (int) $value,
                 'choice' => in_array($value, $setting['options'] ?? [], true) ? $value : ($setting['options'][0] ?? null),
-                default => $value === null ? '' : (string) $value,
+                // A list in config (the notes printed on permits) is edited one item per line.
+                default => is_array($value) ? implode('
+', $value) : ($value === null ? '' : (string) $value),
             };
         }
 

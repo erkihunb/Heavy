@@ -15,6 +15,8 @@ enum Role: string
     case Cashier = 'cashier';
     case TrafficOfficer = 'traffic_officer';
     case Registrar = 'registrar';
+    case Issuer = 'issuer';
+    case Supervisor = 'supervisor';
     case Admin = 'admin';
 
     /**
@@ -24,7 +26,7 @@ enum Role: string
      */
     public static function staff(): array
     {
-        return [self::Reviewer, self::Approver, self::Cashier, self::TrafficOfficer, self::Registrar, self::Admin];
+        return [self::Reviewer, self::Approver, self::Cashier, self::TrafficOfficer, self::Registrar, self::Issuer, self::Supervisor, self::Admin];
     }
 
     /**
@@ -58,9 +60,12 @@ enum Role: string
                 Permission::SubmitPayments,
                 Permission::DownloadOwnPermits,
             ],
+            // A Reviewer examines a request and decides on it; with two-step
+            // approval on, an Approver must decide after the recommendation.
             self::Reviewer => [
                 Permission::ViewReviewQueue,
                 Permission::ReviewPermits,
+                Permission::ApprovePermits,
             ],
             self::Approver => [
                 Permission::ViewReviewQueue,
@@ -68,7 +73,9 @@ enum Role: string
                 Permission::RevokePermits,
                 Permission::ViewReports,
             ],
+            // The cashier opens approved applications to take or check their payment.
             self::Cashier => [
+                Permission::ViewReviewQueue,
                 Permission::VerifyPayments,
                 Permission::ViewReports,
             ],
@@ -77,6 +84,17 @@ enum Role: string
             ],
             self::Registrar => [
                 Permission::RegisterApplicants,
+            ],
+            // The Issuer opens paid applications to check, issue and print them.
+            self::Issuer => [
+                Permission::ViewReviewQueue,
+                Permission::IssuePermits,
+            ],
+            // Head office: sees every branch's applications and figures and comments on them.
+            self::Supervisor => [
+                Permission::ViewReviewQueue,
+                Permission::CommentOnPermits,
+                Permission::ViewReports,
             ],
             self::Admin => array_values(array_filter(
                 Permission::cases(),

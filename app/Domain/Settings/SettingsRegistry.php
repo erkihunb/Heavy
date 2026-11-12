@@ -14,7 +14,17 @@ namespace App\Domain\Settings;
  */
 final class SettingsRegistry
 {
-    public const array SECTIONS = ['general', 'appearance', 'notifications', 'email', 'sms', 'telegram', 'security', 'localization'];
+    /**
+     * The sections of the System settings menu, by category, in menu order.
+     */
+    public const array CATEGORIES = [
+        'organization' => ['general', 'appearance', 'localization'],
+        'permits' => ['permits', 'codes', 'documents'],
+        'communication' => ['notifications', 'email', 'sms', 'telegram'],
+        'access' => ['security'],
+    ];
+
+    public const array SECTIONS = ['general', 'appearance', 'localization', 'permits', 'codes', 'documents', 'notifications', 'email', 'sms', 'telegram', 'security'];
 
     public const array THEMES = ['navy', 'forest', 'sunset', 'graphite'];
 
@@ -27,18 +37,36 @@ final class SettingsRegistry
     public static function all(): array
     {
         return [
-            // General
+            // General: the organisation
             'app.name' => ['section' => 'general', 'group' => 'system', 'type' => 'text', 'required' => true, 'max' => 100],
-            'permits.max_duration_days' => ['section' => 'general', 'group' => 'rules', 'type' => 'int', 'min' => 1, 'max' => 366],
-            'permits.max_trailers' => ['section' => 'general', 'group' => 'rules', 'type' => 'int', 'min' => 0, 'max' => 5],
-            'permits.two_step_approval' => ['section' => 'general', 'group' => 'rules', 'type' => 'bool'],
-            'permits.separation_of_duties' => ['section' => 'general', 'group' => 'rules', 'type' => 'bool'],
-            'permits.receipt_max_kilobytes' => ['section' => 'general', 'group' => 'rules', 'type' => 'int', 'min' => 512, 'max' => 20480],
-            'permits.exports.keep_days' => ['section' => 'general', 'group' => 'rules', 'type' => 'int', 'min' => 1, 'max' => 90],
-            'permits.time_windows.full_day.am' => ['section' => 'general', 'group' => 'time_windows', 'type' => 'longtext', 'required' => true],
-            'permits.time_windows.full_day.en' => ['section' => 'general', 'group' => 'time_windows', 'type' => 'longtext', 'required' => true],
-            'permits.time_windows.pass.am' => ['section' => 'general', 'group' => 'time_windows', 'type' => 'longtext', 'required' => true],
-            'permits.time_windows.pass.en' => ['section' => 'general', 'group' => 'time_windows', 'type' => 'longtext', 'required' => true],
+            'permits.max_duration_days' => ['section' => 'permits', 'group' => 'rules', 'type' => 'int', 'min' => 1, 'max' => 366],
+            'permits.max_trailers' => ['section' => 'permits', 'group' => 'rules', 'type' => 'int', 'min' => 0, 'max' => 5],
+            'permits.online_applications' => ['section' => 'permits', 'group' => 'rules', 'type' => 'bool'],
+            'permits.two_step_approval' => ['section' => 'permits', 'group' => 'rules', 'type' => 'bool'],
+            'permits.separation_of_duties' => ['section' => 'permits', 'group' => 'rules', 'type' => 'bool'],
+            'permits.receipt_max_kilobytes' => ['section' => 'permits', 'group' => 'rules', 'type' => 'int', 'min' => 512, 'max' => 20480],
+            'permits.exports.keep_days' => ['section' => 'permits', 'group' => 'rules', 'type' => 'int', 'min' => 1, 'max' => 90],
+            // The column holds 32 characters. Only the counter can be longer than its token ({seq} → 8 digits),
+            // and it may appear once, so a rule of 30 characters gives at most 31.
+            'permits.number_prefix' => ['section' => 'codes', 'group' => 'numbering', 'type' => 'text', 'required' => true, 'max' => 8, 'pattern' => '/^[A-Z0-9]+(-[A-Z0-9]+)*$/'],
+            'permits.number_format' => ['section' => 'codes', 'group' => 'numbering', 'type' => 'text', 'required' => true, 'max' => 30, 'pattern' => '/^(?=.*\{year\})(?=.*\{seq\})(?!.*\{seq\}.*\{seq\})(\{prefix\}|\{branch\}|\{type\}|\{year\}|\{seq\}|[A-Z0-9-])+$/'],
+            'permits.number_digits' => ['section' => 'codes', 'group' => 'numbering', 'type' => 'int', 'min' => 4, 'max' => 8],
+            'permits.number_year_format' => ['section' => 'codes', 'group' => 'numbering', 'type' => 'choice', 'options' => ['full', 'short']],
+            'permits.number_reset' => ['section' => 'codes', 'group' => 'numbering', 'type' => 'choice', 'options' => ['yearly', 'never']],
+            'permits.number_start' => ['section' => 'codes', 'group' => 'numbering', 'type' => 'int', 'min' => 1, 'max' => 999999],
+            'permits.number_type_codes.full_day' => ['section' => 'codes', 'group' => 'numbering', 'type' => 'text', 'required' => true, 'max' => 4, 'pattern' => '/^[A-Z0-9]+$/'],
+            'permits.number_type_codes.pass' => ['section' => 'codes', 'group' => 'numbering', 'type' => 'text', 'required' => true, 'max' => 4, 'pattern' => '/^[A-Z0-9]+$/'],
+            'permits.certificate_code.enabled' => ['section' => 'codes', 'group' => 'certificate_code', 'type' => 'bool'],
+            'permits.certificate_code.prefix' => ['section' => 'codes', 'group' => 'certificate_code', 'type' => 'text', 'max' => 8, 'pattern' => '/^[A-Z0-9]*$/'],
+            'permits.certificate_code.length' => ['section' => 'codes', 'group' => 'certificate_code', 'type' => 'int', 'min' => 6, 'max' => 16],
+            'permits.time_windows.full_day.am' => ['section' => 'permits', 'group' => 'time_windows', 'type' => 'longtext', 'required' => true],
+            'permits.time_windows.full_day.en' => ['section' => 'permits', 'group' => 'time_windows', 'type' => 'longtext', 'required' => true],
+            'permits.time_windows.pass.am' => ['section' => 'permits', 'group' => 'time_windows', 'type' => 'longtext', 'required' => true],
+            'permits.time_windows.pass.en' => ['section' => 'permits', 'group' => 'time_windows', 'type' => 'longtext', 'required' => true],
+            // The permit document (PDF)
+            'permits.document.notes.am' => ['section' => 'documents', 'group' => 'document_notes', 'type' => 'longtext', 'required' => true],
+            'permits.document.notes.en' => ['section' => 'documents', 'group' => 'document_notes', 'type' => 'longtext', 'required' => true],
+            'permits.verify_url' => ['section' => 'documents', 'group' => 'verification_address', 'type' => 'url', 'required' => true],
             'permits.branding.logo' => ['section' => 'general', 'group' => 'branding', 'type' => 'image', 'kind' => 'logo'],
             'permits.branding.favicon' => ['section' => 'general', 'group' => 'branding', 'type' => 'image', 'kind' => 'favicon'],
             'permits.branding.support_email' => ['section' => 'general', 'group' => 'support', 'type' => 'email'],

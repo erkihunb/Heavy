@@ -9,8 +9,18 @@ import { HourglassIcon } from '@solar-icons/react/linear/hourglass';
 import { QrCodeIcon } from '@solar-icons/react/linear/qr-code';
 import { ShieldCheckIcon } from '@solar-icons/react/linear/shield-check';
 import { WalletMoneyIcon } from '@solar-icons/react/linear/wallet-money';
-import { ArrowRight } from 'lucide-react';
+import { ArrowDown, ArrowRight, ArrowUp, Check, Minus } from 'lucide-react';
 import type { ComponentType } from 'react';
+import {
+    AreaChart,
+    ChartCard,
+    ColumnChart,
+    compactNumber,
+    Meter,
+    SegmentedBar,
+    Sparkline,
+} from '@/components/charts';
+import type { ChartPoint } from '@/components/charts';
 import {
     EmptyRow,
     Table,
@@ -22,13 +32,10 @@ import {
     Tr,
 } from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
-import { PageHeader } from '@/components/page-header';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
-import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { dashboard } from '@/routes';
 import { verify as officerVerify } from '@/routes/officer';
 import { show as organization } from '@/routes/organization';
 import {
@@ -47,9 +54,16 @@ import {
     create as registerVehicle,
     index as vehicleList,
 } from '@/routes/vehicles';
-import type { BreadcrumbItem, DualDate as DualDateValue, Money } from '@/types';
+import PageHeader from '@/shell/Components/PageHeader';
+import AuthenticatedLayout from '@/shell/Layouts/AuthenticatedLayout';
+import type { DualDate as DualDateValue, Money } from '@/types';
 import { PERMIT_STATUSES } from '@/types/enums';
-import type { PermitStatus, PermitType } from '@/types/enums';
+import type {
+    PaymentStatus,
+    PermitStatus,
+    PermitType,
+    ScanResult,
+} from '@/types/enums';
 import type { TranslationKey } from '@/types/translations';
 
 type CountKey =
@@ -61,13 +75,29 @@ type CountKey =
     | 'waiting_review'
     | 'payments_to_verify'
     | 'expiring'
+    | 'to_collect'
+    | 'to_issue'
     | 'scans_today';
 
 type Props = {
     account: { emailVerified: boolean; twoFactorEnabled: boolean };
     registration: { hasOrganization: boolean; vehicleCount: number } | null;
+    /** Applying online is open (paused while requests come in by letter). */
+    canApply: boolean;
     counts: Partial<Record<CountKey, number>>;
-    month: { label: string; issued: number; revenue: Money } | null;
+    month: {
+        label: string;
+        issued: number;
+        revenue: Money;
+        revenue_cents: number;
+        previous: {
+            label: string;
+            issued: number;
+            revenue: Money;
+            revenue_cents: number;
+        } | null;
+    } | null;
+    insights: Insights;
     distribution: Record<PermitStatus, number> | null;
     activity:
         | {
@@ -91,9 +121,80 @@ type Props = {
               status: PermitStatus;
               valid_from: DualDateValue;
               valid_to: DualDateValue;
+              progress: {
+                  percent: number;
+                  days_left: number;
+                  days: number;
+              } | null;
           }[]
         | null;
 };
+
+type DayCount = {
+    date: string;
+    label: string;
+    gregorian: string;
+    count: number;
+};
+
+type SetupStep =
+    'organization' | 'vehicle' | 'applied' | 'issued' | 'two_factor';
+
+type Insights = {
+    /** This Ethiopian month, e.g. "ጥቅምት 2019". */
+    month: string;
+    trend:
+        | {
+              key: string;
+              label: string;
+              short: string;
+              issued: number;
+              revenue: Money;
+          }[]
+        | null;
+    submissions: DayCount[] | null;
+    decisions: {
+        approved: number;
+        changes_requested: number;
+        rejected: number;
+    } | null;
+    payments: Record<PaymentStatus, { count: number; amount: Money }> | null;
+    scans: { today: Record<ScanResult, number>; days: DayCount[] } | null;
+    setup: { key: SetupStep; done: boolean }[] | null;
+};
+
+/* Scan results keep their meaning: good, warning, serious, critical or neutral. */
+const SCAN_COLOR: Record<ScanResult, string> = {
+    valid: 'bg-emerald-600 dark:bg-emerald-500',
+    outside_hours: 'bg-amber-500',
+    not_yet_valid: 'bg-sky-500',
+    expired: 'bg-zinc-400 dark:bg-zinc-500',
+    revoked: 'bg-red-600',
+    not_found: 'bg-orange-400',
+};
+
+const SCAN_ORDER: ScanResult[] = [
+    'valid',
+    'outside_hours',
+    'not_yet_valid',
+    'expired',
+    'revoked',
+    'not_found',
+];
+
+const byDay = (rows: DayCount[], locale: string): ChartPoint[] =>
+    rows.map((row) => {
+        const split = row.label.lastIndexOf(' ');
+        const day = row.label.slice(split + 1);
+
+        return {
+            key: row.date,
+            label: `${row.label} (${row.gregorian})`,
+            short: day === '1' ? row.label : day,
+            value: row.count,
+            display: compactNumber(row.count, locale),
+        };
+    });
 
 type Tone = 'primary' | 'success' | 'warning' | 'critical' | 'neutral';
 
@@ -126,6 +227,7 @@ const STATUS_COLOR: Record<PermitStatus, string> = {
     rejected: 'bg-red-500',
     awaiting_payment: 'bg-amber-600',
     payment_submitted: 'bg-sky-500',
+    payment_confirmed: 'bg-teal-500',
     issued: 'bg-emerald-400',
     active: 'bg-emerald-600',
     expired: 'bg-zinc-400 dark:bg-zinc-500',
@@ -137,10 +239,38 @@ type Kpi = {
     key: string;
     label: string;
     value: string | number;
+    /** What the number counts, in a sentence. */
+    hint?: string;
+    /** Change from the previous period. */
+    delta?: { direction: 'up' | 'down' | 'same'; text: string };
+    /** Recent periods, oldest first, for a sparkline. */
+    trend?: number[];
     icon: ComponentType<{ className?: string }>;
     tone: Tone;
     href?: string;
 };
+
+const DELTA_STYLE = {
+    up: { icon: ArrowUp, className: 'text-emerald-700 dark:text-emerald-400' },
+    down: { icon: ArrowDown, className: 'text-red-700 dark:text-red-400' },
+    same: { icon: Minus, className: 'text-muted-foreground' },
+} as const;
+
+function Delta({ delta }: { delta: NonNullable<Kpi['delta']> }) {
+    const { icon: Icon, className } = DELTA_STYLE[delta.direction];
+
+    return (
+        <p
+            className={cn(
+                'mt-1.5 flex items-center gap-1 text-xs font-medium',
+                className,
+            )}
+        >
+            <Icon aria-hidden="true" className="size-3.5 shrink-0" />
+            {delta.text}
+        </p>
+    );
+}
 
 function KpiCard({ kpi }: { kpi: Kpi }) {
     const body = (
@@ -159,9 +289,20 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
                     <kpi.icon className="size-4" />
                 </span>
             </div>
-            <p className="pt-3 text-2xl leading-tight font-semibold tracking-tight tabular-nums sm:text-3xl">
+            <p className="pt-3 text-2xl leading-tight font-semibold tracking-tight sm:text-3xl">
                 {kpi.value}
             </p>
+            {(kpi.delta || kpi.trend) && (
+                <div className="flex items-end justify-between gap-3">
+                    {kpi.delta ? <Delta delta={kpi.delta} /> : <span />}
+                    {kpi.trend && <Sparkline values={kpi.trend} />}
+                </div>
+            )}
+            {kpi.hint && (
+                <p className="mt-auto pt-2 text-xs leading-relaxed text-muted-foreground">
+                    {kpi.hint}
+                </p>
+            )}
         </>
     );
 
@@ -202,20 +343,18 @@ const RANK_DOT: Record<Attention['rank'], string> = {
 export default function Dashboard({
     account,
     registration,
+    canApply,
     counts,
     month,
+    insights,
     distribution,
     activity,
     recentPermits,
 }: Props) {
     const { t } = useTranslation();
-    const { auth, today } = usePage().props;
+    const { auth, today, locale } = usePage().props;
     const isApplicant = registration !== null;
     const isStaff = !isApplicant && auth.user.roles.length > 0;
-
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: t('dashboard.title'), href: dashboard() },
-    ];
 
     const kpis: Kpi[] = [];
     const add = (
@@ -234,6 +373,7 @@ export default function Dashboard({
         kpis.push({
             key,
             label: t(`dashboard.kpis.${key}` as TranslationKey),
+            hint: t(`dashboard.hints.${key}` as TranslationKey),
             value,
             icon,
             tone: warnWhenPositive && value > 0 ? 'warning' : tone,
@@ -271,13 +411,64 @@ export default function Dashboard({
         isStaff && month ? reports.url() : undefined,
         true,
     );
+    add(
+        'to_collect',
+        WalletMoneyIcon,
+        'primary',
+        reviewQueue.url({ query: { status: 'awaiting_payment' } }),
+        true,
+    );
+    add(
+        'to_issue',
+        DocumentTextIcon,
+        'primary',
+        reviewQueue.url({ query: { status: 'payment_confirmed' } }),
+        true,
+    );
     add('scans_today', QrCodeIcon, 'neutral', officerVerify.url());
 
+    const delta = (
+        now: number,
+        before: number,
+        shown: string,
+        previous: string,
+    ): Kpi['delta'] =>
+        now === before
+            ? {
+                  direction: 'same',
+                  text: t('dashboard.delta.same', { month: previous }),
+              }
+            : {
+                  direction: now > before ? 'up' : 'down',
+                  text: t(
+                      now > before
+                          ? 'dashboard.delta.up'
+                          : 'dashboard.delta.down',
+                      { value: shown, month: previous },
+                  ),
+              };
+
     if (month) {
+        const previous = month.previous;
+        const birr = (cents: number) =>
+            new Intl.NumberFormat('en', { maximumFractionDigits: 2 }).format(
+                cents / 100,
+            );
+
         kpis.push(
             {
                 key: 'issued_month',
                 label: t('dashboard.kpis.issued_month', { month: month.label }),
+                hint: t('dashboard.hints.issued_month'),
+                delta: previous
+                    ? delta(
+                          month.issued,
+                          previous.issued,
+                          String(Math.abs(month.issued - previous.issued)),
+                          previous.label,
+                      )
+                    : undefined,
+                trend: insights.trend?.map((row) => row.issued),
                 value: month.issued,
                 icon: DocumentTextIcon,
                 tone: 'success',
@@ -288,6 +479,16 @@ export default function Dashboard({
                 label: t('dashboard.kpis.revenue_month', {
                     month: month.label,
                 }),
+                hint: t('dashboard.hints.revenue_month'),
+                delta: previous
+                    ? delta(
+                          month.revenue_cents,
+                          previous.revenue_cents,
+                          `ETB ${birr(Math.abs(month.revenue_cents - previous.revenue_cents))}`,
+                          previous.label,
+                      )
+                    : undefined,
+                trend: insights.trend?.map((row) => row.revenue.amount_cents),
                 value: month.revenue.formatted,
                 icon: ChartSquareIcon,
                 tone: 'primary',
@@ -295,6 +496,46 @@ export default function Dashboard({
             },
         );
     }
+
+    const tick = (value: number) => compactNumber(value, locale);
+    const issuedPoints: ChartPoint[] =
+        insights.trend?.map((row) => ({
+            key: row.key,
+            label: row.label,
+            short: row.short,
+            value: row.issued,
+            display: String(row.issued),
+        })) ?? [];
+    const revenuePoints: ChartPoint[] =
+        insights.trend?.map((row) => ({
+            key: row.key,
+            label: row.label,
+            short: row.short,
+            value: row.revenue.amount_cents / 100,
+            display: row.revenue.formatted,
+        })) ?? [];
+    const submitted = insights.submissions ?? [];
+    const submittedTotal = submitted.reduce((sum, row) => sum + row.count, 0);
+    const decisions = insights.decisions;
+    const decided = decisions
+        ? decisions.approved + decisions.changes_requested + decisions.rejected
+        : 0;
+    const payments = insights.payments;
+    const paymentCount = payments
+        ? payments.verified.count +
+          payments.submitted.count +
+          payments.rejected.count
+        : 0;
+    const paymentAmount = payments
+        ? payments.verified.amount.amount_cents +
+          payments.submitted.amount.amount_cents +
+          payments.rejected.amount.amount_cents
+        : 0;
+    const scansToday = insights.scans
+        ? SCAN_ORDER.reduce((sum, r) => sum + insights.scans!.today[r], 0)
+        : 0;
+    const setupDone = insights.setup?.filter((step) => step.done).length ?? 0;
+    const sideCard = decisions !== null || insights.setup !== null;
 
     const attention: Attention[] = [
         ...(!account.emailVerified
@@ -351,6 +592,16 @@ export default function Dashboard({
     countItem('waiting_review', 'medium', reviewQueue.url());
     countItem('payments_to_verify', 'medium', paymentQueue.url());
     countItem(
+        'to_collect',
+        'medium',
+        reviewQueue.url({ query: { status: 'awaiting_payment' } }),
+    );
+    countItem(
+        'to_issue',
+        'medium',
+        reviewQueue.url({ query: { status: 'payment_confirmed' } }),
+    );
+    countItem(
         'expiring',
         'low',
         isStaff && month ? reports.url() : permitList.url(),
@@ -371,7 +622,7 @@ export default function Dashboard({
                         {t('dashboard.actions.register_vehicle')}
                     </Link>
                 </Button>
-                {(counts.vehicles ?? 0) > 0 && (
+                {canApply && (counts.vehicles ?? 0) > 0 && (
                     <Button asChild>
                         <Link href={applyForPermit()}>
                             {t('dashboard.actions.apply')}
@@ -399,18 +650,20 @@ export default function Dashboard({
     );
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={t('dashboard.title')} />
-
-            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+        <AuthenticatedLayout
+            header={
                 <PageHeader
                     title={t('dashboard.greeting', { name: auth.user.name })}
                     description={t('dashboard.intro', {
                         date: `${today.ethiopian_label} (${today.gregorian})`,
                     })}
-                    action={actions || undefined}
+                    actions={actions || undefined}
                 />
+            }
+        >
+            <Head title={t('dashboard.title')} />
 
+            <div className="flex flex-col gap-6">
                 {kpis.length > 0 && (
                     <div
                         className={cn(
@@ -423,6 +676,353 @@ export default function Dashboard({
                         {kpis.map((kpi) => (
                             <KpiCard key={kpi.key} kpi={kpi} />
                         ))}
+                    </div>
+                )}
+
+                {insights.trend && (
+                    <div className="grid gap-4 xl:grid-cols-2">
+                        <ChartCard
+                            title={t('dashboard.charts.issued.title')}
+                            description={t(
+                                'dashboard.charts.issued.description',
+                                { count: issuedPoints.length },
+                            )}
+                        >
+                            <ColumnChart
+                                data={issuedPoints}
+                                caption={t('dashboard.charts.issued.title')}
+                                periodLabel={t('dashboard.charts.period')}
+                                valueLabel={t('dashboard.charts.count')}
+                                formatTick={tick}
+                            />
+                        </ChartCard>
+                        <ChartCard
+                            title={t('dashboard.charts.revenue.title')}
+                            description={t(
+                                'dashboard.charts.revenue.description',
+                            )}
+                        >
+                            <AreaChart
+                                data={revenuePoints}
+                                caption={t('dashboard.charts.revenue.title')}
+                                periodLabel={t('dashboard.charts.period')}
+                                valueLabel={t('dashboard.charts.amount')}
+                                formatTick={tick}
+                            />
+                        </ChartCard>
+                    </div>
+                )}
+
+                {(insights.submissions || sideCard) && (
+                    <div className="grid items-stretch gap-4 xl:grid-cols-3">
+                        {insights.submissions && (
+                            <ChartCard
+                                className={
+                                    sideCard ? 'xl:col-span-2' : 'xl:col-span-3'
+                                }
+                                title={t('dashboard.charts.submissions.title')}
+                                description={t(
+                                    'dashboard.charts.submissions.description',
+                                    { count: submitted.length },
+                                )}
+                                aside={
+                                    <span className="text-xs text-muted-foreground">
+                                        {t(
+                                            'dashboard.charts.submissions.total',
+                                            {
+                                                count: submittedTotal,
+                                                days: submitted.length,
+                                            },
+                                        )}
+                                    </span>
+                                }
+                            >
+                                <AreaChart
+                                    data={byDay(submitted, locale)}
+                                    caption={t(
+                                        'dashboard.charts.submissions.title',
+                                    )}
+                                    periodLabel={t('dashboard.charts.period')}
+                                    valueLabel={t('dashboard.charts.count')}
+                                    formatTick={tick}
+                                />
+                            </ChartCard>
+                        )}
+
+                        {decisions && (
+                            <ChartCard
+                                title={t('dashboard.charts.decisions.title', {
+                                    month: insights.month,
+                                })}
+                                description={t(
+                                    'dashboard.charts.decisions.description',
+                                )}
+                            >
+                                {decided === 0 ? (
+                                    <p className="py-6 text-center text-sm text-muted-foreground">
+                                        {t('dashboard.charts.decisions.empty')}
+                                    </p>
+                                ) : (
+                                    <div className="space-y-5">
+                                        <Meter
+                                            label={t(
+                                                'dashboard.charts.decisions.rate',
+                                            )}
+                                            percent={
+                                                (decisions.approved / decided) *
+                                                100
+                                            }
+                                            tone="success"
+                                            caption={t(
+                                                'dashboard.charts.decisions.of',
+                                                {
+                                                    count: decisions.approved,
+                                                    total: decided,
+                                                },
+                                            )}
+                                        />
+                                        <SegmentedBar
+                                            shareLabel={t(
+                                                'dashboard.charts.share',
+                                            )}
+                                            parts={[
+                                                {
+                                                    key: 'approved',
+                                                    label: t(
+                                                        'dashboard.charts.decisions.approved',
+                                                    ),
+                                                    value: decisions.approved,
+                                                    color: 'bg-emerald-600 dark:bg-emerald-500',
+                                                },
+                                                {
+                                                    key: 'changes_requested',
+                                                    label: t(
+                                                        'dashboard.charts.decisions.changes_requested',
+                                                    ),
+                                                    value: decisions.changes_requested,
+                                                    color: 'bg-amber-500',
+                                                },
+                                                {
+                                                    key: 'rejected',
+                                                    label: t(
+                                                        'dashboard.charts.decisions.rejected',
+                                                    ),
+                                                    value: decisions.rejected,
+                                                    color: 'bg-red-600',
+                                                },
+                                            ]}
+                                        />
+                                    </div>
+                                )}
+                            </ChartCard>
+                        )}
+
+                        {insights.setup && (
+                            <ChartCard
+                                title={t('dashboard.charts.setup.title')}
+                                description={
+                                    setupDone === insights.setup.length
+                                        ? t('dashboard.charts.setup.complete')
+                                        : undefined
+                                }
+                            >
+                                <div className="space-y-4">
+                                    <Meter
+                                        label={t(
+                                            'dashboard.charts.setup.description',
+                                            {
+                                                done: setupDone,
+                                                total: insights.setup.length,
+                                            },
+                                        )}
+                                        percent={
+                                            (setupDone /
+                                                insights.setup.length) *
+                                            100
+                                        }
+                                        tone={
+                                            setupDone === insights.setup.length
+                                                ? 'success'
+                                                : 'primary'
+                                        }
+                                    />
+                                    <ol className="space-y-2">
+                                        {insights.setup.map((step) => (
+                                            <li
+                                                key={step.key}
+                                                className="flex items-center gap-2.5 text-sm"
+                                            >
+                                                <span
+                                                    aria-hidden="true"
+                                                    className={cn(
+                                                        'grid size-5 shrink-0 place-items-center rounded-full border',
+                                                        step.done
+                                                            ? 'border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500'
+                                                            : 'border-border-strong',
+                                                    )}
+                                                >
+                                                    {step.done && (
+                                                        <Check className="size-3" />
+                                                    )}
+                                                </span>
+                                                <span
+                                                    className={cn(
+                                                        step.done &&
+                                                            'text-muted-foreground line-through',
+                                                    )}
+                                                >
+                                                    {t(
+                                                        `dashboard.charts.setup.steps.${step.key}`,
+                                                    )}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ol>
+                                </div>
+                            </ChartCard>
+                        )}
+                    </div>
+                )}
+
+                {(payments || insights.scans) && (
+                    <div className="grid items-stretch gap-4 xl:grid-cols-2">
+                        {payments && (
+                            <ChartCard
+                                title={t('dashboard.charts.payments.title', {
+                                    month: insights.month,
+                                })}
+                                description={t(
+                                    'dashboard.charts.payments.description',
+                                )}
+                            >
+                                {paymentCount === 0 ? (
+                                    <p className="py-6 text-center text-sm text-muted-foreground">
+                                        {t('dashboard.charts.payments.empty')}
+                                    </p>
+                                ) : (
+                                    <div className="space-y-5">
+                                        <Meter
+                                            label={t(
+                                                'dashboard.charts.payments.collected',
+                                            )}
+                                            value={
+                                                payments.verified.amount
+                                                    .formatted
+                                            }
+                                            percent={
+                                                paymentAmount === 0
+                                                    ? 0
+                                                    : (payments.verified.amount
+                                                          .amount_cents /
+                                                          paymentAmount) *
+                                                      100
+                                            }
+                                            tone="success"
+                                        />
+                                        <SegmentedBar
+                                            shareLabel={t(
+                                                'dashboard.charts.share',
+                                            )}
+                                            parts={[
+                                                {
+                                                    key: 'verified',
+                                                    label: t(
+                                                        'dashboard.charts.payments.verified',
+                                                    ),
+                                                    value: payments.verified
+                                                        .count,
+                                                    color: 'bg-emerald-600 dark:bg-emerald-500',
+                                                },
+                                                {
+                                                    key: 'submitted',
+                                                    label: t(
+                                                        'dashboard.charts.payments.submitted',
+                                                    ),
+                                                    value: payments.submitted
+                                                        .count,
+                                                    color: 'bg-sky-500',
+                                                },
+                                                {
+                                                    key: 'rejected',
+                                                    label: t(
+                                                        'dashboard.charts.payments.rejected',
+                                                    ),
+                                                    value: payments.rejected
+                                                        .count,
+                                                    color: 'bg-red-600',
+                                                },
+                                            ]}
+                                        />
+                                    </div>
+                                )}
+                            </ChartCard>
+                        )}
+
+                        {insights.scans && (
+                            <ChartCard
+                                title={t('dashboard.charts.scans.title')}
+                                description={t(
+                                    'dashboard.charts.scans.description',
+                                )}
+                                aside={
+                                    <span className="text-2xl font-semibold">
+                                        {scansToday}
+                                    </span>
+                                }
+                            >
+                                <div className="space-y-5">
+                                    {scansToday === 0 ? (
+                                        <p className="py-2 text-sm text-muted-foreground">
+                                            {t('dashboard.charts.scans.empty')}
+                                        </p>
+                                    ) : (
+                                        <SegmentedBar
+                                            shareLabel={t(
+                                                'dashboard.charts.share',
+                                            )}
+                                            parts={SCAN_ORDER.map((result) => ({
+                                                key: result,
+                                                label: t(
+                                                    `verification.results.${result}.title`,
+                                                ),
+                                                value: insights.scans!.today[
+                                                    result
+                                                ],
+                                                color: SCAN_COLOR[result],
+                                            }))}
+                                        />
+                                    )}
+                                    <div>
+                                        <p className="mb-2 text-xs font-medium text-muted-foreground">
+                                            {t('dashboard.charts.scans.week', {
+                                                count: insights.scans.days
+                                                    .length,
+                                            })}
+                                        </p>
+                                        <ColumnChart
+                                            data={byDay(
+                                                insights.scans.days,
+                                                locale,
+                                            )}
+                                            caption={t(
+                                                'dashboard.charts.scans.week',
+                                                {
+                                                    count: insights.scans.days
+                                                        .length,
+                                                },
+                                            )}
+                                            periodLabel={t(
+                                                'dashboard.charts.period',
+                                            )}
+                                            valueLabel={t(
+                                                'dashboard.charts.count',
+                                            )}
+                                            formatTick={tick}
+                                        />
+                                    </div>
+                                </div>
+                            </ChartCard>
+                        )}
                     </div>
                 )}
 
@@ -651,6 +1251,40 @@ export default function Dashboard({
                                                         date={permit.valid_to}
                                                     />
                                                 </span>
+                                                {permit.progress && (
+                                                    <div className="mt-2 max-w-56">
+                                                        <Meter
+                                                            size="sm"
+                                                            label={
+                                                                permit.progress
+                                                                    .days_left ===
+                                                                0
+                                                                    ? t(
+                                                                          'dashboard.charts.validity.last_day',
+                                                                      )
+                                                                    : t(
+                                                                          'dashboard.charts.validity.days_left',
+                                                                          {
+                                                                              count: permit
+                                                                                  .progress
+                                                                                  .days_left,
+                                                                          },
+                                                                      )
+                                                            }
+                                                            percent={
+                                                                permit.progress
+                                                                    .percent
+                                                            }
+                                                            tone={
+                                                                permit.progress
+                                                                    .days_left <=
+                                                                2
+                                                                    ? 'warning'
+                                                                    : 'primary'
+                                                            }
+                                                        />
+                                                    </div>
+                                                )}
                                             </Td>
                                         </Tr>
                                     ))
@@ -749,6 +1383,6 @@ export default function Dashboard({
                     </TableCard>
                 )}
             </div>
-        </AppLayout>
+        </AuthenticatedLayout>
     );
 }

@@ -14,9 +14,10 @@ import type { BreadcrumbItem, Vehicle } from '@/types';
 type Props = {
     vehicles: Vehicle[];
     limits: PermitLimits;
+    branches: { id: number; code: string; name: string }[];
 };
 
-export default function PermitsCreate({ vehicles, limits }: Props) {
+export default function PermitsCreate({ vehicles, limits, branches }: Props) {
     const { t } = useTranslation();
 
     const form = useForm<PermitFormData>({
@@ -26,6 +27,10 @@ export default function PermitsCreate({ vehicles, limits }: Props) {
         valid_from: '',
         valid_to: '',
         reason: '',
+        any_time: true,
+        move_from: '',
+        move_to: '',
+        branch_id: '',
     });
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -68,6 +73,7 @@ export default function PermitsCreate({ vehicles, limits }: Props) {
                         onSubmit={submit}
                         vehicles={vehicles}
                         limits={limits}
+                        branches={branches}
                         cancelHref={index.url()}
                     />
                 )}

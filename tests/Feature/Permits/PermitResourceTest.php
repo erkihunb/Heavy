@@ -26,13 +26,15 @@ const PERMIT_FIELDS = [
     'valid_from',
     'valid_to',
     'duration_days',
+    'hours',
     'fee',
+    'letter',
     'payments',
     'vehicles',
     'organization',
     'submitted_at',
     'transitions',
-    'document_url',
+    'document_urls',
     'document_pending',
     'can',
 ];
@@ -49,6 +51,9 @@ const PERMIT_ABILITIES = [
     'requestChanges',
     'approve',
     'reject',
+    'recordPayment',
+    'issue',
+    'comment',
     'revoke',
     'reissue',
 ];
@@ -147,7 +152,7 @@ describe('PermitResource', function () {
 
         expect(sortedKeys($data))->toBe(sortedFields(PERMIT_FIELDS, PERMIT_STAFF_FIELDS))
             ->and(sortedKeys($data['recommendation']))->toBe(['at', 'by', 'decision', 'note']);
-    })->with([Role::Reviewer, Role::Approver]);
+    })->with([Role::Reviewer, Role::Approver, Role::Cashier, Role::Issuer, Role::Supervisor]);
 
     it('gives staff who are not part of the review, and guests, the public fields only', function (?Role $role) {
         $viewer = $role === null ? null : userWithRole($role);
@@ -160,7 +165,7 @@ describe('PermitResource', function () {
         foreach ($data['transitions'] as $transition) {
             expect(sortedKeys($transition))->toBe(sortedFields(TRANSITION_FIELDS));
         }
-    })->with([Role::Cashier, Role::TrafficOfficer, null]);
+    })->with([Role::TrafficOfficer, Role::Registrar, null]);
 
     it('presents the application itself', function () {
         $data = resourceAs($this->applicant, PermitResource::make(($this->loaded)()));

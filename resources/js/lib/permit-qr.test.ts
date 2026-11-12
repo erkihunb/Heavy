@@ -25,7 +25,7 @@ describe('permitToken', () => {
         expect(
             permitToken(`${BASE}/v/${'a'.repeat(65)}`, BASE, HERE),
         ).toBeNull();
-        expect(permitToken('TMA-HV-2019-000123', BASE, HERE)).toBeNull();
+        expect(permitToken('AACRA-2019-000123', BASE, HERE)).toBeNull();
         expect(permitToken('javascript:alert(1)', BASE, HERE)).toBeNull();
     });
 

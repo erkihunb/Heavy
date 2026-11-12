@@ -1,0 +1,21 @@
+{
+    "name": "@app/ui",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "sideEffects": false,
+    "description": "The shell's UI kit (buttons, cards, dialogs, form controls), ported from the source kit. Resolved through the '@app/ui' alias in tsconfig.json and vite.config.ts.",
+    "exports": {
+        ".": "./src/index.ts",
+        "./tokens.css": "./src/tokens.css"
+    },
+    "peerDependencies": {
+        "react": ">=18 <20",
+        "react-dom": ">=18 <20"
+    },
+    "dependencies": {
+        "@headlessui/react": "^2.0.0",
+        "@tanstack/react-table": "^9.3.1",
+        "sonner": "^2.0.7"
+    }
+}

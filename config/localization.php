@@ -48,7 +48,12 @@ return [
         'fees',
         'admin',
         'applicants',
+        'register',
         'errors',
+        // The signed-in shell ported from the source system (resources/js/shell).
+        'shell',
+        // Users, roles and permissions (EUISIS RBAC).
+        'rbac',
     ],
 
     /*

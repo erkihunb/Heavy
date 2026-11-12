@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Permits\MovementHours;
 use App\Enums\PermitStatus;
 use App\Enums\PermitType;
 use App\Enums\Recommendation;
@@ -27,6 +28,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $reason
  * @property CarbonImmutable $valid_from
  * @property CarbonImmutable $valid_to
+ * @property string|null $move_from HH:MM:SS, Addis Ababa time; null with move_to for any time of day
+ * @property string|null $move_to
  * @property int|null $fee_cents
  * @property string $currency
  * @property Recommendation|null $recommendation
@@ -40,14 +43,48 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $revoked_at
  * @property string|null $revocation_reason
  * @property string|null $verification_token_hash
- * @property string|null $document_path
+ * @property string|null $document_path the Amharic PDF
+ * @property string|null $document_path_en the English PDF
+ * @property string|null $certificate_code the code printed on its PDFs, e.g. CRT-7K3P-QX2M
  * @property CarbonImmutable|null $submitted_at
+ * @property string|null $letter_number the reference number of the request letter
+ * @property CarbonImmutable|null $letter_date
+ * @property string|null $letter_file_path scanned letter, on the private disk
+ * @property int|null $issued_by the Issuer who issued and printed the permit
  * @property CarbonImmutable|null $created_at
  */
 class Permit extends Model
 {
     /** @use HasFactory<PermitFactory> */
     use HasFactory, HasUlids;
+
+    /**
+     * The branch the application was made at: chosen by the applicant, or
+     * the Registrar's own for walk-ins; null for the head office.
+     *
+     * @return BelongsTo<Branch, $this>
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * The applications a member of staff works on: those filed at a branch
+     * or the head office in their scope, or every one with the administrator
+     * role or a global role (User::branchScope(); fail closed).
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeInBranchOf(Builder $query, User $staff): void
+    {
+        $staff->branchScope()->apply($query, $query->qualifyColumn('branch_id'));
+    }
+
+    public function isInBranchOf(User $staff): bool
+    {
+        return $staff->branchScope()->allows($this->branch_id);
+    }
 
     /**
      * Only what the applicant writes. Status, number, organization, applicant
@@ -60,6 +97,8 @@ class Permit extends Model
         'reason',
         'valid_from',
         'valid_to',
+        'move_from',
+        'move_to',
     ];
 
     /**
@@ -84,6 +123,7 @@ class Permit extends Model
             'fee_cents' => 'integer',
             'recommended_at' => 'datetime',
             'approved_at' => 'datetime',
+            'letter_date' => 'date',
             'issued_at' => 'datetime',
             'revoked_at' => 'datetime',
             'submitted_at' => 'datetime',
@@ -134,6 +174,24 @@ class Permit extends Model
             ->withPivot(['role', 'is_blocking'])
             ->orderBy('permit_vehicles.role')
             ->orderBy('vehicles.plate_normalized');
+    }
+
+    /**
+     * Internal comments (head office), oldest first.
+     *
+     * @return HasMany<PermitComment, $this>
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(PermitComment::class)->orderBy('id');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function issuer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'issued_by');
     }
 
     /**
@@ -207,5 +265,13 @@ class Permit extends Model
     public function durationDays(): int
     {
         return (int) $this->valid_from->diffInDays($this->valid_to) + 1;
+    }
+
+    /**
+     * The hours of the day the vehicles may move; null for any time of day.
+     */
+    public function movementHours(): ?MovementHours
+    {
+        return MovementHours::from($this->move_from, $this->move_to);
     }
 }

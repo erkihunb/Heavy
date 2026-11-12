@@ -15,6 +15,7 @@ return [
     'users' => 'ተጠቃሚዎች',
     'applicants' => 'አመልካቾች',
     'vehicle_types' => 'የተሽከርካሪ ዓይነቶች',
+    'branches' => 'ቅርንጫፎች',
     'system_settings' => 'የሥርዓት ቅንብሮች',
     'audit_log' => 'የኦዲት መዝገብ',
     'sections' => [

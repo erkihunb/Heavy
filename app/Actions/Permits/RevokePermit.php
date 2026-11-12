@@ -7,6 +7,7 @@ use App\Domain\Permits\PermitTransitions;
 use App\Enums\PermitStatus;
 use App\Exceptions\InvalidPermitTransition;
 use App\Exceptions\PermitRuleViolation;
+use App\Jobs\StampPermitDocument;
 use App\Models\Permit;
 use App\Models\User;
 use App\Notifications\PermitRevoked;
@@ -39,6 +40,9 @@ class RevokePermit
         });
 
         $this->notifier->send($revoked, new PermitRevoked($revoked, $reason));
+
+        // Print its PDFs again, stamped "revoked" in both languages.
+        StampPermitDocument::dispatch($revoked->id)->afterCommit();
 
         return $revoked;
     }

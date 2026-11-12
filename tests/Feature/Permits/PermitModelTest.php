@@ -152,7 +152,7 @@ it('never mass-assigns what only an Action may decide', function () {
     $permit->fill([
         'reason' => 'ምክንያት',
         'status' => 'issued',
-        'permit_number' => 'TMA-HV-2019-000001',
+        'permit_number' => 'AACRA-2019-000001',
         'organization_id' => 1,
         'applicant_id' => 1,
         'approved_by' => 1,
@@ -329,21 +329,21 @@ describe('schema constraints', function () {
     });
 
     it('never stores the same permit number twice', function () {
-        Permit::factory()->awaitingPayment()->create(['permit_number' => 'TMA-HV-2019-000001']);
+        Permit::factory()->awaitingPayment()->create(['permit_number' => 'AACRA-2019-000001']);
 
         expectDatabaseToRefuse(
-            fn () => Permit::factory()->awaitingPayment()->create(['permit_number' => 'TMA-HV-2019-000001']),
+            fn () => Permit::factory()->awaitingPayment()->create(['permit_number' => 'AACRA-2019-000001']),
             '23000',
         );
 
-        $other = Permit::factory()->awaitingPayment()->create(['permit_number' => 'TMA-HV-2019-000002']);
+        $other = Permit::factory()->awaitingPayment()->create(['permit_number' => 'AACRA-2019-000002']);
 
         expectDatabaseToRefuse(
-            fn () => DB::table('permits')->where('id', $other->id)->update(['permit_number' => 'TMA-HV-2019-000001']),
+            fn () => DB::table('permits')->where('id', $other->id)->update(['permit_number' => 'AACRA-2019-000001']),
             '23000',
         );
 
-        expect(Permit::where('permit_number', 'TMA-HV-2019-000001')->count())->toBe(1);
+        expect(Permit::where('permit_number', 'AACRA-2019-000001')->count())->toBe(1);
     });
 
     it('lets any number of permits go without a number', function () {

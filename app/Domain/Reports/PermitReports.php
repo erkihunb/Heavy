@@ -7,6 +7,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\PermitStatus;
 use App\Enums\VehicleRole;
 use App\Support\EthiopianMonth;
+use App\Support\Rbac\BranchScope;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\DB;
  * Ethiopian months, in the Authority's timezone. "Issued" means the permit
  * was issued in the period, whatever has happened to it since (revoked,
  * expired); revenue is the verified payments by the day they were paid.
+ * Every figure can be limited to one branch (`$scope`): staff placed at a
+ * branch see their own branch's figures.
  */
 final class PermitReports
 {
@@ -24,7 +27,7 @@ final class PermitReports
      * @param  int|null  $organizationId  only this organization's permits
      * @return array<string, int>
      */
-    public function byStatus(?int $organizationId = null): array
+    public function byStatus(?int $organizationId = null, ?BranchScope $scope = null): array
     {
         $today = ValidityRules::today()->toDateString();
         $issued = PermitStatus::Issued->value;
@@ -35,6 +38,7 @@ final class PermitReports
                 [$issued, $today, PermitStatus::Expired->value, $issued, $today, PermitStatus::Active->value],
             )
             ->when($organizationId !== null, fn ($query) => $query->where('organization_id', $organizationId))
+            ->when($scope !== null, fn ($query) => $scope->apply($query, 'branch_id'))
             ->groupBy('effective')
             ->pluck('total', 'effective');
 
@@ -47,21 +51,26 @@ final class PermitReports
         return $counts;
     }
 
-    public function issuedIn(EthiopianMonth $month): int
+    public function issuedIn(EthiopianMonth $month, ?BranchScope $scope = null): int
     {
         [$from, $until] = $month->instants();
 
-        return DB::table('permits')->where('issued_at', '>=', $from)->where('issued_at', '<', $until)->count();
+        return DB::table('permits')
+            ->where('issued_at', '>=', $from)
+            ->where('issued_at', '<', $until)
+            ->when($scope !== null, fn ($query) => $scope->apply($query, 'branch_id'))
+            ->count();
     }
 
     /**
      * Revenue of verified payments paid in the month, in santim.
      */
-    public function revenueIn(EthiopianMonth $month): int
+    public function revenueIn(EthiopianMonth $month, ?BranchScope $scope = null): int
     {
         return (int) DB::table('payments')
             ->where('status', PaymentStatus::Verified->value)
             ->whereBetween('paid_at', [$month->firstDay()->toDateString(), $month->lastDay()->toDateString()])
+            ->when($scope !== null, fn ($query) => $query->whereIn('permit_id', $scope->apply(DB::table('permits'), 'branch_id')->select('id')))
             ->sum('amount_cents');
     }
 
@@ -71,12 +80,12 @@ final class PermitReports
      * @param  list<EthiopianMonth>  $months
      * @return list<array{month: EthiopianMonth, issued: int, revenue_cents: int}>
      */
-    public function monthly(array $months): array
+    public function monthly(array $months, ?BranchScope $scope = null): array
     {
         return array_map(fn (EthiopianMonth $month): array => [
             'month' => $month,
-            'issued' => $this->issuedIn($month),
-            'revenue_cents' => $this->revenueIn($month),
+            'issued' => $this->issuedIn($month, $scope),
+            'revenue_cents' => $this->revenueIn($month, $scope),
         ], $months);
     }
 
@@ -85,7 +94,7 @@ final class PermitReports
      *
      * @return list<array{vehicle_type_id: int, name_am: string, name_en: string, permits: int}>
      */
-    public function byVehicleType(EthiopianMonth $from, EthiopianMonth $until): array
+    public function byVehicleType(EthiopianMonth $from, EthiopianMonth $until, ?BranchScope $scope = null): array
     {
         [$start] = $from->instants();
         [, $end] = $until->instants();
@@ -98,6 +107,7 @@ final class PermitReports
             ->join('vehicle_types', 'vehicle_types.id', '=', 'vehicles.vehicle_type_id')
             ->where('permits.issued_at', '>=', $start)
             ->where('permits.issued_at', '<', $end)
+            ->when($scope !== null, fn ($query) => $scope->apply($query, 'permits.branch_id'))
             ->groupBy('vehicle_types.id', 'vehicle_types.name_am', 'vehicle_types.name_en')
             ->orderByDesc('permits')
             ->orderBy('vehicle_types.id')
@@ -117,7 +127,7 @@ final class PermitReports
      *
      * @return list<array{organization_id: int, name_am: string, name_en: string|null, permits: int, revenue_cents: int}>
      */
-    public function topOrganizations(EthiopianMonth $from, EthiopianMonth $until, int $limit = 10): array
+    public function topOrganizations(EthiopianMonth $from, EthiopianMonth $until, int $limit = 10, ?BranchScope $scope = null): array
     {
         [$start] = $from->instants();
         [, $end] = $until->instants();
@@ -132,6 +142,7 @@ final class PermitReports
             ->leftJoinSub($revenue, 'revenue', 'revenue.permit_id', '=', 'permits.id')
             ->where('permits.issued_at', '>=', $start)
             ->where('permits.issued_at', '<', $end)
+            ->when($scope !== null, fn ($query) => $scope->apply($query, 'permits.branch_id'))
             ->groupBy('organizations.id', 'organizations.name_am', 'organizations.name_en')
             ->orderByDesc('permits')
             ->orderBy('organizations.id')
@@ -158,13 +169,14 @@ final class PermitReports
      *
      * @return array{count: int, permits: list<array{id: string, permit_number: string|null, organization_am: string, organization_en: string|null, plate: string|null, valid_to: string}>}
      */
-    public function expiringSoon(int $days = 7, int $limit = 20): array
+    public function expiringSoon(int $days = 7, int $limit = 20, ?BranchScope $scope = null): array
     {
         $today = ValidityRules::today();
 
         $query = DB::table('permits')
             ->where('permits.status', PermitStatus::Issued->value)
-            ->whereBetween('permits.valid_to', [$today->toDateString(), $today->addDays($days)->toDateString()]);
+            ->whereBetween('permits.valid_to', [$today->toDateString(), $today->addDays($days)->toDateString()])
+            ->when($scope !== null, fn ($query) => $scope->apply($query, 'permits.branch_id'));
 
         $permits = (clone $query)
             ->join('organizations', 'organizations.id', '=', 'permits.organization_id')

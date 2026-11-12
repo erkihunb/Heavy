@@ -24,9 +24,9 @@ final class GotenbergPdfRenderer implements PdfRenderer
             $response = Http::timeout($this->timeoutSeconds)
                 ->attach('files', $html, 'index.html', ['Content-Type' => 'text/html; charset=utf-8'])
                 ->post(rtrim($this->url, '/').'/forms/chromium/convert/html', [
-                    // A4 portrait, margins handled by the page's own CSS.
-                    'paperWidth' => '8.27',
-                    'paperHeight' => '11.69',
+                    // A4 landscape, margins handled by the page's own CSS.
+                    'paperWidth' => '11.69',
+                    'paperHeight' => '8.27',
                     'marginTop' => '0',
                     'marginBottom' => '0',
                     'marginLeft' => '0',

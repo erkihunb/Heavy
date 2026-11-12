@@ -63,7 +63,8 @@ class ExportController extends Controller
         $export = new Export([
             'dataset' => $request->enum('dataset', ExportDataset::class),
             'format' => $request->enum('format', ExportFormat::class),
-            'filters' => $request->filters(),
+            // Where the person asking may see is fixed here, never taken from the form.
+            'filters' => array_filter([...$request->filters(), 'scope' => $request->user()->branchScope()->toArray()], fn (mixed $value): bool => $value !== null),
         ]);
         $export->user_id = $request->user()->id;
         $export->save();

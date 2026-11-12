@@ -95,7 +95,7 @@ it('records payment verification and rejection with the receipt', function () {
 
     // The permit transitions are recorded as well.
     expect(auditEntries(AuditEvent::PermitTransition)->pluck('properties.attributes.status')->all())
-        ->toContain('issued', 'awaiting_payment');
+        ->toContain('payment_confirmed', 'awaiting_payment');
 });
 
 it('records a reissue as its own event', function () {

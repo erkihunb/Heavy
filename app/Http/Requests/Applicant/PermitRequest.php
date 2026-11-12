@@ -5,6 +5,8 @@ namespace App\Http\Requests\Applicant;
 use App\Data\PermitData;
 use App\Domain\Permits\ValidityRules;
 use App\Enums\PermitType;
+use App\Http\Requests\Concerns\ValidatesMovementHours;
+use App\Models\Branch;
 use App\Models\Permit;
 use App\Models\Vehicle;
 use Carbon\CarbonImmutable;
@@ -19,6 +21,8 @@ use Illuminate\Validation\Validator;
  */
 abstract class PermitRequest extends FormRequest
 {
+    use ValidatesMovementHours;
+
     /**
      * The application being edited, or null when starting a new one.
      */
@@ -37,6 +41,12 @@ abstract class PermitRequest extends FormRequest
             'valid_from' => ['bail', 'required', 'date_format:Y-m-d'],
             'valid_to' => ['bail', 'required', 'date_format:Y-m-d'],
             'reason' => ['required', 'string', 'max:2000'],
+            // Empty means the head office. A closed branch takes no new applications,
+            // but an application already made there may stay.
+            'branch_id' => ['nullable', 'integer', Rule::exists(Branch::class, 'id')->where(fn ($query) => $query
+                ->where('is_active', true)
+                ->orWhere('id', $this->permit()?->branch_id))],
+            ...$this->movementHoursRules(),
         ];
     }
 
@@ -81,6 +91,8 @@ abstract class PermitRequest extends FormRequest
             'valid_from' => __('permits.fields.valid_from'),
             'valid_to' => __('permits.fields.valid_to'),
             'reason' => __('permits.fields.reason'),
+            'branch_id' => __('permits.fields.branch'),
+            ...$this->movementHoursAttributes(),
         ];
     }
 
@@ -95,6 +107,7 @@ abstract class PermitRequest extends FormRequest
             'trailer_vehicle_ids.*.distinct' => __('permits.errors.vehicles_duplicate'),
             'trailer_vehicle_ids.*.different' => __('permits.errors.vehicles_duplicate'),
             'trailer_vehicle_ids.max' => __('permits.errors.too_many_trailers', ['max' => config('permits.max_trailers')]),
+            ...$this->movementHoursMessages(),
         ];
     }
 
@@ -109,7 +122,7 @@ abstract class PermitRequest extends FormRequest
 
     public function toData(): PermitData
     {
-        /** @var array{permit_type: string, primary_vehicle_id: string, trailer_vehicle_ids?: array<array-key, string>|null, valid_from: string, valid_to: string, reason: string} $validated */
+        /** @var array{permit_type: string, primary_vehicle_id: string, trailer_vehicle_ids?: array<array-key, string>|null, valid_from: string, valid_to: string, reason: string, branch_id?: int|string|null} $validated */
         $validated = $this->validated();
 
         return new PermitData(
@@ -119,6 +132,8 @@ abstract class PermitRequest extends FormRequest
             validFrom: CarbonImmutable::createFromFormat('!Y-m-d', $validated['valid_from'], 'UTC'),
             validTo: CarbonImmutable::createFromFormat('!Y-m-d', $validated['valid_to'], 'UTC'),
             reason: trim($validated['reason']),
+            branchId: isset($validated['branch_id']) && $validated['branch_id'] !== '' ? (int) $validated['branch_id'] : null,
+            hours: $this->movementHours(),
         );
     }
 

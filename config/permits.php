@@ -27,7 +27,21 @@ return [
     |
     */
 
-    'two_step_approval' => (bool) env('PERMITS_TWO_STEP_APPROVAL', true),
+    'two_step_approval' => (bool) env('PERMITS_TWO_STEP_APPROVAL', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Online Applications
+    |--------------------------------------------------------------------------
+    |
+    | Whether applicants may sign up, apply and report payments online. Off
+    | while requests come in by letter at a branch or the head office: a
+    | Registrar records them, a cashier records the payment and an Issuer
+    | issues the permit. An Admin can turn it on in System settings.
+    |
+    */
+
+    'online_applications' => (bool) env('PERMITS_ONLINE_APPLICATIONS', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -46,15 +60,60 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Permit Number Prefix
+    | Permit Number Rule
     |--------------------------------------------------------------------------
     |
     | Permit numbers are "<prefix>-<Ethiopian year>-<six digits>", for example
-    | TMA-HV-2018-000123 (spec §4.7).
+    | AACRA-2018-000123 (spec §4.7). The format puts {prefix}, {branch}, {year}
+    | and {seq} (the counter, restarted each Ethiopian year and padded to
+    | `number_digits`) in order; {year} and {seq} must both be in it. {branch}
+    | is the code of the branch the application was made at
+    | (AACRA-BOL-2018-000123) and is left out, with its hyphen, for an
+    | application made at the head office. An Admin changes all three
+    | in System settings → General; a change applies to permits approved from
+    | then on, and numbers already issued stay as they are.
     |
     */
 
-    'number_prefix' => env('PERMITS_NUMBER_PREFIX', 'TMA-HV'),
+    'number_prefix' => env('PERMITS_NUMBER_PREFIX', 'AACRA'),
+
+    'number_format' => env('PERMITS_NUMBER_FORMAT', '{prefix}-{branch}-{year}-{seq}'),
+
+    'number_digits' => (int) env('PERMITS_NUMBER_DIGITS', 6),
+
+    // "full" prints the Ethiopian year as 2019, "short" as 19.
+    'number_year_format' => env('PERMITS_NUMBER_YEAR_FORMAT', 'full'),
+
+    // "yearly": the counter starts again each Ethiopian year; "never": it keeps counting.
+    'number_reset' => env('PERMITS_NUMBER_RESET', 'yearly'),
+
+    // The first counter value of a new year (or of the never-ending counter).
+    'number_start' => (int) env('PERMITS_NUMBER_START', 1),
+
+    // The code {type} prints for each permit type.
+    'number_type_codes' => [
+        'full_day' => env('PERMITS_NUMBER_TYPE_FULL_DAY', 'FD'),
+        'pass' => env('PERMITS_NUMBER_TYPE_PASS', 'PS'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Certificate code
+    |--------------------------------------------------------------------------
+    |
+    | A short check code printed on each permit PDF and shown on the
+    | verification page, e.g. CRT-7K3P-QX2M. It is computed with the app key
+    | from the permit number, type, dates, organisation and plates, so a
+    | printout whose details were altered no longer matches. The prefix and
+    | the number of code characters (grouped by four) are Admin settings.
+    |
+    */
+
+    'certificate_code' => [
+        'enabled' => (bool) env('PERMITS_CERTIFICATE_CODE', true),
+        'prefix' => env('PERMITS_CERTIFICATE_CODE_PREFIX', 'CRT'),
+        'length' => (int) env('PERMITS_CERTIFICATE_CODE_LENGTH', 8),
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -140,6 +199,27 @@ return [
 
     'document' => [
         'logo_path' => env('PERMITS_DOCUMENT_LOGO_PATH'),
+
+        // The "ማሳሰቢያ" (notes) printed at the foot of the permit, as on the
+        // Authority's paper permit; one list per language.
+        'notes' => [
+            'am' => [
+                'ይህ ፈቃድ የባለስልጣኑ ማህተም ከሌለውና ስርዝ ድልዝ ካለበት አያገለግልም።',
+                'የመንቀሳቀሻ ፈቃዱ ጊዜ ሲያበቃ ካርዱ ለባለስልጣን መ/ቤቱ ተመላሽ ይደረጋል።',
+                'ይህ ፈቃድ ከተፈቀደለት ተሽከርካሪ ውጪ ለሌላ ተሽከርካሪ አሳልፎ መስጠት የተከለከለ ነው።',
+                'ፈቃድ የተሰጠው ተሽከርካሪ በጎማ ወይም ጭነቱን ባለመሸፈኑ መንገድ ካበላሸ ፈቃዱ እስከመነጠቅ የሚደርስ እርምጃ ይወሰድበታል።',
+                'ፈቃድ የተሰጣቸው ተሽከርካሪዎች ከተሰጣቸው ዓላማ ውጪ መጠቀም ፈጽሞ የተከለከለ ነው።',
+                'በተከለከለ መንገድ ላይ የሚያሽከረክሩ እና ሌሎች የትራፊክ ደንብ መተላለፍ ጥፋቶች የሚፈጽሙ አሽከርካሪዎች በሕጉ መሠረት ተጠያቂ ይሆናሉ።',
+            ],
+            'en' => [
+                'This permit is not valid without the Authority\'s stamp, or if anything on it is crossed out or altered.',
+                'When the permit expires, the card is returned to the Authority\'s office.',
+                'Handing this permit over to any vehicle other than the one it was issued for is prohibited.',
+                'A permitted vehicle that damages the road with its tyres or an uncovered load faces action up to withdrawal of the permit.',
+                'Using a permitted vehicle for any purpose other than the one stated is strictly prohibited.',
+                'Drivers who use prohibited roads or commit other traffic violations are held accountable under the law.',
+            ],
+        ],
     ],
 
     // "gotenberg" (Chromium; required in production) or "fake" (tests, machines without Gotenberg).

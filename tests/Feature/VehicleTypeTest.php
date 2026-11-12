@@ -7,12 +7,23 @@ use Database\Seeders\VehicleTypeSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\UniqueConstraintViolationException;
 
-it('seeds the vehicle types named in the specification', function () {
+it('seeds the vehicle types of the application form', function () {
     $this->seed(VehicleTypeSeeder::class);
 
     expect(VehicleType::orderBy('sort_order')->pluck('name_am', 'code')->all())->toBe([
         'cargo' => 'የጭነት',
         'special_mobile' => 'ልዩ ተንቀሳቃሽ',
+        'tractor' => 'ጎታች',
+        'trailer' => 'ተሳቢ',
+        'dual_purpose' => 'ድርብ ተግባር',
+        'mixer_truck' => 'ሚክሰር ትራክ',
+        'wheel_loader' => 'ዊል ሎደር',
+        'loader' => 'ሎደር',
+        'roller' => 'ሮለር',
+        'dump_truck' => 'ገልባጭ መኪና',
+        'water_tanker' => 'የውሃ ቦቴ',
+        'liquid_waste' => 'የፈሳሽ ቆሻሻ ማንሻ',
+        'other' => 'ሌላ',
     ]);
 });
 
@@ -22,7 +33,7 @@ it('is idempotent and does not overwrite later edits', function () {
 
     $this->seed(VehicleTypeSeeder::class);
 
-    expect(VehicleType::count())->toBe(2)
+    expect(VehicleType::count())->toBe(13)
         ->and(VehicleType::where('code', 'cargo')->sole()->name_en)->toBe('Edited by an admin')
         ->and(VehicleType::where('code', 'cargo')->sole()->is_active)->toBeFalse();
 });
@@ -30,7 +41,7 @@ it('is idempotent and does not overwrite later edits', function () {
 it('is part of the default database seed', function () {
     $this->seed(DatabaseSeeder::class);
 
-    expect(VehicleType::count())->toBe(2);
+    expect(VehicleType::count())->toBe(13);
 });
 
 it('requires a unique code', function () {

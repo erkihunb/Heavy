@@ -9,7 +9,7 @@ return [
         ],
         'review' => [
             'title' => 'Review',
-            'body' => 'A Traffic Management Authority officer reviews the application and may ask for changes.',
+            'body' => 'A Roads Authority officer reviews the application and may ask for changes.',
         ],
         'pay' => [
             'title' => 'Pay',

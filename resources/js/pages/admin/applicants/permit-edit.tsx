@@ -43,11 +43,21 @@ export default function WalkInPermitEdit({
         valid_from: permit.valid_from.gregorian,
         valid_to: permit.valid_to.gregorian,
         reason: permit.reason,
+        any_time: permit.hours === null,
+        move_from: permit.hours?.from ?? '',
+        move_to: permit.hours?.to ?? '',
+        letter_number: permit.letter?.number ?? '',
+        letter_date: permit.letter?.date?.gregorian ?? '',
+        letter_file: null,
     });
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        form.put(update.url(route), { preserveScroll: true });
+        form.transform((data) => ({ ...data, _method: 'put' }));
+        form.post(update.url(route), {
+            forceFormData: true,
+            preserveScroll: true,
+        });
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -75,6 +85,7 @@ export default function WalkInPermitEdit({
                     limits={limits}
                     cancelHref={showPermit.url(route)}
                     estimateUrl={feeEstimate.url(applicant.id)}
+                    letter={{ hasStoredScan: Boolean(permit.letter?.url) }}
                 />
             </div>
         </AppLayout>

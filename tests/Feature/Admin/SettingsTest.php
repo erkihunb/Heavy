@@ -2,6 +2,9 @@
 
 use App\Actions\Permits\SubmitPermit;
 use App\Domain\Audit\AuditEvent;
+use App\Domain\Documents\PermitDocument;
+use App\Domain\Permits\PermitNumberGenerator;
+use App\Domain\Permits\VerificationTokenService;
 use App\Domain\Settings\SettingsRegistry;
 use App\Domain\Settings\SystemSettings;
 use App\Domain\Settings\ThemeStyle;
@@ -11,6 +14,8 @@ use App\Enums\Role;
 use App\Jobs\SendTelegramMessage;
 use App\Models\Permit;
 use App\Models\Vehicle;
+use App\Support\EthiopianCalendar;
+use Carbon\CarbonImmutable;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\Jobs\SyncJob;
 use Illuminate\Support\Facades\Cache;
@@ -76,11 +81,11 @@ it('saves a change, applies it at once and records before and after', function (
     expect(config('permits.max_duration_days'))->toBe(90);
 
     $this->actingAs($this->admin)
-        ->put(route('admin.settings.update', 'general'), settingsForm('general', [
+        ->put(route('admin.settings.update', 'permits'), settingsForm('permits', [
             'permits.max_duration_days' => 60,
             'permits.separation_of_duties' => false,
         ]))
-        ->assertRedirect(route('admin.settings.show', 'general'))
+        ->assertRedirect(route('admin.settings.show', 'permits'))
         ->assertSessionHas('success', __('admin.settings.messages.saved'));
 
     expect(config('permits.max_duration_days'))->toBe(60)
@@ -90,7 +95,85 @@ it('saves a change, applies it at once and records before and after', function (
     $entry = Activity::query()->where('event', AuditEvent::SettingsUpdated->value)->sole();
     expect($entry->properties['old'])->toBe(['permits.max_duration_days' => 90, 'permits.separation_of_duties' => true])
         ->and($entry->properties['attributes'])->toBe(['permits.max_duration_days' => 60, 'permits.separation_of_duties' => false])
-        ->and($entry->properties['context'])->toBe(['section' => 'general']);
+        ->and($entry->properties['context'])->toBe(['section' => 'permits']);
+});
+
+it('lets an admin change the certificate code rule', function () {
+    $this->actingAs($this->admin)
+        ->put(route('admin.settings.update', 'codes'), settingsForm('codes', [
+            'permits.certificate_code.enabled' => true,
+            'permits.certificate_code.prefix' => 'AACRA',
+            'permits.certificate_code.length' => 12,
+        ]))
+        ->assertSessionHasNoErrors();
+
+    expect(config('permits.certificate_code.prefix'))->toBe('AACRA')
+        ->and(config('permits.certificate_code.length'))->toBe(12);
+});
+
+it('lets an admin change the permit number rule for later approvals', function () {
+    $this->actingAs($this->admin)
+        ->put(route('admin.settings.update', 'codes'), settingsForm('codes', [
+            'permits.number_prefix' => 'AA-HV',
+            'permits.number_format' => '{year}-{prefix}-{seq}',
+            'permits.number_digits' => 4,
+        ]))
+        ->assertSessionHasNoErrors();
+
+    $at = EthiopianCalendar::toGregorian(2019, 5, 1)->setTime(9, 0);
+
+    expect(app(PermitNumberGenerator::class)->next($at))->toBe('2019-AA-HV-0001');
+});
+
+it('gives the code rules page what its live preview needs', function () {
+    $this->actingAs($this->admin)
+        ->get(route('admin.settings.show', 'codes'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('admin/settings/section')
+            ->where('preview.year', PermitNumberGenerator::year(CarbonImmutable::now()))
+            ->where('preview.last.yearly', null)
+            ->where('preview.last.never', null)
+            ->has('categories'));
+});
+
+it('shows the e-mail settings in use now and where each comes from', function () {
+    $this->actingAs($this->admin)
+        ->put(route('admin.settings.update', 'email'), settingsForm('email', ['mail.from.name' => 'Roads Authority']))
+        ->assertSessionHasNoErrors();
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.settings.show', 'email'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('inUse', fn ($rows): bool => collect($rows)->contains(fn (array $row): bool => $row['field'] === 'mail__from__name' && $row['value'] === 'Roads Authority' && $row['source'] === 'settings')
+                && collect($rows)->contains(fn (array $row): bool => $row['field'] === 'mail__mailers__smtp__password' && $row['value'] === null)));
+});
+
+it('puts every section in exactly one menu category', function () {
+    $listed = array_merge(...array_values(SettingsRegistry::CATEGORIES));
+
+    expect($listed)->toBe(SettingsRegistry::SECTIONS)
+        ->and(array_unique($listed))->toBe($listed);
+});
+
+it('lets an admin set the notes and the verification address printed on permits', function () {
+    $this->actingAs($this->admin)
+        ->put(route('admin.settings.update', 'documents'), settingsForm('documents', [
+            'permits.document.notes.am' => 'የመጀመሪያው ማሳሰቢያ።
+
+ሁለተኛው ማሳሰቢያ።',
+            'permits.document.notes.en' => 'First note.
+Second note.',
+            'permits.verify_url' => 'https://permits.example.test',
+        ]))
+        ->assertSessionHasNoErrors();
+
+    $permit = Permit::factory()->forVehicles(Vehicle::factory()->create())->active()->create();
+
+    expect(PermitDocument::html($permit, 'token', 'am'))->toContain('<li>የመጀመሪያው ማሳሰቢያ።</li>')
+        ->toContain('<li>ሁለተኛው ማሳሰቢያ።</li>')
+        ->toContain('https://permits.example.test/verify')
+        ->and(PermitDocument::html($permit, 'token', 'en'))->toContain('<li>Second note.</li>')
+        ->and(VerificationTokenService::url('abc'))->toBe('https://permits.example.test/v/abc');
 });
 
 it('says so when nothing changed, and writes nothing', function () {
@@ -120,8 +203,22 @@ it('validates each value', function (string $section, array $changes, string $fi
         ->put(route('admin.settings.update', $section), settingsForm($section, $changes))
         ->assertSessionHasErrors($field);
 })->with([
-    'too long a validity' => ['general', ['permits.max_duration_days' => 400], 'permits__max_duration_days'],
-    'empty restricted-hours text' => ['general', ['permits.time_windows.pass.en' => ''], 'permits__time_windows__pass__en'],
+    'not a verification address' => ['documents', ['permits.verify_url' => 'not a url'], 'permits__verify_url'],
+    'no notes' => ['documents', ['permits.document.notes.en' => ''], 'permits__document__notes__en'],
+    'too long a validity' => ['permits', ['permits.max_duration_days' => 400], 'permits__max_duration_days'],
+    'lower-case number prefix' => ['codes', ['permits.number_prefix' => 'aacra'], 'permits__number_prefix'],
+    'number rule without the counter' => ['codes', ['permits.number_format' => '{prefix}-{year}'], 'permits__number_format'],
+    'number rule without the year' => ['codes', ['permits.number_format' => '{prefix}-{seq}'], 'permits__number_format'],
+    'number rule with a slash' => ['codes', ['permits.number_format' => '{prefix}/{year}/{seq}'], 'permits__number_format'],
+    'too few counter digits' => ['codes', ['permits.number_digits' => 2], 'permits__number_digits'],
+    'lower-case type code' => ['codes', ['permits.number_type_codes.pass' => 'ps'], 'permits__number_type_codes__pass'],
+    'unknown reset rule' => ['codes', ['permits.number_reset' => 'monthly'], 'permits__number_reset'],
+    'counter starting at zero' => ['codes', ['permits.number_start' => 0], 'permits__number_start'],
+    'lower-case certificate prefix' => ['codes', ['permits.certificate_code.prefix' => 'crt'], 'permits__certificate_code__prefix'],
+    'certificate prefix with a hyphen' => ['codes', ['permits.certificate_code.prefix' => 'C-RT'], 'permits__certificate_code__prefix'],
+    'too short a certificate code' => ['codes', ['permits.certificate_code.length' => 4], 'permits__certificate_code__length'],
+    'too long a certificate code' => ['codes', ['permits.certificate_code.length' => 20], 'permits__certificate_code__length'],
+    'empty restricted-hours text' => ['permits', ['permits.time_windows.pass.en' => ''], 'permits__time_windows__pass__en'],
     'unknown theme' => ['appearance', ['permits.appearance.theme' => 'pink'], 'permits__appearance__theme'],
     'bad reminder time' => ['notifications', ['permits.notifications.reminder_time' => '25:00'], 'permits__notifications__reminder_time'],
     'bad sender address' => ['email', ['mail.from.address' => 'nobody'], 'mail__from__address'],

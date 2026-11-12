@@ -85,6 +85,8 @@ export type Vehicle = {
     region_code: string;
     owner_name: string;
     vehicle_type: VehicleType;
+    /** What the vehicle is, in words, when its type is "other". */
+    type_detail: string | null;
     registered_at: DualDate;
 };
 
@@ -148,13 +150,37 @@ export type PermitAbilities = {
     reject: boolean;
     revoke: boolean;
     reissue: boolean;
+    /** Cashier: record a payment taken at the desk or checked with the bank. */
+    recordPayment: boolean;
+    /** Issuer: issue and print a paid permit. */
+    issue: boolean;
+    /** Head office: comment on the application. */
+    comment: boolean;
+};
+
+/** A head-office comment on an application (staff only). */
+export type PermitComment = {
+    id: number;
+    body: string;
+    author: string;
+    at: DualDate;
+    /** HH:MM, Addis Ababa time. */
+    time: string;
 };
 
 /** Mirrors App\Http\Resources\PermitResource. */
+/** One PDF per language; the permit is printed separately in each. */
+export type PermitDocumentUrls = {
+    am: string;
+    en: string;
+};
+
 export type Permit = {
     /** ULID. */
     id: string;
     permit_number: string | null;
+    /** The branch the application was made at; null for the head office. */
+    branch?: { id: number; code: string; name: string } | null;
     status: PermitStatus;
     /** The status as of now: issued permits become active, then expired, by date. */
     effective_status: PermitStatus;
@@ -163,6 +189,8 @@ export type Permit = {
     valid_from: DualDate;
     valid_to: DualDate;
     duration_days: number;
+    /** The hours of the day it lets the vehicles move (Addis Ababa time); null for any time of day. */
+    hours: { from: string; to: string; label: string } | null;
     /** Copied from the fee schedule at approval; null until then. */
     fee: Money | null;
     payments?: Payment[];
@@ -171,13 +199,23 @@ export type Permit = {
     organization?: string;
     submitted_at: DualDate | null;
     transitions?: PermitTransition[];
-    /** Temporary signed link to the PDF; null while it is being prepared or not allowed. */
-    document_url: string | null;
+    /** Temporary signed links to the Amharic and English PDFs; null while they are being prepared or not allowed. */
+    document_urls: PermitDocumentUrls | null;
     /** Issued, but the PDF is still being rendered. */
     document_pending: boolean;
     can: PermitAbilities;
+    /** The letter the request came in with; office staff only. */
+    letter?: {
+        number: string;
+        date: DualDate | null;
+        url: string | null;
+    } | null;
     /** Staff viewers only. */
     applicant?: string;
+    /** Staff viewers only: the head office's comments, oldest first. */
+    comments?: PermitComment[];
+    /** Staff viewers only: who issued and printed it. */
+    issued_by?: string | null;
     /** Staff viewers only: whole hours waiting for the Authority. */
     waiting_hours?: number | null;
     /** Staff viewers only. */

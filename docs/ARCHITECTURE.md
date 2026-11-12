@@ -34,7 +34,7 @@ erDiagram
 
     PERMIT {
         ulid id
-        string permit_number "TMA-HV-<E.C. year>-<6 digits>, set at approval"
+        string permit_number "AACRA-<E.C. year>-<6 digits>, set at approval"
         string status
         date valid_from
         date valid_to

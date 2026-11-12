@@ -6,6 +6,9 @@
 @import '@fontsource-variable/inter/wght.css';
 @import '@fontsource-variable/noto-sans-ethiopic/wght.css';
 
+/* The signed-in shell ported from EUISIS (resources/js/shell). */
+@import './shell.css';
+
 /*
  * Amharic (Ethiopic script) is set in Abyssinica SIL, self-hosted like the font
  * above. The unicode-range limits it to Ethiopic, so Latin text and digits stay

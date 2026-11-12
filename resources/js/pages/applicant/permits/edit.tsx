@@ -12,9 +12,15 @@ type Props = {
     permit: Permit;
     vehicles: Vehicle[];
     limits: PermitLimits;
+    branches: { id: number; code: string; name: string }[];
 };
 
-export default function PermitsEdit({ permit, vehicles, limits }: Props) {
+export default function PermitsEdit({
+    permit,
+    vehicles,
+    limits,
+    branches,
+}: Props) {
     const { t } = useTranslation();
     const permitVehicles = permit.vehicles ?? [];
 
@@ -29,6 +35,10 @@ export default function PermitsEdit({ permit, vehicles, limits }: Props) {
         valid_from: permit.valid_from.gregorian,
         valid_to: permit.valid_to.gregorian,
         reason: permit.reason,
+        any_time: permit.hours === null,
+        move_from: permit.hours?.from ?? '',
+        move_to: permit.hours?.to ?? '',
+        branch_id: permit.branch ? String(permit.branch.id) : '',
     });
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -56,6 +66,7 @@ export default function PermitsEdit({ permit, vehicles, limits }: Props) {
                     onSubmit={submit}
                     vehicles={vehicles}
                     limits={limits}
+                    branches={branches}
                     cancelHref={show.url({ permit: permit.id })}
                 />
             </div>

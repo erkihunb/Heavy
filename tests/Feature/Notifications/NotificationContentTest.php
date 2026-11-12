@@ -20,7 +20,7 @@ beforeEach(function () {
         ->forVehicles(Vehicle::factory()->create())
         ->awaitingPayment()
         ->validBetween('2025-10-08', '2025-10-17')
-        ->create(['permit_number' => 'TMA-HV-2018-000123', 'fee_cents' => 600_050]);
+        ->create(['permit_number' => 'AACRA-2018-000123', 'fee_cents' => 600_050]);
 });
 
 /**
@@ -53,9 +53,9 @@ it('writes the e-mail in English for an English-speaking member', function () {
     $html = mailFor(new PermitApproved($this->permit), $user);
     $subject = inLocale('en', fn () => (new PermitApproved($this->permit))->toMail($user)->subject);
 
-    expect($subject)->toBe('Permit TMA-HV-2018-000123 approved — please pay the fee')
+    expect($subject)->toBe('Permit AACRA-2018-000123 approved — please pay the fee')
         ->and($html)
-        ->toContain('TMA-HV-2018-000123')
+        ->toContain('AACRA-2018-000123')
         ->toContain('ETB 6,000.50')
         ->toContain('Meskerem 28, 2018')
         ->toContain(route('permits.show', $this->permit));
@@ -67,9 +67,9 @@ it('writes the e-mail in Amharic for an Amharic-speaking member', function () {
     $html = mailFor(new PermitApproved($this->permit), $user);
     $subject = inLocale('am', fn () => (new PermitApproved($this->permit))->toMail($user)->subject);
 
-    expect($subject)->toStartWith('ፍቃድ TMA-HV-2018-000123 ጸድቋል')
+    expect($subject)->toStartWith('ፍቃድ AACRA-2018-000123 ጸድቋል')
         ->and($html)
-        ->toContain('በፍቃድ ቁጥር TMA-HV-2018-000123 ጸድቋል')
+        ->toContain('በፍቃድ ቁጥር AACRA-2018-000123 ጸድቋል')
         ->toContain('መስከረም 28, 2018');
 });
 
@@ -90,7 +90,7 @@ it('keeps SMS short and free of fees, receipts and links', function (string $cla
     $sms = inLocale('am', fn () => (new $class($this->permit, 'Receipt FS-228740 is not readable.'))->toSms(new AnonymousNotifiable));
 
     expect(mb_strlen($sms))->toBeLessThanOrEqual(160)
-        ->and($sms)->toContain('TMA-HV-2018-000123')
+        ->and($sms)->toContain('AACRA-2018-000123')
         ->not->toContain('6,000')
         ->not->toContain('FS-228740')
         ->not->toContain('http');

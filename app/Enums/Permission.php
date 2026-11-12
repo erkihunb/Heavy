@@ -23,8 +23,14 @@ enum Permission: string
     case ApprovePermits = 'permits.approve';
     case RevokePermits = 'permits.revoke';
 
-    // Cashier / Finance
+    // Cashier / Finance: verify receipts and record payments taken at the office
     case VerifyPayments = 'payments.verify';
+
+    // Issuer: check a paid application, issue the permit and print it
+    case IssuePermits = 'permits.issue';
+
+    // Head office: leave comments on any branch's applications
+    case CommentOnPermits = 'permits.comment';
 
     // Traffic Officer
     case ScanPermits = 'verification.scan';
@@ -35,8 +41,19 @@ enum Permission: string
     // Approver and Cashier: the reporting dashboard and exports
     case ViewReports = 'reports.view';
 
-    // Admin
-    case ManageUsers = 'users.manage';
+    // Admin: users, roles and permissions (App\Support\Rbac\PermissionCatalog)
+    case ViewUsers = 'users.view';
+    case CreateUsers = 'users.create';
+    case UpdateUsers = 'users.update';
+    case DeactivateUsers = 'users.deactivate';
+    case AssignRoles = 'users.assign-roles';
+    case ViewRoles = 'roles.view';
+    case CreateRoles = 'roles.create';
+    case UpdateRoles = 'roles.update';
+    case DeleteRoles = 'roles.delete';
+    case ViewPermissions = 'permissions.view';
+
+    // Admin: configuration and the audit log
     case ManageVehicleTypes = 'vehicle-types.manage';
     case ManageFeeSchedules = 'fee-schedules.manage';
     case ManageSettings = 'settings.manage';

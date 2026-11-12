@@ -11,13 +11,19 @@ use Illuminate\Support\Facades\Gate;
 /*
  * Role × action matrix for permits. Applicants act on the applications of
  * their own organization, in the right stage; Reviewers and Approvers act on
- * applications that have been submitted. For staff the policy decides who,
- * the state machine decides when.
+ * applications that have been submitted. A Reviewer may also decide (with
+ * two-step approval off nobody else needs to); revoking stays with Approvers.
+ * Cashiers, Issuers and the head office open applications for their own desk.
+ * For staff the policy decides who, the state machine decides when.
  */
 
 const APPLICANT_ABILITIES = ['update', 'submit', 'withdraw'];
 const REVIEWER_ABILITIES = ['startReview', 'recommend', 'requestChanges'];
 const APPROVER_ABILITIES = ['approve', 'reject', 'revoke'];
+const DESK_ABILITIES = ['recordPayment', 'issue', 'comment'];
+
+/** Staff who open submitted applications. */
+const QUEUE_ROLES = [Role::Reviewer, Role::Approver, Role::Cashier, Role::Issuer, Role::Supervisor, Role::Admin];
 
 /**
  * A user with the role who belongs to the organization of the permit, so
@@ -71,9 +77,9 @@ describe('without a permit', function () {
             ->and($user->can('create', Permit::class))->toBeFalse();
     });
 
-    it('lets only Reviewers, Approvers and Admins reach the review queue', function (Role $role) {
+    it('lets the staff of the review, payment and issue desks and the head office reach the queue', function (Role $role) {
         expect(userWithRole($role)->can('viewQueue', Permit::class))
-            ->toBe(in_array($role, [Role::Reviewer, Role::Approver, Role::Admin], true));
+            ->toBe(in_array($role, QUEUE_ROLES, true));
     })->with(Role::cases());
 });
 
@@ -84,11 +90,11 @@ describe('viewing', function () {
         expect(memberWithRole($role, $permit)->can('view', $permit))->toBe($role === Role::Applicant);
     })->with(Role::cases())->with([PermitStatus::Draft, PermitStatus::Withdrawn]);
 
-    it('shows a submitted application to its organization, Reviewers, Approvers and Admins', function (Role $role, PermitStatus $status) {
+    it('shows a submitted application to its organization and to the staff who work the queue', function (Role $role, PermitStatus $status) {
         $permit = Permit::factory()->create(['status' => $status]);
 
         expect(memberWithRole($role, $permit)->can('view', $permit))
-            ->toBe(in_array($role, [Role::Applicant, Role::Reviewer, Role::Approver, Role::Admin], true));
+            ->toBe(in_array($role, [Role::Applicant, ...QUEUE_ROLES], true));
     })->with(Role::cases())->with([
         PermitStatus::Submitted,
         PermitStatus::UnderReview,
@@ -96,6 +102,7 @@ describe('viewing', function () {
         PermitStatus::Rejected,
         PermitStatus::AwaitingPayment,
         PermitStatus::PaymentSubmitted,
+        PermitStatus::PaymentConfirmed,
         PermitStatus::Issued,
         PermitStatus::Expired,
         PermitStatus::Revoked,
@@ -144,6 +151,7 @@ describe('the applicant\'s actions', function () {
         'rejected' => [PermitStatus::Rejected, []],
         'awaiting payment' => [PermitStatus::AwaitingPayment, []],
         'payment submitted' => [PermitStatus::PaymentSubmitted, []],
+        'payment confirmed' => [PermitStatus::PaymentConfirmed, []],
         'issued' => [PermitStatus::Issued, []],
         'expired' => [PermitStatus::Expired, []],
         'revoked' => [PermitStatus::Revoked, []],
@@ -176,7 +184,8 @@ describe('the decisions of staff', function () {
         $user = memberWithRole($role, $permit);
 
         $expected = match ($role) {
-            Role::Reviewer => REVIEWER_ABILITIES,
+            // The Reviewer decides too; with two-step approval on, ApprovalRules still ask for a recommendation first.
+            Role::Reviewer => [...REVIEWER_ABILITIES, 'approve', 'reject'],
             Role::Approver => APPROVER_ABILITIES,
             Role::Admin => [...REVIEWER_ABILITIES, ...APPROVER_ABILITIES],
             default => [],
@@ -210,12 +219,17 @@ describe('the decisions of staff', function () {
         $reviewer = userWithRole(Role::Reviewer);
         $approver = userWithRole(Role::Approver);
 
-        foreach (APPROVER_ABILITIES as $ability) {
-            expect(denialStatus($reviewer, $ability, $permit))->toBe(403);
-        }
+        expect(denialStatus($reviewer, 'revoke', $permit))->toBe(403);
 
         foreach (REVIEWER_ABILITIES as $ability) {
             expect(denialStatus($approver, $ability, $permit))->toBe(403);
+        }
+
+        // The cashier, the Issuer and the head office see the application but take no review decision.
+        foreach ([Role::Cashier, Role::Issuer, Role::Supervisor] as $role) {
+            foreach ([...REVIEWER_ABILITIES, ...APPROVER_ABILITIES] as $ability) {
+                expect(denialStatus(userWithRole($role), $ability, $permit))->toBe(403);
+            }
         }
     });
 
@@ -226,7 +240,7 @@ describe('the decisions of staff', function () {
         foreach ([...REVIEWER_ABILITIES, ...APPROVER_ABILITIES] as $ability) {
             expect(denialStatus($user, $ability, $permit))->toBe(404);
         }
-    })->with([Role::Applicant, Role::Cashier, Role::TrafficOfficer]);
+    })->with([Role::Applicant, Role::TrafficOfficer, Role::Registrar]);
 
     it('does not depend on the organization of the member of staff', function () {
         $permit = Permit::factory()->underReview()->create();
@@ -235,6 +249,37 @@ describe('the decisions of staff', function () {
             ->and(allowedAbilities(userWithRole(Role::Approver), $permit, APPROVER_ABILITIES))->toBe(APPROVER_ABILITIES)
             ->and(userWithRole(Role::Reviewer)->can('view', $permit))->toBeTrue();
     });
+});
+
+describe('the office desks', function () {
+    it('gives each desk its own action', function (Role $role) {
+        $permit = Permit::factory()->awaitingPayment()->create();
+
+        $expected = match ($role) {
+            Role::Cashier => ['recordPayment'],
+            Role::Issuer => ['issue'],
+            Role::Supervisor => ['comment'],
+            Role::Admin => DESK_ABILITIES,
+            default => [],
+        };
+
+        expect(allowedAbilities(memberWithRole($role, $permit), $permit, DESK_ABILITIES))->toBe($expected);
+    })->with(Role::cases());
+
+    it('hides drafts from every desk', function (Role $role) {
+        $permit = Permit::factory()->draft()->create();
+
+        foreach (DESK_ABILITIES as $ability) {
+            expect(denialStatus(userWithRole($role), $ability, $permit))->toBe(404);
+        }
+    })->with([Role::Cashier, Role::Issuer, Role::Supervisor, Role::Admin]);
+
+    it('shows the request letter to the staff who see the application and to Registrars', function (Role $role) {
+        $permit = Permit::factory()->submitted()->create();
+
+        expect(userWithRole($role)->can('viewLetter', $permit))
+            ->toBe(in_array($role, [...QUEUE_ROLES, Role::Registrar], true));
+    })->with(Role::cases());
 });
 
 it('denies a user without any role everything', function () {
@@ -267,8 +312,8 @@ it('covers every ability of the policy', function () {
     // the Registrar's *For abilities in Admin/WalkInApplicationTest.
     $tested = [
         'viewAny', 'create', 'view', 'viewQueue', 'submitPayment', 'download', 'reissue', 'scan', 'report',
-        'viewFor', 'updateFor', 'submitFor', 'submitPaymentFor',
-        ...APPLICANT_ABILITIES, ...REVIEWER_ABILITIES, ...APPROVER_ABILITIES,
+        'viewFor', 'updateFor', 'submitFor', 'submitPaymentFor', 'viewLetter',
+        ...APPLICANT_ABILITIES, ...REVIEWER_ABILITIES, ...APPROVER_ABILITIES, ...DESK_ABILITIES,
     ];
     sort($tested);
 

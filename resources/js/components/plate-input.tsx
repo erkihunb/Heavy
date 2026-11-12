@@ -35,6 +35,7 @@ export function PlateInput({
     regions,
     error,
     disabled = false,
+    label,
 }: {
     id: string;
     value: string;
@@ -42,6 +43,8 @@ export function PlateInput({
     regions: PlateRegionOption[];
     error?: string;
     disabled?: boolean;
+    /** The heading of the three parts; "Plate number" unless given. */
+    label?: string;
 }) {
     const { t } = useTranslation();
     const parts = split(value);
@@ -61,7 +64,7 @@ export function PlateInput({
             disabled={disabled}
         >
             <legend className="mb-2 text-sm leading-none font-medium">
-                {t('vehicles.fields.plate')}
+                {label ?? t('vehicles.fields.plate')}
             </legend>
 
             <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)] gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.6fr)_minmax(0,1.4fr)]">

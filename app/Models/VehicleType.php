@@ -47,6 +47,12 @@ class VehicleType extends Model
 
     public const string CACHE_KEY = 'vehicle-types.v1';
 
+    /** The type whose vehicles are described in words (ሌላ — ይግለጹ). */
+    public const string OTHER = 'other';
+
+    /** The type a trailer plate on the office form is registered with. */
+    public const string TRAILER = 'trailer';
+
     protected static function booted(): void
     {
         // The cached list (spec §16) is dropped whenever a type changes.

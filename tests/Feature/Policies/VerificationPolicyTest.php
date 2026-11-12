@@ -64,5 +64,5 @@ it('lets staff who can see the permit download it', function (Role $role) {
     $permit = Permit::factory()->issued()->create();
 
     expect(userWithRole($role)->can('download', $permit))
-        ->toBe(in_array($role, [Role::Reviewer, Role::Approver, Role::Registrar, Role::Admin], true));
+        ->toBe(in_array($role, [Role::Reviewer, Role::Approver, Role::Cashier, Role::Registrar, Role::Issuer, Role::Supervisor, Role::Admin], true));
 })->with(Role::staff());

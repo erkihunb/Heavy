@@ -7,6 +7,7 @@ use App\Enums\ScanChannel;
 use App\Enums\ScanResult;
 use App\Http\Resources\PublicPermitVerificationResource;
 use App\Models\Organization;
+use App\Models\Payment;
 use App\Models\Permit;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -36,7 +37,7 @@ beforeEach(function () {
 
     $this->permit = Permit::factory()->forVehicles($this->vehicle)->active()->create([
         'verification_token_hash' => $hash,
-        'permit_number' => 'TMA-HV-2019-000123',
+        'permit_number' => 'AACRA-2019-000123',
         'fee_cents' => 1_500_000,
         'reason' => 'Internal reason text',
     ]);
@@ -58,7 +59,7 @@ describe('by QR code', function () {
             ->assertOk()
             ->assertSee('data-result="valid"', false)
             ->assertSee(__('verification.results.valid.title'))
-            ->assertSee('TMA-HV-2019-000123')
+            ->assertSee('AACRA-2019-000123')
             ->assertSee('ኢት-03-40134')
             ->assertSee('ሀበሻ ኮንስትራክሽን');
 
@@ -87,7 +88,7 @@ describe('by QR code', function () {
         $this->get(route('verification.token', $token))
             ->assertOk()
             ->assertSee('data-result="not_found"', false)
-            ->assertDontSee('TMA-HV-2019-000123');
+            ->assertDontSee('AACRA-2019-000123');
     })->with([
         'unknown' => [str_repeat('A', 43)],
         'too short' => ['abc'],
@@ -106,7 +107,7 @@ describe('by QR code', function () {
         $this->get(route('verification.token', $this->token))->assertSee('data-result="not_found"', false);
     })->with([PermitStatus::AwaitingPayment, PermitStatus::PaymentSubmitted, PermitStatus::UnderReview]);
 
-    it('shows no contact details, fees, receipts, reasons, owner names or ids', function () {
+    it('shows no contact details, fees or ids', function () {
         $html = $this->get(route('verification.token', $this->token))->getContent();
 
         expect($html)
@@ -115,11 +116,22 @@ describe('by QR code', function () {
             ->not->toContain('0911223344')
             ->not->toContain('0115550000')
             ->not->toContain('0012345678')
-            ->not->toContain('Owner Secret Name')
             ->not->toContain('15,000')
-            ->not->toContain('Internal reason text')
             ->not->toContain($this->permit->id)
             ->not->toContain($this->permit->verification_token_hash);
+    });
+
+    it('shows what is printed on the permit: owner, reason, receipt, issuer, branch and issue date', function () {
+        Payment::factory()->for($this->permit)->verified()->create(['receipt_number' => 'RCPT-230729']);
+        $this->permit->approver->forceFill(['name' => 'Kebede Approver'])->save();
+
+        $this->get(route('verification.token', $this->token))
+            ->assertOk()
+            ->assertSee('Owner Secret Name')
+            ->assertSee('Internal reason text')
+            ->assertSee('RCPT-230729')
+            ->assertSee('Kebede Approver')
+            ->assertSee(__('verification.fields.issued'));
     });
 
     it('is never cached or indexed and does not leak the address', function () {
@@ -179,16 +191,25 @@ describe('by number and plate', function () {
             ->assertSee('name="_token"', false);
     });
 
+    it('offers the camera scanner, revealed only by its script', function () {
+        $this->get(route('verification.form'))
+            ->assertOk()
+            ->assertSee('data-qr-scanner', false)
+            // Hidden until verify-scanner.ts runs, so the page works without JavaScript.
+            ->assertSee('data-scan-start hidden', false)
+            ->assertSee('data-verify-base="'.rtrim((string) config('permits.verify_url'), '/').'"', false);
+    });
+
     it('finds the permit only with a matching plate, written in any accepted form', function (string $number, string $plate, string $result) {
         $this->post(route('verification.lookup'), ['permit_number' => $number, 'plate' => $plate])
             ->assertOk()
             ->assertSee("data-result=\"{$result}\"", false);
     })->with([
-        'exact' => ['TMA-HV-2019-000123', 'ኢት-03-40134', 'valid'],
-        'lower case, spaces' => [' tma-hv-2019-000123 ', 'ኢት 03 40134', 'valid'],
-        'wrong plate' => ['TMA-HV-2019-000123', 'ኢት-03-40135', 'not_found'],
-        'malformed plate' => ['TMA-HV-2019-000123', 'nonsense', 'not_found'],
-        'wrong number' => ['TMA-HV-2019-000124', 'ኢት-03-40134', 'not_found'],
+        'exact' => ['AACRA-2019-000123', 'ኢት-03-40134', 'valid'],
+        'lower case, spaces' => [' aacra-2019-000123 ', 'ኢት 03 40134', 'valid'],
+        'wrong plate' => ['AACRA-2019-000123', 'ኢት-03-40135', 'not_found'],
+        'malformed plate' => ['AACRA-2019-000123', 'nonsense', 'not_found'],
+        'wrong number' => ['AACRA-2019-000124', 'ኢት-03-40134', 'not_found'],
     ]);
 
     it('requires both fields', function (array $data, string $field) {
@@ -198,11 +219,11 @@ describe('by number and plate', function () {
             ->assertSessionHasErrors($field);
     })->with([
         [['plate' => 'ኢት-03-40134'], 'permit_number'],
-        [['permit_number' => 'TMA-HV-2019-000123'], 'plate'],
+        [['permit_number' => 'AACRA-2019-000123'], 'plate'],
     ]);
 
     it('logs lookups too', function () {
-        $this->post(route('verification.lookup'), ['permit_number' => 'TMA-HV-2019-000123', 'plate' => 'ኢት-03-40134']);
+        $this->post(route('verification.lookup'), ['permit_number' => 'AACRA-2019-000123', 'plate' => 'ኢት-03-40134']);
 
         expect(VerificationScan::query()->sole()->channel)->toBe(ScanChannel::Lookup);
     });
@@ -212,15 +233,18 @@ describe('PublicPermitVerificationResource', function () {
     it('exposes exactly the whitelisted fields', function () {
         $data = PublicPermitVerificationResource::make($this->permit, ScanResult::Valid, 'en');
 
-        expect(array_keys($data))->toBe(['result', 'checked_at', 'checked_time', 'permit'])
+        expect(array_keys($data))->toBe(['result', 'checked_at', 'checked_time', 'checked_time_ethiopian', 'permit'])
             ->and(array_keys($data['permit']))->toBe([
-                'permit_number', 'permit_type', 'vehicles', 'organization', 'valid_from', 'valid_to', 'time_window_rules',
+                'permit_number', 'permit_type', 'vehicles', 'reason', 'issued_at', 'issued_time', 'branch', 'issuer',
+                'receipt_number', 'certificate_code', 'organization', 'valid_from', 'valid_to', 'time_window_rules', 'hours',
             ])
-            ->and(array_keys($data['permit']['vehicles'][0]))->toBe(['plate', 'role', 'vehicle_type']);
+            ->and(array_keys($data['permit']['vehicles'][0]))->toBe(['plate', 'role', 'vehicle_type', 'owner']);
 
         $json = json_encode($data, JSON_UNESCAPED_UNICODE);
 
-        foreach (['email', 'phone', 'fee', 'receipt', 'reason', 'owner', 'note', 'applicant', 'recommend', 'approved', 'token', 'tin'] as $sensitive) {
+        // The receipt number, reason, owner and issuer are printed on the permit and shown;
+        // contact details, the fee, notes and the token never are.
+        foreach (['email', 'phone', 'fee', 'note', 'applicant', 'recommend', 'approved', 'token', 'tin'] as $sensitive) {
             expect($json)->not->toContain($sensitive);
         }
     });

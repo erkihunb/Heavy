@@ -39,6 +39,7 @@ class Vehicle extends Model
         'plate_normalized',
         'region_code',
         'owner_name',
+        'type_detail',
     ];
 
     /**
@@ -55,6 +56,17 @@ class Vehicle extends Model
     public function vehicleType(): BelongsTo
     {
         return $this->belongsTo(VehicleType::class);
+    }
+
+    /**
+     * The type in a language: the words given for an "other" vehicle, after
+     * the type's own name.
+     */
+    public function typeName(string $locale): string
+    {
+        $name = $this->vehicleType->localizedName($locale);
+
+        return $this->vehicleType->code === VehicleType::OTHER && filled($this->type_detail) ? $name.' — '.$this->type_detail : $name;
     }
 
     /**

@@ -3,18 +3,26 @@
 namespace App\Models;
 
 use App\Enums\Role;
+use App\Models\Role as RoleModel;
+use App\Support\Rbac\BranchScope;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property int|null $registered_by
+ * @property int|null $branch_id
+ * @property Carbon|null $deactivated_at
+ * @property int|null $deactivated_by
  */
 class User extends Authenticatable implements HasLocalePreference, MustVerifyEmail
 {
@@ -56,6 +64,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'deactivated_at' => 'datetime',
         ];
     }
 
@@ -67,6 +76,69 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    /**
+     * The branch office a member of staff works at; null for the head office
+     * and for applicants. Set only by the user-administration actions.
+     *
+     * @return BelongsTo<Branch, $this>
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * Where this user's branch-scoped roles apply: branches and/or the head
+     * office (EUISIS user organization scopes). Set on the Users screen.
+     *
+     * @return HasMany<UserBranchScope, $this>
+     */
+    public function branchScopes(): HasMany
+    {
+        return $this->hasMany(UserBranchScope::class);
+    }
+
+    /**
+     * Where this person may see applications. Everywhere with the
+     * administrator role or any global role; otherwise the head office and
+     * branches in their scope rows, and nothing without a row (fail closed).
+     */
+    public function branchScope(): BranchScope
+    {
+        $roles = $this->roles;
+
+        if ($roles->contains(fn (Model $role): bool => $role instanceof RoleModel
+            && ($role->isProtected() || $role->isGlobal()))) {
+            return BranchScope::everywhere();
+        }
+
+        $rows = $this->branchScopes;
+
+        return BranchScope::of(
+            $rows->contains(fn (UserBranchScope $row): bool => $row->is_head_office),
+            $rows->whereNotNull('branch_id')->pluck('branch_id')->map(fn ($id): int => (int) $id)->values()->all(),
+        );
+    }
+
+    /**
+     * The administrator who deactivated this account, while it is deactivated.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function deactivatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'deactivated_by');
+    }
+
+    /**
+     * Whether the account may be used: false once an administrator
+     * deactivated it (it is kept, with its history, and can be restored).
+     */
+    public function isActive(): bool
+    {
+        return $this->deactivated_at === null;
     }
 
     /**
@@ -92,11 +164,12 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     }
 
     /**
-     * Whether the user holds any staff role (reviewer, approver, cashier, traffic officer, admin).
+     * Whether the user holds any role other than the applicant's: the default
+     * staff roles and every role created on the Roles screen.
      */
     public function isStaff(): bool
     {
-        return $this->hasAnyRole(Role::staffValues());
+        return $this->roles->contains(fn (Model $role): bool => $role->getAttribute('name') !== Role::Applicant->value);
     }
 
     /**

@@ -1,7 +1,7 @@
 # Heavy Vehicle Time-Restricted Movement Permit System
 
 Permit application, review, payment, issuance and verification system for the Addis Ababa
-City Administration Traffic Management Authority.
+City Roads Authority.
 
 **Status:** Milestones 1 (Foundation), 2 (Organizations & Vehicles), 3 (Applications &
 Workflow), 4 (Fees & Payments), 5 (Issuance, QR, PDF, Verification), 6 (Notifications &
@@ -112,8 +112,9 @@ the overview lists what still needs attention (placeholder restricted-hours text
 and SMS providers, error tracking). Further staff accounts are opened in **Admin → Users**.
 
 - **Every deploy:** build, `up -d`, then `migrate --force` and `db:seed --force`. The
-  seeders are idempotent: roles and permissions follow the code; vehicle types are only
-  added. No fees are seeded outside `APP_ENV=local`: an Admin enters the official fee
+  seeders are idempotent: new permissions are created and given to the default roles that
+  list them, but what an Admin changed on the Roles screen is kept (see Users, roles and
+  permissions below); vehicle types are only added. No fees are seeded outside `APP_ENV=local`: an Admin enters the official fee
   schedule before the first application can be approved.
 - **Migrations without downtime:** add columns as nullable or with a default, backfill in a
   job, and only then make them required; never rename or drop a column in the same deploy
@@ -159,6 +160,37 @@ saved value overrides the `.env` default at once (also in running queue workers)
 recorded in the audit log, and secrets are stored encrypted with `APP_KEY` — rotating the
 key means entering them again. The overview page shows the state of every service.
 
+## Users, roles and permissions
+
+Ported from EUISIS. Under **Admin → Users and audit**:
+
+- **Users** (`admin/users`): open staff accounts (the person gets an e-mail link to choose
+  a password, then must turn on two-factor authentication), give them **one or more
+  roles**, set the branch they work at, and **deactivate** or **restore** an account.
+  Deactivating keeps the account and its history; the person is signed out and cannot sign
+  in. Nobody changes their own roles or deactivates themselves, and the last active
+  administrator is always kept. Applicants register themselves and are listed only.
+- **Roles** (`admin/roles`): the default roles (`App\Enums\Role`, marked *system*: their
+  code name cannot change and they cannot be deleted) and any role an Admin creates, with
+  an Amharic name and a picker of permissions grouped by module. The `admin` role always
+  holds every staff permission. A role nobody holds can be deleted.
+- **Permissions** (`admin/permissions`): the read-only catalogue
+  (`App\Support\Rbac\PermissionCatalog`, equal to `App\Enums\Permission` — a test keeps
+  them equal) and which roles hold each.
+
+**Where staff see applications (branch scope).** Each member of staff has scope rows: the
+head office (applications filed without a branch) and/or branches, set on the Branches
+card of their page. Their branch-scoped roles apply only there; with no row they see
+nothing (fail closed). A role whose scope type is **global**, and the `admin` role, see
+every branch. Only an Admin creates or gives a global role. A new account starts with the
+branch it works at, or — at the head office — the head office and every branch that exists
+then; a branch added later must be added to the people who should see it.
+
+**Adding a permission:** add the case to `App\Enums\Permission`, list it in
+`PermissionCatalog::MODULES`, label it in `lang/{en,am}/rbac.php` (`permission_labels`,
+`permission_descriptions`), add it to the default roles in `App\Enums\Role::permissions()`,
+check it in a Policy, and deploy: `db:seed --force` creates it and gives it to those roles.
+
 ## Queue and scheduler
 
 Permit PDFs, spreadsheet exports and all e-mails / SMS are queued. Run a worker and the
@@ -177,3 +209,200 @@ php artisan schedule:work            # or cron: * * * * * php artisan schedule:r
 
 All three commands are safe to run by hand at any time. Until an SMS provider is chosen,
 `SMS_DRIVER=log` writes text messages to the log with the number masked.
+
+Permit PDFs are rendered by the queue worker. If one is missing or is a placeholder
+(written while `PERMITS_PDF_RENDERER=fake`), the download link shows it as being prepared;
+rebuild it with the real renderer:
+
+```bash
+php artisan permits:documents --dry-run   # list them
+php artisan permits:documents --now       # rebuild and render at once
+```
+
+After a new logo, `php artisan permits:documents --all --now` rebuilds the documents that
+are in order too. Each gets a new QR code, so a copy printed before stops verifying.
+
+## Signed-in layout and UI kit
+
+The signed-in layout is an admin shell ported from a sister system, without any of its modules: sidebar
+(collapsible to an icon rail, a drawer on phones), top bar with the Ctrl+K page search,
+bell, light/dark and interface style, EN/አማ switch and account menu, breadcrumbs,
+heading band and toasts. It lives in `resources/js/shell/` (`Layouts/`, `Components/`,
+`Components/ui/`, `hooks/`, `lib/`, `contexts/`), its UI kit in `packages/app-ui`
+(imported as `@app/ui`), its styles in `resources/css/shell.css`, its text in
+`lang/{en,am}/shell.php`. The Dashboard uses it; the other pages still use
+`layouts/app-layout.tsx`.
+
+**The menu** is one file, `resources/js/config/navigation.ts`: sections → groups →
+pages. The sidebar, the breadcrumbs and the Ctrl+K palette all read it. A page:
+
+```ts
+{ href: reports().url, labelKey: 'nav.reports', icon: ChartIcon, permission: 'reports.view' }
+```
+
+`href` comes from a Wayfinder route, `labelKey` is a translation key, `icon` is exported
+by `resources/js/shell/Components/NavIcons.tsx` (add a Solar icon there with `adapt()`),
+and `permission` / `anyPermission` hide it from people without that permission
+(`app/Enums/Permission.php`; the server still authorizes every route). A group whose
+person sees only one page shows as a plain link. A page is highlighted when the address
+is its `href` or below it (`/staff/permits/12` → Review queue); `owns: ['/other/path']`
+claims other paths.
+
+**Putting a page in the layout:**
+
+```tsx
+import PageHeader from '@/shell/Components/PageHeader';
+import AuthenticatedLayout from '@/shell/Layouts/AuthenticatedLayout';
+
+export default function Reports() {
+    return (
+        <AuthenticatedLayout header={<PageHeader title="…" description="…" actions={…} />}>
+            <Head title="…" />
+            {/* the page; the layout sets width and padding */}
+        </AuthenticatedLayout>
+    );
+}
+```
+
+Breadcrumbs follow the menu (home › group › page › Edit / Create / Details); a page the
+menu does not cover passes its own with `breadcrumbs={[{ label, href }]}`. Flash
+messages (`->with('success', …)`, `->with('warning', …)`) show as toasts; in the browser,
+`import { toast } from '@/shell/lib/toast'` and call `toast.success('…')`.
+
+### UI kit
+
+Tables, cards, forms, buttons, icons, dialogs, badges, toasts and loading states, the
+same in light and dark mode and in both languages. **See them all at `/ui-kit`** (signed
+in; the route exists outside production only, `routes/ui-kit.php`).
+
+**Install:** nothing to add. The kit is a local package, `packages/app-ui`, resolved
+through the `@app/ui` alias (`tsconfig.json`, `vite.config.ts`, `vitest.config.ts`); its
+npm dependencies (`@headlessui/react`, `@tanstack/react-table`, `sonner`, `cmdk`, and for
+formatted text `tinymce`, `@tinymce/tinymce-react`, `dompurify`) are in `package.json`.
+
+**Import paths:**
+
+| What | Import |
+|---|---|
+| Kit primitives (Button, Card, inputs, table parts, dialogs) | `@app/ui` |
+| Kit + app wrappers (data table, filter bar, action menu…) in one import | `@/shell/Components/ui` |
+| Other components | `@/shell/Components/<Name>` (Modal, ConfirmationDialog, ConfirmProvider, Dropdown, StatusBadge, RoleBadge, StatCard, FormSection, PageHeader, EmptyState, UserAvatar) |
+| Formatted text | `@/shell/Components/forms/RichTextEditor`, `…/RichTextViewer` |
+| Icons | `@/shell/Components/Icons` (page content), `@/shell/Components/NavIcons` (menu, toolbar) |
+| Toasts / confirm | `@/shell/lib/toast`, `@/shell/hooks/useConfirm` (inside `<ConfirmProvider>`) |
+
+The kit's own labels (pagination, filters, table tools, upload, editor) come from
+`lang/{en,am}/shell.php` through `LocalizedUiProvider`, which the layout mounts.
+
+**Buttons and badges**
+
+```tsx
+<Button>{t('shell.actions.save')}</Button>                    {/* "Save" gets its icon by itself */}
+<Button variant="outline" size="sm" loading={form.processing}>…</Button>
+<Tooltip content="Print"><Button size="icon" variant="ghost" aria-label="Print"><PrinterIcon className="h-4 w-4" /></Button></Tooltip>
+<StatusBadge status="awaiting_payment" />                   {/* tone from shell/lib/statusStyles.ts */}
+<RoleBadge role="cashier" />
+```
+
+Variants: `default primary secondary outline ghost destructive destructiveOutline link`;
+sizes: `xs sm default lg icon`.
+
+**Cards and figures**
+
+```tsx
+<Card><CardHeader><CardTitle>…</CardTitle></CardHeader>…<CardFooter>…</CardFooter></Card>
+<AppMetricCard label="Active permits" value="1,284" variant="primary" trend="up" trendLabel="+8%" />
+<StatCard label="Waiting for review" value={37} tone="warning" />
+```
+
+**Forms** (errors show under their field; the first invalid field gets focus after a submit)
+
+```tsx
+<FormSection title="Vehicle details" description="…">
+    <FormField label="E-mail" required error={form.errors.email}>
+        {({ id, describedBy, invalid }) => (
+            <Input id={id} type="email" aria-describedby={describedBy} aria-invalid={invalid}
+                value={form.data.email} onChange={(e) => form.setData('email', e.target.value)} />
+        )}
+    </FormField>
+    <FileUpload label="Registration document" accept=".pdf" maxSizeMb={2}
+        value={form.data.document} error={form.errors.document} onChange={(file) => form.setData('document', file)} />
+</FormSection>
+```
+
+Also `Select`, `Textarea`, `SearchInput`, `SearchableSelect`, and
+`<RichTextEditor label="…" value={html} onChange={setHtml} preset="standard" maxLength={5000} />`.
+The rich-text editor (TinyMCE, bundled and self-hosted, loaded only on pages that use it)
+keeps to the allowlist in `resources/js/shell/richtext/policy.json`, and the viewer
+sanitizes again before drawing. **A field that accepts formatted text must also be
+sanitized on the server** before it is stored: the kit does not include a server-side
+sanitizer. TinyMCE 7+ is GPL-2.0-or-later unless a commercial licence is bought; the
+editor runs with the `gpl` licence key.
+
+**Tables, filters, pagination**
+
+```tsx
+const column = createColumnHelper<Vehicle>();
+const columns = [
+    column.accessor('plate', { header: t('vehicles.fields.plate') }),
+    column.accessor('status', { header: 'Status', cell: ({ getValue }) => <StatusBadge status={getValue()} /> }),
+    column.display({ id: 'actions', header: () => <span className="sr-only">Actions</span>,
+        cell: ({ row }) => <AppActionMenu items={[{ label: 'Edit', href: edit(row.original).url }]} /> }),
+];
+
+<AppFilterBar href={vehicles().url} filters={filters}>
+    <FilterField label="Plate" wide><Input name="plate" defaultValue={filters.plate} /></FilterField>
+</AppFilterBar>
+<AppDataTable id="vehicles" data={list.data} columns={columns} meta={list.meta}
+    filters={filters} href={vehicles().url} loading={false} emptyTitle="No vehicles" />
+```
+
+`meta` is a Laravel paginator's page fields (`current_page`, `last_page`, `per_page`,
+`total`, `from`, `to`); `laravelPageMeta()` converts a camelCase one. On tables of three
+or more columns the viewer can sort the page by a header, hide columns, choose row
+density and keep the header visible (remembered per `id`).
+
+**Dialogs, menus, feedback**
+
+```tsx
+<Modal show={open} onClose={() => setOpen(false)}>…</Modal>   {/* Esc closes, focus stays inside */}
+const { confirm } = useConfirm();
+const { confirmed, reason } = await confirm({ title: 'Revoke this permit?', variant: 'danger', requireReason: true });
+<Dropdown><Dropdown.Trigger>…</Dropdown.Trigger><Dropdown.Content><Dropdown.Link href="…">…</Dropdown.Link></Dropdown.Content></Dropdown>
+<Alert tone="warning" title="…">…</Alert>   <ErrorState title="…" />   <EmptyState title="…" />
+toast.success('Saved');                     // or a server flash: ->with('success', …)
+<AppTabNav label="Sections" current={tab} items={[{ key: 'a', label: 'A', href: page().url, data: { tab: 'a' } }]} />
+<AppTableSkeleton rows={6} cols={4} />   <AppMetricCardSkeleton />   <AppPageLoader />
+```
+
+**Changing the brand colour:** don't edit components. Set the colour in **Admin → System
+settings → Appearance** (or `PERMITS_THEME` / `PERMITS_PRIMARY_COLOR` in `.env`). Every
+component reads it through the tokens (`--primary` in `resources/css/app.css`, mapped to
+the kit's names in `packages/app-ui/src/tokens.css` and `resources/css/shell.css`), and
+the hover and dark-mode variants are derived from it.
+
+**Adding an icon:** for page content, add a component to
+`resources/js/shell/Components/Icons.tsx` (a 24×24 stroke SVG, as the others):
+
+```tsx
+export function TruckIcon(p: IconProps) {
+    return <svg {...base} {...p}><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7" /><circle cx="7" cy="17" r="2" /><circle cx="17" cy="17" r="2" /></svg>;
+}
+```
+
+For the menu or toolbar, add a Solar icon to `NavIcons.tsx`:
+`import { GarageIcon as SolarGarageIcon } from '@solar-icons/react/linear/garage';` then
+`export const GarageIcon = adapt(SolarGarageIcon);` (names: `node_modules/@solar-icons/react/dist/icons/linear/`).
+Either kind then shows on `/ui-kit` too.
+
+Only the Dashboard and Vehicles pages use the kit so far; the other pages still use
+`resources/js/components/`.
+
+**Brand colour and logo:** both come from **Admin → System settings**. Appearance sets the
+colour preset or a custom brand, accent and sidebar colour (`PERMITS_THEME`,
+`PERMITS_PRIMARY_COLOR`, `PERMITS_SIDEBAR_COLOR`); General sets the logo. The shell
+receives them as the `settings` shared prop (`App\Domain\Settings\ShellSettings`) and
+derives the hover, dark-mode and sidebar-selection colours with
+`resources/js/shell/lib/brandColor.ts`. With no logo uploaded, the sidebar
+shows the placeholder mark in `resources/js/components/brand-mark.tsx`. The product name
+is `common.app_name` in `lang/{en,am}/common.php`.

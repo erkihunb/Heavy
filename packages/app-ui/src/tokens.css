@@ -1,0 +1,35 @@
+/*
+ * The kit's tokens. In the source kit these are literal colours; here each one points
+ * at the app's own token (resources/css/app.css), so the kit, the admin
+ * shell and the shadcn components draw from one palette and follow the
+ * colour theme, the interface style and dark mode together. The values are
+ * the same: app.css carries the "swiss" palette.
+ *
+ * Radii and control heights are already defined by app.css.
+ */
+:root {
+    --app-background: var(--background);
+    --app-foreground: var(--foreground);
+    --app-surface: var(--card);
+    --app-surface-muted: var(--muted);
+    --app-border: var(--border);
+    --app-border-strong: var(--border-strong);
+    --app-muted-foreground: var(--muted-foreground);
+
+    --color-success: var(--success);
+    --color-warning: var(--warning);
+    --color-danger: var(--destructive);
+
+    /* Soft-UI light sources read by buttons and inputs; nothing unless the "soft" style sets them. */
+    --neu-raised: 0 0 #0000;
+    --neu-raised-sm: 0 0 #0000;
+    --neu-raised-lg: 0 0 #0000;
+    --neu-inset: 0 0 #0000;
+
+    --space-field: 1rem;
+    --space-section: 1.5rem;
+    --card-padding: 1.25rem;
+    --icon-sm: 1rem;
+    --icon-md: 1.125rem;
+    --icon-lg: 1.25rem;
+}

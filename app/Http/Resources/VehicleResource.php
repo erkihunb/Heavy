@@ -25,6 +25,7 @@ class VehicleResource extends JsonResource
             'region_code' => $this->region_code,
             'owner_name' => $this->owner_name,
             'vehicle_type' => VehicleTypeResource::make($this->whenLoaded('vehicleType')),
+            'type_detail' => $this->type_detail,
             'registered_at' => EthiopianCalendar::present(
                 $this->created_at?->setTimezone(config('localization.display_timezone')),
                 app()->getLocale(),

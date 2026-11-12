@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Actions\Users\GiveDefaultBranchScope;
 use App\Enums\Role;
 use App\Models\Organization;
 use App\Models\User;
@@ -30,6 +31,11 @@ class DemoUserSeeder extends Seeder
                 ]);
 
             $user->syncRoles([$role->value]);
+
+            // Demo staff work at the head office and see every branch, as real head-office staff start.
+            if ($role->isStaff() && $role !== Role::Admin) {
+                app(GiveDefaultBranchScope::class)->handle($user);
+            }
 
             if ($role === Role::Applicant && $user->organization_id === null) {
                 $organization = Organization::factory()->create([

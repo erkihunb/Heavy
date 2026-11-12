@@ -11,7 +11,7 @@ return [
     ],
     'reviewer' => [
         'name' => 'Reviewer',
-        'summary' => 'Work through the application queue, request changes and recommend approval or rejection.',
+        'summary' => 'Examine requests and decide: approve, reject or send back for changes.',
     ],
     'approver' => [
         'name' => 'Approver',
@@ -28,6 +28,14 @@ return [
     'registrar' => [
         'name' => 'Registrar',
         'summary' => 'Register applicants and their organisation when they come to the office in person.',
+    ],
+    'issuer' => [
+        'name' => 'Issuer',
+        'summary' => 'Check paid applications, issue the permit and print it.',
+    ],
+    'supervisor' => [
+        'name' => 'Head-office supervisor',
+        'summary' => 'See every branch\'s applications, decisions, permits and revenue, and comment on applications.',
     ],
     'admin' => [
         'name' => 'Administrator',

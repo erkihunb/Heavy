@@ -18,7 +18,9 @@ const ALLOWED_TRANSITIONS = [
     'approve' => [PermitStatus::UnderReview, PermitStatus::AwaitingPayment],
     'resubmit' => [PermitStatus::ChangesRequested, PermitStatus::Submitted],
     'submit payment' => [PermitStatus::AwaitingPayment, PermitStatus::PaymentSubmitted],
-    'verify payment' => [PermitStatus::PaymentSubmitted, PermitStatus::Issued],
+    'verify payment' => [PermitStatus::PaymentSubmitted, PermitStatus::PaymentConfirmed],
+    'record a payment at the desk' => [PermitStatus::AwaitingPayment, PermitStatus::PaymentConfirmed],
+    'issue a paid permit' => [PermitStatus::PaymentConfirmed, PermitStatus::Issued],
     'reject payment' => [PermitStatus::PaymentSubmitted, PermitStatus::AwaitingPayment],
     'expire an issued permit' => [PermitStatus::Issued, PermitStatus::Expired],
     'revoke an issued permit' => [PermitStatus::Issued, PermitStatus::Revoked],
@@ -97,6 +99,7 @@ it('treats rejected, expired, revoked and withdrawn as final', function (PermitS
     [PermitStatus::ChangesRequested, false],
     [PermitStatus::AwaitingPayment, false],
     [PermitStatus::PaymentSubmitted, false],
+    [PermitStatus::PaymentConfirmed, false],
     [PermitStatus::Issued, false],
 ]);
 

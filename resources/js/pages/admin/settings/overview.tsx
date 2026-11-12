@@ -1,8 +1,10 @@
-import { CircleCheck, TriangleAlert } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { ChevronRight, CircleCheck, TriangleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { DualDate } from '@/components/dual-date';
 import AdminSettingsLayout from '@/layouts/admin-settings-layout';
 import { useTranslation } from '@/lib/i18n';
+import { show } from '@/routes/admin/settings';
 import type { DualDate as DualDateValue } from '@/types';
 import type { TranslationKey } from '@/types/translations';
 
@@ -37,6 +39,7 @@ type Props = {
         time: string | null;
     } | null;
     sections: string[];
+    categories: Record<string, string[]>;
 };
 
 function Panel({
@@ -68,6 +71,7 @@ export default function SettingsOverview({
     warnings,
     lastChange,
     sections,
+    categories,
 }: Props) {
     const { t } = useTranslation();
     const label = (key: string) =>
@@ -91,8 +95,69 @@ export default function SettingsOverview({
     );
 
     return (
-        <AdminSettingsLayout current="overview" sections={sections}>
+        <AdminSettingsLayout
+            current="overview"
+            sections={sections}
+            categories={categories}
+        >
             <div className="flex flex-col gap-6">
+                {/* A map of every section, by menu category (as in EUISIS). */}
+                <section aria-labelledby="map-title" className="space-y-4">
+                    <h2 id="map-title" className="text-section-title">
+                        {t('admin.settings.map.title')}
+                    </h2>
+                    <div className="grid gap-4 xl:grid-cols-2">
+                        {Object.entries(categories).map(([category, list]) => (
+                            <section
+                                key={category}
+                                aria-labelledby={`map-${category}`}
+                                className="rounded-card border border-border bg-card p-5"
+                            >
+                                <h3
+                                    id={`map-${category}`}
+                                    className="text-xs font-bold tracking-wide text-muted-foreground uppercase"
+                                >
+                                    {t(
+                                        `admin.settings.categories.${category}` as TranslationKey,
+                                    )}
+                                </h3>
+                                <ul className="mt-3 divide-y divide-border">
+                                    {list.map((section) => (
+                                        <li key={section}>
+                                            <Link
+                                                href={show({ section })}
+                                                className="group flex items-start justify-between gap-4 py-3 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                                            >
+                                                <span className="min-w-0">
+                                                    <span className="block font-semibold group-hover:underline">
+                                                        {t(
+                                                            `admin.settings.sections.${section}` as TranslationKey,
+                                                        )}
+                                                    </span>
+                                                    <span className="mt-0.5 block text-sm text-muted-foreground">
+                                                        {t(
+                                                            `admin.settings.section_intros.${section}` as TranslationKey,
+                                                        )}
+                                                    </span>
+                                                </span>
+                                                <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-primary">
+                                                    {t(
+                                                        'admin.settings.map.open',
+                                                    )}
+                                                    <ChevronRight
+                                                        aria-hidden="true"
+                                                        className="size-4"
+                                                    />
+                                                </span>
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </section>
+                        ))}
+                    </div>
+                </section>
+
                 <Panel
                     id="warnings-title"
                     title={t('admin.settings.overview.warnings')}

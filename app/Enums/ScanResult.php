@@ -10,6 +10,8 @@ namespace App\Enums;
 enum ScanResult: string
 {
     case Valid = 'valid';
+    /** In force today, but not at this hour: the vehicle may not move now. */
+    case OutsideHours = 'outside_hours';
     case NotYetValid = 'not_yet_valid';
     case Expired = 'expired';
     case Revoked = 'revoked';

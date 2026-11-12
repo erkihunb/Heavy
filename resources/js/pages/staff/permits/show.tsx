@@ -1,9 +1,13 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, FileDown, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, TriangleAlert } from 'lucide-react';
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
 import { PageHeader } from '@/components/page-header';
+import { PaymentForm } from '@/components/payment-form';
+import { PermitComments } from '@/components/permit-comments';
 import { PermitDetails } from '@/components/permit-details';
+import { PermitDocumentLinks } from '@/components/permit-document-links';
+import { PermitLetter } from '@/components/permit-letter';
 import { PermitTimeline } from '@/components/permit-timeline';
 import { PlateChip } from '@/components/plate-chip';
 import { StaffAction } from '@/components/staff-action';
@@ -14,7 +18,9 @@ import { useTranslation } from '@/lib/i18n';
 import {
     approve,
     index,
+    issue,
     recommend,
+    recordPayment,
     reissue,
     reject,
     requestChanges,
@@ -22,14 +28,21 @@ import {
     show,
     startReview,
 } from '@/routes/staff/permits';
+import { store as storeComment } from '@/routes/staff/permits/comments';
 import type { BreadcrumbItem, Permit, VehicleHistory } from '@/types';
+import { PAYMENT_METHODS } from '@/types/enums';
 
 type Props = {
     permit: Permit;
     vehicleHistory: VehicleHistory[];
+    receiptMaxKilobytes: number;
 };
 
-export default function StaffPermitsShow({ permit, vehicleHistory }: Props) {
+export default function StaffPermitsShow({
+    permit,
+    vehicleHistory,
+    receiptMaxKilobytes,
+}: Props) {
     const { t } = useTranslation();
     const { auth } = usePage().props;
     const args = { permit: permit.id };
@@ -42,7 +55,12 @@ export default function StaffPermitsShow({ permit, vehicleHistory }: Props) {
         can.approve ||
         can.reject ||
         can.revoke ||
-        can.reissue;
+        can.reissue ||
+        can.recordPayment ||
+        can.issue;
+    const verifiedPayment = permit.payments?.find(
+        (payment) => payment.status === 'verified',
+    );
 
     // Why an Approver cannot decide yet. Display only: the server enforces it.
     const isApprover =
@@ -224,6 +242,15 @@ export default function StaffPermitsShow({ permit, vehicleHistory }: Props) {
                             ))}
                         </section>
 
+                        {(permit.comments !== undefined || can.comment) && (
+                            <PermitComments
+                                comments={permit.comments ?? []}
+                                action={
+                                    can.comment ? storeComment.url(args) : null
+                                }
+                            />
+                        )}
+
                         <section
                             aria-labelledby="timeline-title"
                             className="rounded-card border border-border bg-card p-5 sm:p-6"
@@ -276,6 +303,83 @@ export default function StaffPermitsShow({ permit, vehicleHistory }: Props) {
                                     </p>
                                 )}
                             </div>
+                        )}
+
+                        {permit.letter && (
+                            <PermitLetter letter={permit.letter} />
+                        )}
+
+                        {can.recordPayment && permit.fee && (
+                            <section
+                                aria-labelledby="record-payment-title"
+                                className="space-y-4 rounded-card border border-border bg-card p-5"
+                            >
+                                <div className="space-y-1">
+                                    <h3
+                                        id="record-payment-title"
+                                        className="text-section-title"
+                                    >
+                                        {t(
+                                            'permits.staff.record_payment.title',
+                                        )}
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        {t('permits.staff.record_payment.hint')}
+                                    </p>
+                                </div>
+                                <p className="flex items-baseline justify-between gap-3 rounded-card bg-muted px-4 py-3">
+                                    <span className="text-sm text-muted-foreground">
+                                        {t('permits.staff.record_payment.fee')}
+                                    </span>
+                                    <span className="text-xl font-semibold tabular-nums">
+                                        {permit.fee.formatted}
+                                    </span>
+                                </p>
+                                <PaymentForm
+                                    permitId={permit.id}
+                                    fee={permit.fee}
+                                    methods={[...PAYMENT_METHODS]}
+                                    maxKilobytes={receiptMaxKilobytes}
+                                    action={recordPayment.url(args)}
+                                    forCashier
+                                />
+                            </section>
+                        )}
+
+                        {can.issue && (
+                            <>
+                                {verifiedPayment && (
+                                    <p className="flex items-baseline justify-between gap-3 rounded-card border border-border bg-card px-5 py-4">
+                                        <span className="text-sm text-muted-foreground">
+                                            {t('permits.staff.issue.paid')} ·{' '}
+                                            <span translate="no">
+                                                {verifiedPayment.receipt_number}
+                                            </span>
+                                        </span>
+                                        <span className="font-semibold tabular-nums">
+                                            {verifiedPayment.amount.formatted}
+                                        </span>
+                                    </p>
+                                )}
+                                <StaffAction
+                                    id="issue"
+                                    title={t('permits.staff.issue.title')}
+                                    hint={t('permits.staff.issue.hint')}
+                                    action={issue.url(args)}
+                                    submitLabel={t(
+                                        'permits.staff.issue.submit',
+                                    )}
+                                    note="optional"
+                                />
+                            </>
+                        )}
+
+                        {permit.issued_by && (
+                            <p className="text-sm text-muted-foreground">
+                                {t('permits.staff.issued_by', {
+                                    name: permit.issued_by,
+                                })}
+                            </p>
                         )}
 
                         {blockedDecision && (
@@ -359,21 +463,21 @@ export default function StaffPermitsShow({ permit, vehicleHistory }: Props) {
                             />
                         )}
 
-                        {permit.document_url && (
-                            <Button
-                                asChild
-                                variant="outline"
-                                className="w-full"
+                        {permit.document_pending && (
+                            <p
+                                role="status"
+                                className="rounded-card border border-border bg-card p-5 text-sm text-muted-foreground"
                             >
-                                <a
-                                    href={permit.document_url}
-                                    target="_blank"
-                                    rel="noopener"
-                                >
-                                    <FileDown aria-hidden="true" />
-                                    {t('permits.actions.download')}
-                                </a>
-                            </Button>
+                                {t('permits.document.pending')}
+                            </p>
+                        )}
+
+                        {permit.document_urls && (
+                            <PermitDocumentLinks
+                                urls={permit.document_urls}
+                                variant="outline"
+                                stacked
+                            />
                         )}
 
                         {can.reissue && (

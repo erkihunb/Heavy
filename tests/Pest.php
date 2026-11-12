@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Users\GiveDefaultBranchScope;
 use App\Data\PermitData;
 use App\Domain\Permits\ValidityRules;
 use App\Domain\Settings\SettingsRegistry;
@@ -14,8 +15,10 @@ use App\Models\Vehicle;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /*
@@ -54,6 +57,11 @@ function userWithRole(Role $role, bool $twoFactor = false): User
     $factory = $twoFactor ? User::factory()->withTwoFactor() : User::factory();
     $user = $factory->create();
     $user->assignRole($role->value);
+
+    // Staff start with the head office and every branch, as real head-office staff do.
+    if ($role->isStaff() && $role !== Role::Admin) {
+        app(GiveDefaultBranchScope::class)->handle($user);
+    }
 
     return $user;
 }
@@ -102,6 +110,23 @@ function permitPayload(User $applicant, array $overrides = []): array
         'valid_to' => $today->addDays(12)->toDateString(),
         'reason' => 'የግንባታ ዕቃ ማጓጓዝ',
         ...$overrides,
+    ];
+}
+
+/**
+ * The request letter a Registrar records with a request taken at the office.
+ * Fakes the documents disk the scan is stored on.
+ *
+ * @return array{letter_number: string, letter_date: string, letter_file: UploadedFile}
+ */
+function letterFields(): array
+{
+    Storage::fake(config('permits.documents_disk'));
+
+    return [
+        'letter_number' => 'ደ/45/2019',
+        'letter_date' => ValidityRules::today()->subDay()->toDateString(),
+        'letter_file' => UploadedFile::fake()->create('letter.pdf', 120, 'application/pdf'),
     ];
 }
 

@@ -24,6 +24,9 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
+        // Signing up online is paused while requests come in by letter at the office.
+        abort_unless((bool) config('permits.online_applications'), 404);
+
         Validator::make($input, [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),

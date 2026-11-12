@@ -18,7 +18,8 @@ class HomeController extends Controller
         $today = now(config('localization.display_timezone'));
 
         return Inertia::render('welcome', [
-            'canRegister' => Features::enabled(Features::registration()),
+            // Signing up online is paused while requests come in by letter at the office.
+            'canRegister' => Features::enabled(Features::registration()) && config('permits.online_applications'),
             // Dates for the illustrative permit card only; no permit exists behind it.
             'sample' => [
                 'validFrom' => EthiopianCalendar::present($today, $locale),
