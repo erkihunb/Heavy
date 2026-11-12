@@ -15,11 +15,14 @@ export function FeeEstimate({
     primaryVehicleId,
     validFrom,
     validTo,
+    url,
 }: {
     permitType: string;
     primaryVehicleId: string;
     validFrom: string;
     validTo: string;
+    /** The estimate address; the applicant's own unless a Registrar fills the form. */
+    url?: string;
 }) {
     const { t } = useTranslation();
     const [estimate, setEstimate] = useState<Estimate | null>(null);
@@ -39,15 +42,17 @@ export function FeeEstimate({
         const controller = new AbortController();
         // Wait for the person to stop changing the selects.
         const timer = window.setTimeout(() => {
+            const query = {
+                permit_type: permitType,
+                primary_vehicle_id: primaryVehicleId,
+                valid_from: validFrom,
+                valid_to: validTo,
+            };
+
             fetch(
-                feeEstimate.url({
-                    query: {
-                        permit_type: permitType,
-                        primary_vehicle_id: primaryVehicleId,
-                        valid_from: validFrom,
-                        valid_to: validTo,
-                    },
-                }),
+                url
+                    ? `${url}?${new URLSearchParams(query).toString()}`
+                    : feeEstimate.url({ query }),
                 {
                     headers: { Accept: 'application/json' },
                     credentials: 'same-origin',
@@ -65,7 +70,7 @@ export function FeeEstimate({
             window.clearTimeout(timer);
             controller.abort();
         };
-    }, [complete, permitType, primaryVehicleId, validFrom, validTo]);
+    }, [complete, permitType, primaryVehicleId, validFrom, validTo, url]);
 
     if (!complete || estimate === null) {
         return null;

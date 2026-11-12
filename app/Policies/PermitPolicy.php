@@ -130,6 +130,12 @@ class PermitPolicy
                 : Response::deny();
         }
 
+        // A Registrar prints the issued permit for an applicant who came to the office.
+        if ($user->can(Permission::RegisterApplicants->value)
+            && in_array($permit->status, [PermitStatus::Issued, PermitStatus::Expired], true)) {
+            return Response::allow();
+        }
+
         return $this->isVisibleToStaff($user, $permit) ? Response::allow() : Response::denyAsNotFound();
     }
 
@@ -153,6 +159,45 @@ class PermitPolicy
         return in_array($permit->status, [PermitStatus::Issued, PermitStatus::Expired, PermitStatus::Revoked], true)
             ? Response::allow()
             : Response::denyAsNotFound();
+    }
+
+    /**
+     * A Registrar working for an applicant at the office (walk-ins): the
+     * applicant's applications, in the same stages as the applicant could.
+     */
+    public function viewFor(User $user, Permit $permit, User $applicant): Response
+    {
+        return $this->forApplicant($user, $permit, $applicant, PermitStatus::cases());
+    }
+
+    public function updateFor(User $user, Permit $permit, User $applicant): Response
+    {
+        return $this->forApplicant($user, $permit, $applicant, [PermitStatus::Draft, PermitStatus::ChangesRequested]);
+    }
+
+    public function submitFor(User $user, Permit $permit, User $applicant): Response
+    {
+        return $this->forApplicant($user, $permit, $applicant, [PermitStatus::Draft, PermitStatus::ChangesRequested]);
+    }
+
+    public function submitPaymentFor(User $user, Permit $permit, User $applicant): Response
+    {
+        return $this->forApplicant($user, $permit, $applicant, [PermitStatus::AwaitingPayment]);
+    }
+
+    /**
+     * @param  list<PermitStatus>  $statuses
+     */
+    private function forApplicant(User $user, Permit $permit, User $applicant, array $statuses): Response
+    {
+        if (! $user->can(Permission::RegisterApplicants->value)
+            || ! $applicant->can(Permission::ApplyForPermits->value)
+            || $applicant->organization_id === null
+            || $applicant->organization_id !== $permit->organization_id) {
+            return Response::denyAsNotFound();
+        }
+
+        return in_array($permit->status, $statuses, true) ? Response::allow() : Response::deny();
     }
 
     private function isOwnedByOrganizationOf(User $user, Permit $permit): bool

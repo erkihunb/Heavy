@@ -90,6 +90,7 @@ class ApplicantController extends Controller
             $request->user(),
         );
 
-        return to_route('admin.applicants.index')->with('success', __('applicants.messages.registered', ['email' => $user->email]));
+        // Straight on to the vehicles and the application.
+        return to_route('admin.applicants.show', $user)->with('success', __('applicants.messages.registered', ['email' => $user->email]));
     }
 }

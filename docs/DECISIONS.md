@@ -751,6 +751,17 @@ Applicants may come to the office in person. A **Registrar** (a new staff role, 
   (name, e-mail, organization, TIN, phone) before opening a second account.
 - Registrars are staff: two-factor authentication is required. Run
   `RolesAndPermissionsSeeder` on deploy to create the role.
+- **The whole application at the office** (owner's follow-up): from the applicant's page
+  the Registrar registers their vehicles, starts, edits and submits the application, hands
+  in the payment receipt once it is approved, and prints the issued permit. The same
+  Actions, FormRequests and rules as online are used (plate uniqueness, own vehicles only,
+  validity, overlap, the exact fee); only the organization comes from the applicant in
+  the address instead of the signed-in user. The application belongs to the applicant
+  (`applicant_id`), who sees and can continue it after signing in; the status history and
+  the payment's `submitted_by` name the Registrar. `PermitPolicy::*For` allows this only
+  for an applicant's own applications and in the same stages as the applicant; a Registrar
+  may download issued and expired permits to print them. Reviewing, approving and
+  verifying payments stay with their own roles.
 
 ### Vehicle types
 

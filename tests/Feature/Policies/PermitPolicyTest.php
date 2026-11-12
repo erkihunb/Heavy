@@ -263,9 +263,11 @@ it('covers every ability of the policy', function () {
         ->values()
         ->all();
 
-    // submitPayment is covered in PaymentPolicyTest; download, reissue, scan and report in VerificationPolicyTest.
+    // submitPayment is covered in PaymentPolicyTest; download, reissue, scan and report in VerificationPolicyTest;
+    // the Registrar's *For abilities in Admin/WalkInApplicationTest.
     $tested = [
         'viewAny', 'create', 'view', 'viewQueue', 'submitPayment', 'download', 'reissue', 'scan', 'report',
+        'viewFor', 'updateFor', 'submitFor', 'submitPaymentFor',
         ...APPLICANT_ABILITIES, ...REVIEWER_ABILITIES, ...APPROVER_ABILITIES,
     ];
     sort($tested);

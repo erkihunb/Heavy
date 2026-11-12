@@ -98,6 +98,15 @@ abstract class PermitRequest extends FormRequest
         ];
     }
 
+    /**
+     * The organization whose register the request is about: the signed-in
+     * applicant's own. A Registrar acting for an applicant overrides it.
+     */
+    protected function organizationId(): ?int
+    {
+        return $this->user()?->organization_id;
+    }
+
     public function toData(): PermitData
     {
         /** @var array{permit_type: string, primary_vehicle_id: string, trailer_vehicle_ids?: array<array-key, string>|null, valid_from: string, valid_to: string, reason: string} $validated */
@@ -118,7 +127,7 @@ abstract class PermitRequest extends FormRequest
      */
     private function ownVehicle(): Exists
     {
-        $organizationId = $this->permit()->organization_id ?? $this->user()?->organization_id;
+        $organizationId = $this->permit()->organization_id ?? $this->organizationId();
 
         return Rule::exists(Vehicle::class, 'id')->where('organization_id', $organizationId ?? 0);
     }

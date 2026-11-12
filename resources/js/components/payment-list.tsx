@@ -14,7 +14,8 @@ export function PaymentList({
     receiptUrl,
 }: {
     payments: Payment[];
-    receiptUrl: (payment: Payment) => string;
+    /** Leave out where the viewer may not open receipt files. */
+    receiptUrl?: (payment: Payment) => string;
 }) {
     const { t } = useTranslation();
 
@@ -57,7 +58,7 @@ export function PaymentList({
                                 <DualDate date={payment.paid_at} />
                             </Td>
                             <Td align="right">
-                                {payment.has_receipt_file && (
+                                {payment.has_receipt_file && receiptUrl && (
                                     <a
                                         href={receiptUrl(payment)}
                                         target="_blank"

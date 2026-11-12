@@ -30,11 +30,14 @@ export function PaymentForm({
     fee,
     methods,
     maxKilobytes,
+    action,
 }: {
     permitId: string;
     fee: Money;
     methods: PaymentMethod[];
     maxKilobytes: number;
+    /** Where to send it; the applicant's own address unless a Registrar hands it in. */
+    action?: string;
 }) {
     const { t } = useTranslation();
     const maxMegabytes = Math.floor(maxKilobytes / 1024);
@@ -49,7 +52,7 @@ export function PaymentForm({
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        form.post(store.url({ permit: permitId }), {
+        form.post(action ?? store.url({ permit: permitId }), {
             forceFormData: true,
             preserveScroll: true,
         });

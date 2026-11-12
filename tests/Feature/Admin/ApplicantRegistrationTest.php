@@ -44,7 +44,7 @@ it('registers the applicant and their organization in one step', function () {
     $this->actingAs($this->registrar)
         ->post(route('admin.applicants.store'), walkIn())
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('admin.applicants.index'))
+        ->assertRedirect(route('admin.applicants.show', User::query()->where('email', 'abebe@example.test')->value('id')))
         ->assertSessionHas('success');
 
     $user = User::query()->where('email', 'abebe@example.test')->sole();

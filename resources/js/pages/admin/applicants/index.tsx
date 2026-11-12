@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Globe, Plus, Search, Store } from 'lucide-react';
+import { ChevronRight, Globe, Plus, Search, Store } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import {
@@ -21,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
-import { create, index } from '@/routes/admin/applicants';
+import { create, index, show } from '@/routes/admin/applicants';
 import type {
     BreadcrumbItem,
     DualDate as DualDateValue,
@@ -142,11 +142,16 @@ export default function ApplicantsIndex({ applicants, filters }: Props) {
                                 <Th>{t('applicants.organization')}</Th>
                                 <Th>{t('applicants.source')}</Th>
                                 <Th>{t('applicants.registered')}</Th>
+                                <Th align="right">
+                                    <span className="sr-only">
+                                        {t('common.actions')}
+                                    </span>
+                                </Th>
                             </tr>
                         </THead>
                         <TBody>
                             {applicants.data.length === 0 ? (
-                                <EmptyRow colSpan={4}>
+                                <EmptyRow colSpan={5}>
                                     {t('applicants.empty')}
                                 </EmptyRow>
                             ) : (
@@ -220,6 +225,24 @@ export default function ApplicantsIndex({ applicants, filters }: Props) {
                                                 <DualDate
                                                     date={applicant.created_at}
                                                 />
+                                            )}
+                                        </Td>
+                                        <Td align="right">
+                                            {applicant.organization && (
+                                                <Button
+                                                    asChild
+                                                    variant="outline"
+                                                    size="sm"
+                                                >
+                                                    <Link
+                                                        href={show(
+                                                            applicant.id,
+                                                        )}
+                                                    >
+                                                        {t('applicants.open')}
+                                                        <ChevronRight aria-hidden="true" />
+                                                    </Link>
+                                                </Button>
                                             )}
                                         </Td>
                                     </Tr>

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\FeeScheduleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VehicleTypeController;
+use App\Http\Controllers\Admin\WalkInController;
 use App\Models\FeeSchedule;
 use App\Models\User;
 use App\Models\VehicleType;
@@ -49,6 +50,30 @@ Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
         Route::post('applicants', 'store')
             ->middleware('throttle:30,1')
             ->name('applicants.store');
+    });
+
+// The whole application for a walk-in applicant: vehicles, permit, payment.
+Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
+    ->prefix('admin/applicants/{applicant}')
+    ->name('admin.applicants.')
+    ->controller(WalkInController::class)
+    ->whereNumber('applicant')
+    ->group(function () {
+        Route::get('/', 'show')->name('show');
+        Route::get('vehicles/create', 'createVehicle')->name('vehicles.create');
+        Route::post('vehicles', 'storeVehicle')->name('vehicles.store');
+        Route::get('permits/create', 'createPermit')->name('permits.create');
+        Route::post('permits', 'storePermit')->name('permits.store');
+        Route::get('permits/{permit}', 'showPermit')->name('permits.show');
+        Route::get('permits/{permit}/edit', 'editPermit')->name('permits.edit');
+        Route::put('permits/{permit}', 'updatePermit')->name('permits.update');
+        Route::post('permits/{permit}/submit', 'submitPermit')->name('permits.submit');
+        Route::post('permits/{permit}/payments', 'storePayment')
+            ->middleware('throttle:10,1')
+            ->name('permits.payments.store');
+        Route::get('fee-estimate', 'feeEstimate')
+            ->middleware('throttle:60,1')
+            ->name('fee-estimate');
     });
 
 // Vehicle types (spec §11).

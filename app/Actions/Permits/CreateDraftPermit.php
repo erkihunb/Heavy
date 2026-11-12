@@ -27,11 +27,11 @@ class CreateDraftPermit
      *
      * @throws PermitRuleViolation
      */
-    public function handle(Organization $organization, User $applicant, PermitData $data): Permit
+    public function handle(Organization $organization, User $applicant, PermitData $data, ?User $actor = null): Permit
     {
         $this->validity->ensureValid($data->validFrom, $data->validTo);
 
-        return DB::transaction(function () use ($organization, $applicant, $data): Permit {
+        return DB::transaction(function () use ($organization, $applicant, $data, $actor): Permit {
             $permit = new Permit($data->toAttributes());
             $permit->organization_id = $organization->id;
             $permit->applicant_id = $applicant->id;
@@ -39,7 +39,8 @@ class CreateDraftPermit
             $permit->save();
 
             $this->vehicles->replace($permit, $data->primaryVehicleId, $data->trailerVehicleIds);
-            $this->transitions->record($permit, null, PermitStatus::Draft, $applicant);
+            // The history names who started it: the applicant, or the Registrar at the office.
+            $this->transitions->record($permit, null, PermitStatus::Draft, $actor ?? $applicant);
 
             return $permit;
         });

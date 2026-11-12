@@ -57,6 +57,15 @@ abstract class VehicleRequest extends FormRequest
         ];
     }
 
+    /**
+     * The organization whose register the request is about: the signed-in
+     * applicant's own. A Registrar acting for an applicant overrides it.
+     */
+    protected function organizationId(): ?int
+    {
+        return $this->user()?->organization_id;
+    }
+
     public function toData(): VehicleData
     {
         /** @var array{plate: string, vehicle_type_id: int|string, owner_name: string} $validated */
@@ -91,7 +100,7 @@ abstract class VehicleRequest extends FormRequest
             return;
         }
 
-        $organizationId = $this->vehicle()->organization_id ?? $this->user()?->organization_id;
+        $organizationId = $this->vehicle()->organization_id ?? $this->organizationId();
 
         if ($organizationId === null) {
             return;

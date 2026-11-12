@@ -19,6 +19,15 @@ class FeeEstimateRequest extends FormRequest
     }
 
     /**
+     * The organization whose register the request is about: the signed-in
+     * applicant's own. A Registrar acting for an applicant overrides it.
+     */
+    protected function organizationId(): ?int
+    {
+        return $this->user()?->organization_id;
+    }
+
+    /**
      * @return array<string, array<int, mixed>>
      */
     public function rules(): array
@@ -26,7 +35,7 @@ class FeeEstimateRequest extends FormRequest
         return [
             'permit_type' => ['required', Rule::enum(PermitType::class)],
             'primary_vehicle_id' => ['bail', 'required', 'string', Rule::exists(Vehicle::class, 'id')
-                ->where('organization_id', $this->user()->organization_id ?? 0)],
+                ->where('organization_id', $this->organizationId() ?? 0)],
             'valid_from' => ['bail', 'required', 'date_format:Y-m-d'],
             'valid_to' => ['bail', 'required', 'date_format:Y-m-d', 'after_or_equal:valid_from'],
         ];

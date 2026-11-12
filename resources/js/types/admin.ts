@@ -39,3 +39,11 @@ export type AuditEntry = {
     new: Record<string, unknown>;
     context: Record<string, unknown>;
 };
+
+/** The applicant a Registrar is working for (App\Http\Controllers\Admin\WalkInController::summary()). */
+export type WalkInApplicant = {
+    id: number;
+    name: string;
+    /** Organization name in the current interface language. */
+    organization: string;
+};

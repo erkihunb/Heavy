@@ -77,12 +77,15 @@ export function PermitForm({
     vehicles,
     limits,
     cancelHref,
+    estimateUrl,
 }: {
     form: InertiaFormProps<PermitFormData>;
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
     vehicles: Vehicle[];
     limits: PermitLimits;
     cancelHref: string;
+    /** The fee estimate address when a Registrar fills the form for an applicant. */
+    estimateUrl?: string;
 }) {
     const { t } = useTranslation();
     // Errors for array items arrive under keys such as "trailer_vehicle_ids.0".
@@ -262,6 +265,7 @@ export function PermitForm({
                     primaryVehicleId={form.data.primary_vehicle_id}
                     validFrom={form.data.valid_from}
                     validTo={form.data.valid_to}
+                    url={estimateUrl}
                 />
             </Section>
 
