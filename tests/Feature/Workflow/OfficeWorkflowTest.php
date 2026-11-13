@@ -170,7 +170,6 @@ describe('applicants have no pages of their own', function () {
         expect(User::query()->where('email', 'x@example.test')->exists())->toBeFalse();
 
         $this->get(route('login'))->assertInertia(fn (Assert $page) => $page->missing('canRegister'));
-        $this->get(route('home'))->assertInertia(fn (Assert $page) => $page->missing('canRegister'));
     });
 
     it('gives an applicant no address to apply, pay or look at an application from', function (string $method, string $path) {
@@ -201,7 +200,7 @@ describe('applicants have no pages of their own', function () {
             ->assertSessionHasErrors(['email' => __('auth.no_sign_in')]);
         $this->assertGuest();
 
-        foreach ([route('dashboard'), route('profile.edit'), route('staff.permits.index'), route('admin.applicants.index')] as $url) {
+        foreach ([route('dashboard'), route('profile.edit'), route('staff.permits.index'), route('admin.permits.index')] as $url) {
             assertSignedOut($this->actingAs($applicant)->get($url));
         }
     });

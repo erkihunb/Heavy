@@ -53,10 +53,10 @@
         <meta name="theme-color" content="#122170">
 
         {{--
-            On the landing and sign-in pages the logo is the largest thing on the
+            On the sign-in pages the logo is the largest thing on the
             first screen, but it is drawn by the scripts: fetch it right away.
         --}}
-        @if (($page['component'] === 'welcome' || str_starts_with($page['component'], 'auth/')) && ($logoUrl = \App\Domain\Settings\Branding::url('logo')))
+        @if (str_starts_with($page['component'], 'auth/') && ($logoUrl = \App\Domain\Settings\Branding::url('logo')))
             <link rel="preload" as="image" href="{{ $logoUrl }}" fetchpriority="high">
         @endif
 

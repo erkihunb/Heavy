@@ -48,7 +48,7 @@ it('uploads a logo, re-encodes it, serves it and shares it with every page', fun
         ->assertHeader('Content-Type', 'image/webp')
         ->assertHeader('X-Content-Type-Options', 'nosniff');
 
-    $this->get(route('home'))->assertInertia(fn (Assert $page) => $page
+    $this->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
         ->where('branding.logo', Branding::url('logo')));
 
     $entry = Activity::query()->where('event', AuditEvent::SettingsUpdated->value)->latest('id')->first();
@@ -66,14 +66,14 @@ it('replaces the old file and takes an image down on request', function () {
     expect($second)->not->toBe($first)->toEndWith('.png');
     Storage::disk('local')->assertMissing($first);
 
-    $this->get(route('home'))->assertSee('href="'.e(Branding::url('favicon')).'"', false);
+    $this->get(route('dashboard'))->assertSee('href="'.e(Branding::url('favicon')).'"', false);
 
     saveGeneral(['remove_assets' => ['permits__branding__favicon']])->assertSessionHasNoErrors();
 
     expect(Branding::path('favicon'))->toBeNull();
     Storage::disk('local')->assertMissing($second);
     $this->get(route('branding', 'favicon'))->assertNotFound();
-    $this->get(route('home'))->assertSee('href="/favicon.svg"', false);
+    $this->get(route('dashboard'))->assertSee('href="/favicon.svg"', false);
 });
 
 it('refuses files that are not a picture it accepts', function (string $field, UploadedFile $file) {
@@ -182,13 +182,13 @@ it('makes the web copy once and removes it with the logo', function () {
 
 it('asks for the logo before the scripts on the landing and sign-in pages only', function () {
     // No logo: nothing to ask for.
-    $this->get(route('home'))->assertDontSee('rel="preload" as="image"', false);
+    $this->get(route('login'))->assertDontSee('rel="preload" as="image"', false);
 
     saveGeneral(['permits__branding__logo' => UploadedFile::fake()->image('logo.png', 600, 300)]);
     $preload = '<link rel="preload" as="image" href="'.e(Branding::url('logo')).'" fetchpriority="high">';
     auth()->logout();
 
-    $this->get(route('home'))->assertSee($preload, false);
+    $this->get(route('login'))->assertSee($preload, false);
     $this->get(route('login'))->assertSee($preload, false);
 
     // Signed-in pages draw it in the sidebar, which phones fold away.

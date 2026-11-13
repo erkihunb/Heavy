@@ -4,7 +4,7 @@ use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
 it('uses Amharic by default', function () {
-    $this->get(route('home'))
+    $this->get(route('login'))
         ->assertOk()
         ->assertSee('<html lang="am"', escape: false)
         ->assertInertia(fn (Assert $page) => $page
@@ -19,7 +19,7 @@ it('lets a guest switch language for their session', function () {
         ->assertRedirect(route('home'))
         ->assertSessionHas('locale', 'en');
 
-    $this->get(route('home'))
+    $this->get(route('login'))
         ->assertSee('<html lang="en"', escape: false)
         ->assertInertia(fn (Assert $page) => $page
             ->where('locale', 'en')
@@ -65,7 +65,7 @@ it('rejects a language that is not supported', function (mixed $locale) {
 
 it('ignores an unsupported locale that is already in the session', function () {
     $this->withSession(['locale' => 'fr'])
-        ->get(route('home'))
+        ->get(route('login'))
         ->assertInertia(fn (Assert $page) => $page->where('locale', 'am'));
 });
 
@@ -78,7 +78,7 @@ it('rate limits language switching', function () {
 });
 
 it('sends only the frontend translation namespaces to the browser', function () {
-    $this->get(route('home'))
+    $this->get(route('login'))
         ->assertInertia(fn (Assert $page) => $page
             ->where('translations', fn ($translations) => collect($translations)->keys()->all() === config('localization.frontend_namespaces'))
             ->missing('translations.validation')
@@ -89,7 +89,7 @@ it('sends only the frontend translation namespaces to the browser', function () 
 it('falls back to English for a line that has no Amharic translation', function () {
     config(['localization.frontend_namespaces' => ['pagination']]);
 
-    $this->get(route('home'))
+    $this->get(route('login'))
         ->assertInertia(fn (Assert $page) => $page
             ->where('locale', 'am')
             ->where('translations.pagination.next', 'Next &raquo;'));
@@ -112,14 +112,14 @@ it('shares only whitelisted fields of the signed-in user', function () {
 });
 
 it('shares no user for guests', function () {
-    $this->get(route('home'))
+    $this->get(route('login'))
         ->assertInertia(fn (Assert $page) => $page
             ->where('auth.user', null)
             ->where('auth.mustEnableTwoFactor', false));
 });
 
 it('does not load fonts from a third-party host', function () {
-    $this->get(route('home'))
+    $this->get(route('login'))
         ->assertDontSee('fonts.bunny.net')
         ->assertDontSee('fonts.googleapis.com')
         ->assertDontSee('fonts.gstatic.com');

@@ -2,26 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\EthiopianCalendar;
-use Inertia\Inertia;
-use Inertia\Response;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {
     /**
-     * The public landing page.
+     * The site root has no page of its own: guests go straight to signing
+     * in, signed-in people to their dashboard.
      */
-    public function __invoke(): Response
+    public function __invoke(Request $request): RedirectResponse
     {
-        $locale = app()->getLocale();
-        $today = now(config('localization.display_timezone'));
-
-        return Inertia::render('welcome', [
-            // Dates for the illustrative permit card only; no permit exists behind it.
-            'sample' => [
-                'validFrom' => EthiopianCalendar::present($today, $locale),
-                'validTo' => EthiopianCalendar::present($today->addDays(89), $locale),
-            ],
-        ]);
+        return redirect()->route($request->user() ? 'dashboard' : 'login');
     }
 }

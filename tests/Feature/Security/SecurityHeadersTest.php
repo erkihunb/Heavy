@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Vite;
  */
 
 it('sends the security headers on pages', function () {
-    $response = $this->get(route('home'))->assertOk();
+    $response = $this->get(route('login'))->assertOk();
 
     expect($response->headers->get('X-Frame-Options'))->toBe('DENY')
         ->and($response->headers->get('X-Content-Type-Options'))->toBe('nosniff')
@@ -17,7 +17,7 @@ it('sends the security headers on pages', function () {
 });
 
 it('allows scripts only from this site or with the nonce of the request', function () {
-    $response = $this->get(route('home'))->assertOk();
+    $response = $this->get(route('login'))->assertOk();
     $policy = (string) $response->headers->get('Content-Security-Policy');
 
     expect($policy)->toContain("default-src 'self'")
@@ -32,7 +32,7 @@ it('allows scripts only from this site or with the nonce of the request', functi
     $response->assertSee('<script nonce="'.$match[1].'">', false);
 
     // Every request gets a new nonce.
-    $again = (string) $this->get(route('home'))->headers->get('Content-Security-Policy');
+    $again = (string) $this->get(route('login'))->headers->get('Content-Security-Policy');
     expect($again)->not->toContain($match[1]);
 });
 
@@ -49,7 +49,7 @@ it('keeps the stricter referrer policy of the verification pages', function () {
 });
 
 it('sends HSTS only over HTTPS in production', function () {
-    $this->get(route('home'))->assertHeaderMissing('Strict-Transport-Security');
+    $this->get(route('login'))->assertHeaderMissing('Strict-Transport-Security');
 
     $this->app->detectEnvironment(fn (): string => 'production');
 
@@ -66,10 +66,10 @@ it('allows the Vite dev server only locally while it runs', function () {
 
     try {
         $this->app->detectEnvironment(fn (): string => 'local');
-        $local = (string) $this->get(route('home'))->headers->get('Content-Security-Policy');
+        $local = (string) $this->get(route('login'))->headers->get('Content-Security-Policy');
 
         $this->app->detectEnvironment(fn (): string => 'production');
-        $production = (string) $this->get(route('home'))->headers->get('Content-Security-Policy');
+        $production = (string) $this->get(route('login'))->headers->get('Content-Security-Policy');
     } finally {
         @unlink($hot);
     }

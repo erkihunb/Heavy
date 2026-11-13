@@ -736,6 +736,61 @@
     );
 }
 
+/*
+ * Sign-in pages: each piece fades up once, a little after the one before it
+ * (--auth-delay). Motion only underlines the reading order; it never decides
+ * whether something is readable.
+ *
+ * The animation runs forwards into the element's own finished state, so it
+ * is never what makes the content visible. The rules below switch it off
+ * entirely for reduced motion and for "animations off", rather than leaving
+ * a near-zero duration that would hold the first (transparent) frame.
+ */
+@utility auth-reveal {
+    animation: auth-reveal 0.42s var(--ease-snap) both;
+    animation-delay: var(--auth-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-reveal,
+    .auth-drift {
+        animation: none !important;
+    }
+}
+
+:root[data-animations='off'] .auth-reveal,
+:root[data-animations='off'] .auth-drift {
+    animation: none !important;
+}
+
+@keyframes auth-reveal {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* The road bands behind the brand panel: they slide in from the side once. */
+@utility auth-drift {
+    animation: auth-drift 0.9s var(--ease-snap) both;
+    animation-delay: var(--auth-delay, 0ms);
+}
+
+@keyframes auth-drift {
+    from {
+        opacity: 0;
+        transform: translateX(-4%) rotate(-6deg);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) rotate(-6deg);
+    }
+}
+
 /* The brand band on the top edge of sign-in cards: brand, accent, brand. */
 @utility brand-bar {
     height: 4px;

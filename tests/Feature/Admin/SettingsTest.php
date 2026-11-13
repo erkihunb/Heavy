@@ -353,28 +353,28 @@ it('sends no alert when Telegram is off or the alert is switched off', function 
 it('applies the theme and the default mode to every page', function () {
     config(['permits.appearance.theme' => 'forest', 'permits.appearance.default_mode' => 'dark']);
 
-    $this->get(route('home'))
+    $this->get(route('login'))
         ->assertSee('data-theme="forest"', false)
         ->assertSee('data-default-appearance="dark"', false)
         ->assertSee('class="dark"', false);
 
     // A person's own choice wins.
     $this->withUnencryptedCookie('appearance_mode', 'light')
-        ->get(route('home'))
+        ->get(route('login'))
         ->assertDontSee('class="dark"', false);
 });
 
 it('uses the default language for people who have not chosen one', function () {
     config(['app.locale' => 'en']);
 
-    $this->get(route('home'))->assertSee('<html lang="en"', false);
+    $this->get(route('login'))->assertSee('<html lang="en"', false);
 });
 
 describe('theme management', function () {
     it('puts the interface style, shapes and density on every page', function () {
         config(['permits.appearance.ui_style' => 'soft', 'permits.appearance.button_style' => 'pill', 'permits.appearance.card_radius' => 'lg', 'permits.appearance.table_density' => 'compact', 'permits.appearance.animations' => false]);
 
-        $this->get(route('home'))
+        $this->get(route('login'))
             ->assertSee('data-ui-style="soft"', false)
             ->assertSee('data-button-style="pill"', false)
             ->assertSee('data-card-radius="lg"', false)
@@ -397,7 +397,7 @@ describe('theme management', function () {
 
         expect(ThemeStyle::readable('#fde68a'))->toBe('#141414');
 
-        $this->get(route('home'))->assertSee('--primary:#0b5d1e', false);
+        $this->get(route('login'))->assertSee('--primary:#0b5d1e', false);
     });
 
     it('ignores colours that are not hex and sends no style without them', function () {
@@ -422,7 +422,7 @@ describe('theme management', function () {
         config(['permits.appearance.allow_user_mode' => false, 'permits.appearance.default_mode' => 'dark']);
 
         $this->withUnencryptedCookie('appearance_mode', 'light')
-            ->get(route('home'))
+            ->get(route('login'))
             ->assertSee('class="dark"', false)
             ->assertSee('data-user-mode="off"', false);
     });

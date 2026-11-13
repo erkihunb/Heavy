@@ -125,6 +125,6 @@ it('is required by default', function () {
 });
 
 it('does not affect guests', function () {
-    $this->get(route('home'))->assertOk();
+    $this->get(route('home'))->assertRedirect(route('login'));
     $this->get(route('login'))->assertOk();
 });
