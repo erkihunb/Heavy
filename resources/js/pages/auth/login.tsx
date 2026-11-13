@@ -25,6 +25,9 @@ export default function Login({ status, canResetPassword }: Props) {
         <AuthLayout
             title={t('auth_ui.login.title')}
             description={t('auth_ui.login.description')}
+            // The way in, met first and used daily: it is simply there, with
+            // no entrance. The other auth pages keep theirs.
+            still
         >
             <Head title={t('auth_ui.login.submit')} />
 
