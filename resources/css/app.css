@@ -840,6 +840,41 @@
     transform-origin: center;
 }
 
+/*
+ * What the scene says about the system. All of it shares one 56s day:
+ * the sun is up for the first half and the moon for the second, each
+ * swinging across the sky about a point far below it; from dusk to dawn
+ * the panel dims (.hv-dusk), the windows brighten (.hv-windows) and the
+ * headlights and stars show (.hv-night).
+ *
+ * The officer's check runs on each vehicle's own clock instead: the tick
+ * over a vehicle (.hv-verified) and the scanner's flash (.hv-scan) start at
+ * the moment that vehicle's cab reaches the officer, which the component
+ * works out and passes in as --hv-delay.
+ *
+ * At rest it is midday, nothing is dimmed, and every vehicle shows its tick.
+ */
+.hv-sun {
+    transform-origin: 400px 560px;
+    transform: rotate(-16deg);
+}
+
+.hv-moon,
+.hv-night,
+.hv-scan,
+.hv-dusk {
+    opacity: 0;
+}
+
+.hv-windows {
+    opacity: 0.3;
+}
+
+.hv-verified {
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
 @media (prefers-reduced-motion: no-preference) {
     :root:not([data-animations='off']) .hv-right {
         animation: hv-right var(--hv-dur, 27s) linear var(--hv-delay, 0s)
@@ -861,6 +896,137 @@
 
     :root:not([data-animations='off']) .hv-beacon {
         animation: hv-beacon 1.6s linear infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-sun {
+        animation: hv-sun 56s linear infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-moon {
+        animation-delay: -28s;
+    }
+
+    :root:not([data-animations='off']) .hv-dusk {
+        animation: hv-dusk 56s linear infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-windows {
+        animation: hv-windows 56s linear infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-night {
+        animation: hv-night 56s linear infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-verified {
+        animation: hv-verified var(--hv-dur, 27s) linear var(--hv-delay, 0s)
+            infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-scan {
+        animation: hv-scan var(--hv-dur, 27s) linear var(--hv-delay, 0s)
+            infinite;
+    }
+}
+
+@keyframes hv-sun {
+    0% {
+        opacity: 0;
+        transform: rotate(-50deg);
+    }
+    5%,
+    45% {
+        opacity: 0.8;
+    }
+    50% {
+        opacity: 0;
+        transform: rotate(50deg);
+    }
+    100% {
+        opacity: 0;
+        transform: rotate(50deg);
+    }
+}
+
+@keyframes hv-dusk {
+    0%,
+    44% {
+        opacity: 0;
+    }
+    56%,
+    94% {
+        opacity: 0.34;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes hv-windows {
+    0%,
+    45% {
+        opacity: 0.3;
+    }
+    56%,
+    94% {
+        opacity: 0.95;
+    }
+    100% {
+        opacity: 0.3;
+    }
+}
+
+@keyframes hv-night {
+    0%,
+    47% {
+        opacity: 0;
+    }
+    56%,
+    94% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes hv-verified {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    2% {
+        opacity: 1;
+        transform: scale(1.25);
+    }
+    4%,
+    58% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    62%,
+    100% {
+        opacity: 0;
+        transform: scale(1);
+    }
+}
+
+@keyframes hv-scan {
+    0% {
+        opacity: 0;
+    }
+    1% {
+        opacity: 1;
+    }
+    2% {
+        opacity: 0.25;
+    }
+    3.5% {
+        opacity: 1;
+    }
+    6%,
+    100% {
+        opacity: 0;
     }
 }
 

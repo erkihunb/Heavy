@@ -13,6 +13,16 @@ import type { CSSProperties, ReactNode } from 'react';
  *   lane.
  * - Along the top: a few clouds drifting across the sky.
  *
+ * Three things in it are the system itself rather than scenery:
+ *
+ * - The restricted hours. The scene has a day and a night: the sun crosses
+ *   and sets, the panel dims, windows and headlights come on, the moon and
+ *   stars take over, and the heavy vehicles keep moving through all of it.
+ * - The permit. Each vehicle in the near lane is one that holds a permit.
+ * - The roadside check. A traffic officer stands at the kerb with a scanner;
+ *   as each cab passes, the scanner flashes and a tick appears over that
+ *   vehicle and travels on with it.
+ *
  * Drawn here from nothing: inline SVG in the panel's own white, moved by CSS
  * keyframes on transform and opacity (the hv-* rules in resources/css/app.css).
  * Every vehicle carries its resting place as an inline transform, so without
@@ -28,6 +38,27 @@ const NEAR = { seconds: 27, scale: 1, ground: 240 };
 const FAR = { seconds: 36, scale: 0.62, ground: 198 };
 
 type Lane = typeof NEAR;
+
+/* Where the traffic officer stands, and so where a passing cab is checked. */
+const OFFICER_X = 385;
+
+/**
+ * The (negative) delay that starts a per-vehicle loop at the moment that
+ * vehicle's cab reaches the officer.
+ */
+function checkDelay(lane: Lane, offset: number, cab: number) {
+    const reached = (OFFICER_X - cab + 260) / TRAVEL;
+
+    return (reached - offset - 1) * lane.seconds;
+}
+
+/* The near lane: what drives there, where it rests, how far round the loop
+   it starts, and where along its length the cab is. */
+const NEAR_TRAFFIC = [
+    { kind: 'tipper', rest: 130, offset: 0, cab: 146 },
+    { kind: 'lowbed', rest: 420, offset: 0.34, cab: 238 },
+    { kind: 'tanker', rest: 720, offset: 0.67, cab: 238 },
+] as const;
 
 /** A tyre, a hub and spokes; it turns once per circumference travelled. */
 function Wheel({ x, r = 13, speed }: { x: number; r?: number; speed: number }) {
@@ -56,6 +87,13 @@ function Cab({ x }: { x: number }) {
         <g transform={`translate(${x} 0)`}>
             <path d="M0 -24V-72A4 4 0 0 1 4 -76H34L48 -54V-24Z" />
             <path d="M12 -68H31L40 -54H12Z" strokeWidth="1.5" />
+            <path
+                className="hv-night"
+                d="M48 -40L96 -30V-20L48 -32Z"
+                fill="currentColor"
+                fillOpacity="0.3"
+                stroke="none"
+            />
             <rect
                 className="hv-beacon"
                 x="13"
@@ -185,19 +223,22 @@ function ContainerTruck({ speed }: { speed: number }) {
 /**
  * One vehicle in its lane. `rest` is where it stands when nothing moves;
  * `offset` (0–1) is how far round the loop it starts, so vehicles sharing a
- * lane keep their distance for ever.
+ * lane keep their distance for ever. `cab` marks a vehicle the officer
+ * checks: it gets the tick that appears as its cab passes them.
  */
 function Vehicle({
     lane,
     leftward = false,
     rest,
     offset,
+    cab,
     children,
 }: {
     lane: Lane;
     leftward?: boolean;
     rest: number;
     offset: number;
+    cab?: number;
     children: (speed: number) => ReactNode;
 }) {
     const speed = TRAVEL / lane.seconds / lane.scale;
@@ -219,6 +260,30 @@ function Vehicle({
                 >
                     {children(speed)}
                 </g>
+                {cab !== undefined && (
+                    <g
+                        className="hv-verified"
+                        style={
+                            {
+                                '--hv-dur': `${lane.seconds}s`,
+                                '--hv-delay': `${checkDelay(lane, offset, cab).toFixed(1)}s`,
+                            } as CSSProperties
+                        }
+                    >
+                        <circle
+                            cx={cab}
+                            cy="-102"
+                            r="11"
+                            fill="currentColor"
+                            stroke="none"
+                        />
+                        <path
+                            d={`M${cab - 5.5} -102l4 4 7.5 -8`}
+                            stroke="var(--brand-surface)"
+                            strokeWidth="2.5"
+                        />
+                    </g>
+                )}
             </g>
         </g>
     );
@@ -277,6 +342,12 @@ const svgProps = {
 export function HeavyVehicleMotion() {
     return (
         <>
+            {/* Night falling over the whole panel. */}
+            <div
+                aria-hidden="true"
+                className="hv-dusk pointer-events-none absolute inset-0 -z-10 hidden bg-black lg:block"
+            />
+
             {/* The sky. */}
             <svg
                 {...svgProps}
@@ -284,6 +355,28 @@ export function HeavyVehicleMotion() {
                 preserveAspectRatio="xMidYMin slice"
                 className="pointer-events-none absolute inset-x-0 top-0 -z-10 hidden h-[28%] w-full lg:block"
             >
+                {/* The sun by day; the moon and a few stars by night. */}
+                <g className="hv-sun" opacity="0.8">
+                    <circle cx="400" cy="92" r="15" />
+                    <path
+                        d="M400 66V58M400 126V118M374 92H366M434 92H426M381.6 73.6L376 68M424 116L418.4 110.4M381.6 110.4L376 116M424 68L418.4 73.6"
+                        strokeWidth="1.5"
+                    />
+                </g>
+                <g className="hv-sun hv-moon" opacity="0.8">
+                    <path d="M404 76A17 17 0 1 0 418 102A13 13 0 1 1 404 76Z" />
+                </g>
+                <g className="hv-night" fill="currentColor" stroke="none">
+                    <circle cx="130" cy="40" r="1.6" />
+                    <circle cx="238" cy="96" r="1.3" />
+                    <circle cx="322" cy="30" r="1.8" />
+                    <circle cx="468" cy="52" r="1.3" />
+                    <circle cx="556" cy="24" r="1.6" />
+                    <circle cx="648" cy="88" r="1.4" />
+                    <circle cx="712" cy="38" r="1.7" />
+                    <circle cx="60" cy="112" r="1.3" />
+                </g>
+
                 {CLOUDS.map(([y, size, seconds, offset, rest]) => (
                     <g key={y} transform={`translate(0 ${y})`} opacity="0.3">
                         <g
@@ -340,10 +433,10 @@ export function HeavyVehicleMotion() {
                                     strokeWidth="1.5"
                                 />
                                 <path
+                                    className="hv-windows"
                                     d={windows(building)}
                                     strokeWidth="1.5"
                                     strokeDasharray="4 5"
-                                    opacity="0.3"
                                 />
                                 {height > 120 && (
                                     <path
@@ -433,16 +526,53 @@ export function HeavyVehicleMotion() {
                         {(speed) => <ContainerTruck speed={speed} />}
                     </Vehicle>
 
-                    {/* The near lane, heading in. */}
-                    <Vehicle lane={NEAR} rest={130} offset={0}>
-                        {(speed) => <Tipper speed={speed} />}
-                    </Vehicle>
-                    <Vehicle lane={NEAR} rest={360} offset={0.34}>
-                        {(speed) => <LowBed speed={speed} />}
-                    </Vehicle>
-                    <Vehicle lane={NEAR} rest={700} offset={0.67}>
-                        {(speed) => <Tanker speed={speed} />}
-                    </Vehicle>
+                    {/* The near lane, heading in: the vehicles that are
+                        checked as they pass the officer. */}
+                    {NEAR_TRAFFIC.map((truck) => (
+                        <Vehicle
+                            key={truck.kind}
+                            lane={NEAR}
+                            rest={truck.rest}
+                            offset={truck.offset}
+                            cab={truck.cab}
+                        >
+                            {(speed) =>
+                                truck.kind === 'tipper' ? (
+                                    <Tipper speed={speed} />
+                                ) : truck.kind === 'lowbed' ? (
+                                    <LowBed speed={speed} />
+                                ) : (
+                                    <Tanker speed={speed} />
+                                )
+                            }
+                        </Vehicle>
+                    ))}
+
+                    {/* The traffic officer at the kerb, scanner raised. One
+                        flash of the scanner per vehicle, as its cab passes. */}
+                    <g transform={`translate(${OFFICER_X} 258)`}>
+                        {NEAR_TRAFFIC.map((truck) => (
+                            <path
+                                key={truck.kind}
+                                className="hv-scan"
+                                style={
+                                    {
+                                        '--hv-dur': `${NEAR.seconds}s`,
+                                        '--hv-delay': `${(checkDelay(NEAR, truck.offset, truck.cab) - 0.5).toFixed(1)}s`,
+                                    } as CSSProperties
+                                }
+                                d="M-19 -50L-25 -74M-15 -51L-13 -76M-11 -50L-1 -72"
+                                strokeWidth="1.5"
+                            />
+                        ))}
+                        <path d="M-4 -17V0M4 -17V0" />
+                        <path d="M-7 -38H7L8 -17H-8Z" />
+                        <path d="M-7 -28H7" strokeWidth="1.5" opacity="0.7" />
+                        <path d="M-6 -35L-14 -42" />
+                        <rect x="-20" y="-50" width="10" height="7" rx="1.5" />
+                        <circle cx="0" cy="-45" r="5.5" />
+                        <path d="M-7 -48H8M-5 -48Q0 -56 5 -48" />
+                    </g>
                 </g>
             </svg>
         </>
