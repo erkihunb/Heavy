@@ -16,7 +16,9 @@ use Inertia\Response;
 /**
  * The reporting dashboard (spec §11): permits by status, issued and revenue
  * per Ethiopian month for the last twelve months, the vehicle types and
- * organizations behind them, and what expires in the next seven days.
+ * organizations and branches behind them, how long an application takes,
+ * the receipts and roadside checks of the period, and what expires in the
+ * next seven days.
  */
 class ReportController extends Controller
 {
@@ -67,6 +69,30 @@ class ReportController extends Controller
                 'permits' => $row['permits'],
                 'revenue' => Money::present($row['revenue_cents']),
             ], $reports->topOrganizations($months[0], $current, scope: $scope)),
+            'processing' => $reports->processing($months[0], $current, $scope),
+            'payments' => (function () use ($reports, $months, $current, $scope): array {
+                $payments = $reports->payments($months[0], $current, $scope);
+
+                return [
+                    'statuses' => array_map(fn (array $row): array => [
+                        'count' => $row['count'],
+                        'amount' => Money::present($row['amount_cents']),
+                    ], $payments['statuses']),
+                    'methods' => array_map(fn (array $row): array => [
+                        'method' => $row['method'],
+                        'count' => $row['count'],
+                        'amount' => Money::present($row['amount_cents']),
+                    ], $payments['methods']),
+                ];
+            })(),
+            'scans' => $reports->scans($months[0], $current, $scope),
+            // The head office has no branch of its own: its row has no name.
+            'byBranch' => array_map(fn (array $row): array => [
+                'id' => $row['branch_id'],
+                'name' => $row['name_am'] === null ? null : $name($row['name_am'], $row['name_en']),
+                'permits' => $row['permits'],
+                'revenue' => Money::present($row['revenue_cents']),
+            ], $reports->byBranch($months[0], $current, $scope)),
             'expiring' => (function () use ($reports, $locale, $name, $scope): array {
                 $expiring = $reports->expiringSoon(self::EXPIRING_DAYS, scope: $scope);
 

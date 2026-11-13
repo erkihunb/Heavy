@@ -12,6 +12,7 @@ import {
 } from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
 import { PageHeader } from '@/components/page-header';
+import { PaymentStatusBadge } from '@/components/payment-status-badge';
 import { PlateChip } from '@/components/plate-chip';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
@@ -21,8 +22,13 @@ import { index as exports } from '@/routes/staff/exports';
 import { show as permitPage } from '@/routes/staff/permits';
 import { index } from '@/routes/staff/reports';
 import type { BreadcrumbItem, DualDate as DualDateValue, Money } from '@/types';
-import { PERMIT_STATUSES } from '@/types/enums';
-import type { PermitStatus } from '@/types/enums';
+import { PAYMENT_STATUSES, PERMIT_STATUSES, SCAN_RESULTS } from '@/types/enums';
+import type {
+    PaymentMethod,
+    PaymentStatus,
+    PermitStatus,
+    ScanResult,
+} from '@/types/enums';
 
 type Props = {
     period: { from: string; to: string };
@@ -37,6 +43,29 @@ type Props = {
     monthly: { key: string; label: string; issued: number; revenue: Money }[];
     byVehicleType: { name: string; permits: number }[];
     topOrganizations: { name: string; permits: number; revenue: Money }[];
+    processing: {
+        measured: number;
+        average_days: number | null;
+        in_progress: number;
+        oldest_days: number | null;
+    };
+    payments: {
+        statuses: Record<PaymentStatus, { count: number; amount: Money }>;
+        methods: { method: PaymentMethod; count: number; amount: Money }[];
+    };
+    scans: {
+        total: number;
+        by_officers: number;
+        by_public: number;
+        results: Record<ScanResult, number>;
+    };
+    /** The head office has no branch: its row has no id and no name. */
+    byBranch: {
+        id: number | null;
+        name: string | null;
+        permits: number;
+        revenue: Money;
+    }[];
     expiring: {
         days: number;
         count: number;
@@ -76,11 +105,22 @@ function Bar({ value, max }: { value: number; max: number }) {
     );
 }
 
-function Tile({ label, value }: { label: string; value: string | number }) {
+function Tile({
+    label,
+    value,
+    hint,
+}: {
+    label: string;
+    value: string | number;
+    hint?: string;
+}) {
     return (
         <div className="rounded-card border border-border bg-card p-5">
             <p className="text-eyebrow text-muted-foreground">{label}</p>
             <p className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
+            {hint && (
+                <p className="mt-1 text-sm text-muted-foreground">{hint}</p>
+            )}
         </div>
     );
 }
@@ -92,6 +132,10 @@ export default function Reports({
     monthly,
     byVehicleType,
     topOrganizations,
+    processing,
+    payments,
+    scans,
+    byBranch,
     expiring,
 }: Props) {
     const { t } = useTranslation();
@@ -109,6 +153,15 @@ export default function Reports({
     const maxOrganization = Math.max(
         0,
         ...topOrganizations.map((row) => row.permits),
+    );
+    const maxBranch = Math.max(0, ...byBranch.map((row) => row.permits));
+    const maxMethod = Math.max(
+        0,
+        ...payments.methods.map((row) => row.amount.amount_cents),
+    );
+    const maxResult = Math.max(
+        0,
+        ...SCAN_RESULTS.map((result) => scans.results[result]),
     );
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -153,6 +206,43 @@ export default function Reports({
                     <Tile
                         label={t('reports.summary.revenue_period')}
                         value={summary.revenue_period.formatted}
+                    />
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Tile
+                        label={t('reports.processing.average_days')}
+                        value={processing.average_days ?? '—'}
+                        hint={t('reports.processing.average_hint', {
+                            count: processing.measured,
+                        })}
+                    />
+                    <Tile
+                        label={t('reports.processing.in_progress')}
+                        value={processing.in_progress}
+                        hint={
+                            processing.oldest_days === null
+                                ? t('reports.processing.in_progress_hint')
+                                : [
+                                      t('reports.processing.oldest_days'),
+                                      t('reports.processing.days', {
+                                          count: processing.oldest_days,
+                                      }),
+                                  ].join(': ')
+                        }
+                    />
+                    <Tile
+                        label={t('reports.processing.payments_waiting')}
+                        value={payments.statuses.submitted.count}
+                        hint={payments.statuses.submitted.amount.formatted}
+                    />
+                    <Tile
+                        label={t('reports.processing.checks')}
+                        value={scans.total}
+                        hint={t('reports.processing.checks_hint', {
+                            officers: scans.by_officers,
+                            public: scans.by_public,
+                        })}
                     />
                 </div>
 
@@ -343,6 +433,197 @@ export default function Reports({
                                     </Tr>
                                 ))
                             )}
+                        </TBody>
+                    </Table>
+                </TableCard>
+
+                {byBranch.length > 1 && (
+                    <TableCard
+                        title={t('reports.by_branch')}
+                        titleId="branches-title"
+                    >
+                        <Table aria-labelledby="branches-title">
+                            <THead>
+                                <tr>
+                                    <Th>{t('reports.branch')}</Th>
+                                    <Th align="right">
+                                        {t('reports.permits')}
+                                    </Th>
+                                    <Th className="w-1/3">
+                                        <span className="sr-only">
+                                            {t('reports.permits')}
+                                        </span>
+                                    </Th>
+                                    <Th align="right">
+                                        {t('reports.revenue')}
+                                    </Th>
+                                </tr>
+                            </THead>
+                            <TBody>
+                                {byBranch.map((row) => (
+                                    <Tr key={row.id ?? 'head-office'}>
+                                        <Td className="font-medium">
+                                            {row.name ??
+                                                t('reports.head_office')}
+                                        </Td>
+                                        <Td numeric className="font-semibold">
+                                            {row.permits}
+                                        </Td>
+                                        <Td>
+                                            <Bar
+                                                value={row.permits}
+                                                max={maxBranch}
+                                            />
+                                        </Td>
+                                        <Td
+                                            numeric
+                                            className="font-semibold whitespace-nowrap"
+                                        >
+                                            {row.revenue.formatted}
+                                        </Td>
+                                    </Tr>
+                                ))}
+                            </TBody>
+                        </Table>
+                    </TableCard>
+                )}
+
+                <div className="grid gap-6 xl:grid-cols-2">
+                    <TableCard
+                        title={t('reports.payments_by_method')}
+                        titleId="methods-title"
+                    >
+                        <Table aria-labelledby="methods-title">
+                            <THead>
+                                <tr>
+                                    <Th>{t('reports.method')}</Th>
+                                    <Th align="right">
+                                        {t('reports.receipts')}
+                                    </Th>
+                                    <Th align="right">{t('reports.amount')}</Th>
+                                    <Th className="w-1/4">
+                                        <span className="sr-only">
+                                            {t('reports.amount')}
+                                        </span>
+                                    </Th>
+                                </tr>
+                            </THead>
+                            <TBody>
+                                {payments.methods.length === 0 ? (
+                                    <EmptyRow colSpan={4}>
+                                        {t('reports.none')}
+                                    </EmptyRow>
+                                ) : (
+                                    payments.methods.map((row) => (
+                                        <Tr key={row.method}>
+                                            <Td className="font-medium">
+                                                {t(
+                                                    `payments.methods.${row.method}`,
+                                                )}
+                                            </Td>
+                                            <Td
+                                                numeric
+                                                className="font-semibold"
+                                            >
+                                                {row.count}
+                                            </Td>
+                                            <Td
+                                                numeric
+                                                className="font-semibold whitespace-nowrap"
+                                            >
+                                                {row.amount.formatted}
+                                            </Td>
+                                            <Td>
+                                                <Bar
+                                                    value={
+                                                        row.amount.amount_cents
+                                                    }
+                                                    max={maxMethod}
+                                                />
+                                            </Td>
+                                        </Tr>
+                                    ))
+                                )}
+                            </TBody>
+                        </Table>
+                    </TableCard>
+
+                    <TableCard
+                        title={t('reports.payments_by_status')}
+                        titleId="receipts-title"
+                    >
+                        <Table aria-labelledby="receipts-title">
+                            <THead>
+                                <tr>
+                                    <Th>{t('common.status')}</Th>
+                                    <Th align="right">
+                                        {t('reports.receipts')}
+                                    </Th>
+                                    <Th align="right">{t('reports.amount')}</Th>
+                                </tr>
+                            </THead>
+                            <TBody>
+                                {PAYMENT_STATUSES.map((status) => (
+                                    <Tr key={status}>
+                                        <Td>
+                                            <PaymentStatusBadge
+                                                status={status}
+                                            />
+                                        </Td>
+                                        <Td numeric className="font-semibold">
+                                            {payments.statuses[status].count}
+                                        </Td>
+                                        <Td
+                                            numeric
+                                            className="font-semibold whitespace-nowrap"
+                                        >
+                                            {
+                                                payments.statuses[status].amount
+                                                    .formatted
+                                            }
+                                        </Td>
+                                    </Tr>
+                                ))}
+                            </TBody>
+                        </Table>
+                    </TableCard>
+                </div>
+
+                <TableCard
+                    title={t('reports.checks_by_result')}
+                    titleId="checks-title"
+                >
+                    <Table aria-labelledby="checks-title">
+                        <THead>
+                            <tr>
+                                <Th>{t('reports.result')}</Th>
+                                <Th align="right">{t('reports.checks')}</Th>
+                                <Th className="w-1/2">
+                                    <span className="sr-only">
+                                        {t('reports.checks')}
+                                    </span>
+                                </Th>
+                            </tr>
+                        </THead>
+                        <TBody>
+                            {SCAN_RESULTS.map((result) => (
+                                <Tr key={result}>
+                                    <Td className="font-medium">
+                                        {t(
+                                            `verification.results.${result}.title`,
+                                        )}
+                                    </Td>
+                                    <Td numeric className="font-semibold">
+                                        {scans.results[result]}
+                                    </Td>
+                                    <Td>
+                                        <Bar
+                                            value={scans.results[result]}
+                                            max={maxResult}
+                                        />
+                                    </Td>
+                                </Tr>
+                            ))}
                         </TBody>
                     </Table>
                 </TableCard>

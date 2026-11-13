@@ -5,9 +5,11 @@ namespace App\Domain\Reports;
 use App\Domain\Permits\ValidityRules;
 use App\Enums\PaymentStatus;
 use App\Enums\PermitStatus;
+use App\Enums\ScanResult;
 use App\Enums\VehicleRole;
 use App\Support\EthiopianMonth;
 use App\Support\Rbac\BranchScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -20,6 +22,20 @@ use Illuminate\Support\Facades\DB;
  */
 final class PermitReports
 {
+    /**
+     * An application on its way: filed, and neither issued nor turned down.
+     *
+     * @var list<PermitStatus>
+     */
+    private const array IN_PROGRESS = [
+        PermitStatus::Submitted,
+        PermitStatus::UnderReview,
+        PermitStatus::ChangesRequested,
+        PermitStatus::AwaitingPayment,
+        PermitStatus::PaymentSubmitted,
+        PermitStatus::PaymentConfirmed,
+    ];
+
     /**
      * Permits by status as people see it today: issued permits split into
      * "issued" (not started), "active" and "expired" by their dates.
@@ -202,5 +218,153 @@ final class PermitReports
             ->all();
 
         return ['count' => $query->count(), 'permits' => $permits];
+    }
+
+    /**
+     * Permits issued in the period at each branch, with the revenue of those
+     * permits, most first. The head office has no branch: its row has a null
+     * id and no names.
+     *
+     * @return list<array{branch_id: int|null, name_am: string|null, name_en: string|null, permits: int, revenue_cents: int}>
+     */
+    public function byBranch(EthiopianMonth $from, EthiopianMonth $until, ?BranchScope $scope = null): array
+    {
+        [$start] = $from->instants();
+        [, $end] = $until->instants();
+
+        $revenue = DB::table('payments')
+            ->where('status', PaymentStatus::Verified->value)
+            ->groupBy('permit_id')
+            ->select('permit_id', DB::raw('SUM(amount_cents) as paid'));
+
+        return DB::table('permits')
+            ->leftJoin('branches', 'branches.id', '=', 'permits.branch_id')
+            ->leftJoinSub($revenue, 'revenue', 'revenue.permit_id', '=', 'permits.id')
+            ->where('permits.issued_at', '>=', $start)
+            ->where('permits.issued_at', '<', $end)
+            ->when($scope !== null, fn ($query) => $scope->apply($query, 'permits.branch_id'))
+            ->groupBy('branches.id', 'branches.name_am', 'branches.name_en')
+            ->orderByDesc('permits')
+            ->orderBy('branches.id')
+            ->get([
+                'branches.id as branch_id',
+                'branches.name_am',
+                'branches.name_en',
+                DB::raw('COUNT(*) as permits'),
+                DB::raw('COALESCE(SUM(revenue.paid), 0) as revenue_cents'),
+            ])
+            ->map(fn (object $row): array => [
+                'branch_id' => $row->branch_id === null ? null : (int) $row->branch_id,
+                'name_am' => $row->name_am === null ? null : (string) $row->name_am,
+                'name_en' => $row->name_en === null ? null : (string) $row->name_en,
+                'permits' => (int) $row->permits,
+                'revenue_cents' => (int) $row->revenue_cents,
+            ])
+            ->all();
+    }
+
+    /**
+     * Verification attempts in the period: how many, who made them and what
+     * they found. A scan that matched no permit belongs to no branch, so
+     * staff placed at a branch count the scans of their branch's permits only.
+     *
+     * @return array{total: int, by_officers: int, by_public: int, results: array<string, int>}
+     */
+    public function scans(EthiopianMonth $from, EthiopianMonth $until, ?BranchScope $scope = null): array
+    {
+        [$start] = $from->instants();
+        [, $end] = $until->instants();
+
+        $rows = DB::table('verification_scans')
+            ->where('scanned_at', '>=', $start)
+            ->where('scanned_at', '<', $end)
+            ->when($scope !== null && ! $scope->everywhere, fn ($query) => $query->whereIn('permit_id', $scope->apply(DB::table('permits'), 'branch_id')->select('id')))
+            ->groupBy('result')
+            ->get(['result', DB::raw('COUNT(*) as total'), DB::raw('COUNT(user_id) as by_officers')]);
+
+        $results = [];
+
+        foreach (ScanResult::cases() as $result) {
+            $results[$result->value] = (int) ($rows->firstWhere('result', $result->value)->total ?? 0);
+        }
+
+        $total = (int) $rows->sum('total');
+        $byOfficers = (int) $rows->sum('by_officers');
+
+        return ['total' => $total, 'by_officers' => $byOfficers, 'by_public' => $total - $byOfficers, 'results' => $results];
+    }
+
+    /**
+     * How long an application takes: the average time from filing to issue
+     * for the permits issued in the period, and the applications still on
+     * their way today with the age of the oldest one.
+     *
+     * @return array{measured: int, average_days: float|null, in_progress: int, oldest_days: int|null}
+     */
+    public function processing(EthiopianMonth $from, EthiopianMonth $until, ?BranchScope $scope = null): array
+    {
+        [$start] = $from->instants();
+        [, $end] = $until->instants();
+
+        $issued = DB::table('permits')
+            ->where('issued_at', '>=', $start)
+            ->where('issued_at', '<', $end)
+            ->when($scope !== null, fn ($query) => $scope->apply($query, 'branch_id'))
+            ->selectRaw('COUNT(*) as measured, AVG(TIMESTAMPDIFF(SECOND, COALESCE(submitted_at, created_at), issued_at)) as seconds')
+            ->first();
+
+        $waiting = DB::table('permits')
+            ->whereIn('status', array_map(fn (PermitStatus $status): string => $status->value, self::IN_PROGRESS))
+            ->when($scope !== null, fn ($query) => $scope->apply($query, 'branch_id'))
+            ->selectRaw('COUNT(*) as in_progress, MIN(COALESCE(submitted_at, created_at)) as oldest')
+            ->first();
+
+        $measured = (int) ($issued->measured ?? 0);
+
+        return [
+            'measured' => $measured,
+            'average_days' => $measured === 0 ? null : round(max(0, (float) $issued->seconds) / 86400, 1),
+            'in_progress' => (int) ($waiting->in_progress ?? 0),
+            'oldest_days' => ($waiting->oldest ?? null) === null
+                ? null
+                : (int) CarbonImmutable::parse((string) $waiting->oldest, 'UTC')->diffInDays(now(), true),
+        ];
+    }
+
+    /**
+     * The receipts paid in the period: how many and how much in each status,
+     * and the verified ones by how they were paid, largest first.
+     *
+     * @return array{statuses: array<string, array{count: int, amount_cents: int}>, methods: list<array{method: string, count: int, amount_cents: int}>}
+     */
+    public function payments(EthiopianMonth $from, EthiopianMonth $until, ?BranchScope $scope = null): array
+    {
+        $paid = fn () => DB::table('payments')
+            ->whereBetween('paid_at', [$from->firstDay()->toDateString(), $until->lastDay()->toDateString()])
+            ->when($scope !== null, fn ($query) => $query->whereIn('permit_id', $scope->apply(DB::table('permits'), 'branch_id')->select('id')));
+
+        $rows = $paid()->groupBy('status')->get(['status', DB::raw('COUNT(*) as total'), DB::raw('SUM(amount_cents) as amount_cents')]);
+
+        $statuses = [];
+
+        foreach (PaymentStatus::cases() as $status) {
+            $row = $rows->firstWhere('status', $status->value);
+            $statuses[$status->value] = ['count' => (int) ($row->total ?? 0), 'amount_cents' => (int) ($row->amount_cents ?? 0)];
+        }
+
+        $methods = $paid()
+            ->where('status', PaymentStatus::Verified->value)
+            ->groupBy('method')
+            ->orderByDesc('amount_cents')
+            ->orderBy('method')
+            ->get(['method', DB::raw('COUNT(*) as total'), DB::raw('SUM(amount_cents) as amount_cents')])
+            ->map(fn (object $row): array => [
+                'method' => (string) $row->method,
+                'count' => (int) $row->total,
+                'amount_cents' => (int) $row->amount_cents,
+            ])
+            ->all();
+
+        return ['statuses' => $statuses, 'methods' => $methods];
     }
 }

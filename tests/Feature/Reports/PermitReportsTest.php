@@ -2,12 +2,17 @@
 
 use App\Domain\Permits\ValidityRules;
 use App\Domain\Reports\PermitReports;
+use App\Enums\PaymentMethod;
+use App\Models\Branch;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\Permit;
+use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
+use App\Models\VerificationScan;
 use App\Support\EthiopianMonth;
+use App\Support\Rbac\BranchScope;
 use Carbon\CarbonImmutable;
 
 /*
@@ -148,4 +153,82 @@ it('lists issued permits whose last day is within the next days, soonest first',
     expect($this->reports->expiringSoon(7, limit: 1))
         ->count->toBe(2)
         ->permits->toHaveCount(1);
+});
+
+it('counts issued permits and their revenue by branch, the head office apart', function () {
+    $branch = Branch::factory()->create();
+
+    $atBranch = Permit::factory()->issued()->count(2)->create(['issued_at' => '2026-11-11 08:00:00', 'branch_id' => $branch->id]);
+    Payment::factory()->forPermit($atBranch[0])->verified()->create(['amount_cents' => 90_000]);
+    Permit::factory()->issued()->create(['issued_at' => '2026-11-11 08:00:00', 'branch_id' => null]);
+
+    expect($this->reports->byBranch($this->hidar, $this->hidar))->toBe([
+        ['branch_id' => $branch->id, 'name_am' => $branch->name_am, 'name_en' => $branch->name_en, 'permits' => 2, 'revenue_cents' => 90_000],
+        ['branch_id' => null, 'name_am' => null, 'name_en' => null, 'permits' => 1, 'revenue_cents' => 0],
+    ]);
+
+    expect($this->reports->byBranch($this->hidar, $this->hidar, BranchScope::of(true, [])))->toHaveCount(1);
+});
+
+it('counts the checks of the period by result and by who made them', function () {
+    $officer = User::factory()->create();
+    $scan = fn (string $result, string $at, ?int $userId = null) => VerificationScan::query()->forceCreate([
+        'result' => $result, 'channel' => 'qr', 'ip_hash' => str_repeat('a', 64), 'scanned_at' => $at, 'user_id' => $userId,
+    ]);
+
+    $scan('valid', '2026-11-11 08:00:00', $officer->id);
+    $scan('valid', '2026-11-11 09:00:00');
+    $scan('expired', '2026-11-11 10:00:00');
+    $scan('valid', '2026-10-01 10:00:00');
+
+    $scans = $this->reports->scans($this->hidar, $this->hidar);
+
+    expect($scans['total'])->toBe(3)
+        ->and($scans['by_officers'])->toBe(1)
+        ->and($scans['by_public'])->toBe(2)
+        ->and($scans['results']['valid'])->toBe(2)
+        ->and($scans['results']['expired'])->toBe(1)
+        ->and($scans['results']['not_found'])->toBe(0);
+});
+
+it('measures the time from filing to issue, and the applications on their way', function () {
+    Permit::factory()->issued()->create(['submitted_at' => '2026-11-09 08:00:00', 'issued_at' => '2026-11-11 08:00:00']);
+    Permit::factory()->issued()->create(['submitted_at' => '2026-11-10 08:00:00', 'issued_at' => '2026-11-11 08:00:00']);
+    Permit::factory()->submitted()->create(['submitted_at' => '2026-11-07 07:00:00']);
+    Permit::factory()->awaitingPayment()->create(['submitted_at' => '2026-11-11 07:00:00']);
+    Permit::factory()->rejected()->create();
+
+    expect($this->reports->processing($this->hidar, $this->hidar))->toBe([
+        'measured' => 2,
+        'average_days' => 1.5,
+        'in_progress' => 2,
+        'oldest_days' => 5,
+    ]);
+});
+
+it('says nothing about processing time when no permit was issued', function () {
+    expect($this->reports->processing($this->hidar, $this->hidar))->toBe([
+        'measured' => 0, 'average_days' => null, 'in_progress' => 0, 'oldest_days' => null,
+    ]);
+});
+
+it('counts the receipts of the period by status, and the verified ones by method', function () {
+    Payment::factory()->verified()->create(['amount_cents' => 150_000, 'paid_at' => '2026-11-10', 'method' => PaymentMethod::Cash]);
+    Payment::factory()->verified()->create(['amount_cents' => 50_000, 'paid_at' => '2026-11-11', 'method' => PaymentMethod::Cash]);
+    Payment::factory()->verified()->create(['amount_cents' => 70_000, 'paid_at' => '2026-11-11', 'method' => PaymentMethod::MobileMoney]);
+    Payment::factory()->rejected()->create(['amount_cents' => 10_000, 'paid_at' => '2026-11-11']);
+    Payment::factory()->create(['amount_cents' => 20_000, 'paid_at' => '2026-11-11']);
+    Payment::factory()->verified()->create(['amount_cents' => 999_999, 'paid_at' => '2026-11-09']);
+
+    expect($this->reports->payments($this->hidar, $this->hidar))->toBe([
+        'statuses' => [
+            'submitted' => ['count' => 1, 'amount_cents' => 20_000],
+            'verified' => ['count' => 3, 'amount_cents' => 270_000],
+            'rejected' => ['count' => 1, 'amount_cents' => 10_000],
+        ],
+        'methods' => [
+            ['method' => 'cash', 'count' => 2, 'amount_cents' => 200_000],
+            ['method' => 'mobile_money', 'count' => 1, 'amount_cents' => 70_000],
+        ],
+    ]);
 });
