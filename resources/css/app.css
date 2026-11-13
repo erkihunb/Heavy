@@ -847,12 +847,15 @@
  * the panel dims (.hv-dusk), the windows brighten (.hv-windows) and the
  * headlights and stars show (.hv-night).
  *
- * The officer's check runs on each vehicle's own clock instead: the tick
- * over a vehicle (.hv-verified) and the scanner's flash (.hv-scan) start at
- * the moment that vehicle's cab reaches the officer, which the component
- * works out and passes in as --hv-delay.
+ * The officer's check runs on each vehicle's own clock instead, starting
+ * at the moment that vehicle's cab reaches the officer, which the component
+ * works out and passes in as --hv-delay: the scanner flashes (.hv-scan), the
+ * permit's QR code shows over the vehicle (.hv-qr) while the scan line
+ * crosses it and comes back (.hv-qr-line), and as the code goes the tick
+ * takes its place (.hv-verified).
  *
- * At rest it is midday, nothing is dimmed, and every vehicle shows its tick.
+ * At rest it is midday, nothing is dimmed, no code is showing, and every
+ * vehicle shows its tick.
  */
 .hv-sun {
     transform-origin: 400px 560px;
@@ -862,8 +865,14 @@
 .hv-moon,
 .hv-night,
 .hv-scan,
+.hv-qr,
 .hv-dusk {
     opacity: 0;
+}
+
+.hv-qr {
+    transform-box: fill-box;
+    transform-origin: center;
 }
 
 .hv-windows {
@@ -920,6 +929,15 @@
 
     :root:not([data-animations='off']) .hv-verified {
         animation: hv-verified var(--hv-dur, 27s) linear var(--hv-delay, 0s)
+            infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-qr {
+        animation: hv-qr var(--hv-dur, 27s) linear var(--hv-delay, 0s) infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-qr-line {
+        animation: hv-qr-line var(--hv-dur, 27s) ease-in-out var(--hv-delay, 0s)
             infinite;
     }
 
@@ -990,16 +1008,48 @@
     }
 }
 
-@keyframes hv-verified {
+@keyframes hv-qr {
     0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    1.5%,
+    6.5% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    8%,
+    100% {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+}
+
+@keyframes hv-qr-line {
+    0%,
+    1.5% {
+        transform: translateY(0);
+    }
+    4% {
+        transform: translateY(20px);
+    }
+    6.5%,
+    100% {
+        transform: translateY(0);
+    }
+}
+
+@keyframes hv-verified {
+    0%,
+    7% {
         opacity: 0;
         transform: scale(0.3);
     }
-    2% {
+    9% {
         opacity: 1;
         transform: scale(1.25);
     }
-    4%,
+    11%,
     58% {
         opacity: 1;
         transform: scale(1);
@@ -1024,7 +1074,13 @@
     3.5% {
         opacity: 1;
     }
-    6%,
+    5% {
+        opacity: 0.35;
+    }
+    7% {
+        opacity: 1;
+    }
+    9%,
     100% {
         opacity: 0;
     }

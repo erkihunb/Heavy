@@ -1098,9 +1098,12 @@ when the owner asked for it to reflect the project: the **restricted hours**
 (a 56s day — the sun sets, the panel dims, windows and headlights come on,
 moon and stars take over, and the vehicles keep moving), the **permit** (the
 near-lane vehicles are the ones holding one) and the **roadside check** (a
-traffic officer at the kerb whose scanner flashes as each cab passes, after
-which a tick travels on over that vehicle). No clock face and no QR code are
-drawn; both were tried before and read as clip art.
+traffic officer at the kerb whose scanner flashes as each cab passes; the
+permit's QR code shows over that vehicle with a scan line crossing it, then
+gives way to the answer that travels on with it: a tick, or for one of the
+three vehicles a red cross, since a scan can also refuse a permit). The QR code was added at the
+owner's request and appears only for the moment of the scan; no clock face
+is drawn.
 
 The first version of this was a single small truck in the panel's top
 corner; the owner asked for the fuller scene once the panel's text was gone.

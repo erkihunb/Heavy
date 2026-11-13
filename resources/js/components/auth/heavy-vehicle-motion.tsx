@@ -20,8 +20,11 @@ import type { CSSProperties, ReactNode } from 'react';
  *   stars take over, and the heavy vehicles keep moving through all of it.
  * - The permit. Each vehicle in the near lane is one that holds a permit.
  * - The roadside check. A traffic officer stands at the kerb with a scanner;
- *   as each cab passes, the scanner flashes and a tick appears over that
- *   vehicle and travels on with it.
+ *   as each cab passes, the scanner flashes, the permit's QR code shows over
+ *   that vehicle with the scan line crossing it, and the code then gives way
+ *   to the answer, which travels on with the vehicle: a tick for a permit in
+ *   force, or a red cross for one that is refused (expired, revoked, not
+ *   found). One of the three vehicles is refused.
  *
  * Drawn here from nothing: inline SVG in the panel's own white, moved by CSS
  * keyframes on transform and opacity (the hv-* rules in resources/css/app.css).
@@ -53,12 +56,16 @@ function checkDelay(lane: Lane, offset: number, cab: number) {
 }
 
 /* The near lane: what drives there, where it rests, how far round the loop
-   it starts, and where along its length the cab is. */
+   it starts, where along its length the cab is, and whether the officer's
+   scan refuses it. */
 const NEAR_TRAFFIC = [
-    { kind: 'tipper', rest: 130, offset: 0, cab: 146 },
-    { kind: 'lowbed', rest: 420, offset: 0.34, cab: 238 },
-    { kind: 'tanker', rest: 720, offset: 0.67, cab: 238 },
+    { kind: 'tipper', rest: 130, offset: 0, cab: 146, refused: false },
+    { kind: 'lowbed', rest: 420, offset: 0.34, cab: 238, refused: true },
+    { kind: 'tanker', rest: 720, offset: 0.67, cab: 238, refused: false },
 ] as const;
+
+/* The colour of a refused scan; the tick keeps the panel's own white. */
+const REFUSED = '#ef4444';
 
 /** A tyre, a hub and spokes; it turns once per circumference travelled. */
 function Wheel({ x, r = 13, speed }: { x: number; r?: number; speed: number }) {
@@ -224,7 +231,8 @@ function ContainerTruck({ speed }: { speed: number }) {
  * One vehicle in its lane. `rest` is where it stands when nothing moves;
  * `offset` (0–1) is how far round the loop it starts, so vehicles sharing a
  * lane keep their distance for ever. `cab` marks a vehicle the officer
- * checks: it gets the tick that appears as its cab passes them.
+ * checks: it gets the answer that appears as its cab passes them, a tick
+ * unless the scan is `refused`.
  */
 function Vehicle({
     lane,
@@ -232,6 +240,7 @@ function Vehicle({
     rest,
     offset,
     cab,
+    refused = false,
     children,
 }: {
     lane: Lane;
@@ -239,6 +248,7 @@ function Vehicle({
     rest: number;
     offset: number;
     cab?: number;
+    refused?: boolean;
     children: (speed: number) => ReactNode;
 }) {
     const speed = TRAVEL / lane.seconds / lane.scale;
@@ -262,6 +272,43 @@ function Vehicle({
                 </g>
                 {cab !== undefined && (
                     <g
+                        className="hv-qr"
+                        style={
+                            {
+                                '--hv-dur': `${lane.seconds}s`,
+                                '--hv-delay': `${checkDelay(lane, offset, cab).toFixed(1)}s`,
+                            } as CSSProperties
+                        }
+                    >
+                        <g transform={`translate(${cab - 13} -120)`}>
+                            <rect
+                                width="26"
+                                height="26"
+                                rx="3"
+                                fill="currentColor"
+                                stroke="none"
+                            />
+                            <path
+                                d="M3 3h6v6h-6zM17 3h6v6h-6zM3 17h6v6h-6zM11 4h2v2h-2zM12 9h3v2h-3zM4 11h2v3h-2zM9 12h2v2h-2zM14 13h3v2h-3zM20 11h2v2h-2zM11 17h2v3h-2zM16 17h2v2h-2zM20 16h3v2h-3zM14 21h2v2h-2zM19 20h2v3h-2z"
+                                fill="var(--brand-surface)"
+                                stroke="none"
+                            />
+                            <path
+                                d="M5 5h2v2h-2zM19 5h2v2h-2zM5 19h2v2h-2z"
+                                fill="currentColor"
+                                stroke="none"
+                            />
+                            <path
+                                className="hv-qr-line"
+                                d="M-4 3H30"
+                                stroke="var(--brand-accent, currentColor)"
+                                strokeWidth="2"
+                            />
+                        </g>
+                    </g>
+                )}
+                {cab !== undefined && (
+                    <g
                         className="hv-verified"
                         style={
                             {
@@ -274,14 +321,23 @@ function Vehicle({
                             cx={cab}
                             cy="-102"
                             r="11"
-                            fill="currentColor"
-                            stroke="none"
+                            fill={refused ? REFUSED : 'currentColor'}
+                            stroke={refused ? 'currentColor' : 'none'}
+                            strokeWidth="1.5"
                         />
-                        <path
-                            d={`M${cab - 5.5} -102l4 4 7.5 -8`}
-                            stroke="var(--brand-surface)"
-                            strokeWidth="2.5"
-                        />
+                        {refused ? (
+                            <path
+                                d={`M${cab - 4.5} -106.5l9 9M${cab + 4.5} -106.5l-9 9`}
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                            />
+                        ) : (
+                            <path
+                                d={`M${cab - 5.5} -102l4 4 7.5 -8`}
+                                stroke="var(--brand-surface)"
+                                strokeWidth="2.5"
+                            />
+                        )}
                     </g>
                 )}
             </g>
@@ -535,6 +591,7 @@ export function HeavyVehicleMotion() {
                             rest={truck.rest}
                             offset={truck.offset}
                             cab={truck.cab}
+                            refused={truck.refused}
                         >
                             {(speed) =>
                                 truck.kind === 'tipper' ? (
