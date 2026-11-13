@@ -472,30 +472,145 @@
     --sidebar-border: #262830;
 }
 
-/* High contrast: black hairlines, darker secondary text, thick focus rings. */
+/*
+ * High contrast (aimed at WCAG AAA, 7:1 for text): pure black and white
+ * surfaces, black hairlines, secondary text as dark as body text, the brand
+ * and status colours stepped to their darkest readable shade, no shadows,
+ * 2px field borders, underlined links and a thick focus ring.
+ */
 :root[data-ui-style='contrast'] {
-    --border: #141414;
+    --background: #ffffff;
+    --foreground: #000000;
+    --card: #ffffff;
+    --card-foreground: #000000;
+    --popover: #ffffff;
+    --popover-foreground: #000000;
+    --secondary: #f0f0f0;
+    --secondary-foreground: #000000;
+    --muted: #f0f0f0;
+    --muted-foreground: #1f1f1f;
+    --accent: #dde3f5;
+    --accent-foreground: #000000;
+    --brand-accent: #a11f05;
+    --destructive: #991b1b;
+    --destructive-foreground: #991b1b;
+    --success: #14532d;
+    --warning: #7c2d12;
+    --border: #000000;
     --border-strong: #000000;
     --input: #000000;
-    --muted-foreground: #262626;
-    --sidebar-border: #141414;
+    --ring: #000000;
+    --sidebar-border: #000000;
+    --elev-sm: none;
+    --elev-md: none;
+    --elev-lg: 0 0 0 2px #000000;
+    --elev-xl: 0 0 0 2px #000000;
 }
 
 :root[data-ui-style='contrast'].dark {
-    --border: #d4d4d8;
+    --background: #000000;
+    --foreground: #ffffff;
+    --card: #000000;
+    --card-foreground: #ffffff;
+    --popover: #000000;
+    --popover-foreground: #ffffff;
+    --secondary: #1a1a1a;
+    --secondary-foreground: #ffffff;
+    --muted: #1a1a1a;
+    --muted-foreground: #f0f0f0;
+    --accent: #1d3084;
+    --accent-foreground: #ffffff;
+    --brand-accent: #ffa57d;
+    --destructive: #fca5a5;
+    --destructive-foreground: #fca5a5;
+    --success: #86efac;
+    --success-foreground: #000000;
+    --warning: #fcd34d;
+    --border: #ffffff;
     --border-strong: #ffffff;
     --input: #ffffff;
-    --muted-foreground: #e4e4e7;
-    --sidebar-border: #d4d4d8;
+    --ring: #ffff00;
+    --sidebar-border: #ffffff;
+    --elev-lg: 0 0 0 2px #ffffff;
+    --elev-xl: 0 0 0 2px #ffffff;
 }
 
 :root[data-ui-style='contrast'] :focus-visible {
-    outline-width: 3px;
+    outline: 3px solid var(--ring);
+    outline-offset: 3px;
+}
+
+/* Fields carry a 2px edge so their outline reads at a glance. */
+:root[data-ui-style='contrast']
+    :is(
+        input:not(
+            [type='checkbox'],
+            [type='radio'],
+            [type='range'],
+            [type='hidden']
+        ),
+        select,
+        textarea,
+        [data-slot='input'],
+        [data-slot='select-trigger']
+    ) {
+    border-width: 2px;
+    border-color: var(--input);
+}
+
+:root[data-ui-style='contrast'] ::placeholder {
+    color: var(--muted-foreground);
+    opacity: 0.85;
+}
+
+/* Links in running text are underlined, never told apart by colour alone. */
+:root[data-ui-style='contrast'] :is(main, #main-content, [role='main']) p a,
+:root[data-ui-style='contrast'] :is(main, #main-content, [role='main']) td a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* Status badges and chips get an edge, so their meaning does not hang on a tint. */
+:root[data-ui-style='contrast']
+    :is(
+        [data-slot='badge'],
+        .badge,
+        [class*='rounded-full'][class*='px-2'][class*='text-xs']
+    ) {
+    box-shadow: inset 0 0 0 1px currentColor;
+}
+
+/* Disabled controls stay legible: dashed edge instead of a faded colour. */
+:root[data-ui-style='contrast'] :is(button, input, select, textarea):disabled {
+    opacity: 1;
+    border-style: dashed;
 }
 
 /* Cards lift a little in the classic and soft styles. */
 :root:is([data-ui-style='classic'], [data-ui-style='soft']) .bg-card.border {
     box-shadow: var(--elev-md);
+}
+
+/* Soft: controls give under the pointer, quickly (150 ms), unless motion is reduced. */
+@media (prefers-reduced-motion: no-preference) {
+    :root[data-ui-style='soft']:not([data-animations='off'])
+        :is([data-slot='button'], button.inline-flex):not(:disabled) {
+        transition:
+            transform 150ms var(--ease-snap),
+            box-shadow 150ms var(--ease-snap),
+            background-color 150ms ease;
+    }
+
+    :root[data-ui-style='soft']:not([data-animations='off'])
+        :is([data-slot='button'], button.inline-flex):not(:disabled):active {
+        transform: scale(0.97);
+    }
+}
+
+/* Classic in dark mode: the light shadows do not show, so cards keep a firmer edge instead. */
+:root[data-ui-style='classic'].dark {
+    --border: #34343a;
+    --elev-md: 0 1px 3px 0 rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.03);
 }
 
 /* Button style; "auto" follows the interface style. */

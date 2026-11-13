@@ -287,6 +287,13 @@ return [
             'permits__security__password_min_length' => 'Production also requires upper and lower case, digits, symbols and a password not found in known breaches.',
             'localization__display_timezone' => 'Changing it changes which calendar day a timestamp falls on. Keep Africa/Addis_Ababa unless told otherwise.',
         ],
+        'ui_styles' => [
+            'live' => 'Shown on this page as you choose. Save to apply it for everyone, or Discard to go back.',
+            'swiss' => 'Flat and sharp: hairline borders, 2px corners, no shadows.',
+            'classic' => 'Tinted cards, 8px corners and light shadows.',
+            'soft' => 'Rounded and airy: raised cards, controls that press in.',
+            'contrast' => 'Black on white, thick edges and focus rings, for low vision.',
+        ],
         'preview' => [
             'title' => 'Live preview',
             'intro' => 'What the next codes look like with the values above, before you save.',

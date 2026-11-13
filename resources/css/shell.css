@@ -120,6 +120,22 @@ html:root[data-shell].dark {
     --sidebar-accent: var(--sidebar-accent-dark, var(--primary));
 }
 
+/* High contrast: the sidebar's secondary text, edges and hover wash are its full text colour. */
+html:root[data-shell][data-ui-style='contrast'] {
+    --sidebar-muted: var(--sidebar-fg);
+    --sidebar-border: var(--sidebar-fg);
+    --sidebar-hover: color-mix(
+        in srgb,
+        var(--sidebar-fg) 22%,
+        var(--sidebar-bg)
+    );
+    --sidebar-accent-wash: color-mix(
+        in srgb,
+        var(--sidebar-accent) 30%,
+        var(--sidebar-bg)
+    );
+}
+
 /* Soft UI: the kit's buttons and inputs are raised from and pressed into the surface. */
 html[data-shell][data-ui-style='soft'] {
     --neu-raised:

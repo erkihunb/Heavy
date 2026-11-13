@@ -17,6 +17,17 @@
                     }
                 }
 
+                // A person's own interface style (appearance menu) before the first paint,
+                // while the organisation lets people choose (resources/js/shell/lib/theme.ts).
+                if (document.documentElement.dataset.userMode === 'on') {
+                    try {
+                        const style = localStorage.getItem('ui-style');
+
+                        if (['swiss', 'classic', 'soft', 'contrast'].includes(style)) {
+                            document.documentElement.dataset.uiStyle = style;
+                        }
+                    } catch (e) {}
+                }
             })();
         </script>
 

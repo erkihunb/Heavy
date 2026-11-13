@@ -11,6 +11,7 @@ import {
     BrandingPreview,
     MailInUsePanel,
     ThemePreview,
+    UiStylePicker,
 } from '@/components/settings/settings-previews';
 import type { MailInUse } from '@/components/settings/settings-previews';
 import { SettingsSaveBar } from '@/components/settings/settings-save-bar';
@@ -21,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { useLiveAppearance } from '@/hooks/use-live-appearance';
 import AdminSettingsLayout from '@/layouts/admin-settings-layout';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -122,6 +124,7 @@ export default function SettingsSection({
     }
 
     const form = useForm<Record<string, FormValue>>(initial);
+    useLiveAppearance(section === 'appearance' ? form.data : null, initial);
     const [phone, setPhone] = useState('');
     const [testing, setTesting] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
@@ -454,6 +457,40 @@ export default function SettingsSection({
                                 );
                             case 'choice':
                             case 'timezone': {
+                                // The interface style is picked from pictures of each style.
+                                if (
+                                    field.key === 'permits.appearance.ui_style'
+                                ) {
+                                    return (
+                                        <UiStylePicker
+                                            id={props.id}
+                                            groupLabel={label}
+                                            describedBy={
+                                                props['aria-describedby']
+                                            }
+                                            value={String(value)}
+                                            options={field.options ?? []}
+                                            label={(option) =>
+                                                optional(
+                                                    `admin.settings.options.${field.field}.${option}`,
+                                                ) ?? option
+                                            }
+                                            onChange={(style) =>
+                                                // A new interface style brings its own corners: let the
+                                                // button and card corners follow it ("auto") again.
+                                                form.setData((data) => ({
+                                                    ...data,
+                                                    [field.field]: style,
+                                                    permits__appearance__button_style:
+                                                        'auto',
+                                                    permits__appearance__card_radius:
+                                                        'auto',
+                                                }))
+                                            }
+                                        />
+                                    );
+                                }
+
                                 const options =
                                     field.type === 'timezone'
                                         ? Array.from(
@@ -467,31 +504,12 @@ export default function SettingsSection({
                                 return (
                                     <NativeSelect
                                         {...common}
-                                        onChange={(event) => {
-                                            // A new interface style brings its own corners: let the
-                                            // button and card corners follow it ("auto") again.
-                                            if (
-                                                field.key ===
-                                                'permits.appearance.ui_style'
-                                            ) {
-                                                form.setData((data) => ({
-                                                    ...data,
-                                                    [field.field]:
-                                                        event.target.value,
-                                                    permits__appearance__button_style:
-                                                        'auto',
-                                                    permits__appearance__card_radius:
-                                                        'auto',
-                                                }));
-
-                                                return;
-                                            }
-
+                                        onChange={(event) =>
                                             form.setData(
                                                 field.field,
                                                 event.target.value,
-                                            );
-                                        }}
+                                            )
+                                        }
                                     >
                                         {options.map((option) => (
                                             <option key={option} value={option}>
