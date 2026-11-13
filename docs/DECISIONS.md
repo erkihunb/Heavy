@@ -1105,6 +1105,20 @@ three vehicles a red cross, since a scan can also refuse a permit). The QR code 
 owner's request and appears only for the moment of the scan; no clock face
 is drawn.
 
+A refusal has a consequence in the scene. A boom gate stands past the
+officer, down across the near lane; it lifts for the two accepted vehicles
+and comes down behind them. The refused vehicle never reaches it: it slows
+into a lay-by beside the officer and stands there for about six seconds,
+hazard lights going, then fades and comes round again. The near lane is
+spaced so that it is gone before the next vehicle arrives: an earlier
+version left it standing while the others drove past, and the lay-by is too
+close to the lane for that — the vehicles drew over one another.
+
+The scene has a little depth: as the pointer crosses the panel, the ridge,
+skyline, viaduct and road slide by different amounts. That is the one piece
+of JavaScript in it (a pointer listener writing one CSS variable), and it is
+not attached when the device asks for less motion.
+
 The first version of this was a single small truck in the panel's top
 corner; the owner asked for the fuller scene once the panel's text was gone.
 

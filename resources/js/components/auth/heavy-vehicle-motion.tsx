@@ -1,3 +1,4 @@
+import { createContext, useContext, useEffect, useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 
 /**
@@ -26,6 +27,14 @@ import type { CSSProperties, ReactNode } from 'react';
  *   to the answer, which travels on with the vehicle: a tick for a permit in
  *   force, or a red cross for one that is refused (expired, revoked, not
  *   found). One of the three vehicles is refused.
+ * - What a refusal means. A boom gate stands a little way past the officer.
+ *   It lifts for a vehicle whose permit was accepted and comes down behind
+ *   it. The refused vehicle never reaches it: it slows, pulls into the
+ *   lay-by beside the officer and stops there with its hazard lights going,
+ *   and is gone before the next vehicle arrives.
+ *
+ * The scene also has a little depth: as the pointer crosses the panel, the
+ * ridge, the skyline, the viaduct and the road slide by different amounts.
  *
  * Drawn here from nothing: inline SVG in the panel's own white, moved by CSS
  * keyframes on transform and opacity (the hv-* rules in resources/css/app.css).
@@ -56,27 +65,56 @@ function checkDelay(lane: Lane, offset: number, cab: number) {
     return (reached - offset - 1) * lane.seconds;
 }
 
+/* Where the refused vehicle stops: this far along, this far into the lay-by.
+   The hv-refused keyframes in app.css use the same two numbers. */
+const STOP = { x: 167, layBy: 14 };
+
+/* The order and spacing here are what keep the lane clear: the refused
+   vehicle has the longest gap behind it, long enough to stop in the lay-by
+   and be gone before the next one's nose reaches where it stood, and the two
+   accepted ones follow each other with a gap between tail and nose. Nothing
+   in this lane ever overlaps anything else in it. */
 /* The near lane: what drives there, where it rests, how far round the loop
    it starts, where along its length the cab is, and whether the officer's
    scan refuses it. */
 const NEAR_TRAFFIC = [
-    { kind: 'tipper', rest: 130, offset: 0, cab: 146, refused: false },
-    { kind: 'lowbed', rest: 420, offset: 0.34, cab: 238, refused: true },
-    { kind: 'tanker', rest: 720, offset: 0.67, cab: 238, refused: false },
+    { kind: 'tipper', rest: 620, offset: 0.92, cab: 146, refused: false },
+    { kind: 'lowbed', rest: STOP.x, offset: 0.34, cab: 238, refused: true },
+    { kind: 'tanker', rest: -130, offset: 0.67, cab: 238, refused: false },
 ] as const;
 
 /* The colour of a refused scan; the tick keeps the panel's own white. */
 const REFUSED = '#ef4444';
 
-/** A tyre, a hub and spokes; it turns once per circumference travelled. */
+/* It enters two-thirds of the way through the near lane's loop, which is
+   what brings its cab to the officer when the arm is up for it. */
+const REFUSED_DELAY = `${(-(1 - 0.66) * NEAR.seconds).toFixed(2)}s`;
+
+/* True inside the vehicle that stops, so its wheels stop with it. */
+const Stopping = createContext(false);
+
+/* How far a layer slides, in units, when the pointer is at the panel's edge. */
+const depth = (units: number) => ({ '--hv-depth': units }) as CSSProperties;
+
+/**
+ * A tyre, a hub and spokes; it turns once per circumference travelled. On
+ * the vehicle that stops, it turns exactly as far as that vehicle rolls
+ * before stopping, and then holds.
+ */
 function Wheel({ x, r = 13, speed }: { x: number; r?: number; speed: number }) {
+    const stopping = useContext(Stopping);
     const spoke = r - 3;
     const spin = ((2 * Math.PI * r) / speed).toFixed(2);
+    const turn = (((STOP.x + 260) / (2 * Math.PI * r)) * 360).toFixed(0);
 
     return (
         <g
-            className="hv-wheel"
-            style={{ '--hv-spin': `${spin}s` } as CSSProperties}
+            className={stopping ? 'hv-wheel hv-wheel-stopping' : 'hv-wheel'}
+            style={
+                stopping
+                    ? ({ '--hv-turn': `${turn}deg` } as CSSProperties)
+                    : ({ '--hv-spin': `${spin}s` } as CSSProperties)
+            }
         >
             <circle cx={x} cy={-r} r={r} />
             <path
@@ -257,19 +295,43 @@ function Vehicle({
     return (
         <g transform={`translate(0 ${lane.ground})`}>
             <g
-                className={leftward ? 'hv-left' : 'hv-right'}
+                className={
+                    refused ? 'hv-refused' : leftward ? 'hv-left' : 'hv-right'
+                }
                 style={
                     {
                         '--hv-dur': `${lane.seconds}s`,
-                        '--hv-delay': `${(-offset * lane.seconds).toFixed(1)}s`,
-                        transform: `translateX(${rest}px)`,
+                        '--hv-delay': refused
+                            ? REFUSED_DELAY
+                            : `${(-offset * lane.seconds).toFixed(1)}s`,
+                        transform: refused
+                            ? `translate(${STOP.x}px, ${STOP.layBy}px)`
+                            : `translateX(${rest}px)`,
                     } as CSSProperties
                 }
             >
                 <g
                     transform={`scale(${leftward ? -lane.scale : lane.scale} ${lane.scale})`}
                 >
-                    {children(speed)}
+                    <Stopping.Provider value={refused}>
+                        {children(speed)}
+                    </Stopping.Provider>
+                    {refused && cab !== undefined && (
+                        <g className="hv-hazards" fill="#f59e0b" stroke="none">
+                            <circle
+                                className="hv-hazard"
+                                cx="3"
+                                cy="-38"
+                                r="3"
+                            />
+                            <circle
+                                className="hv-hazard"
+                                cx={cab + 23}
+                                cy="-44"
+                                r="3"
+                            />
+                        </g>
+                    )}
                 </g>
                 {cab !== undefined && (
                     <g
@@ -397,10 +459,50 @@ const svgProps = {
 } as const;
 
 export function HeavyVehicleMotion() {
+    const anchor = useRef<HTMLDivElement>(null);
+
+    /* Depth: tell the panel where the pointer is across it, from -1 at the
+       start edge to 1 at the end edge, and let CSS slide the layers. Left
+       alone for anyone who asked for less motion. */
+    useEffect(() => {
+        const panel = anchor.current?.parentElement;
+        const allowed = window.matchMedia?.(
+            '(prefers-reduced-motion: no-preference)',
+        ).matches;
+
+        if (!panel || !allowed) {
+            return;
+        }
+
+        let frame = 0;
+
+        const move = (event: PointerEvent) => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(() => {
+                const box = panel.getBoundingClientRect();
+                const across = ((event.clientX - box.left) / box.width) * 2 - 1;
+
+                panel.style.setProperty('--hv-px', across.toFixed(3));
+            });
+        };
+        const leave = () => panel.style.setProperty('--hv-px', '0');
+
+        panel.addEventListener('pointermove', move);
+        panel.addEventListener('pointerleave', leave);
+
+        return () => {
+            cancelAnimationFrame(frame);
+            panel.removeEventListener('pointermove', move);
+            panel.removeEventListener('pointerleave', leave);
+            panel.style.removeProperty('--hv-px');
+        };
+    }, []);
+
     return (
         <>
             {/* Night falling over the whole panel. */}
             <div
+                ref={anchor}
                 aria-hidden="true"
                 className="hv-dusk pointer-events-none absolute inset-0 -z-10 hidden bg-black lg:block"
             />
@@ -410,7 +512,8 @@ export function HeavyVehicleMotion() {
                 {...svgProps}
                 viewBox="0 0 800 220"
                 preserveAspectRatio="xMidYMin slice"
-                className="pointer-events-none absolute inset-x-0 top-0 -z-10 hidden h-[28%] w-full lg:block"
+                className="hv-layer pointer-events-none absolute inset-x-0 top-0 -z-10 hidden h-[28%] w-full lg:block"
+                style={depth(5)}
             >
                 {/* The sun by day; the moon and a few stars by night. */}
                 <g className="hv-sun" opacity="0.8">
@@ -461,234 +564,274 @@ export function HeavyVehicleMotion() {
                 className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 hidden h-[36%] max-h-80 w-full lg:block"
             >
                 {/* The Entoto ridge behind everything. */}
-                <path
-                    d="M-20 100Q60 44 150 74T330 60T520 80T700 52T830 84"
-                    opacity="0.3"
-                />
-                <path
-                    d="M-20 120Q110 84 230 104T470 96T830 112"
-                    strokeWidth="1.5"
-                    opacity="0.2"
-                />
+                <g className="hv-layer" style={depth(4)}>
+                    <path
+                        d="M-20 100Q60 44 150 74T330 60T520 80T700 52T830 84"
+                        opacity="0.3"
+                    />
+                    <path
+                        d="M-20 120Q110 84 230 104T470 96T830 112"
+                        strokeWidth="1.5"
+                        opacity="0.2"
+                    />
+                </g>
 
                 {/* The skyline: towers, a crane on a site, and a dome. */}
                 <g fill="var(--brand-surface)">
-                    <g opacity="0.55">
-                        <path d="M420 176V22M396 28H474M408 28V40H400M462 28V58M420 22L396 28M420 22L474 28" />
-                    </g>
-                    {BUILDINGS.map((building) => {
-                        const [x, width, height] = building;
+                    <g className="hv-layer" style={depth(9)}>
+                        <g opacity="0.55">
+                            <path d="M420 176V22M396 28H474M408 28V40H400M462 28V58M420 22L396 28M420 22L474 28" />
+                        </g>
+                        {BUILDINGS.map((building) => {
+                            const [x, width, height] = building;
 
-                        return (
-                            <g key={x}>
-                                <rect
-                                    x={x}
-                                    y={176 - height}
-                                    width={width}
-                                    height={height}
-                                    strokeOpacity="0.55"
-                                    strokeWidth="1.5"
-                                />
-                                <path
-                                    className="hv-windows"
-                                    d={windows(building)}
-                                    strokeWidth="1.5"
-                                    strokeDasharray="4 5"
-                                />
-                                {height > 120 && (
-                                    <path
-                                        d={`M${x + width / 2} ${176 - height}V${158 - height}`}
+                            return (
+                                <g key={x}>
+                                    <rect
+                                        x={x}
+                                        y={176 - height}
+                                        width={width}
+                                        height={height}
+                                        strokeOpacity="0.55"
                                         strokeWidth="1.5"
-                                        opacity="0.55"
                                     />
-                                )}
-                            </g>
-                        );
-                    })}
-                    <path
-                        d="M494 176A40 32 0 0 1 574 176ZM534 144V134"
-                        strokeOpacity="0.55"
-                        strokeWidth="1.5"
-                    />
+                                    <path
+                                        className="hv-windows"
+                                        d={windows(building)}
+                                        strokeWidth="1.5"
+                                        strokeDasharray="4 5"
+                                    />
+                                    {height > 120 && (
+                                        <path
+                                            d={`M${x + width / 2} ${176 - height}V${158 - height}`}
+                                            strokeWidth="1.5"
+                                            opacity="0.55"
+                                        />
+                                    )}
+                                </g>
+                            );
+                        })}
+                        <path
+                            d="M494 176A40 32 0 0 1 574 176ZM534 144V134"
+                            strokeOpacity="0.55"
+                            strokeWidth="1.5"
+                        />
+                    </g>
 
                     {/* The light-rail viaduct, and the train that uses it. */}
-                    <path
-                        d="M30 154V176M110 154V176M190 154V176M270 154V176M350 154V176M430 154V176M510 154V176M590 154V176M670 154V176M750 154V176"
-                        strokeOpacity="0.5"
-                    />
-                    <g transform="translate(0 150)">
-                        <g
-                            className="hv-left"
-                            style={
-                                {
-                                    '--hv-dur': '44s',
-                                    '--hv-delay': '-12s',
-                                    transform: 'translateX(470px)',
-                                } as CSSProperties
-                            }
-                        >
-                            <rect x="0" y="-16" width="54" height="16" rx="4" />
-                            <rect
-                                x="58"
-                                y="-16"
-                                width="54"
-                                height="16"
-                                rx="4"
-                            />
-                            <rect
-                                x="116"
-                                y="-16"
-                                width="54"
-                                height="16"
-                                rx="4"
-                            />
-                            <path
-                                d="M7 -9H47M65 -9H105M123 -9H163"
-                                strokeWidth="1.5"
-                                strokeDasharray="6 4"
-                                opacity="0.6"
-                            />
+                    <g className="hv-layer" style={depth(14)}>
+                        <path
+                            d="M30 154V176M110 154V176M190 154V176M270 154V176M350 154V176M430 154V176M510 154V176M590 154V176M670 154V176M750 154V176"
+                            strokeOpacity="0.5"
+                        />
+                        <g transform="translate(0 150)">
+                            <g
+                                className="hv-left"
+                                style={
+                                    {
+                                        '--hv-dur': '44s',
+                                        '--hv-delay': '-12s',
+                                        transform: 'translateX(470px)',
+                                    } as CSSProperties
+                                }
+                            >
+                                <rect
+                                    x="0"
+                                    y="-16"
+                                    width="54"
+                                    height="16"
+                                    rx="4"
+                                />
+                                <rect
+                                    x="58"
+                                    y="-16"
+                                    width="54"
+                                    height="16"
+                                    rx="4"
+                                />
+                                <rect
+                                    x="116"
+                                    y="-16"
+                                    width="54"
+                                    height="16"
+                                    rx="4"
+                                />
+                                <path
+                                    d="M7 -9H47M65 -9H105M123 -9H163"
+                                    strokeWidth="1.5"
+                                    strokeDasharray="6 4"
+                                    opacity="0.6"
+                                />
+                            </g>
                         </g>
+                        <rect
+                            x="-20"
+                            y="150"
+                            width="840"
+                            height="5"
+                            strokeOpacity="0.7"
+                            strokeWidth="1.5"
+                        />
                     </g>
-                    <rect
-                        x="-20"
-                        y="150"
-                        width="840"
-                        height="5"
-                        strokeOpacity="0.7"
-                        strokeWidth="1.5"
-                    />
 
                     {/* The road: kerb, lane markings and the near edge. */}
-                    <rect
-                        x="-20"
-                        y="176"
-                        width="840"
-                        height="90"
-                        stroke="none"
-                    />
-                    <path d="M-20 176H820" opacity="0.6" />
-                    <path
-                        d="M-20 212H820"
-                        strokeDasharray="22 16"
-                        opacity="0.4"
-                    />
-                    <path d="M-20 252H820" opacity="0.45" />
+                    <g className="hv-layer" style={depth(20)}>
+                        <rect
+                            x="-20"
+                            y="176"
+                            width="840"
+                            height="90"
+                            stroke="none"
+                        />
+                        <path d="M-20 176H820" opacity="0.6" />
+                        <path
+                            d="M-20 212H820"
+                            strokeDasharray="22 16"
+                            opacity="0.4"
+                        />
+                        <path d="M-20 252H820" opacity="0.45" />
 
-                    {/* The far lane, heading out of the city. */}
-                    <Vehicle lane={FAR} leftward rest={330} offset={0.1}>
-                        {(speed) => <Mixer speed={speed} />}
-                    </Vehicle>
-                    <Vehicle lane={FAR} leftward rest={640} offset={0.6}>
-                        {(speed) => <ContainerTruck speed={speed} />}
-                    </Vehicle>
-
-                    {/* The near lane, heading in: the vehicles that are
-                        checked as they pass the officer. */}
-                    {NEAR_TRAFFIC.map((truck) => (
-                        <Vehicle
-                            key={truck.kind}
-                            lane={NEAR}
-                            rest={truck.rest}
-                            offset={truck.offset}
-                            cab={truck.cab}
-                            refused={truck.refused}
-                        >
-                            {(speed) =>
-                                truck.kind === 'tipper' ? (
-                                    <Tipper speed={speed} />
-                                ) : truck.kind === 'lowbed' ? (
-                                    <LowBed speed={speed} />
-                                ) : (
-                                    <Tanker speed={speed} />
-                                )
-                            }
+                        {/* The far lane, heading out of the city. */}
+                        <Vehicle lane={FAR} leftward rest={330} offset={0.1}>
+                            {(speed) => <Mixer speed={speed} />}
                         </Vehicle>
-                    ))}
+                        <Vehicle lane={FAR} leftward rest={640} offset={0.6}>
+                            {(speed) => <ContainerTruck speed={speed} />}
+                        </Vehicle>
 
-                    {/* The traffic officer at the kerb. The scanner comes up
+                        {/* The near lane, heading in: the vehicles that are
+                        checked as they pass the officer. */}
+                        {NEAR_TRAFFIC.map((truck) => (
+                            <Vehicle
+                                key={truck.kind}
+                                lane={NEAR}
+                                rest={truck.rest}
+                                offset={truck.offset}
+                                cab={truck.cab}
+                                refused={truck.refused}
+                            >
+                                {(speed) =>
+                                    truck.kind === 'tipper' ? (
+                                        <Tipper speed={speed} />
+                                    ) : truck.kind === 'lowbed' ? (
+                                        <LowBed speed={speed} />
+                                    ) : (
+                                        <Tanker speed={speed} />
+                                    )
+                                }
+                            </Vehicle>
+                        ))}
+
+                        {/* The traffic officer at the kerb. The scanner comes up
                         for each vehicle and flashes once as its cab passes. */}
-                    <g transform={`translate(${OFFICER_X} 258) scale(1.15)`}>
-                        {/* Trousers and boots. */}
-                        <path d="M-7 -26H7L6 -2H1L0 -17L-1 -2H-6Z" />
-                        <path
-                            d="M-8 -2H-1V0H-9ZM1 -2H8L9 0H1Z"
-                            fill="currentColor"
-                            stroke="none"
-                        />
+                        <g
+                            transform={`translate(${OFFICER_X} 258) scale(1.15)`}
+                        >
+                            {/* Trousers and boots. */}
+                            <path d="M-7 -26H7L6 -2H1L0 -17L-1 -2H-6Z" />
+                            <path
+                                d="M-8 -2H-1V0H-9ZM1 -2H8L9 0H1Z"
+                                fill="currentColor"
+                                stroke="none"
+                            />
 
-                        {/* The arm at the side, then the jacket over it. */}
-                        <path d="M8 -44L13 -35L11 -25" strokeWidth="3.5" />
-                        <path d="M-9 -46Q0 -50 9 -46L8 -25H-8Z" />
+                            {/* The arm at the side, then the jacket over it. */}
+                            <path d="M8 -44L13 -35L11 -25" strokeWidth="3.5" />
+                            <path d="M-9 -46Q0 -50 9 -46L8 -25H-8Z" />
 
-                        {/* The reflective vest: its panel, the two bands
+                            {/* The reflective vest: its panel, the two bands
                             over the shoulders and the belt. */}
-                        <path
-                            d="M-6 -47L0 -37L6 -47L7 -28H-7Z"
-                            fill="currentColor"
-                            fillOpacity="0.28"
-                            stroke="none"
-                        />
-                        <path d="M-6 -47L0 -37L6 -47" strokeWidth="2.5" />
-                        <path d="M-8 -28H8" strokeWidth="2.5" />
+                            <path
+                                d="M-6 -47L0 -37L6 -47L7 -28H-7Z"
+                                fill="currentColor"
+                                fillOpacity="0.28"
+                                stroke="none"
+                            />
+                            <path d="M-6 -47L0 -37L6 -47" strokeWidth="2.5" />
+                            <path d="M-8 -28H8" strokeWidth="2.5" />
 
-                        {/* The scanning arm, jointed at the shoulder and the
+                            {/* The scanning arm, jointed at the shoulder and the
                             elbow. It is drawn raised; the hv-arm rules lower
                             it, and lift it again for each vehicle. The
                             scanner and its flashes ride on the forearm. */}
-                        <g className="hv-arm">
-                            <path d="M-8 -44L-15 -39" strokeWidth="3.5" />
-                            <g className="hv-forearm">
-                                {NEAR_TRAFFIC.map((truck) => (
+                            <g className="hv-arm">
+                                <path d="M-8 -44L-15 -39" strokeWidth="3.5" />
+                                <g className="hv-forearm">
+                                    {NEAR_TRAFFIC.map((truck) => (
+                                        <path
+                                            key={truck.kind}
+                                            className="hv-scan"
+                                            style={
+                                                {
+                                                    '--hv-dur': `${NEAR.seconds}s`,
+                                                    '--hv-delay': `${(checkDelay(NEAR, truck.offset, truck.cab) - 0.5).toFixed(1)}s`,
+                                                } as CSSProperties
+                                            }
+                                            d="M-21 -64L-28 -86M-17 -65L-16 -90M-13 -64L-4 -86"
+                                            strokeWidth="1.5"
+                                        />
+                                    ))}
                                     <path
-                                        key={truck.kind}
-                                        className="hv-scan"
-                                        style={
-                                            {
-                                                '--hv-dur': `${NEAR.seconds}s`,
-                                                '--hv-delay': `${(checkDelay(NEAR, truck.offset, truck.cab) - 0.5).toFixed(1)}s`,
-                                            } as CSSProperties
-                                        }
-                                        d="M-21 -64L-28 -86M-17 -65L-16 -90M-13 -64L-4 -86"
-                                        strokeWidth="1.5"
+                                        d="M-15 -39L-17 -52"
+                                        strokeWidth="3.5"
                                     />
-                                ))}
-                                <path d="M-15 -39L-17 -52" strokeWidth="3.5" />
-                                <rect
-                                    x="-23"
-                                    y="-63"
-                                    width="12"
-                                    height="10"
-                                    rx="2"
-                                    fill="currentColor"
-                                    stroke="none"
-                                />
-                                <rect
-                                    x="-21"
-                                    y="-61"
-                                    width="8"
-                                    height="5"
-                                    rx="1"
-                                    fill="var(--brand-surface)"
-                                    stroke="none"
-                                />
+                                    <rect
+                                        x="-23"
+                                        y="-63"
+                                        width="12"
+                                        height="10"
+                                        rx="2"
+                                        fill="currentColor"
+                                        stroke="none"
+                                    />
+                                    <rect
+                                        x="-21"
+                                        y="-61"
+                                        width="8"
+                                        height="5"
+                                        rx="1"
+                                        fill="var(--brand-surface)"
+                                        stroke="none"
+                                    />
+                                </g>
                             </g>
-                        </g>
 
-                        {/* The head, and the white peaked cap with its badge. */}
-                        <circle cx="0" cy="-55" r="5.5" />
-                        <path
-                            d="M-7.5 -58Q-7 -67 0 -67Q7 -67 7.5 -58Z"
-                            fill="currentColor"
-                        />
-                        <path d="M-9 -57.5H5" strokeWidth="2.5" />
-                        <circle
-                            cx="0"
-                            cy="-62.5"
-                            r="1.6"
-                            fill="var(--brand-surface)"
-                            stroke="none"
-                        />
+                            {/* The head, and the white peaked cap with its badge. */}
+                            <circle cx="0" cy="-55" r="5.5" />
+                            <path
+                                d="M-7.5 -58Q-7 -67 0 -67Q7 -67 7.5 -58Z"
+                                fill="currentColor"
+                            />
+                            <path d="M-9 -57.5H5" strokeWidth="2.5" />
+                            <circle
+                                cx="0"
+                                cy="-62.5"
+                                r="1.6"
+                                fill="var(--brand-surface)"
+                                stroke="none"
+                            />
+                        </g>
+                        {/* The boom gate past the officer: down across the
+                        near lane, up for a vehicle that was accepted. */}
+                        <path d="M600 252V198" strokeWidth="4" />
+                        <g className="hv-gate">
+                            <rect
+                                x="536"
+                                y="202"
+                                width="70"
+                                height="7"
+                                rx="3"
+                                fill="currentColor"
+                                stroke="none"
+                            />
+                            <path
+                                d="M546 202V209M558 202V209M570 202V209M582 202V209"
+                                stroke={REFUSED}
+                                strokeWidth="5"
+                                strokeLinecap="butt"
+                            />
+                        </g>
+                        <circle cx="600" cy="205.5" r="4.5" />
                     </g>
                 </g>
             </svg>

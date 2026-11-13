@@ -889,16 +889,49 @@
  * the shoulder (.hv-arm) and the elbow (.hv-forearm), so at rest the scanner
  * hangs at the officer's side.
  *
- * The loop is the near lane's 27s. The three cabs reach the officer at 37.8%,
+ * The loop is the near lane's 27s. The three cabs reach the officer at 45.8%,
  * 63.8% and 96.8% of it; for each, the arm starts up 3% before, is up 1%
  * before, stays up while the code is read and the answer shows (9% after),
- * and is down again 2% later. The last of the three runs over the end of the
- * loop, which is why the loop begins with the arm up.
+ * and is down again 2% later. The first two come close together, so the arm
+ * stays up from one to the other; the last runs over the end of the loop,
+ * which is why the loop begins with the arm up.
  */
 .hv-arm {
     transform-origin: -8px -44px;
     transform: rotate(-34deg);
 }
+
+/*
+ * What a refusal means, on the same 27s.
+ *
+ * The gate (.hv-gate) is down across the near lane and swings up about its
+ * post for the two accepted vehicles: it starts up as the first one's code
+ * has been read (7.5% after the scan), is up before the cab reaches it,
+ * stays up for the second, which follows close behind, and comes down once
+ * that one's tail is through.
+ *
+ * The refused vehicle (.hv-refused) has its own run in place of the lane's
+ * steady one, started two-thirds through the loop: in at lane speed to the
+ * officer (30.8% of its run), then slowing into the lay-by — 167 along, 14
+ * out, the STOP numbers in the component — where it stands for about six
+ * seconds with its hazard lights going (.hv-hazards lets them show,
+ * .hv-hazard flashes them). It is gone before the next vehicle's nose
+ * reaches where it stood, so nothing in the lane ever overlaps, and it
+ * comes round again. Its wheels (.hv-wheel-stopping) turn as
+ * far as it rolls, eased the same way, and hold.
+ *
+ * At rest the gate is down and the refused vehicle is standing in the
+ * lay-by, lights on.
+ */
+.hv-gate {
+    transform-origin: 600px 205.5px;
+}
+
+/*
+ * Depth. The component writes --hv-px, where the pointer is across the panel
+ * from -1 to 1; each layer carries how far it slides as --hv-depth, and
+ * slides the other way. Nearer things carry more.
+ */
 
 .hv-forearm {
     transform-origin: -15px -39px;
@@ -960,6 +993,36 @@
     :root:not([data-animations='off']) .hv-qr-line {
         animation: hv-qr-line var(--hv-dur, 27s) ease-in-out var(--hv-delay, 0s)
             infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-layer {
+        transform: translateX(
+            calc(var(--hv-px, 0) * var(--hv-depth, 0) * -1px)
+        );
+        transition: transform 0.5s ease-out;
+    }
+
+    :root:not([data-animations='off']) .hv-gate {
+        animation: hv-gate 27s ease-in-out infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-refused {
+        animation: hv-refused var(--hv-dur, 27s) linear var(--hv-delay, 0s)
+            infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-wheel-stopping {
+        animation: hv-wheel-stopping var(--hv-dur, 27s) linear
+            var(--hv-delay, 0s) infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-hazards {
+        animation: hv-hazards var(--hv-dur, 27s) linear var(--hv-delay, 0s)
+            infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-hazard {
+        animation: hv-hazard 0.9s steps(1, end) infinite;
     }
 
     :root:not([data-animations='off']) .hv-arm {
@@ -1037,24 +1100,95 @@
     }
 }
 
+@keyframes hv-gate {
+    0% {
+        transform: rotate(80deg);
+    }
+    1.5%,
+    53.3% {
+        transform: rotate(0deg);
+    }
+    55.3%,
+    100% {
+        transform: rotate(80deg);
+    }
+}
+
+@keyframes hv-refused {
+    0% {
+        opacity: 1;
+        transform: translate(-260px, 0);
+        animation-timing-function: linear;
+    }
+    30.8% {
+        transform: translate(147px, 0);
+        animation-timing-function: ease-out;
+    }
+    37% {
+        opacity: 1;
+        transform: translate(167px, 14px);
+    }
+    58% {
+        opacity: 1;
+        transform: translate(167px, 14px);
+    }
+    61%,
+    100% {
+        opacity: 0;
+        transform: translate(167px, 14px);
+    }
+}
+
+@keyframes hv-wheel-stopping {
+    0% {
+        transform: rotate(0deg);
+        animation-timing-function: linear;
+    }
+    30.8% {
+        transform: rotate(calc(var(--hv-turn) * 0.953));
+        animation-timing-function: ease-out;
+    }
+    37%,
+    100% {
+        transform: rotate(var(--hv-turn));
+    }
+}
+
+@keyframes hv-hazards {
+    0%,
+    36% {
+        opacity: 0;
+    }
+    37%,
+    58% {
+        opacity: 1;
+    }
+    59%,
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes hv-hazard {
+    0% {
+        opacity: 1;
+    }
+    50%,
+    100% {
+        opacity: 0.15;
+    }
+}
+
 @keyframes hv-arm {
     0%,
     5.8% {
         transform: rotate(0deg);
     }
     7.8%,
-    34.8% {
+    42.8% {
         transform: rotate(-34deg);
     }
-    36.8%,
-    46.8% {
-        transform: rotate(0deg);
-    }
-    48.8%,
-    60.8% {
-        transform: rotate(-34deg);
-    }
-    62.8%,
+    44.8%,
     72.8% {
         transform: rotate(0deg);
     }
@@ -1074,18 +1208,10 @@
         transform: rotate(0deg);
     }
     7.8%,
-    34.8% {
+    42.8% {
         transform: rotate(-132deg);
     }
-    36.8%,
-    46.8% {
-        transform: rotate(0deg);
-    }
-    48.8%,
-    60.8% {
-        transform: rotate(-132deg);
-    }
-    62.8%,
+    44.8%,
     72.8% {
         transform: rotate(0deg);
     }
