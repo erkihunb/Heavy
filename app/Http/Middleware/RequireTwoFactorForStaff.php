@@ -33,8 +33,7 @@ class RequireTwoFactorForStaff
     {
         $user = $request->user();
 
-        // Someone still on the default password chooses their own first (RequirePasswordChange).
-        if (! $user instanceof User || $user->must_change_password || ! $user->mustEnableTwoFactor() || $request->routeIs(...self::EXEMPT_ROUTES)) {
+        if (! $user instanceof User || ! $user->mustEnableTwoFactor() || $request->routeIs(...self::EXEMPT_ROUTES)) {
             return $next($request);
         }
 

@@ -29,8 +29,6 @@ return [
         'new' => 'New password',
         'confirm' => 'Confirm password',
         'save' => 'Save password',
-        'required_title' => 'Choose your own password',
-        'required_notice' => 'You signed in with the default password. Type it as the current password, then choose a new one. You cannot use the system until this is done.',
     ],
     'two_factor' => [
         'required_title' => 'Two-factor authentication is required',

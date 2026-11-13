@@ -1,12 +1,11 @@
 import { Transition } from '@headlessui/react';
-import { Form, Head, usePage } from '@inertiajs/react';
-import { LockKeyhole, ShieldAlert } from 'lucide-react';
+import { Form, Head } from '@inertiajs/react';
+import { LockKeyhole } from 'lucide-react';
 import { useRef } from 'react';
 import PasswordController from '@/actions/App/Http/Controllers/Settings/PasswordController';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { SectionCard } from '@/components/section-card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
@@ -19,7 +18,6 @@ export default function Password() {
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
     const { t } = useTranslation();
-    const { auth } = usePage().props;
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: t('settings.password.title'), href: edit() },
@@ -30,17 +28,6 @@ export default function Password() {
             <Head title={t('settings.password.title')} />
 
             <SettingsLayout>
-                {auth.mustChangePassword && (
-                    <Alert role="alert" className="mb-6">
-                        <ShieldAlert aria-hidden="true" />
-                        <AlertTitle>
-                            {t('settings.password.required_title')}
-                        </AlertTitle>
-                        <AlertDescription>
-                            {t('settings.password.required_notice')}
-                        </AlertDescription>
-                    </Alert>
-                )}
                 <SectionCard
                     id="password-title"
                     icon={LockKeyhole}

@@ -59,9 +59,7 @@ class HandleInertiaRequests extends Middleware
                     // For navigation and display only; authorization is enforced by Policies.
                     'roles' => $user->getRoleNames()->values()->all(),
                 ],
-                'mustEnableTwoFactor' => (bool) $user?->mustEnableTwoFactor(),
-                'mustChangePassword' => (bool) $user?->must_change_password,
-                // For showing or hiding navigation only (resources/js/config/navigation.ts).
+                'mustEnableTwoFactor' => (bool) $user?->mustEnableTwoFactor(),                // For showing or hiding navigation only (resources/js/config/navigation.ts).
                 'permissions' => $user === null ? [] : $user->getAllPermissions()->pluck('name')->values()->all(),
                 'isSuperAdmin' => false,
             ],

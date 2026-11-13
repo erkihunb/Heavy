@@ -60,6 +60,13 @@ return [
         'confirm_password' => 'Confirm the new password',
         'submit' => 'Save the new password',
     ],
+    'first_password' => [
+        'title' => 'Choose your own password',
+        'description' => 'You gave the default password. Choose your own password to continue; you will then sign in with it.',
+        'submit' => 'Save my password',
+        'back' => 'Back to sign in',
+        'done' => 'Your password is saved. Sign in with it now.',
+    ],
     'confirm' => [
         'title' => 'Confirm your password',
         'description' => 'This part of the system is protected. Enter your password again to continue.',

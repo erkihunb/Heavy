@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 class ThrottleAuthForms
 {
     /** @var list<string> */
-    public const array ROUTES = ['register.store', 'password.email', 'password.update', 'password.confirm.store'];
+    public const array ROUTES = ['register.store', 'password.email', 'password.update', 'password.confirm.store', 'first-password.store'];
 
     public function __construct(private readonly ThrottleRequests $throttle) {}
 

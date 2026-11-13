@@ -4,7 +4,9 @@ namespace App\Providers;
 
 use App\Actions\Fortify\ResetUserPassword;
 use App\Models\User;
+use App\Support\FirstPasswordChange;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
@@ -57,6 +59,13 @@ class FortifyServiceProvider extends ServiceProvider
             // Applicants do not sign in: their requests are recorded and handled at the office.
             if (! $user->maySignIn()) {
                 throw ValidationException::withMessages([Fortify::username() => __('auth.no_sign_in')]);
+            }
+
+            // On the default password nobody is signed in: they choose their own first, on its own page.
+            if ($user->must_change_password) {
+                FirstPasswordChange::begin($request, $user);
+
+                throw new HttpResponseException(redirect()->route('first-password.show'));
             }
 
             return $user;

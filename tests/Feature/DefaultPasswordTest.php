@@ -62,104 +62,114 @@ it('keeps the e-mailed link when no default password is set', function () {
     Notification::assertSentTo($user, StaffAccountCreated::class);
 });
 
-it('lets the person sign in with the default password', function () {
-    // A new account has no two-factor authentication yet, so there is no code to ask for.
+it('does not sign anyone in on the default password: they are sent to choose their own', function () {
+    $user = userOnDefaultPassword(twoFactor: false);
+
+    $this->post(route('login.store'), ['email' => $user->email, 'password' => DEFAULT_PASSWORD])
+        ->assertRedirect(route('first-password.show'));
+
+    $this->assertGuest();
+
+    $this->get(route('first-password.show'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('auth/first-password')
+            ->where('email', $user->email));
+});
+
+it('still refuses a wrong password', function () {
+    $user = userOnDefaultPassword();
+
+    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'not-the-default'])
+        ->assertSessionHasErrors('email');
+
+    $this->get(route('first-password.show'))->assertRedirect(route('login'));
+});
+
+it('shows the page to nobody who did not just give the default password', function () {
+    $this->get(route('first-password.show'))->assertRedirect(route('login'));
+
+    $this->post(route('first-password.store'), ['password' => 'my-own-Passw0rd!', 'password_confirmation' => 'my-own-Passw0rd!'])
+        ->assertRedirect(route('login'));
+});
+
+it('saves the chosen password and sends the person to sign in with it', function () {
     $user = userOnDefaultPassword(twoFactor: false);
 
     $this->post(route('login.store'), ['email' => $user->email, 'password' => DEFAULT_PASSWORD]);
 
-    $this->assertAuthenticatedAs($user);
-});
+    $this->post(route('first-password.store'), ['password' => 'my-own-Passw0rd!', 'password_confirmation' => 'my-own-Passw0rd!'])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('login'))
+        ->assertSessionHas('status', __('auth_ui.first_password.done'));
 
-it('sends someone on the default password to choose their own', function (string $route) {
-    $this->actingAs(userOnDefaultPassword())
-        ->get(route($route))
-        ->assertRedirect(route('user-password.edit'));
-})->with(['home', 'dashboard', 'profile.edit', 'two-factor.show']);
-
-it('asks for the new password before two-factor authentication', function () {
-    $this->actingAs(userOnDefaultPassword(twoFactor: false))
-        ->get(route('dashboard'))
-        ->assertRedirect(route('user-password.edit'));
-});
-
-it('blocks write requests until the password is changed', function () {
-    $user = userOnDefaultPassword();
-
-    $this->actingAs($user)
-        ->patch(route('profile.update'), ['name' => 'Changed', 'email' => $user->email])
-        ->assertRedirect(route('user-password.edit'));
-
-    expect($user->refresh()->name)->not->toBe('Changed');
-});
-
-it('answers JSON requests with 403 until the password is changed', function () {
-    $this->actingAs(userOnDefaultPassword())
-        ->getJson(route('dashboard'))
-        ->assertForbidden();
-});
-
-it('shows the password screen with a notice that the change is required', function () {
-    $this->actingAs(userOnDefaultPassword(twoFactor: false))
-        ->get(route('user-password.edit'))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('settings/password')
-            ->where('auth.mustChangePassword', true));
-});
-
-it('does not show the notice to anyone else', function () {
-    $this->actingAs(staffUser(Role::Reviewer))
-        ->get(route('user-password.edit'))
-        ->assertInertia(fn (Assert $page) => $page->where('auth.mustChangePassword', false));
-});
-
-it('still lets the person sign out and switch language', function () {
-    $user = userOnDefaultPassword();
-
-    $this->actingAs($user)
-        ->from(route('user-password.edit'))
-        ->put(route('locale.update'), ['locale' => 'en'])
-        ->assertRedirect(route('user-password.edit'));
-
-    expect($user->refresh()->locale)->toBe('en');
-
-    $this->actingAs($user)->post(route('logout'))->assertRedirect(route('home'));
     $this->assertGuest();
-});
-
-it('lets the person in once they have chosen their own password', function () {
-    $user = userOnDefaultPassword();
-
-    $this->actingAs($user)
-        ->from(route('user-password.edit'))
-        ->put(route('user-password.update'), [
-            'current_password' => DEFAULT_PASSWORD,
-            'password' => 'my-own-Passw0rd!',
-            'password_confirmation' => 'my-own-Passw0rd!',
-        ])
-        ->assertSessionHasNoErrors();
 
     expect($user->refresh()->must_change_password)->toBeFalse()
         ->and(Hash::check('my-own-Passw0rd!', $user->password))->toBeTrue();
 
-    $this->actingAs($user)->get(route('dashboard'))->assertOk();
+    // The page is closed again, and the new password signs them in.
+    $this->get(route('first-password.show'))->assertRedirect(route('login'));
+
+    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'my-own-Passw0rd!']);
+    $this->assertAuthenticatedAs($user);
 });
 
 it('refuses the default password as the new password', function () {
     withDefaultPassword();
     $user = userOnDefaultPassword();
 
-    $this->actingAs($user)
-        ->from(route('user-password.edit'))
-        ->put(route('user-password.update'), [
-            'current_password' => DEFAULT_PASSWORD,
-            'password' => DEFAULT_PASSWORD,
-            'password_confirmation' => DEFAULT_PASSWORD,
-        ])
+    $this->post(route('login.store'), ['email' => $user->email, 'password' => DEFAULT_PASSWORD]);
+
+    $this->from(route('first-password.show'))
+        ->post(route('first-password.store'), ['password' => DEFAULT_PASSWORD, 'password_confirmation' => DEFAULT_PASSWORD])
         ->assertSessionHasErrors('password');
 
     expect($user->refresh()->must_change_password)->toBeTrue();
+});
+
+it('needs the new password typed twice', function () {
+    $user = userOnDefaultPassword();
+
+    $this->post(route('login.store'), ['email' => $user->email, 'password' => DEFAULT_PASSWORD]);
+
+    $this->from(route('first-password.show'))
+        ->post(route('first-password.store'), ['password' => 'my-own-Passw0rd!', 'password_confirmation' => 'something-else'])
+        ->assertSessionHasErrors('password');
+});
+
+it('closes the page after a while', function () {
+    $user = userOnDefaultPassword();
+
+    $this->post(route('login.store'), ['email' => $user->email, 'password' => DEFAULT_PASSWORD]);
+
+    $this->travel(16)->minutes();
+
+    $this->get(route('first-password.show'))->assertRedirect(route('login'));
+});
+
+it('ends a session that is signed in on the default password all the same', function (string $route) {
+    $this->actingAs(userOnDefaultPassword())
+        ->get(route($route))
+        ->assertRedirect(route('first-password.show'));
+
+    $this->assertGuest();
+})->with(['dashboard', 'profile.edit', 'user-password.edit', 'two-factor.show']);
+
+it('blocks write requests on the default password', function () {
+    $user = userOnDefaultPassword();
+
+    $this->actingAs($user)
+        ->patch(route('profile.update'), ['name' => 'Changed', 'email' => $user->email])
+        ->assertRedirect(route('first-password.show'));
+
+    expect($user->refresh()->name)->not->toBe('Changed');
+});
+
+it('answers JSON requests on the default password with 403', function () {
+    $this->actingAs(userOnDefaultPassword())
+        ->getJson(route('dashboard'))
+        ->assertForbidden();
 });
 
 it('counts a password chosen through a reset link as the change', function () {

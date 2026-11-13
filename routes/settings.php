@@ -1,9 +1,16 @@
 <?php
 
+use App\Http\Controllers\Auth\FirstPasswordController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
 use Illuminate\Support\Facades\Route;
+
+// "Choose your own password": where signing in with the default password stops (not signed in yet).
+Route::middleware(['guest'])->group(function () {
+    Route::get('choose-password', [FirstPasswordController::class, 'show'])->name('first-password.show');
+    Route::post('choose-password', [FirstPasswordController::class, 'store'])->name('first-password.store');
+});
 
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', '/settings/profile');
