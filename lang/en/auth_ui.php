@@ -8,6 +8,15 @@
 return [
     'email' => 'Email address',
     'password' => 'Password',
+    /*
+     * The illustration beside the sign-in form names the system. The Amharic
+     * line leads: it is the Authority's own name for the service, and it is
+     * the same in both languages.
+     */
+    'hero' => [
+        'title' => 'በሰዓት ገደብ የከባድ ተሽከርካሪዎች መንቀሳቀሻ ፈቃድ ሲስተም',
+        'subtitle' => 'Heavy Vehicle Movement Permit System',
+    ],
     'panel' => [
         'eyebrow' => 'Addis Ababa City Roads Authority',
         'title' => 'Movement permits for heavy vehicles, from request to issued permit',

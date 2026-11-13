@@ -11,6 +11,8 @@ export default function AuthLayout({
     description: string;
     /** Draw the page with no entrance at all; the sign-in page passes this. */
     still?: boolean;
+    /** An illustration for the brand panel; the sign-in page passes one. */
+    scene?: React.ReactNode;
 }) {
     return (
         <AuthLayoutTemplate title={title} description={description} {...props}>

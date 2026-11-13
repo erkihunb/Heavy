@@ -35,8 +35,6 @@ return [
         'nav',
         'auth_ui',
         'settings',
-        'process',
-        'landing',
         'dashboard',
         'roles',
         'organization',

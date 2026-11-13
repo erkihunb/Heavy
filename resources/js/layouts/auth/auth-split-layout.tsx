@@ -1,5 +1,5 @@
 import { usePage } from '@inertiajs/react';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { BrandMark } from '@/components/brand-mark';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { SupportContacts } from '@/components/support-contacts';
@@ -22,13 +22,17 @@ import type { AuthLayoutProps } from '@/types';
  * are reached once in a while and are mostly a short instruction, keep the
  * entrance that fades each piece up in reading order (auth-reveal in
  * resources/css/app.css, itself off under reduced motion).
+ *
+ * `scene` is an illustration to draw behind the panel. The sign-in page
+ * passes one; the rest leave the panel plain.
  */
 export default function AuthSplitLayout({
     children,
     title,
     description,
     still = false,
-}: AuthLayoutProps & { still?: boolean }) {
+    scene,
+}: AuthLayoutProps & { still?: boolean; scene?: ReactNode }) {
     const { t } = useTranslation();
     const { branding, appearance } = usePage().props;
     const loginMessage = branding?.loginMessage;
@@ -48,7 +52,7 @@ export default function AuthSplitLayout({
         <div className="relative flex min-h-svh flex-col bg-muted text-foreground lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             {/* ── Brand panel: the service, in the Authority's colours ── */}
             <aside className="relative isolate overflow-hidden surface-brand px-5 py-7 sm:px-8 lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-12">
-                <AuthPanelBackdrop />
+                <AuthPanelBackdrop scene={scene} />
 
                 <div
                     className={`flex items-center gap-3 ${reveal(0).className}`}
@@ -120,9 +124,25 @@ export default function AuthSplitLayout({
                     </ul>
                 </div>
 
+                {/* The system's own name, in both languages. */}
+                <div
+                    className={`mt-10 hidden max-w-md border-t border-white/20 pt-5 lg:block ${reveal(420).className}`}
+                    style={reveal(420).style}
+                >
+                    <p
+                        lang="am"
+                        className="text-sm leading-relaxed font-semibold text-balance"
+                    >
+                        {t('auth_ui.hero.title')}
+                    </p>
+                    <p lang="en" className="mt-1 text-xs text-white/90">
+                        {t('auth_ui.hero.subtitle')}
+                    </p>
+                </div>
+
                 <p
-                    className={`mt-10 hidden max-w-md border-t border-white/20 pt-5 text-xs leading-relaxed text-white/90 lg:block ${reveal(440).className}`}
-                    style={reveal(440).style}
+                    className={`mt-5 hidden max-w-md text-xs leading-relaxed text-white/90 lg:block ${reveal(460).className}`}
+                    style={reveal(460).style}
                 >
                     {t('auth_ui.panel.no_account')}
                 </p>
@@ -170,15 +190,21 @@ export default function AuthSplitLayout({
 }
 
 /**
- * The panel's background: a plain brand surface, lit a little from the top
- * start corner so it does not read as a flat block of colour. Decorative,
- * not announced, and entirely still — nothing moves behind the form.
+ * The panel's background. `scene` is the sign-in illustration, passed in by
+ * the page that wants one; without it the panel is a plain brand surface
+ * with the light in its top start corner.
+ *
+ * Decorative throughout: the scene marks itself aria-hidden, and nothing
+ * here is announced.
  */
-function AuthPanelBackdrop() {
+function AuthPanelBackdrop({ scene }: { scene?: ReactNode }) {
     return (
         <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(90%_70%_at_15%_0%,rgb(255_255_255/0.16),transparent_70%)]"
-        />
+            className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+        >
+            {scene}
+            <div className="absolute inset-0 bg-[radial-gradient(90%_70%_at_15%_0%,rgb(255_255_255/0.16),transparent_70%)]" />
+        </div>
     );
 }

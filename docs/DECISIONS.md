@@ -8,25 +8,25 @@ an answer from the Authority before go-live.
 
 ### Stack and versions
 
-| Topic | Decision | Why |
-|---|---|---|
-| Laravel version | **Laravel 12** (`^12.0`), as specified. | The spec names Laravel 12. The official React starter kit's `main` branch has since moved to Laravel 13 / Inertia 3, so the project is based on the last starter-kit revision that targets Laravel 12 (`laravel/react-starter-kit@d6145cb`, 2026-03-10). **CONFIRM:** Laravel 12 is in its security-fix-only window; check the end date in Laravel's support policy and schedule the upgrade to 13 before it. |
-| React version | **React 19**, not 18. | The official starter kit ships React 19 (with the React Compiler). Downgrading the kit to 18 would diverge from the supported base for no benefit. |
-| Routing helpers | **Wayfinder** (shipped by the kit), not Ziggy. | The spec allows either. Generated files (`resources/js/routes`, `actions`) are git-ignored and produced by `php artisan wayfinder:generate --with-form` / the Vite plugin. |
-| PHP | `^8.3` | Spec minimum; typed class constants are used. |
-| Tests | Pest 4 (PHPUnit 12). The kit's PHPUnit tests were converted to Pest. | Spec. |
-| Licence field | `composer.json` says `proprietary`. | Placeholder — **CONFIRM** the licence the Authority wants. |
+| Topic           | Decision                                                             | Why                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Laravel version | **Laravel 12** (`^12.0`), as specified.                              | The spec names Laravel 12. The official React starter kit's `main` branch has since moved to Laravel 13 / Inertia 3, so the project is based on the last starter-kit revision that targets Laravel 12 (`laravel/react-starter-kit@d6145cb`, 2026-03-10). **CONFIRM:** Laravel 12 is in its security-fix-only window; check the end date in Laravel's support policy and schedule the upgrade to 13 before it. |
+| React version   | **React 19**, not 18.                                                | The official starter kit ships React 19 (with the React Compiler). Downgrading the kit to 18 would diverge from the supported base for no benefit.                                                                                                                                                                                                                                                            |
+| Routing helpers | **Wayfinder** (shipped by the kit), not Ziggy.                       | The spec allows either. Generated files (`resources/js/routes`, `actions`) are git-ignored and produced by `php artisan wayfinder:generate --with-form` / the Vite plugin.                                                                                                                                                                                                                                    |
+| PHP             | `^8.3`                                                               | Spec minimum; typed class constants are used.                                                                                                                                                                                                                                                                                                                                                                 |
+| Tests           | Pest 4 (PHPUnit 12). The kit's PHPUnit tests were converted to Pest. | Spec.                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Licence field   | `composer.json` says `proprietary`.                                  | Placeholder — **CONFIRM** the licence the Authority wants.                                                                                                                                                                                                                                                                                                                                                    |
 
 ### Packages added beyond the starter kit
 
-| Package | Reason |
-|---|---|
-| `spatie/laravel-permission` | Named in spec §2. |
-| `pestphp/pest`, `pestphp/pest-plugin-laravel` | Named in spec §0. |
-| `larastan/larastan` | Named in spec §12 (CI). |
-| `vitest`, `@testing-library/react`, `@testing-library/dom`, `@testing-library/user-event` | Named in spec §17. `user-event` and `dom` are the companions needed to test keyboard interaction. |
-| `jsdom` | **Not in the spec.** DOM implementation Vitest needs to render components. Dev-only. |
-| `@fontsource-variable/noto-sans-ethiopic` | **Not in the spec.** This is how Noto Sans Ethiopic is self-hosted (spec §6): the OFL-licensed font files come from npm and are bundled by Vite into `public/build`, so no font CDN is contacted. |
+| Package                                                                                   | Reason                                                                                                                                                                                            |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `spatie/laravel-permission`                                                               | Named in spec §2.                                                                                                                                                                                 |
+| `pestphp/pest`, `pestphp/pest-plugin-laravel`                                             | Named in spec §0.                                                                                                                                                                                 |
+| `larastan/larastan`                                                                       | Named in spec §12 (CI).                                                                                                                                                                           |
+| `vitest`, `@testing-library/react`, `@testing-library/dom`, `@testing-library/user-event` | Named in spec §17. `user-event` and `dom` are the companions needed to test keyboard interaction.                                                                                                 |
+| `jsdom`                                                                                   | **Not in the spec.** DOM implementation Vitest needs to render components. Dev-only.                                                                                                              |
+| `@fontsource-variable/noto-sans-ethiopic`                                                 | **Not in the spec.** This is how Noto Sans Ethiopic is self-hosted (spec §6): the OFL-licensed font files come from npm and are bundled by Vite into `public/build`, so no font CDN is contacted. |
 
 No Ethiopian-calendar package was added: `App\Support\EthiopianCalendar` is a small
 native implementation (integer arithmetic over the Julian Day Number).
@@ -50,8 +50,8 @@ native implementation (integer arithmetic over the Julian Day Number).
 
 - `EthiopianCalendar::toGregorian()` returns a `CarbonImmutable` at midnight **UTC**;
   callers store/compare `->toDateString()`.
-- `toEthiopian()` uses the calendar date of the given instant *in that instant's own
-  timezone*. Convert a UTC timestamp to the display timezone first (a test pins this).
+- `toEthiopian()` uses the calendar date of the given instant _in that instant's own
+  timezone_. Convert a UTC timestamp to the display timezone first (a test pins this).
 - Numeric format `DD/MM/YYYY`, label format `መስከረም 28, 2018` (`Meskerem 28, 2018` in English).
 - English month spellings (Meskerem, Tikimt, Hidar, Tahsas, Tir, Yekatit, Megabit, Miazia,
   Ginbot, Sene, Hamle, Nehase, Pagume) are a transliteration choice — **CONFIRM**.
@@ -98,7 +98,7 @@ native implementation (integer arithmetic over the Julian Day Number).
 ### Mandatory two-factor authentication for staff
 
 - `RequireTwoFactorForStaff` (in the `web` group) redirects any staff user without
-  *confirmed* 2FA to the two-factor settings screen; JSON requests get 403. Only the
+  _confirmed_ 2FA to the two-factor settings screen; JSON requests get 403. Only the
   2FA setup endpoints, password confirmation, e-mail verification, language switch and
   logout stay reachable.
 - Behind `permits.staff_two_factor_required` (`PERMITS_STAFF_TWO_FACTOR_REQUIRED`,
@@ -132,16 +132,16 @@ native implementation (integer arithmetic over the Julian Day Number).
 
 Defaults that later milestones will implement as configuration. None is built yet.
 
-| # | Question | Default that will be implemented | Milestone |
-|---|---|---|---|
-| 1 | Fee schedule per permit type / vehicle type / duration | `fee_schedules` table seeded with clearly marked placeholder rows; no amount is hard-coded | 4 |
-| 2 | Restricted hours for "ሙሉ ቀን" vs "ይለፍ" | Free-text setting (placeholder) shown on the permit and the verification page | 5 |
-| 3 | Online payment (Telebirr / Chapa) in v1? | No — manual receipt verification; a `PaymentGateway` interface is designed for later | 4 |
-| 4 | Does public verification show the organisation name? | Yes; everything else listed in §7 stays hidden | 5 |
-| 5 | Single-step or two-step approval? | Two-step: Reviewer → Approver | 3 |
-| 6 | Official logo, letterhead and legal wording for the PDF | Placeholders from config | 5 |
-| 7 | SMS provider | `SmsGateway` interface with a log driver | 6 |
-| 8 | Hosting environment and data residency | Docker Compose stack that runs on-prem or in a cloud; S3-compatible private storage | 9 |
+| #   | Question                                                | Default that will be implemented                                                           | Milestone |
+| --- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------- |
+| 1   | Fee schedule per permit type / vehicle type / duration  | `fee_schedules` table seeded with clearly marked placeholder rows; no amount is hard-coded | 4         |
+| 2   | Restricted hours for "ሙሉ ቀን" vs "ይለፍ"                   | Free-text setting (placeholder) shown on the permit and the verification page              | 5         |
+| 3   | Online payment (Telebirr / Chapa) in v1?                | No — manual receipt verification; a `PaymentGateway` interface is designed for later       | 4         |
+| 4   | Does public verification show the organisation name?    | Yes; everything else listed in §7 stays hidden                                             | 5         |
+| 5   | Single-step or two-step approval?                       | Two-step: Reviewer → Approver                                                              | 3         |
+| 6   | Official logo, letterhead and legal wording for the PDF | Placeholders from config                                                                   | 5         |
+| 7   | SMS provider                                            | `SmsGateway` interface with a log driver                                                   | 6         |
+| 8   | Hosting environment and data residency                  | Docker Compose stack that runs on-prem or in a cloud; S3-compatible private storage        | 9         |
 
 ## UI design language (added after Milestone 1)
 
@@ -259,13 +259,13 @@ Plan: [plans/milestone-3-applications-workflow.md](plans/milestone-3-application
 ### Approval (open question §14.5)
 
 - **Two-step by default** (`permits.two_step_approval`, env `PERMITS_TWO_STEP_APPROVAL`):
-  a Reviewer records a *recommendation* (approve / reject, note required for reject) on
+  a Reviewer records a _recommendation_ (approve / reject, note required for reject) on
   the permit while it is under review; an Approver then decides. The recommendation is
   not a status of its own — the spec's state machine is unchanged.
 - **The Approver must not be the person who recommended** (`ApprovalRules`). With the
   setting off, an Approver can decide without a recommendation.
 - **Staff policy abilities check permission and visibility only**; whether the action is
-  possible *now* is the state machine's job. The Resource's `can` map combines both so
+  possible _now_ is the state machine's job. The Resource's `can` map combines both so
   the UI only offers what will succeed; the server re-checks everything.
 - **Staff never see drafts or withdrawn applications** (policy answers "not found").
 - Rejecting and requesting changes require a note; the applicant sees it in the history.
@@ -277,13 +277,13 @@ Plan: [plans/milestone-3-applications-workflow.md](plans/milestone-3-application
   from the applicant's own organization. A partial unique index guarantees one primary.
 - **Overlap** (spec §4.1) is enforced twice: `OverlapGuard` in the Action (vehicle rows
   locked) and the `btree_gist` exclusion constraint on `permit_vehicles`. A permit is
-  *blocking* from approval (`awaiting_payment`) until it is revoked or expired; `period`
+  _blocking_ from approval (`awaiting_payment`) until it is revoked or expired; `period`
   is an inclusive `daterange`. Applications still under review do not block each other —
   the staff detail page shows the vehicle's other permits and flags conflicts.
 - **The plate of a vehicle is locked** once it is on any application that is not a draft
   or withdrawn: the plate on a submitted or issued permit must not change underneath it.
 - **Permit number** `AACRA-<Ethiopian year>-<6 digits>` is assigned at approval from
-  `permit_number_sequences` under a row lock. The year is the Ethiopian *calendar* year
+  `permit_number_sequences` under a row lock. The year is the Ethiopian _calendar_ year
   of the approval date. **CONFIRM** calendar year vs fiscal year (spec says either), and
   the prefix (`permits.number_prefix`).
 - **The number rule is a setting** (2026-11-12, System settings → General → Permit
@@ -301,19 +301,19 @@ Plan: [plans/milestone-3-applications-workflow.md](plans/milestone-3-application
   review queue, permit pages and actions, payment queue and decisions, reports, the
   dashboard and exports (the branch is written into the export by the server). Another
   branch's permit or payment answers 404.
-  - An application gets its branch when it is started (`permits.branch_id`): the
-    applicant chooses it on the form (empty = head office), a walk-in application takes
-    the Registrar's branch. A head-office application is seen by the head office only.
-  - `{branch}` in the number rule prints that branch's code (`AACRA-BOL-2018-000123`,
-    the default rule) and is dropped with its hyphen for the head office. The counter
-    stays **one per Ethiopian year for all branches**, so numbers are unique whatever
-    the rule says.
-  - Not scoped on purpose: traffic officers (the roadside is not a branch), the public
-    verification page, the applicant directory of Registrars (a carrier may go to any
-    branch; the applications inside it are scoped), and the "other permits of this
-    vehicle" list on the review page (overlaps must be seen across branches).
-  - **CONFIRM** with the Authority: whether each branch should count from 1 on its
-    own, and whether an online applicant must choose a branch.
+    - An application gets its branch when it is started (`permits.branch_id`): the
+      applicant chooses it on the form (empty = head office), a walk-in application takes
+      the Registrar's branch. A head-office application is seen by the head office only.
+    - `{branch}` in the number rule prints that branch's code (`AACRA-BOL-2018-000123`,
+      the default rule) and is dropped with its hyphen for the head office. The counter
+      stays **one per Ethiopian year for all branches**, so numbers are unique whatever
+      the rule says.
+    - Not scoped on purpose: traffic officers (the roadside is not a branch), the public
+      verification page, the applicant directory of Registrars (a carrier may go to any
+      branch; the applications inside it are scoped), and the "other permits of this
+      vehicle" list on the review page (overlaps must be seen across branches).
+    - **CONFIRM** with the Authority: whether each branch should count from 1 on its
+      own, and whether an online applicant must choose a branch.
 - **Validity** (spec §4.6): `valid_from <= valid_to` (also a CHECK constraint), at most
   `permits.max_duration_days` (default 90, counted inclusively), not starting before
   today in the display timezone. The staff override for past dates is deferred until
@@ -365,7 +365,7 @@ Plan: [plans/milestone-4-fees-payments.md](plans/milestone-4-fees-payments.md).
 - **The seeded fee schedule is a PLACEHOLDER** (`FeeScheduleSeeder`, local environment
   only): the three amounts seen in the legacy sheet (1,000 / 6,000 / 15,000 ETB) over
   invented bands (1–30, 31–60, 61+ days) for both permit types. **CONFIRM** the official
-  tariff; an Admin enters it under *Fee schedule*.
+  tariff; an Admin enters it under _Fee schedule_.
 - A schedule line prices a **permit type × vehicle type (or every type) × duration band**
   while it is in force (`effective_from`–`effective_to`, both days included, no end date
   = until replaced). The **primary vehicle's** type decides; trailers do not change the fee.
@@ -403,7 +403,7 @@ Plan: [plans/milestone-4-fees-payments.md](plans/milestone-4-fees-payments.md).
   `nosniff`. The applicant's file name is never stored. A file is deleted again if the
   submission fails.
 - A rejected payment stays on record with the cashier's reason (shown to the applicant);
-  the permit goes back to *awaiting payment*. A cashier's note on a *verified* payment is
+  the permit goes back to _awaiting payment_. A cashier's note on a _verified_ payment is
   internal (cashiers and Admins only).
 - **Verifying the payment issues the permit** (`issued`, `issued_at`). The verification
   token, QR code and PDF are added to this step in Milestone 5.
@@ -437,15 +437,15 @@ The specification asks for PostgreSQL 16 (exclusion constraints, `daterange`). T
 chose **MySQL / MariaDB** (development server: MariaDB 10.4). This section replaces every
 earlier statement about PostgreSQL in this file and in the milestone plans.
 
-| PostgreSQL feature the spec relied on | What is used instead |
-|---|---|
-| `daterange` column `permit_vehicles.period` | Two `DATE` columns, `period_from` and `period_to` (both days included) |
+| PostgreSQL feature the spec relied on                                    | What is used instead                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `daterange` column `permit_vehicles.period`                              | Two `DATE` columns, `period_from` and `period_to` (both days included)                                                                                                                                                                                                                                                                 |
 | Exclusion constraint: no overlapping blocking permits per vehicle (§4.1) | `OverlapGuard` locks the vehicle rows inside the approval transaction (this is what holds under concurrency), plus `BEFORE INSERT` / `BEFORE UPDATE` triggers on `permit_vehicles` that refuse an overlapping reserving row with `SQLSTATE 45000` (`permit_vehicles_no_overlap`), so a write that bypasses the Action is still refused |
-| Partial unique index: one primary vehicle per permit | Virtual generated column `primary_marker` (1 for the primary, NULL otherwise) with a unique index on `(permit_id, primary_marker)` |
-| Partial unique index: receipt number unique unless rejected (§4.5) | Virtual generated column `payments.live_receipt_number` with a unique index |
-| plpgsql trigger: append-only `permit_status_transitions` | Two MySQL triggers (`BEFORE UPDATE`, `BEFORE DELETE`) that `SIGNAL` an error |
-| `INSERT … ON CONFLICT … RETURNING` for permit numbers (§4.7) | `INSERT … ON DUPLICATE KEY UPDATE last_number = LAST_INSERT_ID(last_number + 1)`; still one atomic statement under the row lock, no `MAX() + 1` |
-| `LOCK TABLE … SHARE ROW EXCLUSIVE` when saving a fee schedule line | A named lock (`GET_LOCK`), because `LOCK TABLES` would end the transaction |
+| Partial unique index: one primary vehicle per permit                     | Virtual generated column `primary_marker` (1 for the primary, NULL otherwise) with a unique index on `(permit_id, primary_marker)`                                                                                                                                                                                                     |
+| Partial unique index: receipt number unique unless rejected (§4.5)       | Virtual generated column `payments.live_receipt_number` with a unique index                                                                                                                                                                                                                                                            |
+| plpgsql trigger: append-only `permit_status_transitions`                 | Two MySQL triggers (`BEFORE UPDATE`, `BEFORE DELETE`) that `SIGNAL` an error                                                                                                                                                                                                                                                           |
+| `INSERT … ON CONFLICT … RETURNING` for permit numbers (§4.7)             | `INSERT … ON DUPLICATE KEY UPDATE last_number = LAST_INSERT_ID(last_number + 1)`; still one atomic statement under the row lock, no `MAX() + 1`                                                                                                                                                                                        |
+| `LOCK TABLE … SHARE ROW EXCLUSIVE` when saving a fee schedule line       | A named lock (`GET_LOCK`), because `LOCK TABLES` would end the transaction                                                                                                                                                                                                                                                             |
 
 Things to know:
 
@@ -465,6 +465,7 @@ Things to know:
   `heavy_testing`; `Tests\TestCase` refuses any database whose name does not end in `_testing`.
 - Database errors are reported with MySQL's codes: `23000` for unique, foreign-key and
   check violations, `45000` for the triggers.
+
 ## Milestone 5 — Issuance, QR, PDF, Verification
 
 Plan: [plans/milestone-5-issuance-verification.md](plans/milestone-5-issuance-verification.md).
@@ -621,8 +622,8 @@ Plan: [plans/milestone-6-notifications-scheduling.md](plans/milestone-6-notifica
   instead.
 - **Messages:** approved (with the fee to pay), changes requested and rejected (with the
   Authority's note), receipt rejected (with the cashier's reason), issued, revoked (with
-  the reason), and expires soon. The spec's separate *PaymentVerified* is merged into
-  *PermitIssued*: verifying the payment issues the permit in the same step, so two
+  the reason), and expires soon. The spec's separate _PaymentVerified_ is merged into
+  _PermitIssued_: verifying the payment issues the permit in the same step, so two
   messages would say the same thing. A cashier's remark on a **verified** payment is
   internal and is not passed on.
 - **No sensitive data in SMS:** permit number, what happened and dates only — no fee,
@@ -667,7 +668,7 @@ Plan: [plans/milestone-7-legacy-import.md](plans/milestone-7-legacy-import.md).
   spreadsheet and cannot be verified.
 - **Idempotent** on `legacy_source_ref` = sha256 of the timestamp, the e-mail (lower
   case) and the plate cell as written. A second run, or a duplicate row, is counted as
-  *already imported*.
+  _already imported_.
 - **Skipped** (with an issue) when the row is not safely a permit: no readable plate,
   permit type, validity period or organization name, or too few columns.
 - **Imported with a warning** otherwise: unreadable timestamp (no submission time),
@@ -709,7 +710,7 @@ Plan: [plans/milestone-7-legacy-import.md](plans/milestone-7-legacy-import.md).
 - Every run is an `import_batches` row (who, when, totals) with its `import_issues`, and an
   issues CSV (UTF-8 with BOM for Excel) on the private documents disk.
 - CLI: `php artisan legacy:import file.csv [--dry-run] [--user=admin@…]`. Admin screen:
-  *Legacy import* uploads the CSV and runs it on the queue (one try; re-running is safe).
+  _Legacy import_ uploads the CSV and runs it on the queue (one try; re-running is safe).
 
 ## Milestone 8 — Reporting & Exports
 
@@ -734,8 +735,8 @@ Plan: [plans/milestone-8-reporting-exports.md](plans/milestone-8-reporting-expor
   counted as issued in any month.
 - **Revenue** is the sum of **verified** payments by the day they were paid (`paid_at`),
   not by the day the cashier verified them. Submitted and rejected payments are not revenue.
-- **By status** is the status people see today: issued permits are split into *issued*
-  (not started), *active* and *expired* by their dates, even before the nightly job runs.
+- **By status** is the status people see today: issued permits are split into _issued_
+  (not started), _active_ and _expired_ by their dates, even before the nightly job runs.
 - **By vehicle type** uses the primary vehicle's type; **top organizations** lists the ten
   with the most permits issued in the period, with the verified revenue of those permits.
 - **Expiring soon**: issued permits whose last day is today or within the next 7 days.
@@ -780,8 +781,8 @@ Plan: [plans/milestone-9-hardening-deployment.md](plans/milestone-9-hardening-de
 
 - **Headers on every response:** a Content-Security-Policy with a per-request nonce for
   scripts (Vite adds it; the Vite dev server is allowed only locally), `frame-ancestors
-  'none'`, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy:
-  strict-origin-when-cross-origin` (the verification pages keep `no-referrer`),
+'none'`, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy:
+strict-origin-when-cross-origin` (the verification pages keep `no-referrer`),
   `Permissions-Policy` without camera, microphone, geolocation or payment, COOP, and HSTS on
   HTTPS in production. Styles may be inline because React sets style attributes.
 - **Session cookie** `secure` by default when `APP_URL` is HTTPS; `httpOnly` and
@@ -976,7 +977,7 @@ The owner asked for the UI/UX and layout of the EUISIS project. Heavy now follow
   hold, never by a role's name: `User::isStaff()` (any permission of the office's work),
   `User::isApplicant()` (`permits.apply`), the review queue (the union of the desks a person's
   permissions give), the decision page and the dashboard all read permissions. Role names remain
-  only where a role is *given* (the default role of an account opened for an applicant, the rule
+  only where a role is _given_ (the default role of an account opened for an applicant, the rule
   that the applicant's role is not combined with staff roles) and for the protected administrator
   role, which exists so the system always keeps someone who can manage roles.
 - **The dashboard has a permission**, `dashboard.view`. Without it `/dashboard` sends the person
@@ -1041,3 +1042,66 @@ The office's one-page intake form lays itself out by the room the form has, not 
 that the panel shows above the form without the step list, and the buttons sit at the end of the
 form — one set of buttons at any width.
 
+## Requests live under Permits; there is no Applicants page (owner's decision, 2026-11-13)
+
+The Applicants section asked the office to think of a person first and a request second, which
+is not how the counter works: someone arrives with a letter about a vehicle. Everything the
+Registrar does now starts from **Permits**.
+
+- **The pages and routes are gone.** `admin/applicants/*` — the list, the person's page, the
+  separate "start an application" page — no longer exist, in the menu or in `routes/admin.php`.
+  Their work moved to `admin/permits/{permit}`: `show`, `edit`, `update`, `submit`, `payment`,
+  `payments.store`, `vehicles.create`, `vehicles.store` and `fee-estimate`
+  (`Admin\WalkInController`, keyed by the request, not by the applicant). The applicant is read
+  from the request (`$permit->applicant`); a request without one is not found. The Registrar's
+  gates are unchanged (`PermitPolicy::viewFor`, `updateFor`, `submitFor`, `submitPaymentFor`).
+- **"Add new" takes both kinds of request.** Step 1 of the one-page form asks who the request is
+  for: a **new organisation** (registered with the request, as before) or one **already
+  registered**, found with a search of the contact's name or e-mail, the organisation's name, TIN
+  or phone (`admin/permits/organizations`, at least two characters, at most eight results, phones
+  matched by their digits with `+251`/`0` treated as the same number). Choosing one hides the
+  contact and organisation fields, sends `applicant_id`, and requires a request with it — the
+  lookup is for filing requests, not for registering someone twice.
+- **A known plate is the same vehicle.** For an organisation on record, a plate already in its
+  register is used as it is; a new plate joins its register
+  (`RegisterWalkInApplication::forExisting`, one transaction). A plate belonging to _another_
+  organisation is still refused.
+- **A vehicle missing from a request's lists** is registered from the edit page's "Register a
+  vehicle that is not listed" link, which comes back to the edit page.
+- **Nothing the office did was lost**: registering a person alone (the request part switched off)
+  now lands back on a fresh form with the lookup ready for their request when it comes.
+
+## The sign-in illustration
+
+The sign-in panel carries a moving illustration: fields of light drifting
+behind the roads of the city, with heavy vehicles travelling them.
+
+- **No animation library.** `motion` (Framer Motion) was installed for this
+  and then removed: every loop here is a CSS keyframe on `transform`,
+  `opacity` or `stroke-dashoffset`, and the vehicles follow their roads with
+  SVG `offset-path`. Nothing needed orchestration from JavaScript, so a
+  40 KB dependency would have bought nothing. No Lottie, GSAP or three.js
+  either; the scene is inline SVG and self-hosted, so it works on-premises
+  with no outside request.
+- **Ambient, not literal.** A first version drew a clock face for the
+  permitted hours and a QR code for roadside checks. Both read as clip art
+  pinned to a background and crowded the text. The panel already says what
+  the system does in words, so the picture only sets a mood: the "aurora"
+  treatment (large soft gradients on 19–33s cycles) with the roads over it.
+- **It stops.** The loops end for `prefers-reduced-motion`, for the Admin's
+  "animations off" switch, while the tab is in the background
+  (`visibilitychange`) and while the panel is off-screen
+  (`IntersectionObserver`). The still version is the same scene with the
+  vehicles parked, so nothing disappears when motion is off.
+- **One chunk, not two.** The illustration was going to be lazy-loaded, and
+  that was reverted. A page module that lazy-imports part of itself is
+  demoted by Rollup from a page entry to a shared chunk (`_login-*.js`),
+  which breaks the Vite manifest lookup in `resources/views/app.blade.php`
+  (`@vite(["resources/js/pages/{$page['component']}.tsx"])`) and 500s the
+  page. At roughly 1.3 KB gzipped the split was not worth that.
+- **Budget.** The sign-in page is 4.86 KB gzipped in all, against a 60 KB
+  budget for the illustration alone. The scene animates only composited
+  properties, so it adds no layout or paint work beside the form.
+- **The logo is a slot.** `<BrandMark />` draws whatever an Admin uploaded
+  in System settings → General, and a neutral placeholder otherwise. No
+  emblem, seal or flag is drawn by this code.
