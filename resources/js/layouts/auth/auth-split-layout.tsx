@@ -1,15 +1,10 @@
 import { usePage } from '@inertiajs/react';
-import type { CSSProperties } from 'react';
 import { BrandMark } from '@/components/brand-mark';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { SupportContacts } from '@/components/support-contacts';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useTranslation } from '@/lib/i18n';
 import type { AuthLayoutProps } from '@/types';
-
-/** A `--auth-delay` style value: when this element joins the entrance. */
-const delay = (value: string): CSSProperties =>
-    ({ '--auth-delay': value }) as CSSProperties;
 
 /**
  * Sign-in, registration and password pages: on a wide screen the form sits
@@ -20,9 +15,9 @@ const delay = (value: string): CSSProperties =>
  * The site root redirects here, so this is the first page of the system:
  * it names the Authority, the service and the way in, and nothing else.
  *
- * Motion is a short entrance on the panel and the card (stagger-reveal),
- * written as CSS animations so `prefers-reduced-motion` and the Admin's
- * "animations off" switch both stop it (resources/css/app.css).
+ * Nothing here animates. The page is drawn once and stays still: somebody
+ * is reading a form and typing a password, and movement behind that only
+ * gets in the way.
  */
 export default function AuthSplitLayout({
     children,
@@ -39,7 +34,7 @@ export default function AuthSplitLayout({
             <aside className="relative isolate overflow-hidden surface-brand px-5 py-7 sm:px-8 lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-12">
                 <AuthPanelBackdrop />
 
-                <div className="flex auth-reveal items-center gap-3">
+                <div className="flex items-center gap-3">
                     <span className="flex size-11 shrink-0 items-center justify-center rounded-card bg-white/10 p-1.5 ring-1 ring-white/25 lg:size-14">
                         <BrandMark className="size-full" />
                     </span>
@@ -55,33 +50,20 @@ export default function AuthSplitLayout({
 
                 {/* The pitch and the three facts, shown only where there is room. */}
                 <div className="mt-10 hidden lg:block">
-                    <p
-                        className="auth-reveal text-eyebrow text-white/90"
-                        style={delay('60ms')}
-                    >
+                    <p className="text-eyebrow text-white/90">
                         {t('auth_ui.panel.eyebrow')}
                     </p>
-                    <h2
-                        className="mt-3 max-w-md auth-reveal text-3xl leading-tight font-bold text-balance"
-                        style={delay('110ms')}
-                    >
+                    <h2 className="mt-3 max-w-md text-3xl leading-tight font-bold text-balance">
                         {t('auth_ui.panel.title')}
                     </h2>
-                    <p
-                        className="mt-4 max-w-md auth-reveal text-sm leading-relaxed text-white/90"
-                        style={delay('160ms')}
-                    >
+                    <p className="mt-4 max-w-md text-sm leading-relaxed text-white/90">
                         {t('auth_ui.panel.intro')}
                     </p>
 
                     <ul className="mt-9 max-w-md space-y-4">
                         {(['apply', 'decide', 'verify'] as const).map(
                             (step, index) => (
-                                <li
-                                    key={step}
-                                    className="flex auth-reveal gap-3.5"
-                                    style={delay(`${220 + index * 70}ms`)}
-                                >
+                                <li key={step} className="flex gap-3.5">
                                     <span
                                         aria-hidden="true"
                                         className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-card bg-white/10 text-xs font-bold ring-1 ring-white/25"
@@ -106,10 +88,7 @@ export default function AuthSplitLayout({
                     </ul>
                 </div>
 
-                <p
-                    className="mt-10 hidden max-w-md auth-reveal border-t border-white/20 pt-5 text-xs leading-relaxed text-white/90 lg:block"
-                    style={delay('440ms')}
-                >
+                <p className="mt-10 hidden max-w-md border-t border-white/20 pt-5 text-xs leading-relaxed text-white/90 lg:block">
                     {t('auth_ui.panel.no_account')}
                 </p>
             </aside>
@@ -122,10 +101,7 @@ export default function AuthSplitLayout({
                 </header>
 
                 <main className="flex flex-1 flex-col items-center justify-center px-4 pb-10 sm:px-6">
-                    <div
-                        className="w-full max-w-md auth-reveal overflow-hidden rounded-panel border border-border bg-card shadow-lg"
-                        style={delay('80ms')}
-                    >
+                    <div className="w-full max-w-md overflow-hidden rounded-panel border border-border bg-card shadow-lg">
                         <div className="brand-bar" aria-hidden="true" />
                         <div className="space-y-7 px-6 py-8 sm:px-9">
                             <div className="space-y-1.5">
@@ -138,10 +114,7 @@ export default function AuthSplitLayout({
                         </div>
                     </div>
 
-                    <div
-                        className="mt-7 flex w-full max-w-md auth-reveal flex-col items-center gap-1.5 text-center text-xs text-muted-foreground"
-                        style={delay('200ms')}
-                    >
+                    <div className="mt-7 flex w-full max-w-md flex-col items-center gap-1.5 text-center text-xs text-muted-foreground">
                         {loginMessage && (
                             <p className="whitespace-pre-line">
                                 {loginMessage}
