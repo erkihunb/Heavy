@@ -156,23 +156,15 @@ export default function AuthSplitLayout({
 }
 
 /**
- * The panel's background: the road the system is about, drawn as flat bands
- * of the brand colour with one lane dash. Decorative and not announced.
- * `auth-drift` moves it very slowly; reduced motion holds it still.
+ * The panel's background: a plain brand surface, lit a little from the top
+ * start corner so it does not read as a flat block of colour. Decorative,
+ * not announced, and entirely still — nothing moves behind the form.
  */
 function AuthPanelBackdrop() {
     return (
         <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
-        >
-            <div className="absolute inset-0 bg-[radial-gradient(90%_70%_at_15%_0%,rgb(255_255_255/0.16),transparent_70%)]" />
-            <div className="absolute -bottom-10 -left-16 h-56 w-[140%] -rotate-6 auth-drift bg-white/[0.04]" />
-            <div className="absolute -bottom-2 -left-16 h-px w-[140%] -rotate-6 auth-drift bg-white/20" />
-            <div
-                className="absolute bottom-24 -left-16 lane-dash w-[140%] -rotate-6 auth-drift text-white/25"
-                style={delay('120ms')}
-            />
-        </div>
+            className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(90%_70%_at_15%_0%,rgb(255_255_255/0.16),transparent_70%)]"
+        />
     );
 }

@@ -752,14 +752,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .auth-reveal,
-    .auth-drift {
+    .auth-reveal {
         animation: none !important;
     }
 }
 
-:root[data-animations='off'] .auth-reveal,
-:root[data-animations='off'] .auth-drift {
+:root[data-animations='off'] .auth-reveal {
     animation: none !important;
 }
 
@@ -771,23 +769,6 @@
     to {
         opacity: 1;
         transform: translateY(0);
-    }
-}
-
-/* The road bands behind the brand panel: they slide in from the side once. */
-@utility auth-drift {
-    animation: auth-drift 0.9s var(--ease-snap) both;
-    animation-delay: var(--auth-delay, 0ms);
-}
-
-@keyframes auth-drift {
-    from {
-        opacity: 0;
-        transform: translateX(-4%) rotate(-6deg);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0) rotate(-6deg);
     }
 }
 
