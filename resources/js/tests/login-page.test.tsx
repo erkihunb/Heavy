@@ -90,11 +90,11 @@ afterEach(() => {
 });
 
 describe('the sign-in page', () => {
-    it('renders a usable form, whatever the illustration is doing', () => {
+    it('renders a usable form', () => {
         render(<Login canResetPassword />);
 
-        // The form is what people came for: it is there on the first render,
-        // and does not wait on the scene beside it.
+        // The form is what people came for, and it is the whole page:
+        // nothing decorative sits beside it.
         expect(screen.getByLabelText('auth_ui.email')).toBeTruthy();
         expect(screen.getByLabelText('auth_ui.password')).toBeTruthy();
         expect(

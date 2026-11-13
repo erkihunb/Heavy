@@ -1,5 +1,5 @@
 import { usePage } from '@inertiajs/react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties } from 'react';
 import { BrandMark } from '@/components/brand-mark';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { SupportContacts } from '@/components/support-contacts';
@@ -22,17 +22,13 @@ import type { AuthLayoutProps } from '@/types';
  * are reached once in a while and are mostly a short instruction, keep the
  * entrance that fades each piece up in reading order (auth-reveal in
  * resources/css/app.css, itself off under reduced motion).
- *
- * `scene` is an illustration to draw behind the panel. The sign-in page
- * passes one; the rest leave the panel plain.
  */
 export default function AuthSplitLayout({
     children,
     title,
     description,
     still = false,
-    scene,
-}: AuthLayoutProps & { still?: boolean; scene?: ReactNode }) {
+}: AuthLayoutProps & { still?: boolean }) {
     const { t } = useTranslation();
     const { branding, appearance } = usePage().props;
     const loginMessage = branding?.loginMessage;
@@ -52,7 +48,7 @@ export default function AuthSplitLayout({
         <div className="relative flex min-h-svh flex-col bg-muted text-foreground lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             {/* ── Brand panel: the service, in the Authority's colours ── */}
             <aside className="relative isolate overflow-hidden surface-brand px-5 py-7 sm:px-8 lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-12">
-                <AuthPanelBackdrop scene={scene} />
+                <AuthPanelBackdrop />
 
                 <div
                     className={`flex items-center gap-3 ${reveal(0).className}`}
@@ -190,21 +186,20 @@ export default function AuthSplitLayout({
 }
 
 /**
- * The panel's background. `scene` is the sign-in illustration, passed in by
- * the page that wants one; without it the panel is a plain brand surface
- * with the light in its top start corner.
+ * The panel's background: a plain brand surface, lit a little from its top
+ * start corner so it does not read as a flat block of colour.
  *
- * Decorative throughout: the scene marks itself aria-hidden, and nothing
- * here is announced.
+ * Nothing is drawn here and nothing moves. A sign-in page is where somebody
+ * reads a form and types a password; the official guidance for public
+ * services is to remove distractions from it, and the products that feel
+ * most considered keep these pages plain on purpose. Three decorative
+ * treatments were tried here and removed (docs/DECISIONS.md).
  */
-function AuthPanelBackdrop({ scene }: { scene?: ReactNode }) {
+function AuthPanelBackdrop() {
     return (
         <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
-        >
-            {scene}
-            <div className="absolute inset-0 bg-[radial-gradient(90%_70%_at_15%_0%,rgb(255_255_255/0.16),transparent_70%)]" />
-        </div>
+            className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(90%_70%_at_15%_0%,rgb(255_255_255/0.16),transparent_70%)]"
+        />
     );
 }

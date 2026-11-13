@@ -1071,37 +1071,43 @@ Registrar does now starts from **Permits**.
 - **Nothing the office did was lost**: registering a person alone (the request part switched off)
   now lands back on a fresh form with the lookup ready for their request when it comes.
 
-## The sign-in illustration
+## The sign-in page has no decoration
 
-The sign-in panel carries a moving illustration: fields of light drifting
-behind the roads of the city, with heavy vehicles travelling them.
+The sign-in panel carries the Authority's name, what the system is for and
+the three steps of a permit. Behind that text is a plain brand surface, lit
+from its top start corner. Nothing is drawn on it and nothing moves.
 
-- **No animation library.** `motion` (Framer Motion) was installed for this
-  and then removed: every loop here is a CSS keyframe on `transform`,
-  `opacity` or `stroke-dashoffset`, and the vehicles follow their roads with
-  SVG `offset-path`. Nothing needed orchestration from JavaScript, so a
-  40 KB dependency would have bought nothing. No Lottie, GSAP or three.js
-  either; the scene is inline SVG and self-hosted, so it works on-premises
-  with no outside request.
-- **Ambient, not literal.** A first version drew a clock face for the
-  permitted hours and a QR code for roadside checks. Both read as clip art
-  pinned to a background and crowded the text. The panel already says what
-  the system does in words, so the picture only sets a mood: the "aurora"
-  treatment (large soft gradients on 19–33s cycles) with the roads over it.
-- **It stops.** The loops end for `prefers-reduced-motion`, for the Admin's
-  "animations off" switch, while the tab is in the background
-  (`visibilitychange`) and while the panel is off-screen
-  (`IntersectionObserver`). The still version is the same scene with the
-  vehicles parked, so nothing disappears when motion is off.
-- **One chunk, not two.** The illustration was going to be lazy-loaded, and
-  that was reverted. A page module that lazy-imports part of itself is
-  demoted by Rollup from a page entry to a shared chunk (`_login-*.js`),
-  which breaks the Vite manifest lookup in `resources/views/app.blade.php`
-  (`@vite(["resources/js/pages/{$page['component']}.tsx"])`) and 500s the
-  page. At roughly 1.3 KB gzipped the split was not worth that.
-- **Budget.** The sign-in page is 4.86 KB gzipped in all, against a 60 KB
-  budget for the illustration alone. The scene animates only composited
-  properties, so it adds no layout or paint work beside the form.
-- **The logo is a slot.** `<BrandMark />` draws whatever an Admin uploaded
-  in System settings → General, and a neutral placeholder otherwise. No
-  emblem, seal or flag is drawn by this code.
+Three decorative treatments were built and removed before settling here: a
+vehicle driving across a road motif, drifting geometric squares, and an
+illustrated scene (city roads, trucks, a 24-hour clock ring, a QR code)
+with ambient light behind it. Each was rejected on sight: they read as
+clip art stuck to a background, they competed with the text, and the
+movement pulled the eye away from the form.
+
+That matches the guidance rather than contradicting it:
+
+- The **U.S. Web Design System**, the closest public standard for pages
+  like this, says the way to help people sign in is to give context and
+  "remove unnecessary distractions from the page". Its own authentication
+  templates carry no background imagery at all.
+- The products usually held up as the best-looking enterprise software —
+  Linear, Stripe, Vercel — keep these pages plain on purpose. What reads as
+  "premium" is the care in hover, focus, loading and disabled states, not a
+  decorated background.
+- The project's own design guidance says continuous motion belongs to
+  loading indicators, never decoration.
+
+**What moves, and what does not.** The page itself is still: the panel and
+its text are simply there. The card's fields arrive in order once (300ms,
+40ms apart) and then stop, the submit button lifts on hover, and a refused
+sign-in shakes the card a single time. All of that stops for
+`prefers-reduced-motion` and for the Admin's "animations off" switch.
+
+**The logo is a slot.** `<BrandMark />` draws whatever an Admin uploaded in
+System settings → General, and a neutral placeholder otherwise. No emblem,
+seal or flag is drawn by this code.
+
+**No animation library.** `motion` (Framer Motion) was installed for the
+illustration and removed with it. Nothing left needs orchestration from
+JavaScript: the card's entrance and shake are CSS keyframes on `transform`
+and `opacity`.

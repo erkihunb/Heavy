@@ -1,7 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
 import { CircleCheck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { LoginHero } from '@/components/auth/login-hero/LoginHero';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -28,10 +27,9 @@ export default function Login({ status, canResetPassword }: Props) {
         <AuthLayout
             title={t('auth_ui.login.title')}
             description={t('auth_ui.login.description')}
-            // The way in, met first and used daily: the panel's own text is
-            // simply there. The card has its own entrance below.
+            // The way in, met first and used daily: nothing on this page
+            // moves on its own. The card's own entrance is below.
             still
-            scene={<LoginHero />}
         >
             <Head title={t('auth_ui.login.submit')} />
 
