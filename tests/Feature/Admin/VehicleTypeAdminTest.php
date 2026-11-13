@@ -2,6 +2,7 @@
 
 use App\Domain\Audit\AuditEvent;
 use App\Enums\Role;
+use App\Models\Permit;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
 use Illuminate\Support\Facades\Cache;
@@ -93,9 +94,12 @@ it('offers only active types on the office\'s vehicle form, from a cache that a 
     $retired = VehicleType::factory()->inactive()->create();
     $applicant = applicantWithOrganization();
     $registrar = staffUser(Role::Registrar);
+    $permit = Permit::factory()->draft()
+        ->forVehicles(Vehicle::factory()->for($applicant->organization)->create(['vehicle_type_id' => $active->id]))
+        ->create(['applicant_id' => $applicant->id]);
 
     $types = fn (): array => $this->actingAs($registrar)
-        ->get(route('admin.applicants.vehicles.create', $applicant))
+        ->get(route('admin.permits.vehicles.create', $permit))
         ->viewData('page')['props']['vehicleTypes'];
 
     expect(collect($types())->pluck('id')->all())->toContain($active->id)->not->toContain($retired->id)

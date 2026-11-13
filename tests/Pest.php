@@ -12,6 +12,7 @@ use App\Models\Organization;
 use App\Models\Permit;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Models\VehicleType;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -120,6 +121,32 @@ function permitPayload(User $applicant, array $overrides = []): array
         'valid_from' => $today->addDays(3)->toDateString(),
         'valid_to' => $today->addDays(12)->toDateString(),
         'reason' => 'የግንባታ ዕቃ ማጓጓዝ',
+        ...$overrides,
+    ];
+}
+
+/**
+ * Permits › Add new for an organization already on record: a new request of
+ * theirs, with one vehicle, kept as a draft.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function requestFor(User $applicant, array $overrides = []): array
+{
+    $today = ValidityRules::today();
+
+    return [
+        'applicant_id' => $applicant->id,
+        'apply' => true,
+        'submit' => false,
+        'confirmed' => true,
+        'vehicles' => [['plate' => 'ኢት-03-40134', 'vehicle_type_id' => VehicleType::factory()->create()->id, 'owner_name' => 'አበበ ከበደ']],
+        'permit_type' => PermitType::FullDay->value,
+        'valid_from' => $today->addDays(3)->toDateString(),
+        'valid_to' => $today->addDays(12)->toDateString(),
+        'reason' => 'የግንባታ ዕቃ ማጓጓዝ',
+        ...letterFields(),
         ...$overrides,
     ];
 }

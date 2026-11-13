@@ -5,7 +5,6 @@ use App\Enums\Role;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Support\Facades\Notification;
-use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Activitylog\Models\Activity;
 
 /*
@@ -43,8 +42,9 @@ it('registers the applicant and their organization in one step', function () {
     $this->actingAs($this->registrar)
         ->post(route('admin.permits.store'), walkIn())
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('admin.applicants.show', User::query()->where('email', 'abebe@example.test')->value('id')))
-        ->assertSessionHas('success');
+        // Registered without a request: back to a new form; the request comes later through the lookup.
+        ->assertRedirect(route('admin.permits.create'))
+        ->assertSessionHas('success', __('applicants.messages.registered'));
 
     $user = User::query()->where('email', 'abebe@example.test')->sole();
     $organization = Organization::query()->sole();
@@ -115,7 +115,7 @@ it('validates the form', function (array $overrides, string $field) {
 it('is for registrars and admins only', function (Role $role, bool $allowed) {
     $user = staffUser($role);
 
-    $this->actingAs($user)->get(route('admin.applicants.index'))->assertStatus($allowed ? 200 : 403);
+    $this->actingAs($user)->getJson(route('admin.permits.organizations', ['search' => 'Abebe']))->assertStatus($allowed ? 200 : 403);
     $this->actingAs($user)->get(route('admin.permits.create'))->assertStatus($allowed ? 200 : 403);
     $this->actingAs($user)->post(route('admin.permits.store'), walkIn())->assertStatus($allowed ? 302 : 403);
 })->with([
@@ -128,26 +128,64 @@ it('is for registrars and admins only', function (Role $role, bool $allowed) {
 ]);
 
 it('keeps applicants out', function () {
-    assertSignedOut($this->actingAs(applicantWithOrganization())->get(route('admin.applicants.index')));
+    assertSignedOut($this->actingAs(applicantWithOrganization())->get(route('admin.permits.organizations', ['search' => 'Abebe'])));
 });
 
-it('lists applicants with where they registered, and finds them', function () {
+it('finds an organization on record by any of its details', function (string $search) {
     $this->actingAs($this->registrar)->post(route('admin.permits.store'), walkIn());
     applicantWithOrganization(['name_am' => 'ሌላ ተቋም', 'tin' => '0055555555']);
 
     $this->actingAs($this->registrar)
-        ->get(route('admin.applicants.index'))
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('admin/applicants/index')
-            ->has('applicants.data', 2)
-            ->where('applicants.data.1.registered_by', $this->registrar->name)
-            ->where('applicants.data.0.registered_by', null));
+        ->getJson(route('admin.permits.organizations', ['search' => $search]))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.email', 'abebe@example.test')
+        ->assertJsonPath('data.0.organization', 'አበበ የጭነት ማጓጓዣ')
+        ->assertJsonPath('data.0.tin', '0012345678')
+        ->assertJsonPath('data.0.phone', '+251911223344');
+})->with([
+    'contact name' => ['abebe keb'],
+    'contact e-mail' => ['abebe@example'],
+    'organization name in Amharic' => ['የጭነት'],
+    'organization name in English' => ['Freight'],
+    'TIN' => ['0012345678'],
+    'phone, as it is written' => ['0911 22 33'],
+]);
+
+it('answers the lookup only from two characters, and matches phones only by digits', function () {
+    $this->actingAs($this->registrar)->post(route('admin.permits.store'), walkIn());
 
     $this->actingAs($this->registrar)
-        ->get(route('admin.applicants.index', ['search' => '0012345678']))
-        ->assertInertia(fn (Assert $page) => $page
-            ->has('applicants.data', 1)
-            ->where('applicants.data.0.email', 'abebe@example.test'));
+        ->getJson(route('admin.permits.organizations', ['search' => 'A']))
+        ->assertOk()
+        ->assertExactJson(['data' => []]);
+
+    // Text without digits never matches every phone number.
+    $this->actingAs($this->registrar)
+        ->getJson(route('admin.permits.organizations', ['search' => 'zz']))
+        ->assertJsonCount(0, 'data');
+
+    // Wildcards are searched for as they are.
+    $this->actingAs($this->registrar)
+        ->getJson(route('admin.permits.organizations', ['search' => '%%']))
+        ->assertJsonCount(0, 'data');
+});
+
+it('finds only applicants with an organization, at most eight', function () {
+    staffUser(Role::Cashier, ['name' => 'Abebe Cashier']);
+    userWithRole(Role::Applicant)->forceFill(['name' => 'Abebe Without Organization'])->save();
+
+    foreach (range(1, 9) as $number) {
+        $applicant = applicantWithOrganization();
+        $applicant->forceFill(['name' => "Abebe {$number}"])->save();
+    }
+
+    $this->actingAs($this->registrar)
+        ->getJson(route('admin.permits.organizations', ['search' => 'Abebe']))
+        ->assertOk()
+        ->assertJsonCount(8, 'data')
+        ->assertJsonMissing(['name' => 'Abebe Cashier'])
+        ->assertJsonMissing(['name' => 'Abebe Without Organization']);
 });
 
 it('makes the registrar a staff role that needs two-factor authentication', function () {
@@ -155,6 +193,6 @@ it('makes the registrar a staff role that needs two-factor authentication', func
         ->and(Role::staffValues())->toContain('registrar');
 
     $this->actingAs(userWithRole(Role::Registrar))
-        ->get(route('admin.applicants.index'))
+        ->get(route('admin.permits.create'))
         ->assertRedirect();
 });

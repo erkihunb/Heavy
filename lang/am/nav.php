@@ -13,7 +13,6 @@ return [
     'fee_schedules' => 'የክፍያ ተመን',
     'reports' => 'ሪፖርቶች',
     'users' => 'ተጠቃሚዎች',
-    'applicants' => 'አመልካቾች',
     'vehicle_types' => 'የተሽከርካሪ ዓይነቶች',
     'branches' => 'ቅርንጫፎች',
     'system_settings' => 'የሥርዓት ቅንብሮች',

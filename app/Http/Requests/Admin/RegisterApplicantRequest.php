@@ -78,13 +78,24 @@ class RegisterApplicantRequest extends OrganizationRequest
         // here: the fee is paid once the permit is approved (SubmitPayment, RecordPayment).
         $submitted = ['exclude_unless:apply,true', 'exclude_unless:submit,true'];
 
+        // An organization already on record: its person and organization are not typed again.
+        $new = $this->filled('applicant_id') ? ['exclude'] : [];
+
+        $organization = array_map(
+            fn (array $rules): array => [...$new, ...$rules],
+            [
+                ...parent::rules(),
+                // The address may be added later on the organization's profile.
+                'address' => ['nullable', 'string', 'max:500'],
+            ],
+        );
+
         return [
-            'contact_name' => ['required', 'string', 'max:255'],
-            'contact_email' => ['required', 'string', 'email:rfc', 'max:255', Rule::unique(User::class, 'email')],
-            'locale' => ['required', 'string', Rule::in(array_keys((array) config('localization.supported')))],
-            ...parent::rules(),
-            // The address may be added later on the organization's profile.
-            'address' => ['nullable', 'string', 'max:500'],
+            'applicant_id' => ['nullable', 'integer', $this->onRecord(...)],
+            'contact_name' => [...$new, 'required', 'string', 'max:255'],
+            'contact_email' => [...$new, 'required', 'string', 'email:rfc', 'max:255', Rule::unique(User::class, 'email')],
+            'locale' => [...$new, 'required', 'string', Rule::in(array_keys((array) config('localization.supported')))],
+            ...$organization,
             'vehicles.*.type_detail' => [...$apply, 'nullable', 'string', 'max:100'],
             'confirmed' => [...$submitted, 'accepted'],
             'apply' => ['boolean'],
@@ -123,6 +134,12 @@ class RegisterApplicantRequest extends OrganizationRequest
     public function after(): array
     {
         return [
+            // Someone already registered is chosen to file a request for them, not to register again.
+            function (Validator $validator): void {
+                if ($this->filled('applicant_id') && ! $this->boolean('apply')) {
+                    $validator->errors()->add('apply', __('applicants.intake.existing_needs_request'));
+                }
+            },
             function (Validator $validator): void {
                 if (! $this->boolean('apply') || $validator->errors()->hasAny(['valid_from', 'valid_to'])) {
                     return;
@@ -235,8 +252,45 @@ class RegisterApplicantRequest extends OrganizationRequest
     }
 
     /**
-     * A well-formed plate that is in nobody's register yet (the organization
-     * is new) and is not given twice in the form.
+     * The applicant on record the request is filed for, when one was chosen.
+     */
+    public function existingApplicant(): ?User
+    {
+        $id = $this->validated('applicant_id');
+
+        return $id === null ? null : User::query()->with('organization')->find((int) $id);
+    }
+
+    /**
+     * The request asked for, which a request for an organization on record
+     * always has (see after()).
+     */
+    public function permitData(): WalkInPermitData
+    {
+        $permit = $this->permit();
+
+        abort_if($permit === null, 422);
+
+        return $permit;
+    }
+
+    /**
+     * An applicant's account with an organization: the record a new request
+     * of theirs is filed under.
+     */
+    private function onRecord(string $attribute, mixed $value, Closure $fail): void
+    {
+        $applicant = User::query()->find((int) $value);
+
+        if ($applicant === null || ! $applicant->isApplicant() || $applicant->organization_id === null) {
+            $fail(__('applicants.intake.existing_unknown'));
+        }
+    }
+
+    /**
+     * A well-formed plate that is in no other organization's register and is
+     * not given twice in the form. For an organization on record a plate it
+     * already has is its vehicle, used as it is.
      */
     private function freePlate(string $attribute, mixed $value, Closure $fail): void
     {
@@ -259,7 +313,16 @@ class RegisterApplicantRequest extends OrganizationRequest
             return;
         }
 
-        if (Vehicle::query()->where('plate_normalized', $plate->normalized)->exists()) {
+        $owner = $this->filled('applicant_id')
+            ? User::query()->whereKey((int) $this->input('applicant_id'))->value('organization_id')
+            : null;
+
+        $taken = Vehicle::query()
+            ->where('plate_normalized', $plate->normalized)
+            ->when($owner !== null, fn ($query) => $query->where('organization_id', '!=', $owner))
+            ->exists();
+
+        if ($taken) {
             $fail((new DuplicateVehiclePlate($plate, false))->userMessage());
         }
     }

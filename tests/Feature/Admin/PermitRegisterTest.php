@@ -103,8 +103,8 @@ it('opens each permit on the page the viewer works on it from', function () {
     $this->actingAs(staffUser(Role::Registrar))
         ->get(route('admin.permits.index'))
         ->assertInertia(fn (Assert $page) => $page
-            ->where('permits.data.0.href', route('admin.applicants.permits.show', [$draft->applicant_id, $draft]))
-            ->where('permits.data.1.href', route('admin.applicants.permits.show', [$submitted->applicant_id, $submitted])));
+            ->where('permits.data.0.href', route('admin.permits.show', $draft))
+            ->where('permits.data.1.href', route('admin.permits.show', $submitted)));
 });
 
 it('ignores filter values it does not know', function () {

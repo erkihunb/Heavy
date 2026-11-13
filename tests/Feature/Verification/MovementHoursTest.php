@@ -148,7 +148,7 @@ describe('entering the hours on an application', function () {
 
     it('saves a window', function () {
         $this->actingAs($this->registrar)
-            ->post(route('admin.applicants.permits.store', $this->applicant), [...permitPayload($this->applicant, ['any_time' => false, 'move_from' => '11:00', 'move_to' => '14:00']), ...letterFields()])
+            ->post(route('admin.permits.store'), requestFor($this->applicant, ['any_time' => false, 'move_from' => '11:00', 'move_to' => '14:00']))
             ->assertSessionHasNoErrors();
 
         expect(Permit::query()->sole()->movementHours()?->present('en'))->toMatchArray(['from' => '11:00', 'to' => '14:00']);
@@ -156,7 +156,7 @@ describe('entering the hours on an application', function () {
 
     it('saves any time of day for a full-day permit', function () {
         $this->actingAs($this->registrar)
-            ->post(route('admin.applicants.permits.store', $this->applicant), [...permitPayload($this->applicant, ['any_time' => true]), ...letterFields()])
+            ->post(route('admin.permits.store'), requestFor($this->applicant, ['any_time' => true]))
             ->assertSessionHasNoErrors();
 
         expect(Permit::query()->sole()->movementHours())->toBeNull();
@@ -164,7 +164,7 @@ describe('entering the hours on an application', function () {
 
     it('validates the hours', function (array $hours, string $field) {
         $this->actingAs($this->registrar)
-            ->post(route('admin.applicants.permits.store', $this->applicant), [...permitPayload($this->applicant, $hours), ...letterFields()])
+            ->post(route('admin.permits.store'), requestFor($this->applicant, $hours))
             ->assertSessionHasErrors($field);
     })->with([
         'no start' => [['any_time' => false, 'move_to' => '14:00'], 'move_from'],
@@ -209,6 +209,6 @@ it('shows the hours with the permit details', function () {
     $permit = Permit::factory()->forVehicles($vehicle)->draft()->create(['move_from' => '11:00', 'move_to' => '14:00', 'applicant_id' => $applicant->id]);
 
     $this->actingAs(staffUser(Role::Registrar))
-        ->get(route('admin.applicants.permits.show', [$applicant, $permit]))
+        ->get(route('admin.permits.show', $permit))
         ->assertInertia(fn (Assert $page) => $page->where('permit.hours.from', '11:00')->where('permit.hours.to', '14:00'));
 });

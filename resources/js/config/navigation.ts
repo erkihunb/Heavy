@@ -1,5 +1,4 @@
 import { dashboard } from '@/routes';
-import { index as applicants } from '@/routes/admin/applicants';
 import { index as auditLog } from '@/routes/admin/audit-log';
 import { index as branches } from '@/routes/admin/branches';
 import { index as feeSchedules } from '@/routes/admin/fee-schedules';
@@ -148,12 +147,6 @@ export const navigation: Navigation = {
                     labelKey: 'shell.menu.front_desk',
                     icon: UserPlusIcon,
                     items: [
-                        {
-                            href: applicants().url,
-                            labelKey: 'nav.applicants',
-                            icon: UserPlusIcon,
-                            permission: 'applicants.register',
-                        },
                         {
                             href: officerVerify().url,
                             labelKey: 'verification.officer.nav',

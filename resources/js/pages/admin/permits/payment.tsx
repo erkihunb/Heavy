@@ -8,9 +8,8 @@ import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
-import { index, show } from '@/routes/admin/applicants';
-import { payment, show as showPermit } from '@/routes/admin/applicants/permits';
-import { store as storePayment } from '@/routes/admin/applicants/permits/payments';
+import { index, payment, show } from '@/routes/admin/permits';
+import { store as storePayment } from '@/routes/admin/permits/payments';
 import type { BreadcrumbItem, Permit } from '@/types';
 import type { WalkInApplicant } from '@/types/admin';
 import type { PaymentMethod } from '@/types/enums';
@@ -28,25 +27,24 @@ type Props = {
  * applicant brought. Nothing of the application itself changes here; the
  * cashier verifies the receipt before the permit is issued.
  */
-export default function WalkInPermitPayment({
+export default function PermitPayment({
     applicant,
     permit,
     paymentMethods,
     receiptMaxKilobytes,
 }: Props) {
     const { t } = useTranslation();
-    const route = { applicant: applicant.id, permit: permit.id };
+    const route = permit.id;
     const payments = permit.payments ?? [];
     const lastRejected = [...payments]
         .reverse()
         .find((item) => item.status === 'rejected');
 
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: t('applicants.title'), href: index() },
-        { title: applicant.organization, href: show(applicant.id) },
+        { title: t('register.title'), href: index() },
         {
             title: permit.permit_number ?? t('permits.show_title'),
-            href: showPermit(route),
+            href: show(route),
         },
         { title: t('payments.enter'), href: payment(route) },
     ];
@@ -129,7 +127,7 @@ export default function WalkInPermitPayment({
 
                 <div>
                     <Button asChild variant="outline">
-                        <Link href={showPermit(route)}>
+                        <Link href={show(route)}>
                             <ArrowLeft aria-hidden="true" />
                             {t('permits.staff.desks.back')}
                         </Link>

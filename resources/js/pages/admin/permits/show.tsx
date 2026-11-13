@@ -12,13 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
-import { index, show } from '@/routes/admin/applicants';
-import {
-    edit,
-    payment,
-    show as showPermit,
-    submit,
-} from '@/routes/admin/applicants/permits';
+import { edit, index, payment, show, submit } from '@/routes/admin/permits';
 import type { BreadcrumbItem, Permit } from '@/types';
 import type { WalkInApplicant } from '@/types/admin';
 
@@ -30,19 +24,15 @@ type Props = {
 };
 
 /**
- * A walk-in applicant's application, as the Registrar at the office sees
- * it: correct and submit it while it is hers to (a draft, or sent back for
- * changes), open the payment page once it is approved — the registered
- * application is not edited to pay — and print the permit once it is issued.
+ * A request taken at the office, as the Registrar opens it from Permits:
+ * correct and submit it while it is theirs to (a draft, or sent back for
+ * changes), hand in the receipt once it is approved — the request is not
+ * edited to pay — and print the permit once it is issued.
  */
-export default function WalkInPermitShow({
-    applicant,
-    permit,
-    actions,
-}: Props) {
+export default function PermitShow({ applicant, permit, actions }: Props) {
     const { t } = useTranslation();
     const [busy, setBusy] = useState(false);
-    const route = { applicant: applicant.id, permit: permit.id };
+    const route = permit.id;
     const payments = permit.payments ?? [];
     const pendingPayment = payments.some(
         (payment) => payment.status === 'submitted',
@@ -60,11 +50,10 @@ export default function WalkInPermitShow({
         );
 
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: t('applicants.title'), href: index() },
-        { title: applicant.organization, href: show(applicant.id) },
+        { title: t('register.title'), href: index() },
         {
             title: permit.permit_number ?? t('permits.show_title'),
-            href: showPermit(route),
+            href: show(route),
         },
     ];
 
@@ -242,7 +231,7 @@ export default function WalkInPermitShow({
 
                 <div>
                     <Button asChild variant="outline">
-                        <Link href={show(applicant.id)}>
+                        <Link href={index()}>
                             <ArrowLeft aria-hidden="true" />
                             {t('applicants.back')}
                         </Link>

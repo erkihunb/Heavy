@@ -85,17 +85,17 @@ describe('the Registrar', function () {
         $permit = Permit::factory()->forVehicles($this->vehicle)->awaitingPayment()->create(['fee_cents' => 600_050, 'applicant_id' => $this->applicant->id]);
 
         $this->actingAs($this->registrar)
-            ->get(route('admin.applicants.permits.show', [$this->applicant, $permit]))
+            ->get(route('admin.permits.show', $permit))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('actions.submitPayment', true)
                 ->where('actions.update', false)
                 ->missing('paymentMethods'));
 
         $this->actingAs($this->registrar)
-            ->get(route('admin.applicants.permits.payment', [$this->applicant, $permit]))
+            ->get(route('admin.permits.payment', $permit))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('admin/applicants/permit-payment')
+                ->component('admin/permits/payment')
                 ->has('paymentMethods'));
     });
 
@@ -103,11 +103,11 @@ describe('the Registrar', function () {
         $permit = Permit::factory()->forVehicles($this->vehicle)->submitted()->create(['applicant_id' => $this->applicant->id]);
 
         $this->actingAs($this->registrar)
-            ->get(route('admin.applicants.permits.payment', [$this->applicant, $permit]))
+            ->get(route('admin.permits.payment', $permit))
             ->assertForbidden();
 
         $this->actingAs($this->registrar)
-            ->get(route('admin.applicants.permits.edit', [$this->applicant, $permit]))
+            ->get(route('admin.permits.edit', $permit))
             ->assertForbidden();
     });
 });

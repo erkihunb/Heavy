@@ -136,12 +136,13 @@ it('fixes the branch of an export to the person who asks for it', function () {
 });
 
 describe('where an application belongs', function () {
-    it('gives a walk-in application the branch of the registrar, whatever the form says', function () {
+    it('gives a request taken at the office the branch of the registrar, whatever the form says', function () {
         $registrar = ($this->at)(Role::Registrar, $this->bole);
         $applicant = applicantWithOrganization();
 
         $this->actingAs($registrar)
-            ->post(route('admin.applicants.permits.store', $applicant), [...permitPayload($applicant, ['branch_id' => $this->yeka->id]), ...letterFields()])
+            ->post(route('admin.permits.store'), requestFor($applicant, ['branch_id' => $this->yeka->id]))
+            ->assertSessionHasNoErrors()
             ->assertRedirect();
 
         $permit = Permit::query()->where('applicant_id', $applicant->id)->sole();
@@ -149,10 +150,10 @@ describe('where an application belongs', function () {
 
         // A registrar of another branch cannot open it; the head office can.
         $this->actingAs(($this->at)(Role::Registrar, $this->yeka))
-            ->get(route('admin.applicants.permits.show', [$applicant, $permit]))
+            ->get(route('admin.permits.show', $permit))
             ->assertNotFound();
         $this->actingAs(($this->at)(Role::Registrar, null))
-            ->get(route('admin.applicants.permits.show', [$applicant, $permit]))
+            ->get(route('admin.permits.show', $permit))
             ->assertOk();
     });
 });

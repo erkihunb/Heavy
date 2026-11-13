@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import type { InertiaFormProps } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
 import { EthiopianDateInput } from '@/components/ethiopian-date-input';
@@ -87,6 +88,7 @@ export function PermitForm({
     estimateUrl,
     branches = [],
     letter,
+    addVehicleHref,
 }: {
     form: InertiaFormProps<PermitFormData>;
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -99,6 +101,8 @@ export function PermitForm({
     branches?: { id: number; code: string; name: string }[];
     /** Ask for the request letter (a Registrar at the office); `hasStoredScan` on an edit. */
     letter?: { hasStoredScan: boolean };
+    /** Where a vehicle missing from the lists is registered (the Registrar). */
+    addVehicleHref?: string;
 }) {
     const { t } = useTranslation();
     // Errors for array items arrive under keys such as "trailer_vehicle_ids.0".
@@ -271,6 +275,18 @@ export function PermitForm({
                         )}
                     </FormField>
                 ))}
+
+                {addVehicleHref && (
+                    <p className="text-sm text-muted-foreground">
+                        <Link
+                            href={addVehicleHref}
+                            className="font-medium text-primary underline underline-offset-4"
+                        >
+                            {t('permits.form.add_vehicle')}
+                        </Link>{' '}
+                        {t('permits.form.add_vehicle_hint')}
+                    </p>
+                )}
             </Section>
 
             <Section

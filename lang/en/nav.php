@@ -13,7 +13,6 @@ return [
     'fee_schedules' => 'Fee schedule',
     'reports' => 'Reports',
     'users' => 'Users',
-    'applicants' => 'Applicants',
     'vehicle_types' => 'Vehicle types',
     'branches' => 'Branches',
     'system_settings' => 'System settings',

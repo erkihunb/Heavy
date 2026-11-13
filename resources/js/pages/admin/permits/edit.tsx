@@ -4,8 +4,8 @@ import { PermitForm } from '@/components/permit-form';
 import type { PermitFormData, PermitLimits } from '@/components/permit-form';
 import FormPageLayout from '@/layouts/form-page-layout';
 import { useTranslation } from '@/lib/i18n';
-import { feeEstimate, index, show } from '@/routes/admin/applicants';
-import { show as showPermit, update } from '@/routes/admin/applicants/permits';
+import { feeEstimate, index, show, update } from '@/routes/admin/permits';
+import { create as createVehicle } from '@/routes/admin/permits/vehicles';
 import type { Permit, Vehicle } from '@/types';
 import type { WalkInApplicant } from '@/types/admin';
 
@@ -16,8 +16,8 @@ type Props = {
     limits: PermitLimits;
 };
 
-/** A Registrar edits a walk-in applicant's draft or returned application. */
-export default function WalkInPermitEdit({
+/** The Registrar corrects a request taken at the office: a draft, or one sent back for changes. */
+export default function PermitEdit({
     applicant,
     permit,
     vehicles,
@@ -25,7 +25,7 @@ export default function WalkInPermitEdit({
 }: Props) {
     const { t } = useTranslation();
     const permitVehicles = permit.vehicles ?? [];
-    const route = { applicant: applicant.id, permit: permit.id };
+    const route = permit.id;
 
     const form = useForm<PermitFormData>({
         permit_type: permit.permit_type,
@@ -61,11 +61,13 @@ export default function WalkInPermitEdit({
             description={t('applicants.for', {
                 organization: applicant.organization,
             })}
-            backHref={showPermit.url(route)}
+            backHref={show.url(route)}
             breadcrumbs={[
-                { label: t('applicants.title'), href: index().url },
-                { label: applicant.organization, href: show.url(applicant.id) },
-                { label: t('permits.show_title'), href: showPermit.url(route) },
+                { label: t('register.title'), href: index().url },
+                {
+                    label: permit.permit_number ?? t('permits.show_title'),
+                    href: show.url(route),
+                },
                 { label: t('permits.edit_title') },
             ]}
         >
@@ -74,9 +76,10 @@ export default function WalkInPermitEdit({
                 onSubmit={submit}
                 vehicles={vehicles}
                 limits={limits}
-                cancelHref={showPermit.url(route)}
-                estimateUrl={feeEstimate.url(applicant.id)}
+                cancelHref={show.url(route)}
+                estimateUrl={feeEstimate.url(route)}
                 letter={{ hasStoredScan: Boolean(permit.letter?.url) }}
+                addVehicleHref={createVehicle.url(route)}
             />
         </FormPageLayout>
     );

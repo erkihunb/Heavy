@@ -72,15 +72,6 @@ Route::middleware(['auth', 'verified', 'can:permissions.view'])
             ->name('permissions.show');
     });
 
-// Applicants registered at the office (Registrar, Admin).
-Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
-    ->prefix('admin')
-    ->name('admin.')
-    ->controller(ApplicantController::class)
-    ->group(function () {
-        Route::get('applicants', 'index')->name('applicants.index');
-    });
-
 // A new permit taken at the office: the one-page form registers the applicant, their
 // vehicles and the application together (Registrar, Admin). Reached from Permits.
 Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
@@ -93,6 +84,10 @@ Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
         Route::get('permits/intake-fee', 'feeEstimate')
             ->middleware('throttle:60,1')
             ->name('permits.intake-fee');
+        // An organization already on record, for a new request of theirs.
+        Route::get('permits/organizations', 'organizations')
+            ->middleware('throttle:60,1')
+            ->name('permits.organizations');
         Route::post('permits', 'store')
             ->middleware('throttle:30,1')
             ->name('permits.store');
@@ -103,26 +98,24 @@ Route::middleware(['auth', 'verified'])
     ->get('admin/permits', PermitRegisterController::class)
     ->name('admin.permits.index');
 
-// The whole application for a walk-in applicant: vehicles, permit, payment.
+// A request taken at the office, as the Registrar works on it (Registrar, Admin):
+// open it, correct and send it again, a vehicle it needs, the receipt. Reached from Permits.
 Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
-    ->prefix('admin/applicants/{applicant}')
-    ->name('admin.applicants.')
+    ->prefix('admin/permits/{permit}')
+    ->name('admin.permits.')
     ->controller(WalkInController::class)
-    ->whereNumber('applicant')
+    ->whereUlid('permit')
     ->group(function () {
         Route::get('/', 'show')->name('show');
+        Route::get('edit', 'edit')->name('edit');
+        Route::put('/', 'update')->name('update');
+        Route::post('submit', 'submit')->name('submit');
+        Route::get('payment', 'payment')->name('payment');
+        Route::post('payments', 'storePayment')
+            ->middleware('throttle:10,1')
+            ->name('payments.store');
         Route::get('vehicles/create', 'createVehicle')->name('vehicles.create');
         Route::post('vehicles', 'storeVehicle')->name('vehicles.store');
-        Route::get('permits/create', 'createPermit')->name('permits.create');
-        Route::post('permits', 'storePermit')->name('permits.store');
-        Route::get('permits/{permit}', 'showPermit')->name('permits.show');
-        Route::get('permits/{permit}/edit', 'editPermit')->name('permits.edit');
-        Route::put('permits/{permit}', 'updatePermit')->name('permits.update');
-        Route::post('permits/{permit}/submit', 'submitPermit')->name('permits.submit');
-        Route::get('permits/{permit}/payment', 'paymentPermit')->name('permits.payment');
-        Route::post('permits/{permit}/payments', 'storePayment')
-            ->middleware('throttle:10,1')
-            ->name('permits.payments.store');
         Route::get('fee-estimate', 'feeEstimate')
             ->middleware('throttle:60,1')
             ->name('fee-estimate');

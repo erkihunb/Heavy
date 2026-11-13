@@ -154,7 +154,7 @@ class PermitRegisterController extends Controller
         }
 
         if ($registrar) {
-            return route('admin.applicants.permits.show', [$permit->applicant_id, $permit]);
+            return route('admin.permits.show', $permit);
         }
 
         return null;

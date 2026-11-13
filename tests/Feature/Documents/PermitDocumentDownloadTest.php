@@ -29,6 +29,7 @@ beforeEach(function () {
             'document_path' => 'permits/abc.pdf',
             'document_path_en' => 'permits/def.pdf',
             'permit_number' => 'AACRA-2019-000007',
+            'applicant_id' => $this->applicant->id,
         ]);
 });
 
@@ -42,7 +43,7 @@ function documentUrl(Permit $permit, ?string $language = null): string
 
 it('gives the Registrar a signed link per language on the applicant\'s permit page and serves the PDF through it', function () {
     $this->actingAs(staffUser(Role::Registrar))
-        ->get(route('admin.applicants.permits.show', [$this->applicant, $this->permit]))
+        ->get(route('admin.permits.show', $this->permit))
         ->assertInertia(fn (Assert $page) => $page
             ->where('permit.document_pending', false)
             ->where('permit.document_urls.am', fn (string $url): bool => str_contains($url, '/document/am?') && str_contains($url, 'signature='))
@@ -128,7 +129,7 @@ it('says the document is being prepared until the job has run', function () {
     $this->permit->forceFill(['document_path_en' => null])->save();
 
     $this->actingAs(staffUser(Role::Registrar))
-        ->get(route('admin.applicants.permits.show', [$this->applicant, $this->permit]))
+        ->get(route('admin.permits.show', $this->permit))
         ->assertInertia(fn (Assert $page) => $page
             ->where('permit.document_pending', true)
             ->where('permit.document_urls', null));

@@ -104,6 +104,8 @@ return [
         ],
         'choose_vehicle' => 'Choose a vehicle',
         'no_trailer' => 'No trailer',
+        'add_vehicle' => 'Register a vehicle that is not listed.',
+        'add_vehicle_hint' => 'Changes not yet saved on this page are lost.',
         'trailer_number' => 'Trailer :number',
         'save' => 'Save draft',
         'cancel' => 'Cancel',

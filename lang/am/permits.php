@@ -104,6 +104,8 @@ return [
         ],
         'choose_vehicle' => 'ተሽከርካሪ ይምረጡ',
         'no_trailer' => 'ተሳቢ የለም',
+        'add_vehicle' => 'በዝርዝሩ ውስጥ የሌለ ተሽከርካሪ ይመዝግቡ።',
+        'add_vehicle_hint' => 'በዚህ ገጽ ላይ ያልተቀመጡ ለውጦች ይጠፋሉ።',
         'trailer_number' => 'ተሳቢ :number',
         'save' => 'ረቂቁን ያስቀምጡ',
         'cancel' => 'ይቅር',

@@ -77,7 +77,7 @@ it('registers the person, the organization, the vehicles and submits the permit 
     $user = User::query()->where('email', 'abebe@example.test')->sole();
     $permit = Permit::query()->with('vehicles')->sole();
 
-    $response->assertRedirect(route('admin.applicants.permits.show', [$user, $permit]));
+    $response->assertRedirect(route('admin.permits.show', $permit));
 
     expect($user->organization_id)->toBe(Organization::query()->sole()->id)
         ->and(Vehicle::query()->where('organization_id', $user->organization_id)->count())->toBe(2)
@@ -140,3 +140,82 @@ it('accepts at most the allowed number of trailers', function () {
         ->post(route('admin.permits.store'), onePageForm(['vehicles' => $rows]))
         ->assertSessionHasErrors('vehicles');
 });
+
+/*
+ * A new request of an organization already on record (Permits › Add new,
+ * "Already registered"): filed under the same applicant, with no second
+ * account and no second copy of a vehicle the organization already has.
+ */
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function existingForm(User $applicant, array $overrides = []): array
+{
+    $form = onePageForm(['applicant_id' => $applicant->id, ...$overrides]);
+
+    // The person and the organization are not typed again.
+    foreach (['contact_name', 'contact_email', 'locale', 'name_am', 'name_en', 'tin', 'phone', 'email', 'address'] as $field) {
+        unset($form[$field]);
+    }
+
+    return $form;
+}
+
+it('files a new request for an organization on record, reusing its vehicles by plate', function () {
+    $applicant = applicantWithOrganization();
+    $known = Vehicle::factory()->for($applicant->organization)->withPlate('ኢት-03-40134')->create();
+
+    $response = $this->actingAs($this->registrar)
+        ->post(route('admin.permits.store'), existingForm($applicant))
+        ->assertSessionHasNoErrors();
+
+    $permit = Permit::query()->with('vehicles')->sole();
+
+    $response->assertRedirect(route('admin.permits.show', $permit))
+        ->assertSessionHas('success', __('applicants.messages.submitted'));
+
+    expect($permit->applicant_id)->toBe($applicant->id)
+        ->and($permit->organization_id)->toBe($applicant->organization_id)
+        ->and($permit->status)->toBe(PermitStatus::Submitted)
+        // The known plate is the same vehicle; the new one joins the register.
+        ->and($permit->vehicles->pluck('id'))->toContain($known->id)
+        ->and(Vehicle::query()->count())->toBe(2)
+        ->and(Vehicle::query()->where('organization_id', $applicant->organization_id)->count())->toBe(2)
+        // No second account or organization.
+        ->and(User::query()->where('email', 'abebe@example.test')->exists())->toBeFalse()
+        ->and(Organization::query()->count())->toBe(1);
+});
+
+it('refuses a plate of another organization for one on record', function () {
+    $applicant = applicantWithOrganization();
+    Vehicle::factory()->withPlate('ኢት-03-40134')->create();
+
+    $this->actingAs($this->registrar)
+        ->post(route('admin.permits.store'), existingForm($applicant))
+        ->assertSessionHasErrors('vehicles.0.plate');
+
+    expect(Permit::query()->count())->toBe(0);
+});
+
+it('files an organization on record only with a request', function () {
+    $applicant = applicantWithOrganization();
+
+    $this->actingAs($this->registrar)
+        ->post(route('admin.permits.store'), existingForm($applicant, ['apply' => false]))
+        ->assertSessionHasErrors(['apply' => __('applicants.intake.existing_needs_request')]);
+
+    expect(Permit::query()->count())->toBe(0);
+});
+
+it('files requests only for applicants with an organization', function (Closure $applicant) {
+    $this->actingAs($this->registrar)
+        ->post(route('admin.permits.store'), existingForm($applicant()))
+        ->assertSessionHasErrors(['applicant_id' => __('applicants.intake.existing_unknown')]);
+
+    expect(Permit::query()->count())->toBe(0);
+})->with([
+    'a staff member' => [fn () => staffUser(Role::Cashier)],
+    'an applicant without an organization' => [fn () => userWithRole(Role::Applicant)],
+]);

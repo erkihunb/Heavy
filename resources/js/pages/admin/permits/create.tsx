@@ -16,6 +16,8 @@ import InputError from '@/components/input-error';
 import { LetterFields } from '@/components/letter-fields';
 import type { LetterValue } from '@/components/letter-fields';
 import { MovementHoursField } from '@/components/movement-hours-field';
+import { OrganizationLookup } from '@/components/organization-lookup';
+import type { OrganizationMatch } from '@/components/organization-lookup';
 import { PlateInput } from '@/components/plate-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,7 +46,8 @@ type Props = {
 };
 
 type FormData = {
-    // 1. The applicant.
+    // 1. The applicant: an organization on record, or a new one.
+    applicant_id: string;
     contact_email: string;
     contact_name: string;
     phone: string;
@@ -86,6 +89,8 @@ const filled = (...values: string[]) =>
 const STEP_FIELDS: Record<StepKey, (field: string) => boolean> = {
     applicant: (field) =>
         [
+            'applicant_id',
+            'apply',
             'contact_name',
             'contact_email',
             'locale',
@@ -252,7 +257,9 @@ function useFeeEstimate(
  * here: the fee is paid once the permit is approved, and the receipt is
  * recorded then (by the applicant, the Registrar or the cashier). A
  * sticky panel shows how far the form is and keeps the buttons in reach.
- * The permit part can be switched off to register only the person.
+ * The request is for a new organization — registered with it, and the
+ * permit part can be switched off to register only the person — or for one
+ * already on record, found with the lookup.
  */
 export default function ApplicantsCreate({
     locales,
@@ -262,6 +269,7 @@ export default function ApplicantsCreate({
 }: Props) {
     const { t, locale } = useTranslation();
     const form = useForm<FormData>({
+        applicant_id: '',
         contact_email: '',
         contact_name: '',
         phone: '',
@@ -295,6 +303,8 @@ export default function ApplicantsCreate({
     const errorFields = Object.keys(errors);
     const { data } = form;
     const [moreOpen, setMoreOpen] = useState(false);
+    const [existingMode, setExistingMode] = useState(false);
+    const [existing, setExisting] = useState<OrganizationMatch | null>(null);
     const showMore =
         moreOpen || MORE_FIELDS.some((field) => errors[field] !== undefined);
 
@@ -310,8 +320,43 @@ export default function ApplicantsCreate({
         data.valid_to,
     );
 
+    const showStep = (step: StepKey) =>
+        document.getElementById(`step-${step}`)?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+        });
+
+    const chooseMode = (useExisting: boolean) => {
+        setExistingMode(useExisting);
+        setExisting(null);
+        form.clearErrors('applicant_id', 'apply');
+        // A request for an organization on record always comes with the request.
+        form.setData((current) => ({
+            ...current,
+            applicant_id: '',
+            apply: useExisting ? true : current.apply,
+        }));
+    };
+
+    const chooseExisting = (match: OrganizationMatch | null) => {
+        setExisting(match);
+        form.clearErrors('applicant_id');
+        form.setData('applicant_id', match === null ? '' : String(match.id));
+    };
+
     const save = (submitNow: boolean) => (event?: FormEvent) => {
         event?.preventDefault();
+
+        if (existingMode && existing === null) {
+            form.setError(
+                'applicant_id',
+                t('applicants.intake.existing_required'),
+            );
+            showStep('applicant');
+
+            return;
+        }
+
         form.transform((current) => {
             const {
                 owner_name,
@@ -341,7 +386,12 @@ export default function ApplicantsCreate({
                     : []),
             ];
 
-            return { ...rest, vehicles, submit: submitNow };
+            return {
+                ...rest,
+                applicant_id: existingMode ? rest.applicant_id : '',
+                vehicles,
+                submit: submitNow,
+            };
         });
         form.post(store.url(), {
             // The scanned letter travels as a file.
@@ -354,10 +404,7 @@ export default function ApplicantsCreate({
                 );
 
                 if (first) {
-                    document.getElementById(`step-${first}`)?.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start',
-                    });
+                    showStep(first);
                 }
             },
         });
@@ -379,13 +426,15 @@ export default function ApplicantsCreate({
     const states: Record<StepKey, StepState> = {
         applicant: stateOf(
             'applicant',
-            filled(
-                data.contact_email,
-                data.contact_name,
-                data.phone,
-                data.name_am,
-                data.tin,
-            ),
+            existingMode
+                ? existing !== null
+                : filled(
+                      data.contact_email,
+                      data.contact_name,
+                      data.phone,
+                      data.name_am,
+                      data.tin,
+                  ),
         ),
         vehicle: stateOf(
             'vehicle',
@@ -545,143 +594,83 @@ export default function ApplicantsCreate({
                             )}
                             state={states.applicant}
                         >
-                            <div className="grid gap-5 @2xl:grid-cols-2">
-                                <FormField
-                                    id="contact_email"
-                                    label={t('applicants.intake.fields.email')}
-                                    hint={t(
-                                        'applicants.fields.contact_email_hint',
-                                    )}
-                                    error={errors.contact_email}
-                                >
-                                    {(control) => (
-                                        <Input
-                                            {...control}
-                                            type="email"
-                                            autoComplete="off"
-                                            translate="no"
-                                            maxLength={255}
-                                            value={data.contact_email}
-                                            onChange={(event) =>
-                                                form.setData(
-                                                    'contact_email',
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                    )}
-                                </FormField>
-                                {text(
-                                    'contact_name',
-                                    t('applicants.intake.fields.name'),
-                                    { maxLength: 255, autoComplete: 'off' },
-                                )}
-                                <FormField
-                                    id="phone"
-                                    label={t('applicants.intake.fields.phone')}
-                                    hint={t('organization.fields.phone_hint')}
-                                    error={errors.phone}
-                                >
-                                    {(control) => (
-                                        <Input
-                                            {...control}
-                                            type="tel"
-                                            maxLength={30}
-                                            className="tabular-nums"
-                                            value={data.phone}
-                                            onChange={(event) =>
-                                                form.setData(
-                                                    'phone',
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                    )}
-                                </FormField>
-                                {text(
-                                    'name_am',
-                                    t('applicants.intake.fields.organization'),
-                                    { lang: 'am', maxLength: 255 },
-                                )}
-                                <FormField
-                                    id="tin"
-                                    label={t('applicants.intake.fields.tin')}
-                                    hint={t('organization.fields.tin_hint')}
-                                    error={errors.tin}
-                                >
-                                    {(control) => (
-                                        <Input
-                                            {...control}
-                                            inputMode="numeric"
-                                            className="tabular-nums"
-                                            value={data.tin}
-                                            onChange={(event) =>
-                                                form.setData(
-                                                    'tin',
-                                                    event.target.value
-                                                        .replace(/\D/g, '')
-                                                        .slice(0, 10),
-                                                )
-                                            }
-                                        />
-                                    )}
-                                </FormField>
-                            </div>
+                            <fieldset className="mb-5">
+                                <legend className="mb-2 text-sm font-medium">
+                                    {t('applicants.intake.mode')}
+                                </legend>
+                                <div className="grid gap-3 @xl:grid-cols-2">
+                                    {[false, true].map((option) => (
+                                        <label
+                                            key={String(option)}
+                                            className={cn(
+                                                'flex cursor-pointer items-start gap-3 rounded-card border p-4 transition-colors has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50',
+                                                existingMode === option
+                                                    ? 'border-primary bg-primary/5'
+                                                    : 'border-border hover:bg-muted',
+                                            )}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="applicant_mode"
+                                                checked={
+                                                    existingMode === option
+                                                }
+                                                onChange={() =>
+                                                    chooseMode(option)
+                                                }
+                                                className="mt-0.5 size-4 accent-primary"
+                                            />
+                                            <span className="grid gap-0.5">
+                                                <span className="text-sm font-semibold">
+                                                    {t(
+                                                        option
+                                                            ? 'applicants.intake.mode_existing'
+                                                            : 'applicants.intake.mode_new',
+                                                    )}
+                                                </span>
+                                                <span className="text-xs text-muted-foreground">
+                                                    {t(
+                                                        option
+                                                            ? 'applicants.intake.mode_existing_hint'
+                                                            : 'applicants.intake.mode_new_hint',
+                                                    )}
+                                                </span>
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </fieldset>
 
-                            <div className="mt-5 rounded-card border border-border">
-                                <button
-                                    type="button"
-                                    aria-expanded={showMore}
-                                    aria-controls="organization-more"
-                                    onClick={() => setMoreOpen(!showMore)}
-                                    className="flex w-full items-center gap-3 rounded-card px-4 py-3 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-                                >
-                                    <span className="min-w-0 flex-1">
-                                        <span className="block text-sm font-semibold">
-                                            {t('applicants.intake.more')}
-                                        </span>
-                                        <span className="block text-xs text-muted-foreground">
-                                            {t('applicants.intake.more_hint')}
-                                        </span>
-                                    </span>
-                                    <ChevronDown
-                                        aria-hidden="true"
-                                        className={cn(
-                                            'size-4 shrink-0 transition-transform',
-                                            showMore && 'rotate-180',
-                                        )}
-                                    />
-                                </button>
-                                {showMore && (
-                                    <div
-                                        id="organization-more"
-                                        className="grid gap-5 border-t border-border p-4 @2xl:grid-cols-2"
-                                    >
-                                        {text(
-                                            'name_en',
-                                            t('organization.fields.name_en'),
-                                            { lang: 'en', maxLength: 255 },
-                                        )}
+                            {existingMode ? (
+                                <OrganizationLookup
+                                    value={existing}
+                                    onChange={chooseExisting}
+                                    error={errors.applicant_id ?? errors.apply}
+                                />
+                            ) : (
+                                <>
+                                    <div className="grid gap-5 @2xl:grid-cols-2">
                                         <FormField
-                                            id="email"
+                                            id="contact_email"
                                             label={t(
-                                                'organization.fields.email',
+                                                'applicants.intake.fields.email',
                                             )}
                                             hint={t(
-                                                'applicants.intake.org_email_hint',
+                                                'applicants.fields.contact_email_hint',
                                             )}
-                                            error={errors.email}
+                                            error={errors.contact_email}
                                         >
                                             {(control) => (
                                                 <Input
                                                     {...control}
                                                     type="email"
+                                                    autoComplete="off"
                                                     translate="no"
                                                     maxLength={255}
-                                                    value={data.email}
+                                                    value={data.contact_email}
                                                     onChange={(event) =>
                                                         form.setData(
-                                                            'email',
+                                                            'contact_email',
                                                             event.target.value,
                                                         )
                                                     }
@@ -689,44 +678,203 @@ export default function ApplicantsCreate({
                                             )}
                                         </FormField>
                                         {text(
-                                            'address',
-                                            t('organization.fields.address'),
-                                            { maxLength: 500 },
+                                            'contact_name',
+                                            t('applicants.intake.fields.name'),
+                                            {
+                                                maxLength: 255,
+                                                autoComplete: 'off',
+                                            },
                                         )}
                                         <FormField
-                                            id="locale"
+                                            id="phone"
                                             label={t(
-                                                'applicants.fields.locale',
+                                                'applicants.intake.fields.phone',
                                             )}
-                                            error={errors.locale}
+                                            hint={t(
+                                                'organization.fields.phone_hint',
+                                            )}
+                                            error={errors.phone}
                                         >
                                             {(control) => (
-                                                <NativeSelect
+                                                <Input
                                                     {...control}
-                                                    value={data.locale}
+                                                    type="tel"
+                                                    maxLength={30}
+                                                    className="tabular-nums"
+                                                    value={data.phone}
                                                     onChange={(event) =>
                                                         form.setData(
-                                                            'locale',
+                                                            'phone',
                                                             event.target.value,
                                                         )
                                                     }
-                                                >
-                                                    {Object.entries(
-                                                        locales,
-                                                    ).map(([code, name]) => (
-                                                        <option
-                                                            key={code}
-                                                            value={code}
-                                                        >
-                                                            {name}
-                                                        </option>
-                                                    ))}
-                                                </NativeSelect>
+                                                />
+                                            )}
+                                        </FormField>
+                                        {text(
+                                            'name_am',
+                                            t(
+                                                'applicants.intake.fields.organization',
+                                            ),
+                                            { lang: 'am', maxLength: 255 },
+                                        )}
+                                        <FormField
+                                            id="tin"
+                                            label={t(
+                                                'applicants.intake.fields.tin',
+                                            )}
+                                            hint={t(
+                                                'organization.fields.tin_hint',
+                                            )}
+                                            error={errors.tin}
+                                        >
+                                            {(control) => (
+                                                <Input
+                                                    {...control}
+                                                    inputMode="numeric"
+                                                    className="tabular-nums"
+                                                    value={data.tin}
+                                                    onChange={(event) =>
+                                                        form.setData(
+                                                            'tin',
+                                                            event.target.value
+                                                                .replace(
+                                                                    /\D/g,
+                                                                    '',
+                                                                )
+                                                                .slice(0, 10),
+                                                        )
+                                                    }
+                                                />
                                             )}
                                         </FormField>
                                     </div>
-                                )}
-                            </div>
+
+                                    <div className="mt-5 rounded-card border border-border">
+                                        <button
+                                            type="button"
+                                            aria-expanded={showMore}
+                                            aria-controls="organization-more"
+                                            onClick={() =>
+                                                setMoreOpen(!showMore)
+                                            }
+                                            className="flex w-full items-center gap-3 rounded-card px-4 py-3 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                                        >
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block text-sm font-semibold">
+                                                    {t(
+                                                        'applicants.intake.more',
+                                                    )}
+                                                </span>
+                                                <span className="block text-xs text-muted-foreground">
+                                                    {t(
+                                                        'applicants.intake.more_hint',
+                                                    )}
+                                                </span>
+                                            </span>
+                                            <ChevronDown
+                                                aria-hidden="true"
+                                                className={cn(
+                                                    'size-4 shrink-0 transition-transform',
+                                                    showMore && 'rotate-180',
+                                                )}
+                                            />
+                                        </button>
+                                        {showMore && (
+                                            <div
+                                                id="organization-more"
+                                                className="grid gap-5 border-t border-border p-4 @2xl:grid-cols-2"
+                                            >
+                                                {text(
+                                                    'name_en',
+                                                    t(
+                                                        'organization.fields.name_en',
+                                                    ),
+                                                    {
+                                                        lang: 'en',
+                                                        maxLength: 255,
+                                                    },
+                                                )}
+                                                <FormField
+                                                    id="email"
+                                                    label={t(
+                                                        'organization.fields.email',
+                                                    )}
+                                                    hint={t(
+                                                        'applicants.intake.org_email_hint',
+                                                    )}
+                                                    error={errors.email}
+                                                >
+                                                    {(control) => (
+                                                        <Input
+                                                            {...control}
+                                                            type="email"
+                                                            translate="no"
+                                                            maxLength={255}
+                                                            value={data.email}
+                                                            onChange={(event) =>
+                                                                form.setData(
+                                                                    'email',
+                                                                    event.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                        />
+                                                    )}
+                                                </FormField>
+                                                {text(
+                                                    'address',
+                                                    t(
+                                                        'organization.fields.address',
+                                                    ),
+                                                    { maxLength: 500 },
+                                                )}
+                                                <FormField
+                                                    id="locale"
+                                                    label={t(
+                                                        'applicants.fields.locale',
+                                                    )}
+                                                    error={errors.locale}
+                                                >
+                                                    {(control) => (
+                                                        <NativeSelect
+                                                            {...control}
+                                                            value={data.locale}
+                                                            onChange={(event) =>
+                                                                form.setData(
+                                                                    'locale',
+                                                                    event.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                        >
+                                                            {Object.entries(
+                                                                locales,
+                                                            ).map(
+                                                                ([
+                                                                    code,
+                                                                    name,
+                                                                ]) => (
+                                                                    <option
+                                                                        key={
+                                                                            code
+                                                                        }
+                                                                        value={
+                                                                            code
+                                                                        }
+                                                                    >
+                                                                        {name}
+                                                                    </option>
+                                                                ),
+                                                            )}
+                                                        </NativeSelect>
+                                                    )}
+                                                </FormField>
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
                         </Step>
 
                         {data.apply && (
@@ -744,6 +892,13 @@ export default function ApplicantsCreate({
                                     state={states.vehicle}
                                 >
                                     <div className="space-y-5">
+                                        {existingMode && (
+                                            <p className="rounded-md bg-muted px-4 py-3 text-sm text-muted-foreground">
+                                                {t(
+                                                    'applicants.intake.existing_vehicle_hint',
+                                                )}
+                                            </p>
+                                        )}
                                         <div className="grid gap-5 @2xl:grid-cols-2">
                                             {text(
                                                 'owner_name',
@@ -1195,31 +1350,35 @@ export default function ApplicantsCreate({
                                     </p>
                                 )}
 
-                                <label className="flex cursor-pointer items-start gap-3 rounded-md border border-border p-3">
-                                    <input
-                                        type="checkbox"
-                                        checked={data.apply}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'apply',
-                                                event.target.checked,
-                                            )
-                                        }
-                                        aria-describedby="apply-hint"
-                                        className="mt-0.5 size-4 accent-primary"
-                                    />
-                                    <span className="grid gap-0.5">
-                                        <span className="text-sm font-semibold">
-                                            {t('applicants.form.apply')}
+                                {!existingMode && (
+                                    <label className="flex cursor-pointer items-start gap-3 rounded-md border border-border p-3">
+                                        <input
+                                            type="checkbox"
+                                            checked={data.apply}
+                                            onChange={(event) =>
+                                                form.setData(
+                                                    'apply',
+                                                    event.target.checked,
+                                                )
+                                            }
+                                            aria-describedby="apply-hint"
+                                            className="mt-0.5 size-4 accent-primary"
+                                        />
+                                        <span className="grid gap-0.5">
+                                            <span className="text-sm font-semibold">
+                                                {t('applicants.form.apply')}
+                                            </span>
+                                            <span
+                                                id="apply-hint"
+                                                className="text-xs text-muted-foreground"
+                                            >
+                                                {t(
+                                                    'applicants.form.apply_hint',
+                                                )}
+                                            </span>
                                         </span>
-                                        <span
-                                            id="apply-hint"
-                                            className="text-xs text-muted-foreground"
-                                        >
-                                            {t('applicants.form.apply_hint')}
-                                        </span>
-                                    </span>
-                                </label>
+                                    </label>
+                                )}
 
                                 <div className="hidden @5xl/intake:block">
                                     {buttons(true)}

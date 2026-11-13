@@ -11,6 +11,7 @@ use App\Data\WalkInPermitData;
 use App\Models\Organization;
 use App\Models\Permit;
 use App\Models\User;
+use App\Models\Vehicle;
 use Illuminate\Support\Facades\DB;
 
 class RegisterWalkInApplication
@@ -68,6 +69,42 @@ class RegisterWalkInApplication
             }
 
             return [$applicant, $application];
+        });
+
+        return ['applicant' => $applicant, 'permit' => $application];
+    }
+
+    /**
+     * A new request of an organization already on record (Permits › Add new,
+     * "existing organisation"): filed for the same applicant, with the
+     * organization's own vehicles where it has them already (by plate) and
+     * any other vehicle added to its register — all of it or nothing.
+     *
+     * @param  list<VehicleData>  $vehicles  the primary vehicle first, then the trailers
+     * @return array{applicant: User, permit: Permit}
+     */
+    public function forExisting(User $applicant, array $vehicles, WalkInPermitData $permit, User $registrar): array
+    {
+        $application = DB::transaction(function () use ($applicant, $vehicles, $permit, $registrar): Permit {
+            /** @var Organization $profile */
+            $profile = $applicant->organization;
+
+            $ids = array_map(
+                fn (VehicleData $vehicle): string => Vehicle::query()
+                    ->whereBelongsTo($profile)
+                    ->where('plate_normalized', $vehicle->plate->normalized)
+                    ->value('id') ?? $this->registerVehicle->handle($profile, $vehicle)->id,
+                $vehicles,
+            );
+
+            $application = $this->createDraftPermit->handle(
+                $profile,
+                $applicant,
+                $permit->withVehicles(array_shift($ids), $ids),
+                actor: $registrar,
+            );
+
+            return $permit->submit ? $this->submitPermit->handle($application, $registrar) : $application;
         });
 
         return ['applicant' => $applicant, 'permit' => $application];

@@ -14,9 +14,7 @@ use App\Http\Requests\Admin\RegisterApplicantRequest;
 use App\Http\Resources\VehicleTypeResource;
 use App\Models\User;
 use App\Models\VehicleType;
-use App\Support\EthiopianCalendar;
 use App\Support\Money;
-use App\Support\Paginated;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -28,54 +26,64 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Applicants registered at the office (walk-ins). A Registrar, or an Admin,
- * opens the account and the organization for a person who came in; the
- * person then sets their own password from an e-mailed link. The list shows
- * every applicant, so a Registrar can check whether someone is already
- * registered before opening a second account.
+ * A new request taken at the office (Permits › Add new): the one-page form
+ * registers the applicant, their organization and vehicles with the request,
+ * or files the request for an organization already on record, found by the
+ * lookup below. The applicant's account is a record only: nobody signs in.
  */
 class ApplicantController extends Controller
 {
-    private const int PER_PAGE = 25;
+    private const int LOOKUP_LIMIT = 8;
 
-    public function index(Request $request): Response
+    /**
+     * Organizations already on record that match the text (the contact's name
+     * or e-mail, the organization's name, TIN or phone), for a new request of
+     * theirs: the request is filed under the same record instead of a second
+     * account.
+     */
+    public function organizations(Request $request): JsonResponse
     {
         Gate::authorize('registerApplicant', User::class);
 
         $search = is_string($request->query('search')) ? trim($request->query('search')) : '';
 
+        if (mb_strlen($search) < 2) {
+            return response()->json(['data' => []]);
+        }
+
+        $like = '%'.addcslashes($search, '%_\\').'%';
+        // Phones are stored as +251…; "0911…" and "251911…" are the same number.
+        $digits = (string) preg_replace(['/\D/', '/^(251|0)/'], '', $search);
+        $locale = app()->getLocale();
+
         $applicants = User::query()
             ->permission(Permission::ApplyForPermits->value)
-            ->with(['organization:id,name_am,name_en,tin,phone', 'registeredBy:id,name'])
-            ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $query) => $query
-                ->whereLike('name', "%{$search}%")
-                ->orWhereLike('email', "%{$search}%")
+            ->whereNotNull('organization_id')
+            ->with('organization:id,name_am,name_en,tin,phone')
+            ->where(fn (Builder $query) => $query
+                ->whereLike('name', $like)
+                ->orWhereLike('email', $like)
                 ->orWhereHas('organization', fn (Builder $query) => $query
-                    ->whereLike('name_am', "%{$search}%")
-                    ->orWhereLike('name_en', "%{$search}%")
-                    ->orWhereLike('tin', "%{$search}%")
-                    ->orWhereLike('phone', '%'.preg_replace('/\D/', '', $search).'%'))))
-            ->latest('id')
-            ->paginate(self::PER_PAGE)
-            ->withQueryString()
-            ->through(fn (User $user): array => [
+                    ->whereLike('name_am', $like)
+                    ->orWhereLike('name_en', $like)
+                    ->orWhereLike('tin', $like)
+                    // Phones are compared by their digits, and only when the text has some.
+                    ->when(strlen($digits) >= 3, fn (Builder $query) => $query->orWhereLike('phone', "%{$digits}%"))))
+            ->orderBy('name')
+            ->limit(self::LOOKUP_LIMIT)
+            ->get();
+
+        return response()->json([
+            'data' => $applicants->map(fn (User $user): array => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'organization' => $user->organization === null ? null : [
-                    'name' => app()->getLocale() === 'en' && filled($user->organization->name_en)
-                        ? $user->organization->name_en
-                        : $user->organization->name_am,
-                    'tin' => $user->organization->tin,
-                    'phone' => $user->organization->phone,
-                ],
-                'registered_by' => $user->registeredBy?->name,
-                'created_at' => EthiopianCalendar::present($user->created_at?->setTimezone((string) config('localization.display_timezone')), app()->getLocale()),
-            ]);
-
-        return Inertia::render('admin/applicants/index', [
-            'applicants' => Paginated::present($applicants),
-            'filters' => ['search' => $search],
+                'organization' => $locale === 'en' && filled($user->organization?->name_en)
+                    ? (string) $user->organization->name_en
+                    : (string) $user->organization?->name_am,
+                'tin' => $user->organization?->tin,
+                'phone' => $user->organization?->phone,
+            ])->values()->all(),
         ]);
     }
 
@@ -126,22 +134,27 @@ class ApplicantController extends Controller
 
     public function store(RegisterApplicantRequest $request, RegisterWalkInApplication $register): RedirectResponse
     {
-        ['applicant' => $user, 'permit' => $permit] = $register->handle(
-            $request->string('contact_name')->toString(),
-            $request->string('contact_email')->toString(),
-            $request->string('locale')->toString(),
-            $request->toData(),
-            $request->vehicles(),
-            $request->permit(),
-            $request->user(),
-        );
+        $existing = $request->existingApplicant();
 
-        $message = __('applicants.messages.registered');
+        ['permit' => $permit] = $existing !== null
+            ? $register->forExisting($existing, $request->vehicles(), $request->permitData(), $request->user())
+            : $register->handle(
+                $request->string('contact_name')->toString(),
+                $request->string('contact_email')->toString(),
+                $request->string('locale')->toString(),
+                $request->toData(),
+                $request->vehicles(),
+                $request->permit(),
+                $request->user(),
+            );
 
-        // To the application when there is one, otherwise on to the vehicles and the application.
+        $message = $existing !== null ? '' : __('applicants.messages.registered').' ';
+
+        // To the request when there is one; a person registered without a request is
+        // found with the lookup when their request comes.
         return $permit === null
-            ? to_route('admin.applicants.show', $user)->with('success', $message)
-            : to_route('admin.applicants.permits.show', [$user, $permit])->with('success', $message.' '.__(
+            ? to_route('admin.permits.create')->with('success', trim($message))
+            : to_route('admin.permits.show', $permit)->with('success', $message.__(
                 $permit->status === PermitStatus::Submitted ? 'applicants.messages.submitted' : 'applicants.messages.draft',
             ));
     }

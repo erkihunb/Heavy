@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Actions\Permits\CreateDraftPermit;
 use App\Actions\Permits\SubmitPayment;
 use App\Actions\Permits\SubmitPermit;
 use App\Actions\Permits\UpdateDraftPermit;
@@ -16,7 +15,6 @@ use App\Enums\PlateRegion;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Registrar\FeeEstimateForApplicantRequest;
 use App\Http\Requests\Registrar\StorePaymentForApplicantRequest;
-use App\Http\Requests\Registrar\StorePermitForApplicantRequest;
 use App\Http\Requests\Registrar\StoreVehicleForApplicantRequest;
 use App\Http\Requests\Registrar\UpdatePermitForApplicantRequest;
 use App\Http\Resources\PermitResource;
@@ -38,91 +36,22 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * The whole application for an applicant who came to the office (walk-ins):
- * a Registrar registers their vehicles, fills in and submits the permit
- * application, and hands in the payment receipt — the same steps, rules
- * and checks as when the applicant does it online. The application belongs
- * to the applicant; its history names the Registrar who acted.
+ * A request taken at the office, as the Registrar works on it under Permits:
+ * open it, correct it and send it again when changes are asked for, register
+ * a vehicle it needs, and hand in the receipt once it is approved — the same
+ * rules and checks as everywhere. The request belongs to the applicant it was
+ * filed for; its history names the Registrar who acted.
  */
 class WalkInController extends Controller
 {
-    public function show(Request $request, User $applicant): Response
+    public function show(Request $request, Permit $permit): Response
     {
-        $organization = $this->organization($applicant);
-
-        return Inertia::render('admin/applicants/show', [
-            'applicant' => [
-                'id' => $applicant->id,
-                'name' => $applicant->name,
-                'email' => $applicant->email,
-                'registered_by' => $applicant->registeredBy?->name,
-            ],
-            'organization' => [
-                'name_am' => $organization->name_am,
-                'name_en' => $organization->name_en,
-                'tin' => $organization->tin,
-                'phone' => $organization->phone,
-                'email' => $organization->email,
-                'address' => $organization->address,
-            ],
-            'vehicles' => $this->vehicles($organization),
-            'permits' => PermitResource::collection(
-                Permit::query()
-                    ->whereBelongsTo($organization)
-                    ->inBranchOf($request->user())
-                    ->with(['vehicles.vehicleType', 'organization', 'branch'])
-                    ->latest()
-                    ->orderByDesc('id')
-                    ->limit(50)
-                    ->get(),
-            ),
-        ]);
-    }
-
-    public function createVehicle(User $applicant): Response
-    {
-        $this->organization($applicant);
-
-        return Inertia::render('admin/applicants/vehicle-create', [
-            'applicant' => $this->summary($applicant),
-            'vehicleTypes' => VehicleTypeResource::collection(VehicleType::cachedOrdered()->filter(fn (VehicleType $type): bool => $type->is_active)->values()),
-            'plateRegions' => array_map(
-                fn (PlateRegion $region): array => ['value' => $region->value, 'latin' => $region->latinCode()],
-                PlateRegion::cases(),
-            ),
-        ]);
-    }
-
-    public function storeVehicle(StoreVehicleForApplicantRequest $request, User $applicant, RegisterVehicle $registerVehicle): RedirectResponse
-    {
-        $registerVehicle->handle($this->organization($applicant), $request->toData());
-
-        return to_route('admin.applicants.show', $applicant)->with('success', __('vehicles.registered_message'));
-    }
-
-    public function createPermit(User $applicant): Response
-    {
-        return Inertia::render('admin/applicants/permit-create', [
-            'applicant' => $this->summary($applicant),
-            'vehicles' => $this->vehicles($this->organization($applicant)),
-            'limits' => $this->limits(),
-        ]);
-    }
-
-    public function storePermit(StorePermitForApplicantRequest $request, User $applicant, CreateDraftPermit $createDraftPermit): RedirectResponse
-    {
-        $permit = $createDraftPermit->handle($this->organization($applicant), $applicant, $request->toData(), actor: $request->user());
-
-        return to_route('admin.applicants.permits.show', [$applicant, $permit])->with('success', __('permits.messages.draft_saved'));
-    }
-
-    public function showPermit(Request $request, User $applicant, Permit $permit): Response
-    {
+        $applicant = $this->applicant($permit);
         Gate::authorize('viewFor', [$permit, $applicant]);
 
         $may = fn (string $ability): bool => Gate::allows($ability, [$permit, $applicant]);
 
-        return Inertia::render('admin/applicants/permit-show', [
+        return Inertia::render('admin/permits/show', [
             'applicant' => $this->summary($applicant),
             'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'branch', 'transitions', 'payments'])),
             'actions' => [
@@ -133,27 +62,12 @@ class WalkInController extends Controller
         ]);
     }
 
-    /**
-     * The receipt for an approved application, on a page of its own: the
-     * registered application is not opened for editing to pay for it.
-     */
-    public function paymentPermit(User $applicant, Permit $permit): Response
+    public function edit(Permit $permit): Response
     {
-        Gate::authorize('submitPaymentFor', [$permit, $applicant]);
-
-        return Inertia::render('admin/applicants/permit-payment', [
-            'applicant' => $this->summary($applicant),
-            'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'branch', 'payments'])),
-            'paymentMethods' => array_map(fn (PaymentMethod $method): string => $method->value, PaymentMethod::selectable()),
-            'receiptMaxKilobytes' => (int) config('permits.receipt_max_kilobytes'),
-        ]);
-    }
-
-    public function editPermit(User $applicant, Permit $permit): Response
-    {
+        $applicant = $this->applicant($permit);
         Gate::authorize('updateFor', [$permit, $applicant]);
 
-        return Inertia::render('admin/applicants/permit-edit', [
+        return Inertia::render('admin/permits/edit', [
             'applicant' => $this->summary($applicant),
             'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'branch', 'transitions'])),
             'vehicles' => $this->vehicles($this->organization($applicant)),
@@ -161,32 +75,79 @@ class WalkInController extends Controller
         ]);
     }
 
-    public function updatePermit(UpdatePermitForApplicantRequest $request, User $applicant, Permit $permit, UpdateDraftPermit $updateDraftPermit): RedirectResponse
+    public function update(UpdatePermitForApplicantRequest $request, Permit $permit, UpdateDraftPermit $updateDraftPermit): RedirectResponse
     {
         $updateDraftPermit->handle($permit, $request->toData(), keepBranch: true);
 
-        return to_route('admin.applicants.permits.show', [$applicant, $permit])->with('success', __('permits.messages.draft_saved'));
+        return to_route('admin.permits.show', $permit)->with('success', __('permits.messages.draft_saved'));
     }
 
-    public function submitPermit(Request $request, User $applicant, Permit $permit, SubmitPermit $submitPermit): RedirectResponse
+    public function submit(Request $request, Permit $permit, SubmitPermit $submitPermit): RedirectResponse
     {
-        Gate::authorize('submitFor', [$permit, $applicant]);
+        Gate::authorize('submitFor', [$permit, $this->applicant($permit)]);
 
         $submitPermit->handle($permit, $request->user());
 
-        return to_route('admin.applicants.permits.show', [$applicant, $permit])->with('success', __('permits.messages.submitted'));
+        return to_route('admin.permits.show', $permit)->with('success', __('permits.messages.submitted'));
     }
 
-    public function storePayment(StorePaymentForApplicantRequest $request, User $applicant, Permit $permit, SubmitPayment $submitPayment): RedirectResponse
+    /**
+     * The receipt for an approved request, on a page of its own: the request
+     * is not opened for editing to pay for it.
+     */
+    public function payment(Permit $permit): Response
+    {
+        $applicant = $this->applicant($permit);
+        Gate::authorize('submitPaymentFor', [$permit, $applicant]);
+
+        return Inertia::render('admin/permits/payment', [
+            'applicant' => $this->summary($applicant),
+            'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'branch', 'payments'])),
+            'paymentMethods' => array_map(fn (PaymentMethod $method): string => $method->value, PaymentMethod::selectable()),
+            'receiptMaxKilobytes' => (int) config('permits.receipt_max_kilobytes'),
+        ]);
+    }
+
+    public function storePayment(StorePaymentForApplicantRequest $request, Permit $permit, SubmitPayment $submitPayment): RedirectResponse
     {
         $submitPayment->handle($permit, $request->user(), $request->toData());
 
-        return to_route('admin.applicants.permits.show', [$applicant, $permit])->with('success', __('payments.messages.submitted'));
+        return to_route('admin.permits.show', $permit)->with('success', __('payments.messages.submitted'));
     }
 
-    public function feeEstimate(FeeEstimateForApplicantRequest $request, User $applicant, FeeCalculator $fees): JsonResponse
+    /**
+     * A vehicle the request needs that its organization has not registered
+     * yet; back to correcting the request afterwards.
+     */
+    public function createVehicle(Permit $permit): Response
     {
-        $this->organization($applicant);
+        $applicant = $this->applicant($permit);
+        Gate::authorize('updateFor', [$permit, $applicant]);
+
+        return Inertia::render('admin/permits/vehicle-create', [
+            'applicant' => $this->summary($applicant),
+            'permit' => ['id' => $permit->id, 'permit_number' => $permit->permit_number],
+            'vehicleTypes' => VehicleTypeResource::collection(VehicleType::cachedOrdered()->filter(fn (VehicleType $type): bool => $type->is_active)->values()),
+            'plateRegions' => array_map(
+                fn (PlateRegion $region): array => ['value' => $region->value, 'latin' => $region->latinCode()],
+                PlateRegion::cases(),
+            ),
+        ]);
+    }
+
+    public function storeVehicle(StoreVehicleForApplicantRequest $request, Permit $permit, RegisterVehicle $registerVehicle): RedirectResponse
+    {
+        $applicant = $this->applicant($permit);
+        Gate::authorize('updateFor', [$permit, $applicant]);
+
+        $registerVehicle->handle($this->organization($applicant), $request->toData());
+
+        return to_route('admin.permits.edit', $permit)->with('success', __('vehicles.registered_message'));
+    }
+
+    public function feeEstimate(FeeEstimateForApplicantRequest $request, Permit $permit, FeeCalculator $fees): JsonResponse
+    {
+        $this->organization($this->applicant($permit));
 
         /** @var array{permit_type: string, primary_vehicle_id: string, valid_from: string, valid_to: string} $validated */
         $validated = $request->validated();
@@ -206,8 +167,21 @@ class WalkInController extends Controller
     }
 
     /**
-     * The applicant in the address, who must be an applicant with an
-     * organization; anyone else is not found here.
+     * The applicant the request was filed for; a request without one is not
+     * found here.
+     */
+    private function applicant(Permit $permit): User
+    {
+        $applicant = $permit->applicant;
+
+        abort_if($applicant === null, 404);
+
+        return $applicant;
+    }
+
+    /**
+     * The applicant's organization; someone who is not an applicant with an
+     * organization is not found here.
      */
     private function organization(User $applicant): Organization
     {

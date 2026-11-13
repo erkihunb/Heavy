@@ -22,7 +22,7 @@ final class Landing
         Permission::ViewDashboard->value => 'dashboard',
         Permission::ViewReviewQueue->value => 'staff.permits.index',
         Permission::VerifyPayments->value => 'staff.payments.index',
-        Permission::RegisterApplicants->value => 'admin.applicants.index',
+        Permission::RegisterApplicants->value => 'admin.permits.index',
         Permission::ScanPermits->value => 'officer.verify',
         Permission::ViewReports->value => 'staff.reports.index',
         Permission::ViewUsers->value => 'admin.users.index',
