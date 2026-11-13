@@ -21,6 +21,29 @@ describe('translate', () => {
         );
     });
 
+    it('resolves a name that itself contains a dot', () => {
+        const withDottedNames = {
+            admin: {
+                audit: {
+                    events: {
+                        'permit.transition': 'Permit status changed',
+                        permit: { other: 'nested beside it' },
+                    },
+                },
+            },
+        };
+
+        expect(
+            translate(withDottedNames, 'admin.audit.events.permit.transition'),
+        ).toBe('Permit status changed');
+        expect(
+            translate(withDottedNames, 'admin.audit.events.permit.other'),
+        ).toBe('nested beside it');
+        expect(
+            translate(withDottedNames, 'admin.audit.events.permit.missing'),
+        ).toBe('admin.audit.events.permit.missing');
+    });
+
     it('substitutes Laravel-style placeholders', () => {
         expect(
             translate(translations, 'common.greeting', {

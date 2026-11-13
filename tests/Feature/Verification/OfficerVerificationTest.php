@@ -98,6 +98,22 @@ it('records a violation report', function () {
         ->and($report->note)->toBe('Moving at 08:00 on Churchill Road.');
 });
 
+it('brings an officer who looked a permit up by number back to their own page after a report', function () {
+    // Looking up by number and plate answers at the public form's address,
+    // so "back" from the report is that address: a plain page the back
+    // office cannot show. The officer goes on to their look-up page instead,
+    // and the confirmation goes with them.
+    $this->actingAs($this->officer)
+        ->from(route('verification.form'))
+        ->post(route('officer.permits.reports.store', $this->permit), ['note' => 'Load not covered.'])
+        ->assertRedirect(route('verification.form'));
+
+    $this->actingAs($this->officer)
+        ->get(route('verification.form'))
+        ->assertRedirect(route('officer.verify'))
+        ->assertSessionHas('success', __('verification.officer.report.saved'));
+});
+
 it('requires a report to say something', function () {
     $this->actingAs($this->officer)
         ->post(route('officer.permits.reports.store', $this->permit), ['note' => ''])

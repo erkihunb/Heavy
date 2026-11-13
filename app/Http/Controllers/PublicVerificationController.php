@@ -11,6 +11,7 @@ use App\Http\Resources\PublicPermitVerificationResource;
 use App\Models\Permit;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -35,8 +36,23 @@ class PublicVerificationController extends Controller
         return $this->answer($request, $permit, ScanChannel::Qr);
     }
 
-    public function form(): View
+    /**
+     * The public look-up form. A signed-in officer is sent to their own
+     * look-up page instead: an officer who looked a permit up by number and
+     * plate is at this address, so anything that redirects them "back" (a
+     * saved report, a refused one) lands here, and this plain page cannot be
+     * shown inside the back office. Whatever was flashed goes with them.
+     */
+    public function form(Request $request): View|RedirectResponse
     {
+        $user = $request->user();
+
+        if ($user instanceof User && $user->can('scan', Permit::class)) {
+            $request->session()->reflash();
+
+            return redirect()->route('officer.verify');
+        }
+
         return view('verification.lookup');
     }
 
