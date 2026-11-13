@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 import {
     Check,
     ChevronDown,
@@ -16,23 +16,17 @@ import InputError from '@/components/input-error';
 import { LetterFields } from '@/components/letter-fields';
 import type { LetterValue } from '@/components/letter-fields';
 import { MovementHoursField } from '@/components/movement-hours-field';
-import { PageHeader } from '@/components/page-header';
 import { PlateInput } from '@/components/plate-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import AppLayout from '@/layouts/app-layout';
+import FormPageLayout from '@/layouts/form-page-layout';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { create, index, intakeFee, store } from '@/routes/admin/permits';
-import type {
-    BreadcrumbItem,
-    Money,
-    PlateRegionOption,
-    VehicleType,
-} from '@/types';
+import { index, intakeFee, store } from '@/routes/admin/permits';
+import type { Money, PlateRegionOption, VehicleType } from '@/types';
 import { PERMIT_TYPES } from '@/types/enums';
 import type { TranslationKey } from '@/types/translations';
 
@@ -47,7 +41,6 @@ type Props = {
     vehicleTypes: VehicleType[];
     plateRegions: PlateRegionOption[];
     limits: { max_trailers: number; max_duration_days: number };
-    receiptMaxKilobytes: number;
 };
 
 type FormData = {
@@ -78,16 +71,11 @@ type FormData = {
     any_time: boolean;
     move_from: string;
     move_to: string;
-    // 4. The payment.
-    amount: string;
-    receipt_number: string;
-    paid_at: string;
-    receipt_file: File | null;
-    // 5. The confirmation.
+    // 4. The confirmation.
     confirmed: boolean;
 } & LetterValue;
 
-type StepKey = 'applicant' | 'vehicle' | 'permit' | 'payment' | 'confirm';
+type StepKey = 'applicant' | 'vehicle' | 'permit' | 'confirm';
 
 type StepState = 'done' | 'todo' | 'optional' | 'error';
 
@@ -122,8 +110,6 @@ const STEP_FIELDS: Record<StepKey, (field: string) => boolean> = {
             'letter_date',
             'letter_file',
         ].includes(field),
-    payment: (field) =>
-        ['amount', 'receipt_number', 'paid_at', 'receipt_file'].includes(field),
     confirm: (field) => field === 'confirmed',
 };
 
@@ -200,8 +186,8 @@ function StepNumber({ number, state }: { number: number; state: StepState }) {
 
 /**
  * What the request would cost by today's schedule, asked of the server once
- * the type, the vehicle type and both dates are chosen. The amount on the
- * receipt must match it; one click copies it into the amount.
+ * the type, the vehicle type and both dates are chosen. Shown for the
+ * applicant's information: the fee is paid only once the permit is approved.
  */
 function useFeeEstimate(
     permitType: string,
@@ -261,9 +247,10 @@ function useFeeEstimate(
 
 /**
  * The office's application form, in the order of the Authority's form:
- * the applicant, the vehicle, the permit asked for, the payment and the
- * confirmation. Saved together — as a draft, or submitted for review with
- * the receipt, which the cashier verifies once the request is approved. A
+ * the applicant, the vehicle, the permit asked for and the confirmation.
+ * Saved together — as a draft, or submitted for review. There is no payment
+ * here: the fee is paid once the permit is approved, and the receipt is
+ * recorded then (by the applicant, the Registrar or the cashier). A
  * sticky panel shows how far the form is and keeps the buttons in reach.
  * The permit part can be switched off to register only the person.
  */
@@ -272,7 +259,6 @@ export default function ApplicantsCreate({
     vehicleTypes,
     plateRegions,
     limits,
-    receiptMaxKilobytes,
 }: Props) {
     const { t, locale } = useTranslation();
     const form = useForm<FormData>({
@@ -302,10 +288,6 @@ export default function ApplicantsCreate({
         letter_number: '',
         letter_date: '',
         letter_file: null,
-        amount: '',
-        receipt_number: '',
-        paid_at: '',
-        receipt_file: null,
         confirmed: false,
     });
     // Errors for the vehicles arrive under keys such as "vehicles.1.plate".
@@ -362,7 +344,7 @@ export default function ApplicantsCreate({
             return { ...rest, vehicles, submit: submitNow };
         });
         form.post(store.url(), {
-            // The scanned letter and the receipt travel as files.
+            // The scanned letter travels as a file.
             forceFormData: true,
             preserveScroll: true,
             onError: (failed) => {
@@ -421,13 +403,6 @@ export default function ApplicantsCreate({
                 data.letter_date,
             ) && data.letter_file !== null,
         ),
-        payment: stateOf(
-            'payment',
-            filled(data.amount, data.receipt_number, data.paid_at) &&
-                data.receipt_file !== null,
-            // A receipt the applicant did not bring is recorded by the cashier later.
-            true,
-        ),
         confirm: stateOf('confirm', data.confirmed),
     };
 
@@ -447,17 +422,13 @@ export default function ApplicantsCreate({
                       title: 'applicants.intake.sections.permit.title',
                   },
                   {
-                      key: 'payment',
-                      title: 'applicants.intake.sections.payment.title',
-                  },
-                  {
                       key: 'confirm',
                       title: 'applicants.intake.sections.confirm.title',
                   },
               ] as { key: StepKey; title: TranslationKey }[])
             : []),
     ];
-    const required = steps.filter((step) => step.key !== 'payment');
+    const required = steps;
     const completed = required.filter(
         (step) => states[step.key] === 'done',
     ).length;
@@ -469,8 +440,7 @@ export default function ApplicantsCreate({
             | 'name_en'
             | 'address'
             | 'owner_name'
-            | 'type_detail'
-            | 'receipt_number',
+            | 'type_detail',
         label: string,
         extra: {
             lang?: string;
@@ -548,28 +518,21 @@ export default function ApplicantsCreate({
         </div>
     );
 
-    // Under Permits: a new permit taken at the office, with its applicant.
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: t('register.title'), href: index() },
-        { title: t('register.add_new'), href: create() },
-    ];
-
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={t('register.add_new')} />
-
-            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-                <PageHeader
-                    title={t('register.add_new')}
-                    description={t('applicants.create_intro')}
-                />
-
+        <FormPageLayout
+            title={t('register.add_new')}
+            description={t('applicants.create_intro')}
+            backHref={index.url()}
+            width="full"
+        >
+            {/* The layout follows the room the form has, not the window: the sidebar takes its share. */}
+            <div className="@container/intake">
                 <form
                     onSubmit={save(data.apply)}
                     noValidate
-                    className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_19rem] xl:grid-cols-[minmax(0,1fr)_21rem]"
+                    className="grid items-start gap-6 @5xl/intake:grid-cols-[minmax(0,1fr)_20rem]"
                 >
-                    <div className="flex min-w-0 flex-col gap-6">
+                    <div className="@container flex min-w-0 flex-col gap-6">
                         {/* 1. The applicant. */}
                         <Step
                             id="applicant"
@@ -582,7 +545,7 @@ export default function ApplicantsCreate({
                             )}
                             state={states.applicant}
                         >
-                            <div className="grid gap-5 md:grid-cols-2">
+                            <div className="grid gap-5 @2xl:grid-cols-2">
                                 <FormField
                                     id="contact_email"
                                     label={t('applicants.intake.fields.email')}
@@ -692,7 +655,7 @@ export default function ApplicantsCreate({
                                 {showMore && (
                                     <div
                                         id="organization-more"
-                                        className="grid gap-5 border-t border-border p-4 md:grid-cols-2"
+                                        className="grid gap-5 border-t border-border p-4 @2xl:grid-cols-2"
                                     >
                                         {text(
                                             'name_en',
@@ -781,7 +744,7 @@ export default function ApplicantsCreate({
                                     state={states.vehicle}
                                 >
                                     <div className="space-y-5">
-                                        <div className="grid gap-5 md:grid-cols-2">
+                                        <div className="grid gap-5 @2xl:grid-cols-2">
                                             {text(
                                                 'owner_name',
                                                 t(
@@ -940,7 +903,7 @@ export default function ApplicantsCreate({
                                                     'applicants.intake.fields.movement',
                                                 )}
                                             </legend>
-                                            <div className="grid gap-3 sm:grid-cols-2">
+                                            <div className="grid gap-3 @md:grid-cols-2">
                                                 {PERMIT_TYPES.map((type) => (
                                                     <label
                                                         key={type}
@@ -1010,7 +973,7 @@ export default function ApplicantsCreate({
                                             )}
                                         </FormField>
 
-                                        <div className="grid gap-5 md:grid-cols-2">
+                                        <div className="grid gap-5 @2xl:grid-cols-2">
                                             <EthiopianDateInput
                                                 id="valid_from"
                                                 label={t(
@@ -1061,178 +1024,52 @@ export default function ApplicantsCreate({
                                                 }
                                             />
                                         </div>
-                                    </div>
-                                </Step>
-
-                                {/* 4. The payment. */}
-                                <Step
-                                    id="payment"
-                                    number={4}
-                                    title={t(
-                                        'applicants.intake.sections.payment.title',
-                                    )}
-                                    description={t(
-                                        'applicants.intake.sections.payment.intro',
-                                    )}
-                                    state={states.payment}
-                                >
-                                    <div className="space-y-5">
                                         {estimate && (
                                             <div
                                                 aria-live="polite"
-                                                className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-card border border-border bg-muted px-4 py-3"
+                                                className="rounded-card border border-border bg-muted px-4 py-3"
                                             >
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="text-eyebrow text-muted-foreground">
+                                                <p className="text-eyebrow text-muted-foreground">
+                                                    {t('applicants.intake.fee')}
+                                                </p>
+                                                {estimate.fee ? (
+                                                    <p className="flex flex-wrap items-baseline gap-x-2">
+                                                        <span className="text-xl font-extrabold tabular-nums">
+                                                            {
+                                                                estimate.fee
+                                                                    .formatted
+                                                            }
+                                                        </span>
+                                                        <span className="text-sm text-muted-foreground">
+                                                            {t(
+                                                                'payments.fee_days',
+                                                                {
+                                                                    days: estimate.days,
+                                                                },
+                                                            )}
+                                                        </span>
+                                                    </p>
+                                                ) : (
+                                                    <p className="font-medium">
                                                         {t(
-                                                            'applicants.intake.fee',
+                                                            'payments.fee_unknown',
                                                         )}
                                                     </p>
-                                                    {estimate.fee ? (
-                                                        <p className="flex flex-wrap items-baseline gap-x-2">
-                                                            <span className="text-xl font-extrabold tabular-nums">
-                                                                {
-                                                                    estimate.fee
-                                                                        .formatted
-                                                                }
-                                                            </span>
-                                                            <span className="text-sm text-muted-foreground">
-                                                                {t(
-                                                                    'payments.fee_days',
-                                                                    {
-                                                                        days: estimate.days,
-                                                                    },
-                                                                )}
-                                                            </span>
-                                                        </p>
-                                                    ) : (
-                                                        <p className="font-medium">
-                                                            {t(
-                                                                'payments.fee_unknown',
-                                                            )}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                {estimate.fee && (
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            form.setData(
-                                                                'amount',
-                                                                (
-                                                                    (estimate
-                                                                        .fee
-                                                                        ?.amount_cents ??
-                                                                        0) / 100
-                                                                ).toFixed(2),
-                                                            )
-                                                        }
-                                                    >
-                                                        {t(
-                                                            'applicants.intake.use_fee',
-                                                        )}
-                                                    </Button>
                                                 )}
+                                                <p className="mt-1 text-xs text-muted-foreground">
+                                                    {t(
+                                                        'applicants.intake.fee_after_approval',
+                                                    )}
+                                                </p>
                                             </div>
                                         )}
-
-                                        <div className="grid gap-5 md:grid-cols-2">
-                                            <FormField
-                                                id="amount"
-                                                label={t(
-                                                    'applicants.intake.fields.amount',
-                                                )}
-                                                error={errors.amount}
-                                            >
-                                                {(control) => (
-                                                    <Input
-                                                        {...control}
-                                                        inputMode="decimal"
-                                                        autoComplete="off"
-                                                        className="tabular-nums"
-                                                        value={data.amount}
-                                                        onChange={(event) =>
-                                                            form.setData(
-                                                                'amount',
-                                                                event.target
-                                                                    .value,
-                                                            )
-                                                        }
-                                                    />
-                                                )}
-                                            </FormField>
-                                            {text(
-                                                'receipt_number',
-                                                t(
-                                                    'applicants.intake.fields.receipt_number',
-                                                ),
-                                                {
-                                                    maxLength: 64,
-                                                    autoComplete: 'off',
-                                                    translate: 'no',
-                                                },
-                                            )}
-                                            <EthiopianDateInput
-                                                id="paid_at"
-                                                label={t(
-                                                    'applicants.intake.fields.paid_at',
-                                                )}
-                                                value={data.paid_at}
-                                                error={errors.paid_at}
-                                                onChange={(iso) =>
-                                                    form.setData('paid_at', iso)
-                                                }
-                                            />
-                                            <FormField
-                                                id="receipt_file"
-                                                label={t(
-                                                    'applicants.intake.fields.receipt_file',
-                                                )}
-                                                hint={t(
-                                                    'applicants.intake.fields.receipt_file_hint',
-                                                    {
-                                                        max: String(
-                                                            Math.floor(
-                                                                receiptMaxKilobytes /
-                                                                    1024,
-                                                            ),
-                                                        ),
-                                                    },
-                                                )}
-                                                error={errors.receipt_file}
-                                            >
-                                                {(control) => (
-                                                    <Input
-                                                        {...control}
-                                                        type="file"
-                                                        accept="application/pdf,image/jpeg,image/png"
-                                                        className="h-auto py-2"
-                                                        onChange={(event) =>
-                                                            form.setData(
-                                                                'receipt_file',
-                                                                event.target
-                                                                    .files?.[0] ??
-                                                                    null,
-                                                            )
-                                                        }
-                                                    />
-                                                )}
-                                            </FormField>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">
-                                            {t(
-                                                'applicants.intake.payment_draft_note',
-                                            )}
-                                        </p>
                                     </div>
                                 </Step>
 
-                                {/* 5. The confirmation. */}
+                                {/* 4. The confirmation. */}
                                 <Step
                                     id="confirm"
-                                    number={5}
+                                    number={4}
                                     title={t(
                                         'applicants.intake.sections.confirm.title',
                                     )}
@@ -1276,16 +1113,19 @@ export default function ApplicantsCreate({
                                                 className="mt-2"
                                             />
                                         </div>
-                                        {buttons(false)}
                                     </div>
                                 </Step>
                             </>
                         )}
+
+                        <div className="@5xl/intake:hidden">
+                            {buttons(false)}
+                        </div>
                     </div>
 
                     <aside
                         aria-label={t('applicants.form.panel')}
-                        className="flex flex-col gap-4 lg:sticky lg:top-20"
+                        className="order-first flex flex-col gap-4 @5xl/intake:sticky @5xl/intake:top-20 @5xl/intake:order-none"
                     >
                         <div className="overflow-hidden rounded-card border border-border bg-card">
                             <div className="brand-bar" aria-hidden="true" />
@@ -1313,7 +1153,7 @@ export default function ApplicantsCreate({
                                     </div>
                                 </div>
 
-                                <ol className="space-y-1">
+                                <ol className="hidden space-y-1 @5xl/intake:block">
                                     {steps.map((step, position) => (
                                         <li key={step.key}>
                                             <a
@@ -1381,11 +1221,13 @@ export default function ApplicantsCreate({
                                     </span>
                                 </label>
 
-                                {buttons(true)}
+                                <div className="hidden @5xl/intake:block">
+                                    {buttons(true)}
+                                </div>
                             </div>
                         </div>
 
-                        <p className="flex items-start gap-2 px-1 text-xs text-muted-foreground">
+                        <p className="hidden items-start gap-2 px-1 text-xs text-muted-foreground @5xl/intake:flex">
                             <MailCheck
                                 aria-hidden="true"
                                 className="mt-0.5 size-4 shrink-0"
@@ -1395,6 +1237,6 @@ export default function ApplicantsCreate({
                     </aside>
                 </form>
             </div>
-        </AppLayout>
+        </FormPageLayout>
     );
 }

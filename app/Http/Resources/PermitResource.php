@@ -102,6 +102,17 @@ class PermitResource extends JsonResource
     }
 
     /**
+     * What a user can do with this permit right now (see abilities()), for a
+     * controller deciding which role page to offer.
+     *
+     * @return array<string, bool>
+     */
+    public function abilitiesFor(?User $user): array
+    {
+        return $this->abilities($user);
+    }
+
+    /**
      * What the current user can do with this permit right now: allowed by the
      * policy and possible in the permit's current stage. It only decides
      * which buttons are shown; every action is authorised again on the server.
@@ -120,10 +131,6 @@ class PermitResource extends JsonResource
         $mayDecide = fn (): bool => $user !== null && app(ApprovalRules::class)->violation($permit, $user) === null;
 
         return [
-            'update' => $may('update'),
-            'submit' => $may('submit'),
-            'withdraw' => $may('withdraw'),
-            'submitPayment' => $may('submitPayment'),
             'startReview' => $canMoveTo(PermitStatus::UnderReview) && $may('startReview'),
             // Without two-step approval the Reviewer decides, so there is nothing to recommend.
             'recommend' => (bool) config('permits.two_step_approval') && $status === PermitStatus::UnderReview && $may('recommend'),

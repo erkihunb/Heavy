@@ -43,7 +43,6 @@ Route::middleware(['throttle:verification', VerificationHeaders::class])
         Route::post('verify', 'lookup')->name('verification.lookup');
     });
 
-require __DIR__.'/applicant.php';
 require __DIR__.'/staff.php';
 require __DIR__.'/admin.php';
 require __DIR__.'/settings.php';

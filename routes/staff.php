@@ -21,6 +21,10 @@ Route::middleware(['auth', 'verified', 'can:viewQueue,'.Permit::class])
     ->group(function () {
         Route::get('permits', 'index')->name('permits.index');
         Route::get('permits/{permit}', 'show')->name('permits.show');
+        // One page per role (PermitReviewController::desks()).
+        Route::get('permits/{permit}/decision', 'decision')->name('permits.decision');
+        Route::get('permits/{permit}/payment', 'payment')->name('permits.payment-desk');
+        Route::get('permits/{permit}/issue', 'issuing')->name('permits.issue-desk');
 
         Route::post('permits/{permit}/start-review', 'startReview')->name('permits.start-review');
         Route::post('permits/{permit}/recommend', 'recommend')->name('permits.recommend');

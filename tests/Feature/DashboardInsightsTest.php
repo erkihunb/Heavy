@@ -22,9 +22,15 @@ beforeEach(function () {
 
 function recordTransition(Permit $permit, PermitStatus $to, string $at): void
 {
+    // Travelling with a callback returns to the real clock afterwards, so the
+    // test's own moment is put back: the figures must not depend on today's date.
+    $moment = CarbonImmutable::now();
+
     test()->travelTo(CarbonImmutable::parse($at, 'UTC'), function () use ($permit, $to): void {
         $permit->transitions()->create(['from_status' => $permit->status, 'to_status' => $to]);
     });
+
+    test()->travelTo($moment);
 }
 
 function recordScan(string $result, string $at): void
@@ -83,8 +89,7 @@ it('shows reviewers the applications sent in each day and this month\'s decision
             ->where('insights.decisions', ['approved' => 2, 'changes_requested' => 1, 'rejected' => 1])
             // Reviewers do not see revenue or payments.
             ->where('insights.trend', null)
-            ->where('insights.payments', null)
-            ->where('insights.setup', null));
+            ->where('insights.payments', null));
 });
 
 it('shows a cashier this month\'s payments by what happened to them', function () {
@@ -99,8 +104,7 @@ it('shows a cashier this month\'s payments by what happened to them', function (
             ->where('insights.payments.verified.count', 1)
             ->where('insights.payments.verified.amount.amount_cents', 150_000)
             ->where('insights.payments.submitted.count', 1)
-            ->where('insights.payments.rejected.count', 1)
-            ->where('insights.setup', null));
+            ->where('insights.payments.rejected.count', 1));
 });
 
 it('shows a traffic officer today\'s checks by result and the last seven days', function () {
@@ -120,41 +124,4 @@ it('shows a traffic officer today\'s checks by result and the last seven days', 
             ->where('insights.scans.days.6.count', 3)
             ->where('insights.scans.days.5.count', 1)
             ->where('insights.submissions', null));
-});
-
-it('walks an applicant through getting started', function () {
-    $this->actingAs(userWithRole(Role::Applicant))
-        ->get(route('dashboard'))
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('insights.setup', [
-                ['key' => 'organization', 'done' => false],
-                ['key' => 'vehicle', 'done' => false],
-                ['key' => 'applied', 'done' => false],
-                ['key' => 'issued', 'done' => false],
-                ['key' => 'two_factor', 'done' => false],
-            ])
-            ->where('insights.submissions', null)
-            ->where('insights.decisions', null));
-});
-
-it('counts only the applicant\'s own organization and shows how far a permit in force has run', function () {
-    $user = applicantWithOrganization();
-    $own = Permit::factory()->for($user->organization)->active()->create([
-        'valid_from' => '2026-11-03',
-        'valid_to' => '2026-11-22',
-        'submitted_at' => '2026-11-01 08:00:00',
-        'issued_at' => '2026-11-02 08:00:00',
-    ]);
-    recordTransition($own, PermitStatus::Submitted, '2026-11-12 06:00:00');
-    recordTransition(Permit::factory()->submitted()->create(), PermitStatus::Submitted, '2026-11-12 06:00:00');
-
-    $this->actingAs($user)
-        ->get(route('dashboard'))
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('insights.submissions.13.count', 1)
-            ->where('insights.setup.0.done', true)
-            ->where('insights.setup.2.done', true)
-            ->where('insights.setup.3.done', true)
-            // 3 to 22 November is 20 days; the 12th is the 10th of them.
-            ->where('recentPermits.0.progress', ['percent' => 50, 'days_left' => 10, 'days' => 20]));
 });

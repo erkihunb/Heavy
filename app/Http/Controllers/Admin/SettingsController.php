@@ -10,7 +10,6 @@ use App\Domain\Sms\SmsGateway;
 use App\Domain\Telegram\TelegramGateway;
 use App\Enums\PaymentStatus;
 use App\Enums\PermitStatus;
-use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Organization;
@@ -20,6 +19,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Support\EthiopianCalendar;
 use App\Support\EthiopianPhone;
+use App\Support\Rbac\PermissionCatalog;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\RedirectResponse;
@@ -75,7 +75,7 @@ class SettingsController extends Controller
             ],
             'counts' => [
                 'users' => User::query()->count(),
-                'staff' => User::role(Role::staffValues())->count(),
+                'staff' => User::permission(PermissionCatalog::staffPermissions())->count(),
                 'organizations' => Organization::query()->count(),
                 'vehicles' => Vehicle::query()->count(),
                 'permits_in_force' => Permit::query()->where('status', PermitStatus::Issued)->count(),

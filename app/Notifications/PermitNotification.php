@@ -64,8 +64,8 @@ abstract class PermitNotification extends Notification implements ShouldQueue
             $mail->line(__('notifications.note', ['note' => trim($this->note)]));
         }
 
+        // No link: applicants have no pages of their own; the office handles the request.
         return $mail
-            ->action(__('notifications.open'), route('permits.show', $this->permit))
             ->salutation(__('notifications.salutation', ['authority' => __('common.authority')]));
     }
 

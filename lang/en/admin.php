@@ -52,7 +52,6 @@ return [
     ],
     'branches' => [
         'title' => 'Branches',
-        'intro' => 'The branch offices of the Authority. Staff placed at a branch see and work on that branch\'s applications only; Admins and head-office staff (no branch) see the whole institution. An applicant chooses the branch they apply to; a walk-in application belongs to the Registrar\'s branch. Close a branch instead of deleting it: its permits keep it.',
         'in_number' => 'The branch code is part of the permit number, for example AACRA-BOL-2018-000123.',
         'not_in_number' => 'The permit number rule does not name the branch. Add {branch} to the rule in System settings → Code rules to print the code in permit numbers.',
         'new' => 'New branch',
@@ -187,7 +186,6 @@ return [
             'app__name' => 'System name',
             'permits__max_duration_days' => 'Longest validity (days)',
             'permits__max_trailers' => 'Trailers per permit',
-            'permits__online_applications' => 'Online applications',
             'permits__two_step_approval' => 'Two-step approval',
             'permits__separation_of_duties' => 'Separation of duties',
             'permits__receipt_max_kilobytes' => 'Largest receipt file (KB)',
@@ -256,7 +254,6 @@ return [
             'permits__appearance__animations' => 'Off for slower computers. People who ask their device for reduced motion never get animations.',
             'app__name' => 'Shown in page titles and e-mails.',
             'permits__max_duration_days' => 'Counted including the first and the last day.',
-            'permits__online_applications' => 'Applicants sign up, apply and report payments themselves. When off, requests come in by letter and are recorded at the office.',
             'permits__two_step_approval' => 'A Reviewer recommends before an Approver decides. When off, the Reviewer decides alone.',
             'permits__separation_of_duties' => 'The person who approved a permit cannot verify its payment.',
             'permits__number_prefix' => 'Up to 8 capital letters and digits, for example AACRA. Parts may be joined with a hyphen.',

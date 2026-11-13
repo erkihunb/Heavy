@@ -39,7 +39,6 @@ export default function BranchesIndex({ branches, in_number }: Props) {
             <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
                 <PageHeader
                     title={t('admin.branches.title')}
-                    description={t('admin.branches.intro')}
                     action={
                         <Button asChild size="lg" className="w-full sm:w-auto">
                             <Link href={create()}>

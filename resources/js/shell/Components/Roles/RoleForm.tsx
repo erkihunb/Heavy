@@ -15,7 +15,6 @@ import {
     buttonClassName,
 } from '@/shell/Components/ui';
 import { useLocale } from '@/shell/hooks/useLocale';
-import type { PermissionModule } from '@/shell/lib/permissionGroups';
 
 export type RoleFormData = {
     name: string;
@@ -26,12 +25,11 @@ export type RoleFormData = {
 
 /**
  * The role editor shared by Create and Edit (EUISIS Roles/Create, Roles/Edit):
- * names and scope type above, the grouped permission picker below.
+ * names and scope type above, the permission picker below.
  */
 export default function RoleForm({
     initial,
     permissions,
-    modules,
     can,
     submitUrl,
     method,
@@ -41,8 +39,7 @@ export default function RoleForm({
     isSystem = false,
 }: {
     initial: RoleFormData;
-    permissions: Record<string, PermissionEntry[]>;
-    modules: PermissionModule[];
+    permissions: PermissionEntry[];
     can: { assignPermissions: boolean; manageGlobalRoles: boolean };
     submitUrl: string;
     method: 'post' | 'put';
@@ -143,7 +140,6 @@ export default function RoleForm({
                 )}
                 <PermissionPicker
                     permissions={permissions}
-                    modules={modules}
                     selected={form.data.permissions}
                     onChange={(names) => form.setData('permissions', names)}
                     disabled={pickerDisabled}

@@ -4,17 +4,14 @@ import type { PermissionEntry } from '@/shell/Components/Roles/PermissionPicker'
 import RoleForm from '@/shell/Components/Roles/RoleForm';
 import { useLocale } from '@/shell/hooks/useLocale';
 import AuthenticatedLayout from '@/shell/Layouts/AuthenticatedLayout';
-import type { PermissionModule } from '@/shell/lib/permissionGroups';
 
 /** A new role (EUISIS Roles/Create). */
 export default function CreateRole({
     permissions,
-    modules,
     can,
     urls,
 }: {
-    permissions: Record<string, PermissionEntry[]>;
-    modules: PermissionModule[];
+    permissions: PermissionEntry[];
     can: { assignPermissions: boolean; manageGlobalRoles: boolean };
     urls: { index: string; store: string };
 }) {
@@ -40,7 +37,6 @@ export default function CreateRole({
                     permissions: [],
                 }}
                 permissions={permissions}
-                modules={modules}
                 can={can}
                 submitUrl={urls.store}
                 method="post"

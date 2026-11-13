@@ -101,40 +101,119 @@ class PermitReviewController extends Controller
     }
 
     /**
-     * What waits for the person's desk: review, payment or issuing. The head
-     * office, which only oversees, sees everything in progress.
+     * What waits for the person's desks — review, payment and issuing, each
+     * by its permission, so someone who holds several sees them all. The
+     * head office, which only oversees, sees everything in progress.
      *
      * @return list<PermitStatus>
      */
     private function desk(User $user): array
     {
-        return match (true) {
-            $user->can(Permission::ReviewPermits->value) || $user->can(Permission::ApprovePermits->value) => [PermitStatus::Submitted, PermitStatus::UnderReview],
-            $user->can(Permission::VerifyPayments->value) => [PermitStatus::AwaitingPayment, PermitStatus::PaymentSubmitted],
-            $user->can(Permission::IssuePermits->value) => [PermitStatus::PaymentConfirmed],
-            default => [
-                PermitStatus::Submitted,
-                PermitStatus::UnderReview,
-                PermitStatus::ChangesRequested,
-                PermitStatus::AwaitingPayment,
-                PermitStatus::PaymentSubmitted,
-                PermitStatus::PaymentConfirmed,
-            ],
-        };
+        $waiting = [
+            ...($user->can(Permission::ReviewPermits->value) || $user->can(Permission::ApprovePermits->value)
+                ? [PermitStatus::Submitted, PermitStatus::UnderReview] : []),
+            ...($user->can(Permission::VerifyPayments->value)
+                ? [PermitStatus::AwaitingPayment, PermitStatus::PaymentSubmitted] : []),
+            ...($user->can(Permission::IssuePermits->value)
+                ? [PermitStatus::PaymentConfirmed] : []),
+        ];
+
+        return $waiting !== [] ? $waiting : [
+            PermitStatus::Submitted,
+            PermitStatus::UnderReview,
+            PermitStatus::ChangesRequested,
+            PermitStatus::AwaitingPayment,
+            PermitStatus::PaymentSubmitted,
+            PermitStatus::PaymentConfirmed,
+        ];
     }
 
-    public function show(Permit $permit, OverlapGuard $overlap): Response
+    /**
+     * The application, read only: its details, the vehicles' permit history,
+     * the head office's comments and the timeline. Each role works on it on
+     * its own page (decision, payment, issue), linked from here.
+     */
+    public function show(Request $request, Permit $permit, OverlapGuard $overlap): Response
     {
         Gate::authorize('view', $permit);
 
-        $permit->load(['vehicles.vehicleType', 'organization', 'branch', 'applicant', 'recommender', 'issuer', 'comments.author', 'transitions.actor', 'payments']);
+        return $this->render('staff/permits/show', $request, $permit, $overlap);
+    }
 
-        return Inertia::render('staff/permits/show', [
-            'permit' => PermitResource::make($permit),
+    /**
+     * The Reviewer's and Approver's page: the details and the vehicles'
+     * history, then the decision (start, recommend, approve, request changes,
+     * reject) and, once issued, revoking or reissuing.
+     */
+    public function decision(Request $request, Permit $permit, OverlapGuard $overlap): Response
+    {
+        Gate::authorize('view', $permit);
+        abort_unless($this->desks($request->user())['decision'], 403);
+
+        return $this->render('staff/permits/decision', $request, $permit, $overlap);
+    }
+
+    /**
+     * The cashier's page: the fee, the receipts handed in, and recording a
+     * payment taken at the office.
+     */
+    public function payment(Request $request, Permit $permit, OverlapGuard $overlap): Response
+    {
+        Gate::authorize('view', $permit);
+        abort_unless($this->desks($request->user())['payment'], 403);
+
+        return $this->render('staff/permits/payment', $request, $permit, $overlap);
+    }
+
+    /**
+     * The Issuer's page: the verified payment, then issuing and printing.
+     */
+    public function issuing(Request $request, Permit $permit, OverlapGuard $overlap): Response
+    {
+        Gate::authorize('view', $permit);
+        abort_unless($this->desks($request->user())['issue'], 403);
+
+        return $this->render('staff/permits/issue', $request, $permit, $overlap);
+    }
+
+    private function render(string $page, Request $request, Permit $permit, OverlapGuard $overlap): Response
+    {
+        $permit->load(['vehicles.vehicleType', 'organization', 'branch', 'applicant', 'recommender', 'issuer', 'comments.author', 'transitions.actor', 'payments']);
+        $resource = PermitResource::make($permit);
+        $can = $resource->abilitiesFor($request->user());
+        $desks = $this->desks($request->user());
+        // Waiting for this person on that page now.
+        $pending = [
+            'decision' => $can['startReview'] || $can['recommend'] || $can['approve'] || $can['requestChanges'] || $can['reject'] || $can['revoke'] || $can['reissue'],
+            'payment' => $can['recordPayment'],
+            'issue' => $can['issue'],
+        ];
+        $routes = ['decision' => 'staff.permits.decision', 'payment' => 'staff.permits.payment-desk', 'issue' => 'staff.permits.issue-desk'];
+
+        return Inertia::render($page, [
+            'permit' => $resource,
             'vehicleHistory' => $this->vehicleHistory($permit, $overlap),
-            // For the cashier's payment form.
             'receiptMaxKilobytes' => (int) config('permits.receipt_max_kilobytes'),
+            'desks' => array_map(
+                fn (string $key): array => ['key' => $key, 'url' => route($routes[$key], $permit), 'pending' => $pending[$key]],
+                array_keys(array_filter($desks)),
+            ),
         ]);
+    }
+
+    /**
+     * The role pages a person has, by their permissions: one page per role,
+     * whatever stage the application is in.
+     *
+     * @return array{decision: bool, payment: bool, issue: bool}
+     */
+    private function desks(User $user): array
+    {
+        return [
+            'decision' => $user->can(Permission::ReviewPermits->value) || $user->can(Permission::ApprovePermits->value) || $user->can(Permission::RevokePermits->value),
+            'payment' => $user->can(Permission::VerifyPayments->value),
+            'issue' => $user->can(Permission::IssuePermits->value),
+        ];
     }
 
     public function startReview(StartReviewRequest $request, Permit $permit, StartReview $startReview): RedirectResponse

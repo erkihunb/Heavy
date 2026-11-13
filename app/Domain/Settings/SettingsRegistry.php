@@ -41,7 +41,6 @@ final class SettingsRegistry
             'app.name' => ['section' => 'general', 'group' => 'system', 'type' => 'text', 'required' => true, 'max' => 100],
             'permits.max_duration_days' => ['section' => 'permits', 'group' => 'rules', 'type' => 'int', 'min' => 1, 'max' => 366],
             'permits.max_trailers' => ['section' => 'permits', 'group' => 'rules', 'type' => 'int', 'min' => 0, 'max' => 5],
-            'permits.online_applications' => ['section' => 'permits', 'group' => 'rules', 'type' => 'bool'],
             'permits.two_step_approval' => ['section' => 'permits', 'group' => 'rules', 'type' => 'bool'],
             'permits.separation_of_duties' => ['section' => 'permits', 'group' => 'rules', 'type' => 'bool'],
             'permits.receipt_max_kilobytes' => ['section' => 'permits', 'group' => 'rules', 'type' => 'int', 'min' => 512, 'max' => 20480],

@@ -15,7 +15,11 @@ import { useBranding } from '@/shell/hooks/useBranding';
 import { useCan } from '@/shell/hooks/useCan';
 import { useLocale } from '@/shell/hooks/useLocale';
 import { useSystemSettings } from '@/shell/hooks/useSystemSettings';
-import { activeItem, permittedSections } from '@/shell/lib/navigation';
+import {
+    activeItem,
+    isPermitted,
+    permittedSections,
+} from '@/shell/lib/navigation';
 
 const SIDEBAR_GROUPS_STORAGE_KEY = 'heavy-sidebar-open-groups';
 
@@ -58,6 +62,8 @@ export default function AppSidebar({
         getString('appearance.logo_position', 'start') === 'center';
 
     const homeNav = navigation.home;
+    // The dashboard link, for those who hold its permission.
+    const showHome = isPermitted(homeNav, can);
     const sections: NavSection[] = permittedSections(navigation, can);
     const allGroups = sections.flatMap((section) => section.groups);
     const currentUrl = pageUrl;
@@ -542,7 +548,7 @@ export default function AppSidebar({
                 className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain mask-[linear-gradient(to_bottom,transparent,#000_12px,#000_94%,transparent)] px-2 pt-3 pb-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_12px,#000_94%,transparent)]"
                 aria-label={t('shell.nav.main_navigation')}
             >
-                {(!normalizedQuery || matches(homeNav)) && (
+                {showHome && (!normalizedQuery || matches(homeNav)) && (
                     <ul className="mb-4 space-y-px">{renderLink(homeNav)}</ul>
                 )}
                 {sections.map((section) =>
@@ -550,7 +556,7 @@ export default function AppSidebar({
                 )}
                 {normalizedQuery &&
                     !matchingGroups.length &&
-                    !matches(homeNav) && (
+                    !(showHome && matches(homeNav)) && (
                         <p
                             role="status"
                             className="px-3 py-5 text-sm leading-relaxed text-(--sidebar-muted)"

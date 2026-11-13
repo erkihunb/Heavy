@@ -139,10 +139,6 @@ export type PermitTransition = {
 
 /** What the signed-in user may do with a permit right now (buttons only). */
 export type PermitAbilities = {
-    update: boolean;
-    submit: boolean;
-    withdraw: boolean;
-    submitPayment: boolean;
     startReview: boolean;
     recommend: boolean;
     requestChanges: boolean;

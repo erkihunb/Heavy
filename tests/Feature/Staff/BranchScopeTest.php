@@ -136,39 +136,6 @@ it('fixes the branch of an export to the person who asks for it', function () {
 });
 
 describe('where an application belongs', function () {
-    it('lets an applicant choose the branch they apply to', function () {
-        $applicant = applicantWithOrganization();
-
-        $this->actingAs($applicant)
-            ->get(route('permits.create'))
-            ->assertInertia(fn (Assert $page) => $page->has('branches', 2)->where('branches.0.code', 'BOL'));
-
-        $this->actingAs($applicant)
-            ->post(route('permits.store'), permitPayload($applicant, ['branch_id' => $this->yeka->id]))
-            ->assertRedirect();
-
-        $permit = Permit::query()->where('applicant_id', $applicant->id)->sole();
-        expect($permit->branch_id)->toBe($this->yeka->id);
-
-        // Changing a draft may move it, here to the head office.
-        $this->actingAs($applicant)
-            ->put(route('permits.update', $permit), permitPayload($applicant, ['branch_id' => '']))
-            ->assertRedirect();
-
-        expect($permit->refresh()->branch_id)->toBeNull();
-    });
-
-    it('refuses a closed or unknown branch', function (Closure $branchId) {
-        $applicant = applicantWithOrganization();
-
-        $this->actingAs($applicant)
-            ->post(route('permits.store'), permitPayload($applicant, ['branch_id' => $branchId()]))
-            ->assertSessionHasErrors('branch_id');
-    })->with([
-        'closed' => [fn () => Branch::factory()->closed()->create()->id],
-        'unknown' => [fn () => 999_999],
-    ]);
-
     it('gives a walk-in application the branch of the registrar, whatever the form says', function () {
         $registrar = ($this->at)(Role::Registrar, $this->bole);
         $applicant = applicantWithOrganization();

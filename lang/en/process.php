@@ -4,20 +4,20 @@ return [
     'title' => 'How a permit is issued',
     'steps' => [
         'apply' => [
-            'title' => 'Apply',
-            'body' => 'Register your organisation and vehicles, choose the permit type and the dates, and submit the application.',
+            'title' => 'Request at the office',
+            'body' => 'Bring the request letter to a branch or the head office. The registrar records the organisation, the vehicles, the permit type and the dates.',
         ],
         'review' => [
             'title' => 'Review',
-            'body' => 'A Roads Authority officer reviews the application and may ask for changes.',
+            'body' => 'A Roads Authority officer reviews the request and may ask for changes.',
         ],
         'pay' => [
             'title' => 'Pay',
-            'body' => 'Once the application is approved, pay the fee and upload the receipt for verification.',
+            'body' => 'Once the request is approved, pay the fee at the bank or the cashier and bring the receipt to the office.',
         ],
         'issue' => [
             'title' => 'Permit issued',
-            'body' => 'The permit is issued as a document that carries a secure QR code.',
+            'body' => 'The permit is printed at the office as a document that carries a secure QR code.',
         ],
         'verify' => [
             'title' => 'Checked on the road',

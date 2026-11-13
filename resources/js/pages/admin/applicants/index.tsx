@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ChevronRight, Globe, Plus, Search, Store } from 'lucide-react';
+import { ChevronRight, Plus, Search } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import {
@@ -18,7 +18,6 @@ import { Pagination } from '@/components/pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
 import { index, show } from '@/routes/admin/applicants';
@@ -41,7 +40,7 @@ type Applicant = {
 
 type Props = {
     applicants: Paginated<Applicant>;
-    filters: { search: string; source: string };
+    filters: { search: string };
 };
 
 export default function ApplicantsIndex({ applicants, filters }: Props) {
@@ -52,7 +51,7 @@ export default function ApplicantsIndex({ applicants, filters }: Props) {
         { title: t('applicants.title'), href: index() },
     ];
 
-    const filter = (next: { search?: string; source?: string }) => {
+    const filter = (next: { search?: string }) => {
         const query = { ...filters, ...next };
 
         router.get(
@@ -112,27 +111,6 @@ export default function ApplicantsIndex({ applicants, filters }: Props) {
                             {t('applicants.search')}
                         </Button>
                     </form>
-
-                    <div className="grid w-full gap-1.5 sm:w-56">
-                        <Label htmlFor="source">{t('applicants.source')}</Label>
-                        <NativeSelect
-                            id="source"
-                            value={filters.source}
-                            onChange={(event) =>
-                                filter({ source: event.target.value })
-                            }
-                        >
-                            <option value="">
-                                {t('applicants.any_source')}
-                            </option>
-                            <option value="office">
-                                {t('applicants.at_office')}
-                            </option>
-                            <option value="online">
-                                {t('applicants.online')}
-                            </option>
-                        </NativeSelect>
-                    </div>
                 </div>
 
                 <TableCard>
@@ -202,23 +180,8 @@ export default function ApplicantsIndex({ applicants, filters }: Props) {
                                             )}
                                         </Td>
                                         <Td muted>
-                                            <span className="flex items-center gap-1.5 whitespace-nowrap">
-                                                {applicant.registered_by ? (
-                                                    <Store
-                                                        aria-hidden="true"
-                                                        className="size-4"
-                                                    />
-                                                ) : (
-                                                    <Globe
-                                                        aria-hidden="true"
-                                                        className="size-4"
-                                                    />
-                                                )}
-                                                {applicant.registered_by
-                                                    ? t('applicants.by_staff', {
-                                                          name: applicant.registered_by,
-                                                      })
-                                                    : t('applicants.online')}
+                                            <span className="whitespace-nowrap">
+                                                {applicant.registered_by ?? '—'}
                                             </span>
                                         </Td>
                                         <Td className="whitespace-nowrap">

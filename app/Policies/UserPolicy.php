@@ -3,7 +3,6 @@
 namespace App\Policies;
 
 use App\Enums\Permission;
-use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
@@ -39,7 +38,7 @@ class UserPolicy
             return Response::deny();
         }
 
-        if ($target->hasRole(Role::Applicant->value)) {
+        if ($target->isApplicant()) {
             return Response::deny(__('admin.users.errors.applicant'));
         }
 
@@ -61,7 +60,7 @@ class UserPolicy
             return Response::deny(__('admin.users.errors.own_role'));
         }
 
-        if ($target->hasRole(Role::Applicant->value)) {
+        if ($target->isApplicant()) {
             return Response::deny(__('admin.users.errors.applicant'));
         }
 

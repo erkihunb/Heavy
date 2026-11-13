@@ -39,7 +39,6 @@ class RoleController extends Controller
         $filters = [
             'search' => trim((string) $request->query('search', '')),
             'scope' => in_array($request->query('scope'), [Role::SCOPE_BRANCH, Role::SCOPE_GLOBAL], true) ? (string) $request->query('scope') : '',
-            'module' => array_key_exists((string) $request->query('module'), PermissionCatalog::MODULES) ? (string) $request->query('module') : '',
         ];
 
         $roles = Role::query()
@@ -49,10 +48,6 @@ class RoleController extends Controller
                 fn (Builder $inner) => $inner->whereLike('name', "%{$filters['search']}%")->orWhereLike('name_am', "%{$filters['search']}%"),
             ))
             ->when($filters['scope'] !== '', fn (Builder $query) => $query->where('scope_type', $filters['scope']))
-            ->when($filters['module'] !== '', fn (Builder $query) => $query->whereHas(
-                'permissions',
-                fn (Builder $permissions) => $permissions->whereIn('name', $this->moduleNames($filters['module'])),
-            ))
             ->orderByDesc('is_system')
             ->orderBy('name')
             ->paginate(self::PER_PAGE)
@@ -71,7 +66,6 @@ class RoleController extends Controller
                 'to' => $roles->lastItem(),
             ],
             'filters' => $filters,
-            'modules' => PermissionCatalog::modules(),
             'scopeCounts' => [
                 Role::SCOPE_BRANCH => Role::query()->where('scope_type', Role::SCOPE_BRANCH)->count(),
                 Role::SCOPE_GLOBAL => Role::query()->where('scope_type', Role::SCOPE_GLOBAL)->count(),
@@ -86,8 +80,7 @@ class RoleController extends Controller
         Gate::authorize('create', Role::class);
 
         return Inertia::render('admin/roles/create', [
-            'permissions' => PermissionCatalog::grouped(),
-            'modules' => PermissionCatalog::modules(),
+            'permissions' => PermissionCatalog::entries(),
             'can' => [
                 'assignPermissions' => true,
                 'manageGlobalRoles' => $request->user()?->can('manageGlobal', Role::class) ?? false,
@@ -143,8 +136,7 @@ class RoleController extends Controller
                 'is_system' => $role->is_system,
                 'users_count' => $role->users()->count(),
             ],
-            'permissions' => PermissionCatalog::grouped(),
-            'modules' => PermissionCatalog::modules(),
+            'permissions' => PermissionCatalog::entries(),
             'can' => [
                 'assignPermissions' => $actor?->can('assignPermissions', $role) ?? false,
                 // A global role stays global for whoever may edit it; only administrators make one.
@@ -227,12 +219,6 @@ class RoleController extends Controller
     private function presentRow(Role $role, ?User $actor): array
     {
         $names = $role->permissions->pluck('name');
-        $modules = $names
-            ->map(fn (string $name): ?string => PermissionCatalog::moduleOf($name))
-            ->filter()
-            ->countBy()
-            ->sortDesc()
-            ->all();
 
         return [
             'id' => $role->id,
@@ -242,7 +228,6 @@ class RoleController extends Controller
             'scope_type' => $role->scope_type,
             'users_count' => (int) $role->getAttribute('users_count'),
             'permissions_count' => $names->count(),
-            'modules' => $modules,
             'is_protected' => $role->isProtected(),
             'is_system' => $role->is_system,
             'can' => [
@@ -253,13 +238,5 @@ class RoleController extends Controller
             'editUrl' => route('admin.roles.edit', $role),
             'destroyUrl' => route('admin.roles.destroy', $role),
         ];
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function moduleNames(string $module): array
-    {
-        return array_merge(...array_values(PermissionCatalog::MODULES[$module]));
     }
 }

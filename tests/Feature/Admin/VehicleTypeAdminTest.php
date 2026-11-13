@@ -88,12 +88,15 @@ it('validates the type', function (array $input, string $field) {
     'negative order' => [['sort_order' => -1], 'sort_order'],
 ]);
 
-it('offers applicants only active types, from a cache that a change refreshes', function () {
+it('offers only active types on the office\'s vehicle form, from a cache that a change refreshes', function () {
     $active = VehicleType::factory()->create();
     $retired = VehicleType::factory()->inactive()->create();
     $applicant = applicantWithOrganization();
+    $registrar = staffUser(Role::Registrar);
 
-    $types = fn (): array => $this->actingAs($applicant)->get(route('vehicles.create'))->viewData('page')['props']['vehicleTypes'];
+    $types = fn (): array => $this->actingAs($registrar)
+        ->get(route('admin.applicants.vehicles.create', $applicant))
+        ->viewData('page')['props']['vehicleTypes'];
 
     expect(collect($types())->pluck('id')->all())->toContain($active->id)->not->toContain($retired->id)
         ->and(Cache::has(VehicleType::CACHE_KEY))->toBeTrue();

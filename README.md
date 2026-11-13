@@ -169,7 +169,7 @@ Ported from EUISIS. Under **Admin → Users and audit**:
   roles**, set the branch they work at, and **deactivate** or **restore** an account.
   Deactivating keeps the account and its history; the person is signed out and cannot sign
   in. Nobody changes their own roles or deactivates themselves, and the last active
-  administrator is always kept. Applicants register themselves and are listed only.
+  administrator is always kept. Applicants are registered at the office (Applicants) and are listed only.
 - **Roles** (`admin/roles`): the default roles (`App\Enums\Role`, marked *system*: their
   code name cannot change and they cannot be deleted) and any role an Admin creates, with
   an Amharic name and a picker of permissions grouped by module. The `admin` role always

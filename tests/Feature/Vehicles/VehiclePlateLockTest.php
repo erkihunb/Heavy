@@ -10,9 +10,6 @@ use App\Exceptions\VehiclePlateLocked;
 use App\Models\Permit;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
-use Illuminate\Contracts\Debug\ExceptionHandler;
-use Illuminate\Http\Request;
-use Inertia\Testing\AssertableInertia as Assert;
 
 /*
  * Once a vehicle is on a submitted application its plate is part of that
@@ -142,84 +139,5 @@ describe('UpdateVehicle', function () {
         );
 
         expect($this->vehicle->refresh()->plate_normalized)->toBe('ኢት-03-99999');
-    });
-});
-
-describe('over HTTP', function () {
-    it('answers a change of a locked plate with a validation error and changes nothing', function () {
-        Permit::factory()->forVehicles($this->vehicle)->submitted()->create();
-
-        $this->actingAs($this->user)
-            ->from(route('vehicles.edit', $this->vehicle))
-            ->put(route('vehicles.update', $this->vehicle), [
-                'plate' => 'ኢት-03-99999',
-                'vehicle_type_id' => $this->vehicle->vehicle_type_id,
-                'owner_name' => 'ሌላ ባለንብረት',
-            ])
-            ->assertRedirect(route('vehicles.edit', $this->vehicle))
-            ->assertSessionHasErrors(['plate' => __('vehicles.errors.plate_locked')])
-            ->assertSessionMissing('success');
-
-        $this->vehicle->refresh();
-
-        expect($this->vehicle->plate_normalized)->toBe('ኢት-03-40134')
-            ->and($this->vehicle->owner_name)->toBe('አበበ ከበደ');
-    });
-
-    it('turns a refusal by the Action into the same validation error', function () {
-        // What the exception handler makes of VehiclePlateLocked when the form
-        // validation did not catch it first (a race with a submission).
-        $request = Request::create(route('vehicles.update', $this->vehicle), 'PUT', server: ['HTTP_ACCEPT' => 'application/json']);
-
-        $response = app(ExceptionHandler::class)->render($request, new VehiclePlateLocked('ኢት-03-40134'));
-
-        expect($response->getStatusCode())->toBe(422)
-            ->and($response->getData(true)['errors'])->toBe(['plate' => [__('vehicles.errors.plate_locked')]]);
-    });
-
-    it('still saves the other details when the plate is left as it is', function () {
-        Permit::factory()->forVehicles($this->vehicle)->submitted()->create();
-        $type = VehicleType::factory()->create();
-
-        $this->actingAs($this->user)
-            ->put(route('vehicles.update', $this->vehicle), [
-                'plate' => 'ET 03 40134',
-                'vehicle_type_id' => $type->id,
-                'owner_name' => 'ሌላ ባለንብረት',
-            ])
-            ->assertRedirect(route('vehicles.index'))
-            ->assertSessionHasNoErrors();
-
-        $this->vehicle->refresh();
-
-        expect($this->vehicle->plate_normalized)->toBe('ኢት-03-40134')
-            ->and($this->vehicle->owner_name)->toBe('ሌላ ባለንብረት')
-            ->and($this->vehicle->vehicle_type_id)->toBe($type->id);
-    });
-
-    it('still lets the plate be corrected while the vehicle is only on a draft', function () {
-        Permit::factory()->forVehicles($this->vehicle)->draft()->create();
-
-        $this->actingAs($this->user)
-            ->put(route('vehicles.update', $this->vehicle), [
-                'plate' => 'ኢት-03-99999',
-                'vehicle_type_id' => $this->vehicle->vehicle_type_id,
-                'owner_name' => 'አበበ ከበደ',
-            ])
-            ->assertSessionHasNoErrors();
-
-        expect($this->vehicle->refresh()->plate_normalized)->toBe('ኢት-03-99999');
-    });
-
-    it('tells the edit form whether the plate is locked', function () {
-        $this->actingAs($this->user)
-            ->get(route('vehicles.edit', $this->vehicle))
-            ->assertInertia(fn (Assert $page) => $page->where('plateLocked', false));
-
-        Permit::factory()->forVehicles($this->vehicle)->submitted()->create();
-
-        $this->actingAs($this->user)
-            ->get(route('vehicles.edit', $this->vehicle))
-            ->assertInertia(fn (Assert $page) => $page->where('plateLocked', true));
     });
 });

@@ -42,17 +42,11 @@ it('lets Approvers and Admins reissue', function (Role $role) {
         ->toBe(in_array($role, [Role::Approver, Role::Admin], true));
 })->with(Role::cases());
 
-it('lets the organization download its issued or expired permit', function (PermitStatus $status, bool $allowed) {
+it('does not let the applicant\'s own account download the permit: the office prints it', function (PermitStatus $status) {
     $permit = Permit::factory()->create(['status' => $status]);
 
-    expect(verificationMember(Role::Applicant, $permit)->can('download', $permit))->toBe($allowed);
-})->with([
-    [PermitStatus::Issued, true],
-    [PermitStatus::Expired, true],
-    [PermitStatus::Revoked, false],
-    [PermitStatus::AwaitingPayment, false],
-    [PermitStatus::Draft, false],
-]);
+    expect(verificationMember(Role::Applicant, $permit)->can('download', $permit))->toBeFalse();
+})->with([PermitStatus::Issued, PermitStatus::Expired, PermitStatus::Revoked]);
 
 it('answers not found to another organization', function () {
     $permit = Permit::factory()->issued()->create();

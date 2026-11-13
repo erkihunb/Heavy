@@ -1,7 +1,6 @@
 <?php
 
 use App\Domain\Permits\ValidityRules;
-use App\Enums\PaymentStatus;
 use App\Enums\PermitStatus;
 use App\Enums\Role;
 use App\Jobs\GeneratePermitDocument;
@@ -19,8 +18,8 @@ use Spatie\Activitylog\Models\Activity;
 /*
  * The office's application form in the order of the Authority's form: the
  * applicant, the vehicle (an "other" one described in words, a trailer by its
- * plate), the permit, the receipt brought with the request, and the
- * confirmation. The receipt waits for the decision, then goes to the cashier.
+ * plate), the permit and the confirmation. No payment is taken with the
+ * request: the fee is paid once the permit is approved.
  */
 
 beforeEach(function () {
@@ -62,109 +61,46 @@ function intakeForm(array $overrides = []): array
         'valid_from' => $today->addDays(3)->toDateString(),
         'valid_to' => $today->addDays(12)->toDateString(),
         ...$letter,
-        'amount' => '1500.00',
-        'receipt_number' => 'CBE-778899',
-        'paid_at' => $today->toDateString(),
-        'receipt_file' => UploadedFile::fake()->create('receipt.pdf', 120, 'application/pdf'),
         'confirmed' => true,
         ...$overrides,
     ];
 }
 
-it('records the request with the receipt, which waits for the decision', function () {
+it('records the request without a payment, even when receipt details are sent', function () {
     $this->actingAs($this->registrar)
-        ->post(route('admin.permits.store'), intakeForm())
+        ->post(route('admin.permits.store'), intakeForm([
+            'amount' => '1500.00',
+            'receipt_number' => 'CBE-778899',
+            'paid_at' => ValidityRules::today()->toDateString(),
+            'receipt_file' => UploadedFile::fake()->create('receipt.pdf', 120, 'application/pdf'),
+        ]))
         ->assertSessionHasNoErrors();
 
     $permit = Permit::query()->with('vehicles')->sole();
-    $payment = Payment::query()->sole();
 
     expect($permit->status)->toBe(PermitStatus::Submitted)
         ->and($permit->vehicles)->toHaveCount(2)
-        ->and($payment->permit_id)->toBe($permit->id)
-        ->and($payment->status)->toBe(PaymentStatus::Submitted)
-        ->and($payment->amount_cents)->toBe(150_000)
-        ->and($payment->submitted_by)->toBe($this->registrar->id)
-        ->and($payment->receipt_file_path)->toStartWith('receipts/')
-        ->and(Activity::query()->where('event', 'payment.taken_at_intake')->count())->toBe(1);
+        ->and(Payment::query()->count())->toBe(0)
+        ->and(Activity::query()->where('event', 'payment.taken_at_intake')->count())->toBe(0);
 
-    // Not the cashier's yet: the request has not been decided.
+    // Nothing for the cashier until the request is decided.
     $this->actingAs(staffUser(Role::Cashier))
         ->get(route('staff.payments.index'))
         ->assertInertia(fn (Assert $page) => $page->has('payments.data', 0));
 });
 
-it('sends the receipt to the cashier once the request is approved for the same fee', function () {
+it('waits for the payment once the request is approved', function () {
     $this->actingAs($this->registrar)->post(route('admin.permits.store'), intakeForm())->assertSessionHasNoErrors();
     $permit = Permit::query()->sole();
     $reviewer = staffUser(Role::Reviewer);
-    $cashier = staffUser(Role::Cashier);
 
     $this->actingAs($reviewer)->post(route('staff.permits.start-review', $permit))->assertSessionHas('success');
     $this->actingAs($reviewer)->post(route('staff.permits.approve', $permit))->assertSessionHas('success');
 
-    expect($permit->refresh()->status)->toBe(PermitStatus::PaymentSubmitted)
-        ->and($permit->fee_cents)->toBe(150_000);
-
-    $this->actingAs($cashier)
-        ->get(route('staff.payments.index'))
-        ->assertInertia(fn (Assert $page) => $page->has('payments.data', 1));
-
-    $this->actingAs($cashier)
-        ->post(route('staff.payments.verify', Payment::query()->sole()))
-        ->assertSessionHasNoErrors();
-
-    expect($permit->refresh()->status)->toBe(PermitStatus::PaymentConfirmed)
-        ->and(Payment::query()->sole()->status)->toBe(PaymentStatus::Verified);
-});
-
-it('sets the receipt aside when the fee fixed at approval is another amount', function () {
-    $this->actingAs($this->registrar)->post(route('admin.permits.store'), intakeForm())->assertSessionHasNoErrors();
-    $permit = Permit::query()->sole();
-    $reviewer = staffUser(Role::Reviewer);
-
-    // As if the schedule had changed between the desk and the decision.
-    Payment::query()->update(['amount_cents' => 100_000]);
-
-    $this->actingAs($reviewer)->post(route('staff.permits.start-review', $permit));
-    $this->actingAs($reviewer)->post(route('staff.permits.approve', $permit))->assertSessionHas('success');
-
-    $payment = Payment::query()->sole();
-
     expect($permit->refresh()->status)->toBe(PermitStatus::AwaitingPayment)
-        ->and($payment->status)->toBe(PaymentStatus::Rejected)
-        ->and($payment->notes)->toContain('1,000.00');
-});
-
-it('keeps the cashier\'s desk payment when no receipt is brought', function () {
-    $this->actingAs($this->registrar)
-        ->post(route('admin.permits.store'), intakeForm([
-            'amount' => '', 'receipt_number' => '', 'paid_at' => '', 'receipt_file' => null,
-        ]))
-        ->assertSessionHasNoErrors();
-
-    expect(Permit::query()->sole()->status)->toBe(PermitStatus::Submitted)
+        ->and($permit->fee_cents)->toBe(150_000)
         ->and(Payment::query()->count())->toBe(0);
 });
-
-it('wants the whole receipt once part of it is given, and the amount of the fee', function (array $overrides, string $field) {
-    // Dates are known only once the application has started.
-    if ($overrides === ['paid_at' => 'tomorrow']) {
-        $overrides['paid_at'] = ValidityRules::today()->addDay()->toDateString();
-    }
-
-    $this->actingAs($this->registrar)
-        ->post(route('admin.permits.store'), intakeForm($overrides))
-        ->assertSessionHasErrors($field);
-
-    expect(Permit::query()->count())->toBe(0)
-        ->and(Payment::query()->count())->toBe(0);
-})->with([
-    'no file' => [['receipt_file' => null], 'receipt_file'],
-    'no date' => [['paid_at' => ''], 'paid_at'],
-    'not the fee' => [['amount' => '1000.00'], 'amount'],
-    'paid in the future' => [['paid_at' => 'tomorrow'], 'paid_at'],
-]);
 
 it('asks for the confirmation when submitting, not for a draft', function () {
     $this->actingAs($this->registrar)
@@ -175,9 +111,7 @@ it('asks for the confirmation when submitting, not for a draft', function () {
         ->post(route('admin.permits.store'), intakeForm(['confirmed' => false, 'submit' => false]))
         ->assertSessionHasNoErrors();
 
-    // A draft keeps no receipt.
-    expect(Permit::query()->sole()->status)->toBe(PermitStatus::Draft)
-        ->and(Payment::query()->count())->toBe(0);
+    expect(Permit::query()->sole()->status)->toBe(PermitStatus::Draft);
 });
 
 it('describes an "other" vehicle in words', function () {
@@ -224,7 +158,6 @@ it('tells the desk the fee by the vehicle type', function () {
         ->assertJsonPath('days', 10)
         ->assertJsonPath('fee.amount_cents', 150_000);
 
-    $this->actingAs(applicantWithOrganization())
-        ->getJson(route('admin.permits.intake-fee', ['permit_type' => 'full_day']))
-        ->assertForbidden();
+    assertSignedOut($this->actingAs(applicantWithOrganization())
+        ->getJson(route('admin.permits.intake-fee', ['permit_type' => 'full_day'])));
 });

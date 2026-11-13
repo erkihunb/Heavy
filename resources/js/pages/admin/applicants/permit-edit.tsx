@@ -1,17 +1,12 @@
-import { Head, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
-import { PageHeader } from '@/components/page-header';
 import { PermitForm } from '@/components/permit-form';
 import type { PermitFormData, PermitLimits } from '@/components/permit-form';
-import AppLayout from '@/layouts/app-layout';
+import FormPageLayout from '@/layouts/form-page-layout';
 import { useTranslation } from '@/lib/i18n';
 import { feeEstimate, index, show } from '@/routes/admin/applicants';
-import {
-    edit,
-    show as showPermit,
-    update,
-} from '@/routes/admin/applicants/permits';
-import type { BreadcrumbItem, Permit, Vehicle } from '@/types';
+import { show as showPermit, update } from '@/routes/admin/applicants/permits';
+import type { Permit, Vehicle } from '@/types';
 import type { WalkInApplicant } from '@/types/admin';
 
 type Props = {
@@ -60,34 +55,29 @@ export default function WalkInPermitEdit({
         });
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: t('applicants.title'), href: index() },
-        { title: applicant.organization, href: show(applicant.id) },
-        { title: t('permits.show_title'), href: showPermit(route) },
-        { title: t('permits.edit_title'), href: edit(route) },
-    ];
-
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={t('permits.edit_title')} />
-
-            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-                <PageHeader
-                    title={t('permits.edit_title')}
-                    description={t('applicants.for', {
-                        organization: applicant.organization,
-                    })}
-                />
-                <PermitForm
-                    form={form}
-                    onSubmit={submit}
-                    vehicles={vehicles}
-                    limits={limits}
-                    cancelHref={showPermit.url(route)}
-                    estimateUrl={feeEstimate.url(applicant.id)}
-                    letter={{ hasStoredScan: Boolean(permit.letter?.url) }}
-                />
-            </div>
-        </AppLayout>
+        <FormPageLayout
+            title={t('permits.edit_title')}
+            description={t('applicants.for', {
+                organization: applicant.organization,
+            })}
+            backHref={showPermit.url(route)}
+            breadcrumbs={[
+                { label: t('applicants.title'), href: index().url },
+                { label: applicant.organization, href: show.url(applicant.id) },
+                { label: t('permits.show_title'), href: showPermit.url(route) },
+                { label: t('permits.edit_title') },
+            ]}
+        >
+            <PermitForm
+                form={form}
+                onSubmit={submit}
+                vehicles={vehicles}
+                limits={limits}
+                cancelHref={showPermit.url(route)}
+                estimateUrl={feeEstimate.url(applicant.id)}
+                letter={{ hasStoredScan: Boolean(permit.letter?.url) }}
+            />
+        </FormPageLayout>
     );
 }

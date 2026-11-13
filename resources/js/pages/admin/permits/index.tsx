@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Building2, ChevronRight, Globe, Plus, Search, X } from 'lucide-react';
+import { ChevronRight, Plus, Search, X } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import {
@@ -40,7 +40,6 @@ type RegisterRow = {
     status: PermitStatus;
     organization: string | null;
     applicant: string | null;
-    at_office: boolean;
     plates: string[];
     valid_from: DualDateValue;
     valid_to: DualDateValue;
@@ -53,7 +52,6 @@ type Filters = {
     search: string;
     status: string | null;
     permit_type: string | null;
-    source: string;
     from: string | null;
     to: string | null;
 };
@@ -106,7 +104,6 @@ export default function PermitRegister({
         filters.search !== '' ||
         filters.status !== null ||
         filters.permit_type !== null ||
-        filters.source !== '' ||
         filters.from !== null ||
         filters.to !== null;
 
@@ -206,28 +203,6 @@ export default function PermitRegister({
                                 ))}
                             </NativeSelect>
                         </div>
-                        <div className="grid gap-1.5">
-                            <Label htmlFor="source">
-                                {t('register.source')}
-                            </Label>
-                            <NativeSelect
-                                id="source"
-                                value={filters.source}
-                                onChange={(event) =>
-                                    apply({ source: event.target.value })
-                                }
-                            >
-                                <option value="">
-                                    {t('register.any_source')}
-                                </option>
-                                <option value="office">
-                                    {t('register.at_office')}
-                                </option>
-                                <option value="online">
-                                    {t('register.online')}
-                                </option>
-                            </NativeSelect>
-                        </div>
                         <EthiopianDateInput
                             id="from"
                             label={t('register.from')}
@@ -316,27 +291,8 @@ export default function PermitRegister({
                                             <span className="block font-medium">
                                                 {permit.organization ?? '—'}
                                             </span>
-                                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                {permit.at_office ? (
-                                                    <Building2
-                                                        aria-hidden="true"
-                                                        className="size-3.5"
-                                                    />
-                                                ) : (
-                                                    <Globe
-                                                        aria-hidden="true"
-                                                        className="size-3.5"
-                                                    />
-                                                )}
+                                            <span className="block text-xs text-muted-foreground">
                                                 {permit.applicant}
-                                                <span className="sr-only">
-                                                    {' · '}
-                                                    {permit.at_office
-                                                        ? t(
-                                                              'register.at_office',
-                                                          )
-                                                        : t('register.online')}
-                                                </span>
                                             </span>
                                         </Td>
                                         <Td>

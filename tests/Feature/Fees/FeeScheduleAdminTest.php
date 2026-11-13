@@ -181,7 +181,7 @@ describe('saving', function () {
 
 describe('authorization', function () {
     it('keeps everyone but Admins out', function (Role $role) {
-        $user = $role === Role::Applicant ? applicantWithOrganization() : staffUser($role);
+        $user = staffUser($role);
         $line = FeeSchedule::factory()->create();
 
         $this->actingAs($user)->get(route('admin.fee-schedules.index'))->assertForbidden();
@@ -192,7 +192,7 @@ describe('authorization', function () {
 
         expect(FeeSchedule::query()->count())->toBe(1)
             ->and($line->refresh()->amount_cents)->toBe(100_000);
-    })->with(array_values(array_filter(Role::cases(), fn (Role $role): bool => $role !== Role::Admin)));
+    })->with(array_values(array_filter(Role::cases(), fn (Role $role): bool => ! in_array($role, [Role::Admin, Role::Applicant], true))));
 
     it('sends guests to the login page', function () {
         $this->get(route('admin.fee-schedules.index'))->assertRedirect(route('login'));

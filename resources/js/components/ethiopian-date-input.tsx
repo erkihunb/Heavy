@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
+import { RequiredMark } from '@/components/form-field';
 import InputError from '@/components/input-error';
 import {
     MONTHS_IN_YEAR,
@@ -39,9 +40,12 @@ export function EthiopianDateInput({
     yearsAfter = 1,
     min,
     max,
+    required = false,
 }: {
     id: string;
     label: string;
+    /** Marks the label as a field the server requires. */
+    required?: boolean;
     /** Gregorian ISO date, or "" when nothing is chosen. */
     value: string;
     onChange: (iso: string) => void;
@@ -240,6 +244,7 @@ export function EthiopianDateInput({
         <div className="flex min-w-0 flex-col gap-2">
             <label htmlFor={id} className="text-sm leading-none font-medium">
                 {label}
+                {required && <RequiredMark />}
             </label>
 
             <button

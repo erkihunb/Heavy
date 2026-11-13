@@ -1,12 +1,10 @@
-import { Head, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
-import { PageHeader } from '@/components/page-header';
 import { VehicleTypeForm } from '@/components/vehicle-type-form';
 import type { VehicleTypeFormData } from '@/components/vehicle-type-form';
-import AppLayout from '@/layouts/app-layout';
+import FormPageLayout from '@/layouts/form-page-layout';
 import { useTranslation } from '@/lib/i18n';
-import { edit, index, update } from '@/routes/admin/vehicle-types';
-import type { BreadcrumbItem } from '@/types';
+import { index, update } from '@/routes/admin/vehicle-types';
 import type { AdminVehicleType } from '@/types/admin';
 
 type Props = {
@@ -30,27 +28,17 @@ export default function VehicleTypesEdit({ type }: Props) {
         });
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: t('admin.vehicle_types.title'), href: index() },
-        {
-            title: t('admin.vehicle_types.edit_title'),
-            href: edit({ vehicle_type: type.id }),
-        },
-    ];
-
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={t('admin.vehicle_types.edit_title')} />
-
-            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-                <PageHeader title={t('admin.vehicle_types.edit_title')} />
-                <VehicleTypeForm
-                    form={form}
-                    onSubmit={submit}
-                    cancelHref={index.url()}
-                    codeLocked
-                />
-            </div>
-        </AppLayout>
+        <FormPageLayout
+            title={t('admin.vehicle_types.edit_title')}
+            backHref={index.url()}
+        >
+            <VehicleTypeForm
+                form={form}
+                onSubmit={submit}
+                cancelHref={index.url()}
+                codeLocked
+            />
+        </FormPageLayout>
     );
 }

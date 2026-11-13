@@ -9,21 +9,15 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
 import { useTranslation } from '@/lib/i18n';
-import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
 type Props = {
     status?: string;
     canResetPassword: boolean;
-    canRegister: boolean;
 };
 
-export default function Login({
-    status,
-    canResetPassword,
-    canRegister,
-}: Props) {
+export default function Login({ status, canResetPassword }: Props) {
     const { t } = useTranslation();
 
     return (
@@ -106,15 +100,6 @@ export default function Login({
                                 {t('auth_ui.login.submit')}
                             </Button>
                         </div>
-
-                        {canRegister && (
-                            <div className="text-center text-sm text-muted-foreground">
-                                {t('auth_ui.login.no_account')}{' '}
-                                <TextLink href={register()} tabIndex={5}>
-                                    {t('auth_ui.login.sign_up')}
-                                </TextLink>
-                            </div>
-                        )}
                     </>
                 )}
             </Form>

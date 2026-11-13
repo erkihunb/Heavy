@@ -361,7 +361,8 @@ describe('the detail page', function () {
                 ->where('permit.can.approve', true)
                 ->where('permit.can.reject', true)
                 ->where('permit.can.recommend', false)
-                ->where('permit.can.update', false)
+                // Changing an application is the Registrar's, on the applicant's own page.
+                ->missing('permit.can.update')
                 ->has('vehicleHistory', 1)
                 ->where('vehicleHistory.0.vehicle_id', $this->vehicle->id)
                 ->where('vehicleHistory.0.plate', 'ኢት-03-40134')

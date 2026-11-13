@@ -11,8 +11,8 @@ use App\Domain\Permits\FeeCalculator;
 use App\Domain\Permits\ValidityRules;
 use App\Enums\PaymentMethod;
 use App\Enums\Permission;
+use App\Enums\PermitType;
 use App\Enums\PlateRegion;
-use App\Http\Controllers\Applicant\FeeEstimateController;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Registrar\FeeEstimateForApplicantRequest;
 use App\Http\Requests\Registrar\StorePaymentForApplicantRequest;
@@ -27,6 +27,8 @@ use App\Models\Permit;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
+use App\Support\Money;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -128,6 +130,20 @@ class WalkInController extends Controller
                 'submit' => $may('submitFor'),
                 'submitPayment' => $may('submitPaymentFor'),
             ],
+        ]);
+    }
+
+    /**
+     * The receipt for an approved application, on a page of its own: the
+     * registered application is not opened for editing to pay for it.
+     */
+    public function paymentPermit(User $applicant, Permit $permit): Response
+    {
+        Gate::authorize('submitPaymentFor', [$permit, $applicant]);
+
+        return Inertia::render('admin/applicants/permit-payment', [
+            'applicant' => $this->summary($applicant),
+            'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'branch', 'payments'])),
             'paymentMethods' => array_map(fn (PaymentMethod $method): string => $method->value, PaymentMethod::selectable()),
             'receiptMaxKilobytes' => (int) config('permits.receipt_max_kilobytes'),
         ]);
@@ -172,7 +188,21 @@ class WalkInController extends Controller
     {
         $this->organization($applicant);
 
-        return app(FeeEstimateController::class)($request, $fees);
+        /** @var array{permit_type: string, primary_vehicle_id: string, valid_from: string, valid_to: string} $validated */
+        $validated = $request->validated();
+
+        // What the permit would cost by today's schedule; the fee owed is fixed at approval.
+        $vehicle = Vehicle::query()->findOrFail($validated['primary_vehicle_id']);
+        $from = CarbonImmutable::createFromFormat('!Y-m-d', $validated['valid_from'], 'UTC');
+        $to = CarbonImmutable::createFromFormat('!Y-m-d', $validated['valid_to'], 'UTC');
+        $days = (int) $from->diffInDays($to) + 1;
+
+        $amount = $fees->amountFor(PermitType::from($validated['permit_type']), $vehicle->vehicle_type_id, $days, ValidityRules::today());
+
+        return response()->json([
+            'days' => $days,
+            'fee' => $amount === null ? null : Money::present($amount),
+        ]);
     }
 
     /**

@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Support\EthiopianCalendar;
 use Inertia\Inertia;
 use Inertia\Response;
-use Laravel\Fortify\Features;
 
 class HomeController extends Controller
 {
@@ -18,8 +17,6 @@ class HomeController extends Controller
         $today = now(config('localization.display_timezone'));
 
         return Inertia::render('welcome', [
-            // Signing up online is paused while requests come in by letter at the office.
-            'canRegister' => Features::enabled(Features::registration()) && config('permits.online_applications'),
             // Dates for the illustrative permit card only; no permit exists behind it.
             'sample' => [
                 'validFrom' => EthiopianCalendar::present($today, $locale),

@@ -4,15 +4,14 @@ use App\Domain\Audit\AuditEvent;
 use App\Enums\Role;
 use App\Models\Organization;
 use App\Models\User;
-use App\Notifications\ApplicantAccountCreated;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Activitylog\Models\Activity;
 
 /*
  * Applicants who come to the office in person: a Registrar (or an Admin)
- * opens their account and organization; the applicant sets their own
- * password from an e-mailed link.
+ * records them and their organization. The applicant's account is a record
+ * only: it gets no password link and cannot sign in.
  */
 
 beforeEach(function () {
@@ -60,7 +59,8 @@ it('registers the applicant and their organization in one step', function () {
         ->and($organization->created_by)->toBe($user->id)
         ->and($organization->phone)->toBe('+251911223344');
 
-    Notification::assertSentTo($user, ApplicantAccountCreated::class);
+    // The account is a record only: no password link, nothing to sign in with.
+    Notification::assertNothingSentTo($user);
 
     $entry = Activity::query()->where('event', AuditEvent::ApplicantRegistered->value)->sole();
     expect((int) $entry->causer_id)->toBe($this->registrar->id)
@@ -76,28 +76,22 @@ it('never lets the office choose or see the password', function () {
     expect(Hash::check('secret-123', $user->password))->toBeFalse();
 });
 
-it('lets the applicant set a password from the e-mailed link and sign in', function () {
+it('gives the applicant no way to sign in', function () {
     $this->actingAs($this->registrar)->post(route('admin.permits.store'), walkIn());
     auth()->logout();
 
     $user = User::query()->where('email', 'abebe@example.test')->sole();
-    $token = null;
-    Notification::assertSentTo($user, ApplicantAccountCreated::class, function (ApplicantAccountCreated $notification) use (&$token): bool {
-        $token = $notification->token;
 
-        return true;
-    });
+    // "Forgot password" sends nothing for an account nobody signs in with…
+    $this->post(route('password.email'), ['email' => 'abebe@example.test']);
+    Notification::assertNothingSentTo($user);
 
-    $this->post(route('password.update'), [
-        'token' => $token,
-        'email' => 'abebe@example.test',
-        'password' => 'A-strong-pass-2026!',
-        'password_confirmation' => 'A-strong-pass-2026!',
-    ])->assertSessionHasNoErrors();
+    // …and even with a password, signing in is refused.
+    $user->forceFill(['password' => 'A-strong-pass-2026!'])->save();
 
     $this->post(route('login.store'), ['email' => 'abebe@example.test', 'password' => 'A-strong-pass-2026!'])
-        ->assertSessionHasNoErrors();
-    $this->assertAuthenticatedAs($user);
+        ->assertSessionHasErrors(['email' => __('auth.no_sign_in')]);
+    $this->assertGuest();
 });
 
 it('validates the form', function (array $overrides, string $field) {
@@ -134,7 +128,7 @@ it('is for registrars and admins only', function (Role $role, bool $allowed) {
 ]);
 
 it('keeps applicants out', function () {
-    $this->actingAs(applicantWithOrganization())->get(route('admin.applicants.index'))->assertForbidden();
+    assertSignedOut($this->actingAs(applicantWithOrganization())->get(route('admin.applicants.index')));
 });
 
 it('lists applicants with where they registered, and finds them', function () {
@@ -154,12 +148,6 @@ it('lists applicants with where they registered, and finds them', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->has('applicants.data', 1)
             ->where('applicants.data.0.email', 'abebe@example.test'));
-
-    $this->actingAs($this->registrar)
-        ->get(route('admin.applicants.index', ['source' => 'online']))
-        ->assertInertia(fn (Assert $page) => $page
-            ->has('applicants.data', 1)
-            ->where('applicants.data.0.registered_by', null));
 });
 
 it('makes the registrar a staff role that needs two-factor authentication', function () {

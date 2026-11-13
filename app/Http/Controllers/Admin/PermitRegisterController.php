@@ -61,7 +61,6 @@ class PermitRegisterController extends Controller
         $search = $this->text($request, 'search');
         $status = PermitStatus::tryFrom($this->text($request, 'status'));
         $permitType = PermitType::tryFrom($this->text($request, 'permit_type'));
-        $source = in_array($request->query('source'), ['office', 'online'], true) ? (string) $request->query('source') : '';
         $from = $this->date($request, 'from');
         $to = $this->date($request, 'to');
 
@@ -87,8 +86,6 @@ class PermitRegisterController extends Controller
                     ->whereLike('name', $like($search))
                     ->orWhereLike('email', $like($search)))))
             ->when($permitType !== null, fn (Builder $query) => $query->where('permit_type', $permitType))
-            ->when($source === 'office', fn (Builder $query) => $query->whereHas('applicant', fn (Builder $query) => $query->whereNotNull('registered_by')))
-            ->when($source === 'online', fn (Builder $query) => $query->whereHas('applicant', fn (Builder $query) => $query->whereNull('registered_by')))
             ->when($from !== null, fn (Builder $query) => $query->where('created_at', '>=', $from->startOfDay()->utc()))
             ->when($to !== null, fn (Builder $query) => $query->where('created_at', '<=', $to->endOfDay()->utc()));
 
@@ -98,7 +95,7 @@ class PermitRegisterController extends Controller
         ));
 
         $permits = $base()
-            ->with(['vehicles', 'organization', 'applicant:id,name,registered_by'])
+            ->with(['vehicles', 'organization', 'applicant:id,name'])
             ->when($status !== null, fn (Builder $query) => $query->inEffectiveStatus($status))
             ->latest()
             ->orderByDesc('id')
@@ -112,7 +109,6 @@ class PermitRegisterController extends Controller
                 'search' => $search,
                 'status' => $status?->value,
                 'permit_type' => $permitType?->value,
-                'source' => $source,
                 'from' => $from?->toDateString(),
                 'to' => $to?->toDateString(),
             ],
@@ -138,7 +134,6 @@ class PermitRegisterController extends Controller
             'status' => $permit->effectiveStatus($now)->value,
             'organization' => $permit->organization?->localizedName($locale),
             'applicant' => $permit->applicant?->name,
-            'at_office' => $permit->applicant?->registered_by !== null,
             'plates' => $permit->vehicles->map(fn (Vehicle $vehicle): string => $vehicle->plate_normalized)->values()->all(),
             'valid_from' => EthiopianCalendar::present($permit->valid_from, $locale),
             'valid_to' => EthiopianCalendar::present($permit->valid_to, $locale),

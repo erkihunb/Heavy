@@ -17,7 +17,15 @@ return [
     'skip_to_content' => 'Skip to main content',
     'welcome' => [
         'title' => 'Time-restricted movement permits for heavy vehicles',
-        'intro' => 'Apply for, pay for and manage permits that allow heavy vehicles to move during restricted hours.',
+        'intro' => 'Bring a request letter to a branch or the head office: the Authority records it, decides on it and issues the permit that lets a heavy vehicle move during restricted hours.',
+    ],
+    'required' => 'required',
+    'file' => [
+        'label' => 'File',
+        'choose' => 'Choose file',
+        'change' => 'Change file',
+        'none' => 'No file chosen',
+        'remove' => 'Remove',
     ],
     'pagination' => [
         'label' => 'Pages',

@@ -4,10 +4,12 @@ namespace App\Actions\Permits;
 
 use App\Domain\Audit\AuditEvent;
 use App\Domain\Audit\AuditLog;
+use App\Enums\Permission;
 use App\Models\Permit;
 use App\Models\PermitComment;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class CommentOnPermit
 {
@@ -19,6 +21,8 @@ class CommentOnPermit
      */
     public function handle(Permit $permit, User $author, string $body): PermitComment
     {
+        Gate::forUser($author)->authorize(Permission::CommentOnPermits->value);
+
         return DB::transaction(function () use ($permit, $author, $body): PermitComment {
             $comment = new PermitComment(['body' => trim($body)]);
             $comment->permit_id = $permit->id;

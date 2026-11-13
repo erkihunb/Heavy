@@ -19,61 +19,11 @@ use Illuminate\Auth\Access\Response;
  */
 class PermitPolicy
 {
-    /**
-     * Reaching the applicant's list. Which permits are listed is always
-     * limited to the user's own organization by the query.
-     */
-    public function viewAny(User $user): bool
-    {
-        return $user->can(Permission::ApplyForPermits->value);
-    }
-
-    /**
-     * Applying online. Paused while requests come in by letter at the office
-     * (System settings → Permits → online applications).
-     */
-    public function create(User $user): bool
-    {
-        return (bool) config('permits.online_applications')
-            && $user->can(Permission::ApplyForPermits->value)
-            && $user->organization_id !== null;
-    }
-
     public function view(User $user, Permit $permit): Response
     {
-        return $this->isOwnedByOrganizationOf($user, $permit) || $this->isVisibleToStaff($user, $permit)
+        return $this->isVisibleToStaff($user, $permit)
             ? Response::allow()
             : Response::denyAsNotFound();
-    }
-
-    public function update(User $user, Permit $permit): Response
-    {
-        return $this->ownedAndIn($user, $permit, [PermitStatus::Draft, PermitStatus::ChangesRequested]);
-    }
-
-    public function submit(User $user, Permit $permit): Response
-    {
-        return $this->ownedAndIn($user, $permit, [PermitStatus::Draft, PermitStatus::ChangesRequested]);
-    }
-
-    public function withdraw(User $user, Permit $permit): Response
-    {
-        return $this->ownedAndIn($user, $permit, [PermitStatus::Draft, PermitStatus::Submitted]);
-    }
-
-    /**
-     * Reporting the fee as paid, while the permit waits for payment.
-     */
-    public function submitPayment(User $user, Permit $permit): Response
-    {
-        if (! $this->isOwnedByOrganizationOf($user, $permit)) {
-            return Response::denyAsNotFound();
-        }
-
-        return (bool) config('permits.online_applications')
-            && $user->can(Permission::SubmitPayments->value) && $permit->status === PermitStatus::AwaitingPayment
-            ? Response::allow()
-            : Response::deny();
     }
 
     /**
@@ -163,18 +113,11 @@ class PermitPolicy
     }
 
     /**
-     * Opening the permit's PDF: its own organization while the permit is
-     * issued or has expired, and staff who can see the permit.
+     * Opening the permit's PDF: the Registrar who prints it for the
+     * applicant, and staff who can see the permit.
      */
     public function download(User $user, Permit $permit): Response
     {
-        if ($this->isOwnedByOrganizationOf($user, $permit)) {
-            return $user->can(Permission::DownloadOwnPermits->value)
-                && in_array($permit->status, [PermitStatus::Issued, PermitStatus::Expired], true)
-                ? Response::allow()
-                : Response::deny();
-        }
-
         // A Registrar prints the issued permit for an applicant who came to the office.
         if ($user->can(Permission::RegisterApplicants->value)
             && $permit->isInBranchOf($user)
@@ -247,13 +190,6 @@ class PermitPolicy
         return in_array($permit->status, $statuses, true) ? Response::allow() : Response::deny();
     }
 
-    private function isOwnedByOrganizationOf(User $user, Permit $permit): bool
-    {
-        return $user->can(Permission::ApplyForPermits->value)
-            && $user->organization_id !== null
-            && $user->organization_id === $permit->organization_id;
-    }
-
     /**
      * Drafts and withdrawn applications are the applicant's business only,
      * and staff placed at a branch see that branch's applications only.
@@ -263,23 +199,6 @@ class PermitPolicy
         return $user->can(Permission::ViewReviewQueue->value)
             && $permit->status->isVisibleToStaff()
             && $permit->isInBranchOf($user);
-    }
-
-    /**
-     * A permit of another organization does not exist as far as the user is
-     * concerned; one of their own in the wrong stage is simply not allowed.
-     *
-     * @param  list<PermitStatus>  $statuses
-     */
-    private function ownedAndIn(User $user, Permit $permit, array $statuses): Response
-    {
-        if (! $this->isOwnedByOrganizationOf($user, $permit)) {
-            return Response::denyAsNotFound();
-        }
-
-        return in_array($permit->status, $statuses, true)
-            ? Response::allow()
-            : Response::deny();
     }
 
     /**

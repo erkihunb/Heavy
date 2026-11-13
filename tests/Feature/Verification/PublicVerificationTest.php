@@ -192,12 +192,23 @@ describe('by number and plate', function () {
     });
 
     it('offers the camera scanner, revealed only by its script', function () {
-        $this->get(route('verification.form'))
+        $response = $this->get(route('verification.form'))
             ->assertOk()
             ->assertSee('data-qr-scanner', false)
-            // Hidden until verify-scanner.ts runs, so the page works without JavaScript.
+            // Hidden in the markup, so the page works without JavaScript…
             ->assertSee('data-scan-start hidden', false)
             ->assertSee('data-verify-base="'.rtrim((string) config('permits.verify_url'), '/').'"', false);
+
+        // …and shown by an inline script right after it, before the first paint,
+        // so the form below does not jump when the scanner's script arrives.
+        preg_match("/'nonce-([^']+)'/", (string) $response->headers->get('Content-Security-Policy'), $nonce);
+        $html = (string) $response->getContent();
+
+        expect($nonce)->not->toBeEmpty()
+            ->and($html)->toContain('<script nonce="'.$nonce[1].'">')
+            ->and($html)->toContain("document.querySelector('[data-scan-start]').hidden = false;")
+            ->and(strpos($html, "querySelector('[data-scan-start]').hidden = false"))->toBeGreaterThan(strpos($html, 'data-scan-start hidden'))
+            ->and(strpos($html, "querySelector('[data-scan-start]').hidden = false"))->toBeLessThan(strpos($html, 'name="permit_number"'));
     });
 
     it('finds the permit only with a matching plate, written in any accepted form', function (string $number, string $plate, string $result) {

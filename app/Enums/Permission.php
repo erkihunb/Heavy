@@ -8,12 +8,11 @@ namespace App\Enums;
  */
 enum Permission: string
 {
+    // Everyone who should see it: the home screen with its figures and what needs attention
+    case ViewDashboard = 'dashboard.view';
+
     // Applicant (always scoped to the user's own organization by the Policy)
-    case ManageOwnOrganization = 'organization.manage-own';
-    case ManageOwnVehicles = 'vehicles.manage-own';
     case ApplyForPermits = 'permits.apply';
-    case SubmitPayments = 'payments.submit';
-    case DownloadOwnPermits = 'permits.download-own';
 
     // Reviewer
     case ViewReviewQueue = 'permits.view-queue';

@@ -11,6 +11,7 @@ use App\Domain\Permits\OverlapGuard;
 use App\Domain\Permits\PermitNumberGenerator;
 use App\Domain\Permits\PermitTransitions;
 use App\Enums\PaymentStatus;
+use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Exceptions\InvalidPermitTransition;
 use App\Exceptions\OverlappingPermit;
@@ -23,6 +24,7 @@ use App\Notifications\PermitApproved;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Gate;
 
 class ApprovePermit
 {
@@ -51,6 +53,8 @@ class ApprovePermit
      */
     public function handle(Permit $permit, User $approver, ?string $note = null): Permit
     {
+        Gate::forUser($approver)->authorize(Permission::ApprovePermits->value);
+
         $approved = $this->approve($permit, $approver, $note);
 
         // The organization is told what to pay (queued, after commit).
@@ -60,8 +64,9 @@ class ApprovePermit
     }
 
     /**
-     * A receipt the Registrar took with the request (TakeReceiptAtIntake) goes
-     * to the cashier now, when it is for the fee just fixed: the permit waits
+     * A receipt the Registrar took with the request — the office form did so
+     * until payment moved after approval; such receipts may still be open —
+     * goes to the cashier now, when it is for the fee just fixed: the permit waits
      * for its verification instead of for a payment. A receipt for another
      * amount cannot pay this fee; it is set aside, with the reason, and the
      * permit waits for payment as usual.

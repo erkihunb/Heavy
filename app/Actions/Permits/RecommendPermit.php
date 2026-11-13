@@ -4,6 +4,7 @@ namespace App\Actions\Permits;
 
 use App\Data\RecommendationData;
 use App\Domain\Permits\PermitTransitions;
+use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Enums\Recommendation;
 use App\Exceptions\PermitRuleViolation;
@@ -11,6 +12,7 @@ use App\Models\Permit;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class RecommendPermit
 {
@@ -25,6 +27,8 @@ class RecommendPermit
      */
     public function handle(Permit $permit, User $reviewer, RecommendationData $data): Permit
     {
+        Gate::forUser($reviewer)->authorize(Permission::ReviewPermits->value);
+
         if ($data->recommendation === Recommendation::Reject && blank($data->note)) {
             throw new PermitRuleViolation('note_required');
         }

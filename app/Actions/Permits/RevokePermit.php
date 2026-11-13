@@ -4,6 +4,7 @@ namespace App\Actions\Permits;
 
 use App\Domain\Notifications\PermitNotifier;
 use App\Domain\Permits\PermitTransitions;
+use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Exceptions\InvalidPermitTransition;
 use App\Exceptions\PermitRuleViolation;
@@ -12,6 +13,7 @@ use App\Models\Permit;
 use App\Models\User;
 use App\Notifications\PermitRevoked;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Gate;
 
 class RevokePermit
 {
@@ -29,6 +31,8 @@ class RevokePermit
      */
     public function handle(Permit $permit, User $approver, string $reason): Permit
     {
+        Gate::forUser($approver)->authorize(Permission::RevokePermits->value);
+
         if (blank($reason)) {
             throw new PermitRuleViolation('revocation_reason_required');
         }

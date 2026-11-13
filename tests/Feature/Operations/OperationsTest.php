@@ -59,15 +59,6 @@ describe('admin:create', function () {
 });
 
 describe('rate limits on the account forms', function () {
-    it('limits registration attempts per IP', function () {
-        foreach (range(1, 5) as $attempt) {
-            $this->post(route('register.store'), ['name' => 'X', 'email' => "x{$attempt}", 'password' => 'a', 'password_confirmation' => 'b'])
-                ->assertStatus(302);
-        }
-
-        $this->post(route('register.store'), [])->assertStatus(429);
-    });
-
     it('limits password-reset e-mails per IP', function () {
         foreach (range(1, 5) as $attempt) {
             $this->post(route('password.email'), ['email' => "nobody{$attempt}@example.test"]);

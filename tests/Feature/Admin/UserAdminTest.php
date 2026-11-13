@@ -52,6 +52,29 @@ it('lists users with their roles, searchable and filtered by role and status', f
         ->assertInertia(fn (Assert $page) => $page->has('users.data', 1)->where('users.data.0.id', $cashier->id));
 });
 
+it('lists many users at once, telling staff by their permissions', function () {
+    // A whole page of users: each row says whether the person is staff, which
+    // reads their permissions, so they must be loaded with the page.
+    $cashier = staffUser(Role::Cashier);
+    $applicant = applicantWithOrganization();
+    RoleModel::query()->create(['name' => 'onlooker', 'guard_name' => 'web'])->givePermissionTo('dashboard.view');
+    $onlooker = User::factory()->create();
+    $onlooker->assignRole('onlooker');
+
+    $rows = $this->actingAs($this->admin)
+        ->get(route('admin.users.index'))
+        ->assertOk()
+        ->viewData('page')['props']['users']['data'];
+
+    $staff = collect($rows)->pluck('is_staff', 'id');
+
+    expect($staff[$this->admin->id])->toBeTrue()
+        ->and($staff[$cashier->id])->toBeTrue()
+        ->and($staff[$applicant->id])->toBeFalse()
+        // The dashboard alone is not the office's work.
+        ->and($staff[$onlooker->id])->toBeFalse();
+});
+
 it('opens a staff account with several roles and sends a link to choose a password', function () {
     $branch = Branch::factory()->create(['code' => 'BOL']);
 

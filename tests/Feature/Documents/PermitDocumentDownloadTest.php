@@ -20,6 +20,8 @@ beforeEach(function () {
     Storage::disk('documents')->put('permits/def.pdf', "%PDF-1.4\n%%EOF\n");
 
     $this->applicant = applicantWithOrganization();
+    // Prints and hands over the permit at the office.
+    $this->registrar = staffUser(Role::Registrar);
     $this->permit = Permit::factory()
         ->forVehicles(Vehicle::factory()->for($this->applicant->organization)->create())
         ->active()
@@ -38,15 +40,15 @@ function documentUrl(Permit $permit, ?string $language = null): string
     ]));
 }
 
-it('gives the applicant a signed link per language on the permit page and serves the PDF through it', function () {
-    $this->actingAs($this->applicant)
-        ->get(route('permits.show', $this->permit))
+it('gives the Registrar a signed link per language on the applicant\'s permit page and serves the PDF through it', function () {
+    $this->actingAs(staffUser(Role::Registrar))
+        ->get(route('admin.applicants.permits.show', [$this->applicant, $this->permit]))
         ->assertInertia(fn (Assert $page) => $page
             ->where('permit.document_pending', false)
             ->where('permit.document_urls.am', fn (string $url): bool => str_contains($url, '/document/am?') && str_contains($url, 'signature='))
             ->where('permit.document_urls.en', fn (string $url): bool => str_contains($url, '/document/en?') && str_contains($url, 'signature=')));
 
-    $response = $this->actingAs($this->applicant)->get(documentUrl($this->permit, 'am'))->assertOk();
+    $response = $this->actingAs($this->registrar)->get(documentUrl($this->permit, 'am'))->assertOk();
 
     expect($response->headers->get('Content-Type'))->toBe('application/pdf')
         ->and($response->headers->get('Content-Disposition'))->toContain('AACRA-2019-000007-am.pdf')
@@ -55,8 +57,8 @@ it('gives the applicant a signed link per language on the permit page and serves
 });
 
 it('serves the English PDF on its own link, and the Amharic one when no language is named', function () {
-    $english = $this->actingAs($this->applicant)->get(documentUrl($this->permit, 'en'))->assertOk();
-    $default = $this->actingAs($this->applicant)->get(documentUrl($this->permit))->assertOk();
+    $english = $this->actingAs($this->registrar)->get(documentUrl($this->permit, 'en'))->assertOk();
+    $default = $this->actingAs($this->registrar)->get(documentUrl($this->permit))->assertOk();
 
     expect($english->headers->get('Content-Disposition'))->toContain('AACRA-2019-000007-en.pdf')
         ->not->toContain('def')
@@ -64,30 +66,30 @@ it('serves the English PDF on its own link, and the Amharic one when no language
 });
 
 it('writes each download and print to the audit log', function () {
-    $this->actingAs($this->applicant)->get(documentUrl($this->permit, 'en'))->assertOk();
-    $this->actingAs($this->applicant)->withHeader('X-Permit-Print', '1')->get(documentUrl($this->permit, 'am'))->assertOk();
+    $this->actingAs($this->registrar)->get(documentUrl($this->permit, 'en'))->assertOk();
+    $this->actingAs($this->registrar)->withHeader('X-Permit-Print', '1')->get(documentUrl($this->permit, 'am'))->assertOk();
 
     $entries = Activity::query()->where('event', 'permit.document_downloaded')->orderBy('id')->get();
 
     expect($entries)->toHaveCount(2)
         ->and($entries[0]->subject_id)->toEqual($this->permit->id)
-        ->and($entries[0]->causer_id)->toEqual($this->applicant->id)
+        ->and($entries[0]->causer_id)->toEqual($this->registrar->id)
         ->and($entries[0]->properties->get('context'))->toBe(['language' => 'en', 'purpose' => 'download'])
         ->and($entries[1]->properties->get('context'))->toBe(['language' => 'am', 'purpose' => 'print']);
 });
 
 it('knows no language but Amharic and English', function () {
-    $this->actingAs($this->applicant)
+    $this->actingAs($this->registrar)
         ->get('/permits/'.$this->permit->id.'/document/fr')
         ->assertNotFound();
 });
 
 it('refuses a link without a valid signature', function () {
-    $this->actingAs($this->applicant)
+    $this->actingAs($this->registrar)
         ->get(route('permits.document', $this->permit))
         ->assertForbidden();
 
-    $this->actingAs($this->applicant)
+    $this->actingAs($this->registrar)
         ->get(documentUrl($this->permit).'x')
         ->assertForbidden();
 });
@@ -96,13 +98,7 @@ it('refuses an expired link', function () {
     $url = documentUrl($this->permit);
     $this->travel(31)->minutes();
 
-    $this->actingAs($this->applicant)->get($url)->assertForbidden();
-});
-
-it('pretends another organization\'s permit does not exist, even with a signed link', function () {
-    $this->actingAs(applicantWithOrganization())
-        ->get(documentUrl($this->permit))
-        ->assertNotFound();
+    $this->actingAs($this->registrar)->get($url)->assertForbidden();
 });
 
 it('serves staff who can see the permit, and nobody else among staff', function (Role $role, int $status) {
@@ -120,23 +116,24 @@ it('serves staff who can see the permit, and nobody else among staff', function 
     [Role::TrafficOfficer, 404],
 ]);
 
-it('stops serving the applicant once the permit is revoked', function () {
+it('stops serving the Registrar once the permit is revoked', function () {
     $this->permit->forceFill(['status' => PermitStatus::Revoked])->save();
 
-    $this->actingAs($this->applicant)->get(documentUrl($this->permit))->assertForbidden();
+    // The Registrar prints issued permits only and does not work the queue: not found.
+    $this->actingAs($this->registrar)->get(documentUrl($this->permit))->assertNotFound();
 });
 
 it('says the document is being prepared until the job has run', function () {
     // Only the Amharic PDF is there so far: neither link is offered until both are.
     $this->permit->forceFill(['document_path_en' => null])->save();
 
-    $this->actingAs($this->applicant)
-        ->get(route('permits.show', $this->permit))
+    $this->actingAs(staffUser(Role::Registrar))
+        ->get(route('admin.applicants.permits.show', [$this->applicant, $this->permit]))
         ->assertInertia(fn (Assert $page) => $page
             ->where('permit.document_pending', true)
             ->where('permit.document_urls', null));
 
-    $this->actingAs($this->applicant)->get(documentUrl($this->permit, 'en'))->assertNotFound();
+    $this->actingAs($this->registrar)->get(documentUrl($this->permit, 'en'))->assertNotFound();
 });
 
 it('sends guests to the login page', function () {

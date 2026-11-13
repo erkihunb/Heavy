@@ -3,14 +3,10 @@
 namespace App\Http\Requests\Admin;
 
 use App\Data\OrganizationData;
-use App\Data\PaymentData;
 use App\Data\VehicleData;
 use App\Data\WalkInPermitData;
-use App\Domain\Payments\ReceiptNumber;
-use App\Domain\Permits\FeeCalculator;
 use App\Domain\Permits\ValidityRules;
 use App\Domain\Vehicles\PlateNumber;
-use App\Enums\PaymentMethod;
 use App\Enums\PermitType;
 use App\Exceptions\DuplicateVehiclePlate;
 use App\Http\Requests\Applicant\OrganizationRequest;
@@ -21,12 +17,9 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
 use App\Support\EthiopianPhone;
-use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Closure;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\File;
 use Illuminate\Validation\Rules\Unique;
 use Illuminate\Validation\Validator;
 
@@ -68,18 +61,6 @@ class RegisterApplicantRequest extends OrganizationRequest
         if (blank($this->input('email')) && is_string($this->input('contact_email'))) {
             $this->merge(['email' => $this->input('contact_email')]);
         }
-
-        if (is_string($this->input('receipt_number'))) {
-            $this->merge(['receipt_number' => ReceiptNumber::normalize($this->input('receipt_number'))]);
-        }
-    }
-
-    /**
-     * Whether the receipt is taken now: only when the request is submitted.
-     */
-    private function paying(): bool
-    {
-        return $this->boolean('apply') && $this->boolean('submit') && filled($this->input('receipt_number'));
     }
 
     protected function uniqueTin(): Unique
@@ -93,8 +74,9 @@ class RegisterApplicantRequest extends OrganizationRequest
     public function rules(): array
     {
         $apply = ['exclude_unless:apply,true'];
-        // The receipt and the confirmation go with a submitted request, not with a draft.
-        $pay = ['exclude_unless:apply,true', 'exclude_unless:submit,true'];
+        // The confirmation goes with a submitted request, not with a draft. No payment is taken
+        // here: the fee is paid once the permit is approved (SubmitPayment, RecordPayment).
+        $submitted = ['exclude_unless:apply,true', 'exclude_unless:submit,true'];
 
         return [
             'contact_name' => ['required', 'string', 'max:255'],
@@ -104,20 +86,7 @@ class RegisterApplicantRequest extends OrganizationRequest
             // The address may be added later on the organization's profile.
             'address' => ['nullable', 'string', 'max:500'],
             'vehicles.*.type_detail' => [...$apply, 'nullable', 'string', 'max:100'],
-            'amount' => [...$pay, 'bail', 'nullable', 'required_with:receipt_number,paid_at,receipt_file', 'string', function (string $attribute, mixed $value, Closure $fail): void {
-                if (! is_string($value) || ! Money::isValid($value)) {
-                    $fail(__('payments.errors.amount_invalid'));
-                }
-            }],
-            'receipt_number' => [...$pay, 'bail', 'nullable', 'required_with:amount,paid_at,receipt_file', 'string', 'max:'.ReceiptNumber::MAX_LENGTH, function (string $attribute, mixed $value, Closure $fail): void {
-                if (! is_string($value) || ! ReceiptNumber::isValid($value)) {
-                    $fail(__('payments.errors.receipt_invalid'));
-                }
-            }],
-            'paid_at' => [...$pay, 'bail', 'nullable', 'required_with:amount,receipt_number,receipt_file', 'date_format:Y-m-d', 'before_or_equal:'.ValidityRules::today()->toDateString()],
-            // The content is sniffed, not the extension the browser sent.
-            'receipt_file' => [...$pay, 'nullable', 'required_with:amount,receipt_number,paid_at', File::types(['pdf', 'jpg', 'jpeg', 'png'])->max((int) config('permits.receipt_max_kilobytes'))],
-            'confirmed' => [...$pay, 'accepted'],
+            'confirmed' => [...$submitted, 'accepted'],
             'apply' => ['boolean'],
             'submit' => ['boolean'],
             'vehicles' => [...$apply, 'required', 'array', 'min:1', 'max:'.(1 + (int) config('permits.max_trailers'))],
@@ -142,9 +111,6 @@ class RegisterApplicantRequest extends OrganizationRequest
         return [
             ...parent::messages(),
             ...$this->letterMessages(),
-            'paid_at.before_or_equal' => __('payments.errors.paid_in_future'),
-            'receipt_file.mimes' => __('payments.errors.file_type'),
-            'receipt_file.max' => __('payments.errors.file_size', ['max' => intdiv((int) config('permits.receipt_max_kilobytes'), 1024)]),
             'confirmed.accepted' => __('applicants.intake.confirm_required'),
         ];
     }
@@ -188,25 +154,6 @@ class RegisterApplicantRequest extends OrganizationRequest
                     }
                 }
             },
-            // The amount paid is the fee by today's schedule, when the schedule has one.
-            function (Validator $validator): void {
-                if (! $this->paying() || $validator->errors()->hasAny(['amount', 'permit_type', 'valid_from', 'valid_to', 'vehicles.0.vehicle_type_id'])) {
-                    return;
-                }
-
-                $from = CarbonImmutable::createFromFormat('!Y-m-d', $this->string('valid_from')->toString(), 'UTC');
-                $to = CarbonImmutable::createFromFormat('!Y-m-d', $this->string('valid_to')->toString(), 'UTC');
-                $fee = app(FeeCalculator::class)->amountFor(
-                    PermitType::from($this->string('permit_type')->toString()),
-                    (int) $this->input('vehicles.0.vehicle_type_id'),
-                    (int) $from->diffInDays($to) + 1,
-                    ValidityRules::today(),
-                );
-
-                if ($fee !== null && Money::parse($this->string('amount')->toString()) !== $fee) {
-                    $validator->errors()->add('amount', __('payments.errors.amount_mismatch', ['fee' => Money::format($fee)]));
-                }
-            },
         ];
     }
 
@@ -231,10 +178,6 @@ class RegisterApplicantRequest extends OrganizationRequest
             'reason' => __('permits.fields.reason'),
             ...$this->movementHoursAttributes(),
             ...$this->letterAttributes(),
-            'amount' => __('payments.fields.amount'),
-            'receipt_number' => __('payments.fields.receipt_number'),
-            'paid_at' => __('payments.fields.paid_at'),
-            'receipt_file' => __('payments.fields.receipt_file'),
             'confirmed' => __('applicants.intake.confirm'),
         ];
     }
@@ -251,27 +194,6 @@ class RegisterApplicantRequest extends OrganizationRequest
             phone: (string) EthiopianPhone::normalize($validated['phone']),
             email: $validated['email'],
             address: $validated['address'] ?? '',
-        );
-    }
-
-    /**
-     * The receipt taken with a submitted request; none with a draft.
-     */
-    public function payment(): ?PaymentData
-    {
-        if (! $this->paying()) {
-            return null;
-        }
-
-        $file = $this->file('receipt_file');
-
-        return new PaymentData(
-            // The office takes bank deposit slips; the cashier sees the receipt itself.
-            method: PaymentMethod::BankDeposit,
-            receiptNumber: $this->string('receipt_number')->toString(),
-            amountCents: Money::parse($this->string('amount')->toString()),
-            paidAt: CarbonImmutable::createFromFormat('!Y-m-d', $this->string('paid_at')->toString(), 'UTC'),
-            receiptFile: $file instanceof UploadedFile ? $file : null,
         );
     }
 

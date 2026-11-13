@@ -7,6 +7,7 @@ use App\Domain\Audit\AuditLog;
 use App\Domain\Notifications\PermitNotifier;
 use App\Domain\Permits\PermitTransitions;
 use App\Enums\PaymentStatus;
+use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Exceptions\InvalidPermitTransition;
 use App\Exceptions\PermitRuleViolation;
@@ -15,6 +16,7 @@ use App\Models\Permit;
 use App\Models\User;
 use App\Notifications\PaymentRejected;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Gate;
 
 class RejectPayment
 {
@@ -34,6 +36,8 @@ class RejectPayment
      */
     public function handle(Payment $payment, User $cashier, string $note): Payment
     {
+        Gate::forUser($cashier)->authorize(Permission::VerifyPayments->value);
+
         /** @var Permit $permit */
         $permit = $payment->permit()->firstOrFail();
 

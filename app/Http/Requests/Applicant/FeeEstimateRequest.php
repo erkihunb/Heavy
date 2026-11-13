@@ -11,12 +11,9 @@ use Illuminate\Validation\Rule;
 /**
  * What the application form sends to ask what a permit would cost today.
  */
-class FeeEstimateRequest extends FormRequest
+abstract class FeeEstimateRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return (bool) $this->user()?->can('create', Permit::class);
-    }
+    abstract public function authorize(): bool;
 
     /**
      * The organization whose register the request is about: the signed-in

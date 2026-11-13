@@ -171,7 +171,7 @@ describe('decisions', function () {
     });
 
     it('keeps everyone but cashiers and Admins out', function (Role $role) {
-        $user = $role === Role::Applicant ? applicantWithOrganization() : staffUser($role);
+        $user = staffUser($role);
 
         $this->actingAs($user)->get(route('staff.payments.index'))->assertForbidden();
         $this->actingAs($user)->get(route('staff.payments.show', $this->payment))->assertForbidden();
@@ -179,7 +179,7 @@ describe('decisions', function () {
         $this->actingAs($user)->post(route('staff.payments.reject', $this->payment), ['note' => 'x'])->assertForbidden();
 
         expect($this->payment->refresh()->status)->toBe(PaymentStatus::Submitted);
-    })->with([Role::Applicant, Role::Reviewer, Role::Approver, Role::TrafficOfficer]);
+    })->with([Role::Reviewer, Role::Approver, Role::TrafficOfficer]);
 
     it('requires a cashier to have confirmed two-factor authentication', function () {
         $this->actingAs(userWithRole(Role::Cashier))
@@ -196,29 +196,25 @@ describe('receipt files', function () {
         $this->owner->forceFill(['organization_id' => $this->permit->organization_id])->save();
     });
 
-    it('serves the receipt to its organization and to cashiers, without revealing where it is stored', function () {
-        foreach ([[$this->owner, 'payments.receipt'], [$this->cashier, 'staff.payments.receipt']] as [$user, $route]) {
-            $response = $this->actingAs($user)->get(route($route, $this->payment))->assertOk();
+    it('serves the receipt to cashiers, without revealing where it is stored', function () {
+        $response = $this->actingAs($this->cashier)->get(route('staff.payments.receipt', $this->payment))->assertOk();
 
-            expect($response->headers->get('Content-Disposition'))
-                ->toContain('receipt-FS100001.pdf')
-                ->not->toContain('receipts/')
-                ->not->toContain('abcdefghij')
-                ->and($response->headers->get('Cache-Control'))->toContain('no-store')
-                ->and($response->headers->get('X-Content-Type-Options'))->toBe('nosniff');
-        }
+        expect($response->headers->get('Content-Disposition'))
+            ->toContain('receipt-FS100001.pdf')
+            ->not->toContain('receipts/')
+            ->not->toContain('abcdefghij')
+            ->and($response->headers->get('Cache-Control'))->toContain('no-store')
+            ->and($response->headers->get('X-Content-Type-Options'))->toBe('nosniff');
     });
 
-    it('pretends another organization\'s receipt does not exist', function () {
-        $this->actingAs(applicantWithOrganization())
-            ->get(route('payments.receipt', $this->payment))
-            ->assertNotFound();
+    it('has no address for applicants: receipts are opened at the office only', function () {
+        $this->get('/payments/'.$this->payment->id.'/receipt')->assertNotFound();
+        assertSignedOut($this->actingAs($this->owner)->get(route('staff.payments.receipt', $this->payment)));
     });
 
     it('keeps other staff out', function (Role $role) {
         $user = staffUser($role);
 
-        $this->actingAs($user)->get(route('payments.receipt', $this->payment))->assertNotFound();
         $this->actingAs($user)->get(route('staff.payments.receipt', $this->payment))->assertForbidden();
     })->with([Role::Reviewer, Role::Approver, Role::TrafficOfficer]);
 
@@ -233,6 +229,6 @@ describe('receipt files', function () {
     });
 
     it('sends guests to the login page', function () {
-        $this->get(route('payments.receipt', $this->payment))->assertRedirect(route('login'));
+        $this->get(route('staff.payments.receipt', $this->payment))->assertRedirect(route('login'));
     });
 });

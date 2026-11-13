@@ -35,15 +35,16 @@ it('matches the role table in the specification', function (Role $role, array $e
 
     expect(permissionValues($role))->toBe($expected);
 })->with([
-    'applicant' => [Role::Applicant, ['organization.manage-own', 'vehicles.manage-own', 'permits.apply', 'payments.submit', 'permits.download-own']],
-    'reviewer' => [Role::Reviewer, ['permits.view-queue', 'permits.review', 'permits.approve']],
-    'approver' => [Role::Approver, ['permits.view-queue', 'permits.approve', 'permits.revoke', 'reports.view']],
-    'cashier' => [Role::Cashier, ['permits.view-queue', 'payments.verify', 'reports.view']],
-    'traffic officer' => [Role::TrafficOfficer, ['verification.scan']],
-    'registrar' => [Role::Registrar, ['applicants.register']],
-    'issuer' => [Role::Issuer, ['permits.view-queue', 'permits.issue']],
-    'supervisor' => [Role::Supervisor, ['permits.view-queue', 'permits.comment', 'reports.view']],
+    'applicant' => [Role::Applicant, ['permits.apply']],
+    'reviewer' => [Role::Reviewer, ['dashboard.view', 'permits.view-queue', 'permits.review', 'permits.approve']],
+    'approver' => [Role::Approver, ['dashboard.view', 'permits.view-queue', 'permits.approve', 'permits.revoke', 'reports.view']],
+    'cashier' => [Role::Cashier, ['dashboard.view', 'permits.view-queue', 'payments.verify', 'reports.view']],
+    'traffic officer' => [Role::TrafficOfficer, ['dashboard.view', 'verification.scan']],
+    'registrar' => [Role::Registrar, ['dashboard.view', 'applicants.register']],
+    'issuer' => [Role::Issuer, ['dashboard.view', 'permits.view-queue', 'permits.issue']],
+    'supervisor' => [Role::Supervisor, ['dashboard.view', 'permits.view-queue', 'permits.comment', 'reports.view']],
     'admin' => [Role::Admin, [
+        'dashboard.view',
         'users.view', 'users.create', 'users.update', 'users.deactivate', 'users.assign-roles',
         'roles.view', 'roles.create', 'roles.update', 'roles.delete', 'permissions.view',
         'vehicle-types.manage', 'fee-schedules.manage', 'settings.manage', 'audit-log.view',

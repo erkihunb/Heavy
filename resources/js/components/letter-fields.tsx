@@ -1,4 +1,5 @@
 import { EthiopianDateInput } from '@/components/ethiopian-date-input';
+import { FilePicker } from '@/components/file-picker';
 import { FormField } from '@/components/form-field';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/lib/i18n';
@@ -29,16 +30,17 @@ export function LetterFields({
     const { t } = useTranslation();
 
     return (
-        <fieldset className="space-y-4 rounded-card border border-border bg-muted/30 p-4">
+        <fieldset className="@container space-y-4 rounded-card border border-border bg-muted/30 p-4">
             <legend className="px-1 text-sm font-semibold">
                 {t('permits.letter.title')}
             </legend>
             <p className="text-sm text-muted-foreground">
                 {t('permits.letter.intro')}
             </p>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 @md:grid-cols-2">
                 <FormField
                     id="letter_number"
+                    required
                     label={t('permits.letter.number')}
                     error={errors.letter_number}
                 >
@@ -57,6 +59,7 @@ export function LetterFields({
                 </FormField>
                 <EthiopianDateInput
                     id="letter_date"
+                    required
                     label={t('permits.letter.date')}
                     value={value.letter_date}
                     error={errors.letter_date}
@@ -67,6 +70,7 @@ export function LetterFields({
             </div>
             <FormField
                 id="letter_file"
+                required={!hasStoredScan}
                 label={t('permits.letter.file')}
                 hint={
                     hasStoredScan
@@ -76,16 +80,13 @@ export function LetterFields({
                 error={errors.letter_file}
             >
                 {(control) => (
-                    <Input
-                        {...control}
-                        type="file"
+                    <FilePicker
+                        id={control.id}
+                        describedBy={control['aria-describedby']}
+                        invalid={control['aria-invalid']}
                         accept="application/pdf,image/jpeg,image/png"
-                        className="h-auto py-2"
-                        onChange={(event) =>
-                            onChange({
-                                letter_file: event.target.files?.[0] ?? null,
-                            })
-                        }
+                        file={value.letter_file}
+                        onChange={(file) => onChange({ letter_file: file })}
                     />
                 )}
             </FormField>

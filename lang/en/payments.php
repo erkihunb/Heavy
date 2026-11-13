@@ -42,6 +42,8 @@ return [
         'submit' => 'Submit receipt',
     ],
     'history' => 'Payments',
+    'enter' => 'Enter the payment',
+    'enter_intro' => 'The application is approved. Enter the receipt on its own page; the registered application is not changed.',
     'view_receipt' => 'Open receipt',
     'rejected_notice' => 'Your receipt was rejected: :note Submit a corrected one.',
     'waiting_notice' => 'Your receipt is waiting for a cashier to verify it.',

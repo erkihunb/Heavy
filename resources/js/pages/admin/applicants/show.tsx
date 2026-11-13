@@ -81,12 +81,7 @@ export default function ApplicantShow({
         [t('organization.fields.phone'), organization.phone],
         [t('organization.fields.email'), organization.email],
         [t('organization.fields.address'), organization.address],
-        [
-            t('applicants.source'),
-            applicant.registered_by
-                ? t('applicants.by_staff', { name: applicant.registered_by })
-                : t('applicants.online'),
-        ],
+        [t('applicants.source'), applicant.registered_by ?? '—'],
     ];
 
     return (

@@ -1,8 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Pencil, Send } from 'lucide-react';
+import { ArrowLeft, Banknote, Pencil, Send } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/page-header';
-import { PaymentForm } from '@/components/payment-form';
 import { PaymentList } from '@/components/payment-list';
 import { PermitDetails } from '@/components/permit-details';
 import { PermitDocumentLinks } from '@/components/permit-document-links';
@@ -16,34 +15,30 @@ import { useTranslation } from '@/lib/i18n';
 import { index, show } from '@/routes/admin/applicants';
 import {
     edit,
+    payment,
     show as showPermit,
     submit,
 } from '@/routes/admin/applicants/permits';
-import { store as storePayment } from '@/routes/admin/applicants/permits/payments';
 import type { BreadcrumbItem, Permit } from '@/types';
 import type { WalkInApplicant } from '@/types/admin';
-import type { PaymentMethod } from '@/types/enums';
 
 type Props = {
     applicant: WalkInApplicant;
     permit: Permit;
     /** What the Registrar may do now (App\Policies\PermitPolicy::*For). */
     actions: { update: boolean; submit: boolean; submitPayment: boolean };
-    paymentMethods: PaymentMethod[];
-    receiptMaxKilobytes: number;
 };
 
 /**
  * A walk-in applicant's application, as the Registrar at the office sees
- * it: submit it for review, hand in the payment receipt once it is
- * approved, and print the permit once it is issued.
+ * it: correct and submit it while it is hers to (a draft, or sent back for
+ * changes), open the payment page once it is approved — the registered
+ * application is not edited to pay — and print the permit once it is issued.
  */
 export default function WalkInPermitShow({
     applicant,
     permit,
     actions,
-    paymentMethods,
-    receiptMaxKilobytes,
 }: Props) {
     const { t } = useTranslation();
     const [busy, setBusy] = useState(false);
@@ -52,9 +47,6 @@ export default function WalkInPermitShow({
     const pendingPayment = payments.some(
         (payment) => payment.status === 'submitted',
     );
-    const lastRejected = [...payments]
-        .reverse()
-        .find((payment) => payment.status === 'rejected');
 
     const send = () =>
         router.post(
@@ -178,43 +170,28 @@ export default function WalkInPermitShow({
                     </p>
                 )}
 
-                {actions.submitPayment && permit.fee && (
+                {actions.submitPayment && (
                     <section
                         aria-labelledby="payment-title"
-                        className="space-y-5 rounded-card border-2 border-primary bg-card p-6 sm:p-7"
+                        className="flex flex-col gap-4 rounded-card border-2 border-primary bg-card p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7"
                     >
                         <div className="space-y-1.5">
                             <h2
                                 id="payment-title"
                                 className="text-section-title"
                             >
-                                {t('payments.form.title')}
+                                {t('payments.enter')}
                             </h2>
                             <p className="max-w-2xl text-muted-foreground">
-                                {t('payments.form.intro', {
-                                    fee: permit.fee.formatted,
-                                })}
+                                {t('payments.enter_intro')}
                             </p>
                         </div>
-
-                        {lastRejected?.notes && (
-                            <p
-                                role="alert"
-                                className="rounded-card border-2 border-destructive px-4 py-3 font-medium"
-                            >
-                                {t('payments.rejected_notice', {
-                                    note: lastRejected.notes,
-                                })}
-                            </p>
-                        )}
-
-                        <PaymentForm
-                            permitId={permit.id}
-                            fee={permit.fee}
-                            methods={paymentMethods}
-                            maxKilobytes={receiptMaxKilobytes}
-                            action={storePayment.url(route)}
-                        />
+                        <Button asChild size="lg">
+                            <Link href={payment(route)}>
+                                <Banknote aria-hidden="true" />
+                                {t('payments.enter')}
+                            </Link>
+                        </Button>
                     </section>
                 )}
 

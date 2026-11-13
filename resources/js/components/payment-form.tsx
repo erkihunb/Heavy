@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { EthiopianDateInput } from '@/components/ethiopian-date-input';
+import { FilePicker } from '@/components/file-picker';
 import { FormField } from '@/components/form-field';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/lib/i18n';
-import { store } from '@/routes/permits/payments';
 import type { Money } from '@/types';
 import type { PaymentMethod } from '@/types/enums';
 
@@ -23,26 +23,25 @@ type PaymentFormData = {
 };
 
 /**
- * The applicant reports the fee of an approved permit as paid: how, the
- * receipt number, the amount, the date and a scan of the receipt. A cashier
- * uses the same form to record a payment taken at the desk (`forCashier`):
+ * The fee of an approved permit reported as paid: how, the receipt number,
+ * the amount, the date and a scan of the receipt, handed in by a Registrar
+ * for the applicant. A cashier uses the same form to record a payment taken
+ * at the desk (`forCashier`):
  * the scan is then optional and an internal note can be added. The server
  * checks everything again, including that the amount is exactly the fee.
  */
 export function PaymentForm({
-    permitId,
     fee,
     methods,
     maxKilobytes,
     action,
     forCashier = false,
 }: {
-    permitId: string;
     fee: Money;
     methods: PaymentMethod[];
     maxKilobytes: number;
-    /** Where to send it; the applicant's own address unless a Registrar hands it in. */
-    action?: string;
+    /** Where to send it: the Registrar's or the cashier's own address. */
+    action: string;
     /** A cashier records the payment: scan optional, internal note, amount filled in. */
     forCashier?: boolean;
 }) {
@@ -60,7 +59,7 @@ export function PaymentForm({
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        form.post(action ?? store.url({ permit: permitId }), {
+        form.post(action, {
             forceFormData: true,
             preserveScroll: true,
         });
@@ -174,17 +173,13 @@ export function PaymentForm({
                 error={form.errors.receipt_file}
             >
                 {(control) => (
-                    <Input
-                        {...control}
-                        type="file"
+                    <FilePicker
+                        id={control.id}
+                        describedBy={control['aria-describedby']}
+                        invalid={control['aria-invalid']}
                         accept="application/pdf,image/jpeg,image/png"
-                        className="h-auto py-2"
-                        onChange={(event) =>
-                            form.setData(
-                                'receipt_file',
-                                event.target.files?.[0] ?? null,
-                            )
-                        }
+                        file={form.data.receipt_file}
+                        onChange={(file) => form.setData('receipt_file', file)}
                     />
                 )}
             </FormField>

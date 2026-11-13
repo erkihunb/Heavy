@@ -523,11 +523,8 @@ Flows and diagrams: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ### Requests by letter at the office (owner's decision, 2026-11-12)
 
-- **Online sign-up and applying are paused.** `permits.online_applications` (System settings →
-  Permits, default off): the register page and its endpoint answer 404, the login and home pages
-  hide "Register", applicants cannot start applications or report payments. Turning it on brings
-  the online flow back unchanged. The test suite runs with it on (phpunit.xml) because most tests
-  cover that flow; `tests/Feature/Workflow/OfficeWorkflowTest.php` covers the office flow with it off.
+- **Online sign-up and applying were paused**, then removed altogether on 2026-11-13 (see
+  "The office does everything" below): there is no `permits.online_applications` setting any more.
 - **The letter.** Applicants hand a letter to a branch or the head office. The Registrar records
   the request with the letter's number, date and a scanned copy (PDF/JPG/PNG, required; on an edit
   only when none is stored) and sends it on. Scans are on the private documents disk under
@@ -962,3 +959,85 @@ The owner asked for the UI/UX and layout of the EUISIS project. Heavy now follow
 - The public verification pages (Blade, no JavaScript) use the same tokens, brand bar and
   radii. The Vite dev server listens on `127.0.0.1`, since a Content-Security-Policy cannot
   name an IPv6 address and the stylesheet of these pages was blocked in development.
+
+## The office does everything; permissions decide (owner's decision, 2026-11-13)
+
+- **Applicants have no pages.** An applicant never applies themselves: a person holding
+  `applicants.register` records the letter. `routes/applicant.php`, its controllers, pages, menu
+  section, the applicant's dashboard, self sign-up (Fortify registration) and the
+  `permits.online_applications` setting are gone, with the applicant-only policy abilities.
+  The Registrar's requests reuse the validation rules in `App\Http\Requests\Applicant\*`
+  (now abstract). Applicant accounts are records only: they get no password link and cannot
+  sign in (`User::maySignIn()`; a session left from before is ended on its next request, and
+  "Forgot password" sends them nothing), unless their roles also give them office work.
+  Notification e-mails carry no link. `UpdateOrganization` and `WithdrawPermit` are no
+  longer called from anywhere.
+- **No role is fixed in code.** What a person may do is decided by the permissions their roles
+  hold, never by a role's name: `User::isStaff()` (any permission of the office's work),
+  `User::isApplicant()` (`permits.apply`), the review queue (the union of the desks a person's
+  permissions give), the decision page and the dashboard all read permissions. Role names remain
+  only where a role is *given* (the default role of an account opened for an applicant, the rule
+  that the applicant's role is not combined with staff roles) and for the protected administrator
+  role, which exists so the system always keeps someone who can manage roles.
+- **The dashboard has a permission**, `dashboard.view`. Without it `/dashboard` sends the person
+  to the first page their permissions open (`App\Support\Rbac\Landing`), and the menu, the
+  breadcrumbs and the command palette do not offer it. The migration grants it to every role that
+  does office work, so nobody loses it on deploy; applicants' roles do not get it.
+- **The applicant portal's permissions are gone** (`organization.manage-own`,
+  `vehicles.manage-own`, `payments.submit`, `permits.download-own`; migration
+  `2026_11_28_000002`), with the policy branches that let an applicant see their own
+  applications, payments and PDFs. `permits.apply` stays, labelled "Applicant account": it marks
+  the accounts requests are recorded for. Notices to applicants send them to the office, and the
+  landing page describes the office flow.
+- **Roles and permissions are not put into categories.** The Roles list, the role picker on a
+  user, the permission catalogue and the permission picker each show one flat list;
+  `PermissionCatalog` is a single ordered list.
+
+## Speed on slow phones (2026-11-13)
+
+Measured with Lighthouse (mobile: slow 4G, 4x slower CPU), median of three runs, against the
+production build served by production's own nginx config (`docker/nginx/default.conf`).
+
+- **Text is compressed** (gzip in nginx). Nothing was compressed before: about 1.1 MB of HTML,
+  JavaScript and CSS per first visit went out as it is. `gzip_proxied any`, because a proxy in
+  front may add a Via header. The pages carry no secret in their body (the CSRF token is in a
+  cookie), so compressing HTML does not open the BREACH attack.
+- **The interface's words are sent once.** `translations` (about 125 KB of JSON) was in every
+  page and every in-app visit. It is now an Inertia once prop keyed by language and a fingerprint
+  of the language files (`FrontendTranslations::version()`), so a language switch or a deploy that
+  changes the wording sends it again; a browser holding two languages' keys is always sent it.
+- **Only the icons the app uses are bundled.** `NavIcons.tsx` exported 198 icons, wrapped in a
+  function call each, which bundlers must keep: every signed-in page downloaded all of them. It
+  now lists the 26 in use, each marked `/* @__PURE__ */`. Add icons there as they are needed.
+- **The logo goes to web pages as a small WebP copy** (at most 160 px, three times the largest
+  place it is drawn), made once beside the upload; the upload itself stays as it is for the permit
+  PDF. The landing and sign-in pages preload it, since it is the largest thing on their first
+  screen and is otherwise only requested once the scripts have run. The production image now
+  installs PHP's `gd`, which the logo upload already needed.
+- **The public verify page no longer jumps:** the "Scan QR code" button is shown by an inline
+  script right after it instead of by the scanner's script, which arrives later on a slow phone.
+- **Left as they are:** the core bundle (React, Inertia and the libraries Inertia brings: axios,
+  lodash, qs, laravel-precognition) cannot shrink without replacing Inertia; the signed-in shell's
+  menus, dialogs and toasts are drawn on every page. Fonts load only the subsets a page needs.
+  The biggest remaining step for the first paint would be server-side rendering (`ssr.tsx`
+  exists, but production runs no SSR server): the pages are drawn by JavaScript.
+
+## One layout for create and edit pages (2026-11-13)
+
+Every create and edit page reads the same way, as the shell's Users and Roles forms:
+`layouts/form-page-layout.tsx` gives the heading band (breadcrumbs, a link back, the title, an
+optional one-line description) and the forms' common width (`max-w-4xl`, set once in
+`AuthenticatedLayout`); the fields sit in `FormSection` cards and end with `FormActions`
+(Cancel, then the main action, on the right; stacked full width on a phone, main action on top),
+both in `components/form-layout.tsx`. Fields the server requires carry a red asterisk
+(`required` on `FormField`, `EthiopianDateInput` and `PlateInput`, or `RequiredMark`), read out as
+"required". File fields use `components/file-picker.tsx`, which speaks the page's language (the
+browser's own control says "Choose File" in the browser's language). On phones the header's
+back link gives way to the breadcrumb's "‹ Parent", which leads to the same place.
+
+The office's one-page intake form lays itself out by the room the form has, not the window
+(container queries, `@container/intake`): the progress panel sits beside the form only from a
+64 rem form area, field pairs only from 42 rem, so the sidebar can no longer squeeze it; below
+that the panel shows above the form without the step list, and the buttons sit at the end of the
+form — one set of buttons at any width.
+

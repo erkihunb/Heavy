@@ -29,7 +29,7 @@ it('is open to the staff who work on applications, admins and registrars only', 
 ]);
 
 it('keeps applicants out', function () {
-    $this->actingAs(applicantWithOrganization())->get(route('admin.permits.index'))->assertForbidden();
+    assertSignedOut($this->actingAs(applicantWithOrganization())->get(route('admin.permits.index')));
 });
 
 it('lists every permit newest first, drafts only for registrars', function () {
@@ -89,13 +89,6 @@ it('filters by status, type and where it was registered', function () {
     $this->actingAs(staffUser(Role::Admin))
         ->get(route('admin.permits.index', ['permit_type' => 'full_day']))
         ->assertInertia(fn (Assert $page) => $page->has('permits.data', 1)->where('permits.data.0.id', $revoked->id));
-
-    $this->actingAs(staffUser(Role::Admin))
-        ->get(route('admin.permits.index', ['source' => 'office']))
-        ->assertInertia(fn (Assert $page) => $page
-            ->has('permits.data', 1)
-            ->where('permits.data.0.id', $revoked->id)
-            ->where('permits.data.0.at_office', true));
 });
 
 it('opens each permit on the page the viewer works on it from', function () {
@@ -118,7 +111,7 @@ it('ignores filter values it does not know', function () {
     Permit::factory()->issued()->create();
 
     $this->actingAs(staffUser(Role::Admin))
-        ->get(route('admin.permits.index', ['status' => 'bogus', 'permit_type' => 'x', 'source' => 'y', 'from' => '12/12/2020']))
+        ->get(route('admin.permits.index', ['status' => 'bogus', 'permit_type' => 'x', 'from' => '12/12/2020']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->has('permits.data', 1)

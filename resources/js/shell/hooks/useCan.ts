@@ -9,13 +9,10 @@ import { usePage } from '@inertiajs/react';
 export function useCan() {
     const { auth } = usePage().props;
     const permissions = auth.permissions ?? [];
-    const roles: string[] = auth.user?.roles ?? [];
     const isSuperAdmin = auth.isSuperAdmin === true;
 
     const can = (permission: string): boolean =>
         isSuperAdmin || permissions.includes(permission);
 
-    const hasRole = (role: string): boolean => roles.includes(role);
-
-    return { can, hasRole, isSuperAdmin };
+    return { can, isSuperAdmin };
 }

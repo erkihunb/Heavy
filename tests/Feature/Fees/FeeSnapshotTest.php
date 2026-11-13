@@ -78,8 +78,8 @@ it('tells the approver over HTTP when the fee is missing', function () {
 it('shows the fee on the permit once approved', function () {
     $permit = Permit::factory()->forVehicles($this->vehicle)->awaitingPayment()->create(['fee_cents' => 600_050]);
 
-    $this->actingAs($this->applicant)
-        ->get(route('permits.show', $permit))
+    $this->actingAs(staffUser(Role::Cashier))
+        ->get(route('staff.permits.show', $permit))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('permit.fee', [
@@ -90,7 +90,7 @@ it('shows the fee on the permit once approved', function () {
 });
 
 it('has no fee before approval', function () {
-    $this->actingAs($this->applicant)
-        ->get(route('permits.show', $this->permit))
+    $this->actingAs(staffUser(Role::Cashier))
+        ->get(route('staff.permits.show', $this->permit))
         ->assertInertia(fn ($page) => $page->where('permit.fee', null));
 });

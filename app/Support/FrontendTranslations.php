@@ -32,6 +32,26 @@ final class FrontendTranslations
     }
 
     /**
+     * A short fingerprint of the files the translations for a language are
+     * read from (their paths, sizes and change times): it changes whenever a
+     * deploy changes the wording, without reading the files themselves.
+     */
+    public static function version(string $locale): string
+    {
+        $fallback = (string) config('app.fallback_locale');
+        $stamp = '';
+
+        foreach (self::namespaces() as $namespace) {
+            foreach (array_unique([$fallback, $locale]) as $language) {
+                $path = lang_path("{$language}/{$namespace}.php");
+                $stamp .= is_file($path) ? "{$path}:".filesize($path).':'.filemtime($path).'|' : "{$path}:-|";
+            }
+        }
+
+        return substr(md5($stamp), 0, 12);
+    }
+
+    /**
      * Every dot-notation key available to the frontend, e.g. "common.language".
      *
      * @return list<string>

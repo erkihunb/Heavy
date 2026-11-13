@@ -12,7 +12,7 @@ import type { NavItem } from '@/config/navigation';
 import { SearchIcon as Search } from '@/shell/Components/NavIcons';
 import { useCan } from '@/shell/hooks/useCan';
 import { useLocale } from '@/shell/hooks/useLocale';
-import { permittedSections } from '@/shell/lib/navigation';
+import { isPermitted, permittedSections } from '@/shell/lib/navigation';
 
 interface Props {
     open: boolean;
@@ -46,7 +46,9 @@ export default function AppCommandPalette({ open, onClose }: Props) {
     }, [open]);
 
     const grouped: { labelKey: string; items: NavItem[] }[] = [
-        { labelKey: 'shell.nav.home', items: [navigation.home] },
+        ...(isPermitted(navigation.home, can)
+            ? [{ labelKey: 'shell.nav.home', items: [navigation.home] }]
+            : []),
         ...permittedSections(navigation, can).flatMap(
             (section) => section.groups,
         ),

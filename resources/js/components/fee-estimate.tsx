@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from '@/lib/i18n';
-import { feeEstimate } from '@/routes';
 import type { Money } from '@/types';
 
 type Estimate = { days: number; fee: Money | null };
@@ -21,8 +20,8 @@ export function FeeEstimate({
     primaryVehicleId: string;
     validFrom: string;
     validTo: string;
-    /** The estimate address; the applicant's own unless a Registrar fills the form. */
-    url?: string;
+    /** The estimate address for the applicant the Registrar fills the form for. */
+    url: string;
 }) {
     const { t } = useTranslation();
     const [estimate, setEstimate] = useState<Estimate | null>(null);
@@ -49,16 +48,11 @@ export function FeeEstimate({
                 valid_to: validTo,
             };
 
-            fetch(
-                url
-                    ? `${url}?${new URLSearchParams(query).toString()}`
-                    : feeEstimate.url({ query }),
-                {
-                    headers: { Accept: 'application/json' },
-                    credentials: 'same-origin',
-                    signal: controller.signal,
-                },
-            )
+            fetch(`${url}?${new URLSearchParams(query).toString()}`, {
+                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+                signal: controller.signal,
+            })
                 .then((response) => (response.ok ? response.json() : null))
                 .then((body: Estimate | null) => setEstimate(body))
                 .catch(() => {

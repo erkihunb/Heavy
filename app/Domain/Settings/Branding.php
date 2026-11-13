@@ -23,6 +23,9 @@ final class Branding
 
     private const string DIRECTORY = 'branding';
 
+    /** The largest the web pages draw the logo is 48 CSS pixels; three times that, rounded up. */
+    private const int DISPLAY_SIZE = 160;
+
     private const array TYPES = [
         'png' => 'image/png',
         'jpg' => 'image/jpeg',
@@ -48,7 +51,11 @@ final class Branding
     {
         $path = self::path($asset);
 
-        return $path === null ? null : route('branding', ['asset' => $asset, 'v' => substr(md5($path), 0, 10)], false);
+        // "display": the logo's address changed when it began to be served as a
+        // smaller WebP copy, so browsers that cached the old file fetch the new one.
+        $version = $asset === 'logo' ? "{$path}|display" : $path;
+
+        return $path === null ? null : route('branding', ['asset' => $asset, 'v' => substr(md5($version), 0, 10)], false);
     }
 
     public static function absolutePath(string $asset): ?string
@@ -61,6 +68,104 @@ final class Branding
     public static function contentType(string $path): string
     {
         return self::TYPES[strtolower(pathinfo($path, PATHINFO_EXTENSION))] ?? 'application/octet-stream';
+    }
+
+    /**
+     * The logo as the web pages show it: at most DISPLAY_SIZE pixels on its
+     * longer side (three times the largest place it appears, for sharp phone
+     * screens) and as WebP, made once from the upload and kept beside it. The
+     * upload itself stays as it is for the permit PDF. When no smaller copy
+     * can be made (an icon file, no image support, or the copy would not be
+     * smaller), the upload is served.
+     */
+    public static function displayPath(string $asset): ?string
+    {
+        $path = self::path($asset);
+
+        if ($path === null || $asset !== 'logo') {
+            return $path === null ? null : Storage::disk('local')->path($path);
+        }
+
+        $disk = Storage::disk('local');
+
+        foreach (self::displayCopies($path) as $copy) {
+            if ($disk->exists($copy)) {
+                return $disk->path($copy);
+            }
+        }
+
+        $original = (string) $disk->get($path);
+        $bytes = self::displayBytes($original);
+
+        // Not worth a copy: keep the upload's bytes under the copy's name, so
+        // making one is not tried again on every request.
+        $copy = $bytes !== null && strlen($bytes) < strlen($original)
+            ? self::displayStem($path).'.webp'
+            : self::displayStem($path).'.'.strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        $disk->put($copy, $bytes !== null && strlen($bytes) < strlen($original) ? $bytes : $original);
+
+        return $disk->path($copy);
+    }
+
+    private static function displayStem(string $path): string
+    {
+        return (string) preg_replace('/\.[a-z0-9]+$/i', '', $path).'.display';
+    }
+
+    /**
+     * Where the display copy of an upload may be stored.
+     *
+     * @return list<string>
+     */
+    private static function displayCopies(string $path): array
+    {
+        $stem = self::displayStem($path);
+
+        return array_values(array_unique([
+            "{$stem}.webp",
+            "{$stem}.".strtolower(pathinfo($path, PATHINFO_EXTENSION)),
+        ]));
+    }
+
+    /**
+     * The picture scaled down to fit DISPLAY_SIZE (never up), with its
+     * transparency, as WebP; null when it cannot be decoded or written.
+     */
+    private static function displayBytes(string $original): ?string
+    {
+        if (! function_exists('imagewebp') || $original === '') {
+            return null;
+        }
+
+        $image = @imagecreatefromstring($original);
+
+        if ($image === false) {
+            return null;
+        }
+
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $scale = min(1, self::DISPLAY_SIZE / max($width, $height, 1));
+        $targetWidth = max(1, (int) round($width * $scale));
+        $targetHeight = max(1, (int) round($height * $scale));
+
+        $copy = imagecreatetruecolor($targetWidth, $targetHeight);
+
+        if ($copy === false) {
+            return null;
+        }
+
+        imagealphablending($copy, false);
+        imagesavealpha($copy, true);
+        imagefill($copy, 0, 0, (int) imagecolorallocatealpha($copy, 0, 0, 0, 127));
+        imagecopyresampled($copy, $image, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height);
+
+        ob_start();
+        $written = imagewebp($copy, null, 90);
+        $bytes = (string) ob_get_clean();
+
+        return $written && $bytes !== '' ? $bytes : null;
     }
 
     /**
@@ -150,7 +255,7 @@ final class Branding
     public static function delete(?string $path): void
     {
         if (is_string($path) && str_starts_with($path, self::DIRECTORY.'/')) {
-            Storage::disk('local')->delete($path);
+            Storage::disk('local')->delete([$path, ...self::displayCopies($path)]);
         }
     }
 }

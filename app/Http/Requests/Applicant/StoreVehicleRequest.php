@@ -4,12 +4,9 @@ namespace App\Http\Requests\Applicant;
 
 use App\Models\Vehicle;
 
-class StoreVehicleRequest extends VehicleRequest
+abstract class StoreVehicleRequest extends VehicleRequest
 {
-    public function authorize(): bool
-    {
-        return (bool) $this->user()?->can('create', Vehicle::class);
-    }
+    abstract public function authorize(): bool;
 
     protected function vehicle(): ?Vehicle
     {

@@ -187,21 +187,7 @@ it('is for registrars and admins only', function (Role $role, int $status) {
     'traffic officer' => [Role::TrafficOfficer, 403],
 ]);
 
-it('keeps the applicant\'s own portal working on what the office started', function () {
-    $this->actingAs($this->registrar)->post(route('admin.applicants.permits.store', $this->applicant), [...permitPayload($this->applicant), ...letterFields()]);
-    $permit = Permit::query()->sole();
-
-    $this->actingAs($this->applicant)
-        ->get(route('permits.show', $permit))
-        ->assertOk();
-
-    $this->actingAs($this->applicant)
-        ->post(route('permits.submit', $permit))
-        ->assertRedirect(route('permits.show', $permit));
-});
-
 it('never lets an applicant use the office routes', function () {
-    $this->actingAs($this->applicant)
-        ->get(route('admin.applicants.show', $this->applicant))
-        ->assertForbidden();
+    assertSignedOut($this->actingAs($this->applicant)
+        ->get(route('admin.applicants.show', $this->applicant)));
 });

@@ -12,7 +12,8 @@ FROM php:8.4-fpm-alpine AS php-base
 
 COPY --from=mlocati/php-extension-installer:2 /usr/bin/install-php-extensions /usr/local/bin/
 
-RUN install-php-extensions pdo_mysql intl zip bcmath opcache redis pcntl \
+# gd: the logo upload is re-encoded, and the web pages get a small WebP copy of it.
+RUN install-php-extensions pdo_mysql intl zip bcmath opcache redis pcntl gd \
     && apk add --no-cache fcgi tzdata
 
 ENV TZ=UTC

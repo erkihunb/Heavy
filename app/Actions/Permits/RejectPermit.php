@@ -5,12 +5,14 @@ namespace App\Actions\Permits;
 use App\Domain\Notifications\PermitNotifier;
 use App\Domain\Permits\ApprovalRules;
 use App\Domain\Permits\PermitTransitions;
+use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Exceptions\InvalidPermitTransition;
 use App\Exceptions\PermitRuleViolation;
 use App\Models\Permit;
 use App\Models\User;
 use App\Notifications\PermitRejected;
+use Illuminate\Support\Facades\Gate;
 
 class RejectPermit
 {
@@ -29,6 +31,8 @@ class RejectPermit
      */
     public function handle(Permit $permit, User $approver, string $note): Permit
     {
+        Gate::forUser($approver)->authorize(Permission::ApprovePermits->value);
+
         if (blank($note)) {
             throw new PermitRuleViolation('note_required');
         }

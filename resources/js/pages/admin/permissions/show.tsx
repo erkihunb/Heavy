@@ -11,11 +11,7 @@ import {
 } from '@/shell/Components/ui';
 import { useLocale } from '@/shell/hooks/useLocale';
 import AuthenticatedLayout from '@/shell/Layouts/AuthenticatedLayout';
-import {
-    CRITICAL_PERMISSIONS,
-    permissionGroupLabel,
-    permissionModuleLabel,
-} from '@/shell/lib/permissionGroups';
+import { CRITICAL_PERMISSIONS } from '@/shell/lib/permissionGroups';
 
 type HoldingRole = {
     id: number;
@@ -36,9 +32,6 @@ export default function ShowPermission({
         name: string;
         label: string;
         description: string | null;
-        group: string;
-        module: string;
-        moduleName: string;
     };
     roles: HoldingRole[];
     urls: { index: string };
@@ -71,26 +64,6 @@ export default function ShowPermission({
                             </dt>
                             <dd className="font-mono break-all text-(--app-foreground)">
                                 {permission.name}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt className="text-xs text-(--app-muted-foreground)">
-                                {t('rbac.permissions.module')}
-                            </dt>
-                            <dd className="text-(--app-foreground)">
-                                {permissionModuleLabel(
-                                    t,
-                                    permission.module,
-                                    permission.moduleName,
-                                )}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt className="text-xs text-(--app-muted-foreground)">
-                                {t('rbac.permissions.group')}
-                            </dt>
-                            <dd className="text-(--app-foreground)">
-                                {permissionGroupLabel(t, permission.group)}
                             </dd>
                         </div>
                         {CRITICAL_PERMISSIONS.has(permission.name) && (

@@ -1,16 +1,14 @@
-import { Link } from '@inertiajs/react';
 import type { InertiaFormProps } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
 import { EthiopianDateInput } from '@/components/ethiopian-date-input';
 import { FeeEstimate } from '@/components/fee-estimate';
-import { FormField } from '@/components/form-field';
+import { FormField, RequiredMark } from '@/components/form-field';
+import { FormActions } from '@/components/form-layout';
 import InputError from '@/components/input-error';
 import { LetterFields } from '@/components/letter-fields';
 import { MovementHoursField } from '@/components/movement-hours-field';
 import type { MovementHoursValue } from '@/components/movement-hours-field';
-import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/native-select';
-import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/lib/i18n';
 import type { Vehicle } from '@/types';
@@ -95,8 +93,8 @@ export function PermitForm({
     vehicles: Vehicle[];
     limits: PermitLimits;
     cancelHref: string;
-    /** The fee estimate address when a Registrar fills the form for an applicant. */
-    estimateUrl?: string;
+    /** The fee estimate address for the applicant the form is filled for. */
+    estimateUrl: string;
     /** The branches an applicant may apply to; none hides the choice. */
     branches?: { id: number; code: string; name: string }[];
     /** Ask for the request letter (a Registrar at the office); `hasStoredScan` on an edit. */
@@ -124,7 +122,7 @@ export function PermitForm({
     };
 
     return (
-        <form onSubmit={onSubmit} noValidate className="max-w-3xl space-y-5">
+        <form onSubmit={onSubmit} noValidate className="space-y-5">
             {letter && (
                 <LetterFields
                     value={{
@@ -153,6 +151,7 @@ export function PermitForm({
                 >
                     <legend className="sr-only">
                         {t('permits.fields.permit_type')}
+                        <RequiredMark />
                     </legend>
                     {PERMIT_TYPES.map((type) => (
                         <label
@@ -198,6 +197,7 @@ export function PermitForm({
             >
                 <FormField
                     id="primary_vehicle_id"
+                    required
                     label={t('permits.fields.primary_vehicle')}
                     error={errors.primary_vehicle_id}
                 >
@@ -284,6 +284,7 @@ export function PermitForm({
                 <div className="grid gap-6 md:grid-cols-2">
                     <EthiopianDateInput
                         id="valid_from"
+                        required
                         label={t('permits.fields.valid_from')}
                         value={form.data.valid_from}
                         error={errors.valid_from}
@@ -291,6 +292,7 @@ export function PermitForm({
                     />
                     <EthiopianDateInput
                         id="valid_to"
+                        required
                         label={t('permits.fields.valid_to')}
                         value={form.data.valid_to}
                         error={errors.valid_to}
@@ -333,6 +335,7 @@ export function PermitForm({
             >
                 <FormField
                     id="reason"
+                    required
                     label={t('permits.fields.reason')}
                     error={errors.reason}
                 >
@@ -382,20 +385,15 @@ export function PermitForm({
             </Section>
 
             <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground sm:text-right">
                     {t('permits.form.next_step')}
                 </p>
-                <div className="flex flex-col gap-3 sm:flex-row">
-                    <Button type="submit" size="lg" disabled={form.processing}>
-                        {form.processing && <Spinner />}
-                        {t('permits.form.save')}
-                    </Button>
-                    <Button asChild variant="outline" size="lg">
-                        <Link href={cancelHref}>
-                            {t('permits.form.cancel')}
-                        </Link>
-                    </Button>
-                </div>
+                <FormActions
+                    cancelHref={cancelHref}
+                    cancelLabel={t('permits.form.cancel')}
+                    submitLabel={t('permits.form.save')}
+                    processing={form.processing}
+                />
             </div>
         </form>
     );

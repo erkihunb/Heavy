@@ -30,11 +30,8 @@ it('is open to approvers, cashiers and admins', function (Role $role) {
 ]);
 
 it('is closed to everyone else', function (Role $role) {
-    $user = $role === Role::Applicant ? applicantWithOrganization() : staffUser($role);
-
-    $this->actingAs($user)->get(route('staff.reports.index'))->assertForbidden();
+    $this->actingAs(staffUser($role))->get(route('staff.reports.index'))->assertForbidden();
 })->with([
-    'applicant' => [Role::Applicant],
     'reviewer' => [Role::Reviewer],
     'traffic officer' => [Role::TrafficOfficer],
 ]);

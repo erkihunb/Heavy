@@ -141,28 +141,30 @@ describe('a check outside the hours', function () {
 
 describe('entering the hours on an application', function () {
     beforeEach(function () {
+        // The Registrar enters the hours from the letter, for the applicant.
+        $this->registrar = staffUser(Role::Registrar);
         $this->applicant = applicantWithOrganization();
     });
 
     it('saves a window', function () {
-        $this->actingAs($this->applicant)
-            ->post(route('permits.store'), permitPayload($this->applicant, ['any_time' => false, 'move_from' => '11:00', 'move_to' => '14:00']))
+        $this->actingAs($this->registrar)
+            ->post(route('admin.applicants.permits.store', $this->applicant), [...permitPayload($this->applicant, ['any_time' => false, 'move_from' => '11:00', 'move_to' => '14:00']), ...letterFields()])
             ->assertSessionHasNoErrors();
 
         expect(Permit::query()->sole()->movementHours()?->present('en'))->toMatchArray(['from' => '11:00', 'to' => '14:00']);
     });
 
     it('saves any time of day for a full-day permit', function () {
-        $this->actingAs($this->applicant)
-            ->post(route('permits.store'), permitPayload($this->applicant, ['any_time' => true]))
+        $this->actingAs($this->registrar)
+            ->post(route('admin.applicants.permits.store', $this->applicant), [...permitPayload($this->applicant, ['any_time' => true]), ...letterFields()])
             ->assertSessionHasNoErrors();
 
         expect(Permit::query()->sole()->movementHours())->toBeNull();
     });
 
     it('validates the hours', function (array $hours, string $field) {
-        $this->actingAs($this->applicant)
-            ->post(route('permits.store'), permitPayload($this->applicant, $hours))
+        $this->actingAs($this->registrar)
+            ->post(route('admin.applicants.permits.store', $this->applicant), [...permitPayload($this->applicant, $hours), ...letterFields()])
             ->assertSessionHasErrors($field);
     })->with([
         'no start' => [['any_time' => false, 'move_to' => '14:00'], 'move_from'],
@@ -206,7 +208,7 @@ it('shows the hours with the permit details', function () {
     $vehicle = Vehicle::factory()->for($applicant->organization)->create();
     $permit = Permit::factory()->forVehicles($vehicle)->draft()->create(['move_from' => '11:00', 'move_to' => '14:00', 'applicant_id' => $applicant->id]);
 
-    $this->actingAs($applicant)
-        ->get(route('permits.show', $permit))
+    $this->actingAs(staffUser(Role::Registrar))
+        ->get(route('admin.applicants.permits.show', [$applicant, $permit]))
         ->assertInertia(fn (Assert $page) => $page->where('permit.hours.from', '11:00')->where('permit.hours.to', '14:00'));
 });

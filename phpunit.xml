@@ -30,10 +30,8 @@
         <env name="DB_URL" value="" force="true"/>
         <!-- Tests assert the production default, whatever the local .env says. -->
         <env name="PERMITS_STAFF_TWO_FACTOR_REQUIRED" value="true" force="true"/>
-        <!-- The online flow and two-step approval are switched off in production for now
-             (requests come in by letter); most tests cover them, and the office flow's own
-             tests switch them off (tests/Feature/Workflow). -->
-        <env name="PERMITS_ONLINE_APPLICATIONS" value="true" force="true"/>
+        <!-- Two-step approval is switched off in production for now; most tests cover it,
+             and the office flow's own tests switch it off (tests/Feature/Workflow). -->
         <env name="PERMITS_TWO_STEP_APPROVAL" value="true" force="true"/>
         <!-- Permit PDFs are rendered by a fake; the Gotenberg smoke test opts in by itself. -->
         <env name="PERMITS_PDF_RENDERER" value="fake" force="true"/>

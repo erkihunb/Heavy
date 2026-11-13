@@ -1,8 +1,9 @@
 <?php
 
+use App\Enums\Permission;
 use App\Enums\Role;
+use App\Models\Role as RoleModel;
 use App\Models\User;
-use App\Models\Vehicle;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('guests are redirected to the login page', function () {
@@ -10,12 +11,42 @@ test('guests are redirected to the login page', function () {
     $response->assertRedirect(route('login'));
 });
 
-test('authenticated users can visit the dashboard', function () {
-    $user = User::factory()->create();
-    $this->actingAs($user);
+test('people who hold the dashboard permission can visit it', function () {
+    $this->actingAs(staffUser(Role::Registrar))
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->component('dashboard'));
+});
 
-    $response = $this->get(route('dashboard'));
-    $response->assertOk();
+test('without the dashboard permission a person starts on the first page they may open', function () {
+    // No role at all: only their own profile is theirs.
+    $this->actingAs(User::factory()->create())
+        ->get(route('dashboard'))
+        ->assertRedirect(route('profile.edit'));
+
+    // A role an administrator took the dashboard from: straight to its work.
+    RoleModel::findByName(Role::Reviewer->value)->revokePermissionTo(Permission::ViewDashboard->value);
+
+    $this->actingAs(staffUser(Role::Reviewer))
+        ->get(route('dashboard'))
+        ->assertRedirect(route('staff.permits.index'));
+});
+
+test('the dashboard permission alone opens the dashboard, whatever the role is called', function () {
+    $role = RoleModel::query()->create(['name' => 'onlooker', 'guard_name' => 'web']);
+    $role->givePermissionTo(Permission::ViewDashboard->value);
+    $user = User::factory()->create();
+    $user->assignRole('onlooker');
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('dashboard')
+            // Nothing of the office's work: no figures, and not asked for two-factor as staff are.
+            ->where('counts', [])
+            ->where('account.staff', false)
+            ->where('activity', null));
 });
 
 test('unverified users are sent to verify their email address first', function () {
@@ -25,15 +56,12 @@ test('unverified users are sent to verify their email address first', function (
 });
 
 test('the dashboard reports the account status of the signed-in user', function () {
-    $user = User::factory()->create();
-    $user->assignRole(Role::Applicant->value);
-
-    $this->actingAs($user)
+    $this->actingAs(staffUser(Role::Reviewer))
         ->get(route('dashboard'))
         ->assertInertia(fn (Assert $page) => $page
             ->component('dashboard')
-            ->where('account', ['emailVerified' => true, 'twoFactorEnabled' => false])
-            ->where('auth.user.roles', ['applicant']));
+            ->where('account', ['emailVerified' => true, 'twoFactorEnabled' => true, 'staff' => true])
+            ->where('auth.user.roles', ['reviewer']));
 });
 
 test('the dashboard reflects confirmed two-factor authentication', function () {
@@ -45,13 +73,6 @@ test('the dashboard reflects confirmed two-factor authentication', function () {
         ->assertInertia(fn (Assert $page) => $page->where('account.twoFactorEnabled', true));
 });
 
-test('the dashboard works for an account that has no role yet', function () {
-    $this->actingAs(User::factory()->create())
-        ->get(route('dashboard'))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page->where('auth.user.roles', []));
-});
-
 test('every role has a name and a summary in both languages', function () {
     foreach (['am', 'en'] as $locale) {
         $roles = require lang_path("{$locale}/roles.php");
@@ -61,28 +82,4 @@ test('every role has a name and a summary in both languages', function () {
                 ->and($roles[$role]['summary'] ?? '')->not->toBe('', "{$locale}.roles.{$role}.summary");
         }
     }
-});
-
-test('an applicant without an organization is told to create one', function () {
-    $this->actingAs(userWithRole(Role::Applicant))
-        ->get(route('dashboard'))
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('registration', ['hasOrganization' => false, 'vehicleCount' => 0]));
-});
-
-test('an applicant sees how many vehicles their own organization has registered', function () {
-    $user = applicantWithOrganization();
-    Vehicle::factory()->for($user->organization)->count(2)->create();
-    Vehicle::factory()->count(3)->create();
-
-    $this->actingAs($user)
-        ->get(route('dashboard'))
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('registration', ['hasOrganization' => true, 'vehicleCount' => 2]));
-});
-
-test('staff see no registration step', function () {
-    $this->actingAs(userWithRole(Role::Reviewer, twoFactor: true))
-        ->get(route('dashboard'))
-        ->assertInertia(fn (Assert $page) => $page->where('registration', null));
 });

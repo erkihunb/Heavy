@@ -3,13 +3,11 @@ import { Banknote2Icon } from '@solar-icons/react/linear/banknote-2';
 import { CalendarMarkIcon } from '@solar-icons/react/linear/calendar-mark';
 import { ChartSquareIcon } from '@solar-icons/react/linear/chart-square';
 import { ClipboardListIcon } from '@solar-icons/react/linear/clipboard-list';
-import { DeliveryIcon } from '@solar-icons/react/linear/delivery';
 import { DocumentTextIcon } from '@solar-icons/react/linear/document-text';
-import { HourglassIcon } from '@solar-icons/react/linear/hourglass';
 import { QrCodeIcon } from '@solar-icons/react/linear/qr-code';
 import { ShieldCheckIcon } from '@solar-icons/react/linear/shield-check';
 import { WalletMoneyIcon } from '@solar-icons/react/linear/wallet-money';
-import { ArrowDown, ArrowRight, ArrowUp, Check, Minus } from 'lucide-react';
+import { ArrowDown, ArrowRight, ArrowUp, Minus } from 'lucide-react';
 import type { ComponentType } from 'react';
 import {
     AreaChart,
@@ -37,12 +35,6 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { verify as officerVerify } from '@/routes/officer';
-import { show as organization } from '@/routes/organization';
-import {
-    create as applyForPermit,
-    index as permitList,
-    show as permitPage,
-} from '@/routes/permits';
 import { index as paymentQueue } from '@/routes/staff/payments';
 import {
     index as reviewQueue,
@@ -50,28 +42,15 @@ import {
 } from '@/routes/staff/permits';
 import { index as reports } from '@/routes/staff/reports';
 import { show as twoFactor } from '@/routes/two-factor';
-import {
-    create as registerVehicle,
-    index as vehicleList,
-} from '@/routes/vehicles';
 import PageHeader from '@/shell/Components/PageHeader';
 import AuthenticatedLayout from '@/shell/Layouts/AuthenticatedLayout';
 import type { DualDate as DualDateValue, Money } from '@/types';
 import { PERMIT_STATUSES } from '@/types/enums';
-import type {
-    PaymentStatus,
-    PermitStatus,
-    PermitType,
-    ScanResult,
-} from '@/types/enums';
+import type { PaymentStatus, PermitStatus, ScanResult } from '@/types/enums';
 import type { TranslationKey } from '@/types/translations';
 
 type CountKey =
-    | 'vehicles'
     | 'in_force'
-    | 'in_progress'
-    | 'changes_requested'
-    | 'awaiting_payment'
     | 'waiting_review'
     | 'payments_to_verify'
     | 'expiring'
@@ -80,10 +59,12 @@ type CountKey =
     | 'scans_today';
 
 type Props = {
-    account: { emailVerified: boolean; twoFactorEnabled: boolean };
-    registration: { hasOrganization: boolean; vehicleCount: number } | null;
-    /** Applying online is open (paused while requests come in by letter). */
-    canApply: boolean;
+    account: {
+        emailVerified: boolean;
+        twoFactorEnabled: boolean;
+        /** Does the office's work (by permissions): asked to turn two-factor on. */
+        staff: boolean;
+    };
     counts: Partial<Record<CountKey, number>>;
     month: {
         label: string;
@@ -104,28 +85,12 @@ type Props = {
               id: number;
               permit_id: string;
               reference: string;
-              organization: string | null;
+              organization: string;
               from: PermitStatus | null;
               to: PermitStatus;
               at: DualDateValue;
               time: string;
               actor: string | null;
-              staff_link: boolean;
-          }[]
-        | null;
-    recentPermits:
-        | {
-              id: string;
-              permit_number: string | null;
-              permit_type: PermitType;
-              status: PermitStatus;
-              valid_from: DualDateValue;
-              valid_to: DualDateValue;
-              progress: {
-                  percent: number;
-                  days_left: number;
-                  days: number;
-              } | null;
           }[]
         | null;
 };
@@ -136,9 +101,6 @@ type DayCount = {
     gregorian: string;
     count: number;
 };
-
-type SetupStep =
-    'organization' | 'vehicle' | 'applied' | 'issued' | 'two_factor';
 
 type Insights = {
     /** This Ethiopian month, e.g. "ጥቅምት 2019". */
@@ -160,7 +122,6 @@ type Insights = {
     } | null;
     payments: Record<PaymentStatus, { count: number; amount: Money }> | null;
     scans: { today: Record<ScanResult, number>; days: DayCount[] } | null;
-    setup: { key: SetupStep; done: boolean }[] | null;
 };
 
 /* Scan results keep their meaning: good, warning, serious, critical or neutral. */
@@ -342,19 +303,14 @@ const RANK_DOT: Record<Attention['rank'], string> = {
 
 export default function Dashboard({
     account,
-    registration,
-    canApply,
     counts,
     month,
     insights,
     distribution,
     activity,
-    recentPermits,
 }: Props) {
     const { t } = useTranslation();
     const { auth, today, locale } = usePage().props;
-    const isApplicant = registration !== null;
-    const isStaff = !isApplicant && auth.user.roles.length > 0;
 
     const kpis: Kpi[] = [];
     const add = (
@@ -381,15 +337,7 @@ export default function Dashboard({
         });
     };
 
-    add('vehicles', DeliveryIcon, 'primary', vehicleList.url());
-    add(
-        'in_force',
-        ShieldCheckIcon,
-        'success',
-        isApplicant ? permitList.url() : undefined,
-    );
-    add('in_progress', HourglassIcon, 'neutral', permitList.url());
-    add('awaiting_payment', WalletMoneyIcon, 'neutral', permitList.url(), true);
+    add('in_force', ShieldCheckIcon, 'success');
     add(
         'waiting_review',
         ClipboardListIcon,
@@ -408,7 +356,7 @@ export default function Dashboard({
         'expiring',
         CalendarMarkIcon,
         'neutral',
-        isStaff && month ? reports.url() : undefined,
+        month ? reports.url() : undefined,
         true,
     );
     add(
@@ -534,8 +482,7 @@ export default function Dashboard({
     const scansToday = insights.scans
         ? SCAN_ORDER.reduce((sum, r) => sum + insights.scans!.today[r], 0)
         : 0;
-    const setupDone = insights.setup?.filter((step) => step.done).length ?? 0;
-    const sideCard = decisions !== null || insights.setup !== null;
+    const sideCard = decisions !== null;
 
     const attention: Attention[] = [
         ...(!account.emailVerified
@@ -547,32 +494,12 @@ export default function Dashboard({
                   },
               ]
             : []),
-        ...(isStaff && !account.twoFactorEnabled
+        ...(account.staff && !account.twoFactorEnabled
             ? [
                   {
                       key: 'two_factor_off',
                       rank: 'high' as const,
                       href: twoFactor.url(),
-                  },
-              ]
-            : []),
-        ...(registration && !registration.hasOrganization
-            ? [
-                  {
-                      key: 'no_organization',
-                      rank: 'high' as const,
-                      href: organization.url(),
-                  },
-              ]
-            : []),
-        ...(registration &&
-        registration.hasOrganization &&
-        registration.vehicleCount === 0
-            ? [
-                  {
-                      key: 'no_vehicles',
-                      rank: 'medium' as const,
-                      href: registerVehicle.url(),
                   },
               ]
             : []),
@@ -587,8 +514,6 @@ export default function Dashboard({
         }
     };
 
-    countItem('changes_requested', 'high', permitList.url());
-    countItem('awaiting_payment', 'high', permitList.url());
     countItem('waiting_review', 'medium', reviewQueue.url());
     countItem('payments_to_verify', 'medium', paymentQueue.url());
     countItem(
@@ -601,11 +526,9 @@ export default function Dashboard({
         'medium',
         reviewQueue.url({ query: { status: 'payment_confirmed' } }),
     );
-    countItem(
-        'expiring',
-        'low',
-        isStaff && month ? reports.url() : permitList.url(),
-    );
+    if (month) {
+        countItem('expiring', 'low', reports.url());
+    }
 
     const total = distribution
         ? PERMIT_STATUSES.reduce((sum, status) => sum + distribution[status], 0)
@@ -614,40 +537,26 @@ export default function Dashboard({
         ? PERMIT_STATUSES.filter((status) => distribution[status] > 0)
         : [];
 
-    const actions = isApplicant ? (
-        registration?.hasOrganization && (
-            <>
-                <Button asChild variant="outline">
-                    <Link href={registerVehicle()}>
-                        {t('dashboard.actions.register_vehicle')}
-                    </Link>
-                </Button>
-                {canApply && (counts.vehicles ?? 0) > 0 && (
-                    <Button asChild>
-                        <Link href={applyForPermit()}>
-                            {t('dashboard.actions.apply')}
-                        </Link>
-                    </Button>
-                )}
-            </>
-        )
-    ) : counts.waiting_review !== undefined ? (
-        <Button asChild>
-            <Link href={reviewQueue()}>{t('dashboard.actions.queue')}</Link>
-        </Button>
-    ) : counts.payments_to_verify !== undefined ? (
-        <Button asChild>
-            <Link href={paymentQueue()}>{t('dashboard.actions.payments')}</Link>
-        </Button>
-    ) : (
-        counts.scans_today !== undefined && (
+    const actions =
+        counts.waiting_review !== undefined ? (
             <Button asChild>
-                <Link href={officerVerify()}>
-                    {t('dashboard.actions.scan')}
+                <Link href={reviewQueue()}>{t('dashboard.actions.queue')}</Link>
+            </Button>
+        ) : counts.payments_to_verify !== undefined ? (
+            <Button asChild>
+                <Link href={paymentQueue()}>
+                    {t('dashboard.actions.payments')}
                 </Link>
             </Button>
-        )
-    );
+        ) : (
+            counts.scans_today !== undefined && (
+                <Button asChild>
+                    <Link href={officerVerify()}>
+                        {t('dashboard.actions.scan')}
+                    </Link>
+                </Button>
+            )
+        );
 
     return (
         <AuthenticatedLayout
@@ -814,71 +723,6 @@ export default function Dashboard({
                                         />
                                     </div>
                                 )}
-                            </ChartCard>
-                        )}
-
-                        {insights.setup && (
-                            <ChartCard
-                                title={t('dashboard.charts.setup.title')}
-                                description={
-                                    setupDone === insights.setup.length
-                                        ? t('dashboard.charts.setup.complete')
-                                        : undefined
-                                }
-                            >
-                                <div className="space-y-4">
-                                    <Meter
-                                        label={t(
-                                            'dashboard.charts.setup.description',
-                                            {
-                                                done: setupDone,
-                                                total: insights.setup.length,
-                                            },
-                                        )}
-                                        percent={
-                                            (setupDone /
-                                                insights.setup.length) *
-                                            100
-                                        }
-                                        tone={
-                                            setupDone === insights.setup.length
-                                                ? 'success'
-                                                : 'primary'
-                                        }
-                                    />
-                                    <ol className="space-y-2">
-                                        {insights.setup.map((step) => (
-                                            <li
-                                                key={step.key}
-                                                className="flex items-center gap-2.5 text-sm"
-                                            >
-                                                <span
-                                                    aria-hidden="true"
-                                                    className={cn(
-                                                        'grid size-5 shrink-0 place-items-center rounded-full border',
-                                                        step.done
-                                                            ? 'border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500'
-                                                            : 'border-border-strong',
-                                                    )}
-                                                >
-                                                    {step.done && (
-                                                        <Check className="size-3" />
-                                                    )}
-                                                </span>
-                                                <span
-                                                    className={cn(
-                                                        step.done &&
-                                                            'text-muted-foreground line-through',
-                                                    )}
-                                                >
-                                                    {t(
-                                                        `dashboard.charts.setup.steps.${step.key}`,
-                                                    )}
-                                                </span>
-                                            </li>
-                                        ))}
-                                    </ol>
-                                </div>
                             </ChartCard>
                         )}
                     </div>
@@ -1186,114 +1030,6 @@ export default function Dashboard({
                     )}
                 </div>
 
-                {recentPermits && (
-                    <TableCard
-                        title={t('dashboard.recent.title')}
-                        titleId="recent-title"
-                        actions={
-                            <Button asChild variant="outline" size="sm">
-                                <Link href={permitList()}>
-                                    {t('dashboard.recent.all')}
-                                </Link>
-                            </Button>
-                        }
-                    >
-                        <Table aria-labelledby="recent-title">
-                            <THead>
-                                <tr>
-                                    <Th>{t('permits.fields.permit_number')}</Th>
-                                    <Th>{t('permits.fields.status')}</Th>
-                                    <Th>{t('permits.fields.permit_type')}</Th>
-                                    <Th>{t('permits.fields.validity')}</Th>
-                                </tr>
-                            </THead>
-                            <TBody>
-                                {recentPermits.length === 0 ? (
-                                    <EmptyRow colSpan={4}>
-                                        {t('dashboard.recent.empty')}
-                                    </EmptyRow>
-                                ) : (
-                                    recentPermits.map((permit) => (
-                                        <Tr key={permit.id}>
-                                            <Td className="whitespace-nowrap">
-                                                <Link
-                                                    href={permitPage({
-                                                        permit: permit.id,
-                                                    })}
-                                                    translate="no"
-                                                    className="font-semibold text-primary tabular-nums underline-offset-4 hover:underline"
-                                                >
-                                                    {permit.permit_number ??
-                                                        t(
-                                                            'permits.not_numbered',
-                                                        )}
-                                                </Link>
-                                            </Td>
-                                            <Td>
-                                                <StatusBadge
-                                                    status={permit.status}
-                                                />
-                                            </Td>
-                                            <Td className="whitespace-nowrap">
-                                                {t(
-                                                    `permits.types.${permit.permit_type}`,
-                                                )}
-                                            </Td>
-                                            <Td className="whitespace-nowrap">
-                                                <span className="flex flex-wrap items-baseline gap-x-1.5">
-                                                    <DualDate
-                                                        date={permit.valid_from}
-                                                    />
-                                                    <span aria-hidden="true">
-                                                        –
-                                                    </span>
-                                                    <DualDate
-                                                        date={permit.valid_to}
-                                                    />
-                                                </span>
-                                                {permit.progress && (
-                                                    <div className="mt-2 max-w-56">
-                                                        <Meter
-                                                            size="sm"
-                                                            label={
-                                                                permit.progress
-                                                                    .days_left ===
-                                                                0
-                                                                    ? t(
-                                                                          'dashboard.charts.validity.last_day',
-                                                                      )
-                                                                    : t(
-                                                                          'dashboard.charts.validity.days_left',
-                                                                          {
-                                                                              count: permit
-                                                                                  .progress
-                                                                                  .days_left,
-                                                                          },
-                                                                      )
-                                                            }
-                                                            percent={
-                                                                permit.progress
-                                                                    .percent
-                                                            }
-                                                            tone={
-                                                                permit.progress
-                                                                    .days_left <=
-                                                                2
-                                                                    ? 'warning'
-                                                                    : 'primary'
-                                                            }
-                                                        />
-                                                    </div>
-                                                )}
-                                            </Td>
-                                        </Tr>
-                                    ))
-                                )}
-                            </TBody>
-                        </Table>
-                    </TableCard>
-                )}
-
                 {activity && (
                     <TableCard
                         title={t('dashboard.activity.title')}
@@ -1304,22 +1040,16 @@ export default function Dashboard({
                                 <tr>
                                     <Th>{t('dashboard.activity.when')}</Th>
                                     <Th>{t('dashboard.activity.permit')}</Th>
-                                    {isStaff && (
-                                        <Th>
-                                            {t(
-                                                'dashboard.activity.organization',
-                                            )}
-                                        </Th>
-                                    )}
+                                    <Th>
+                                        {t('dashboard.activity.organization')}
+                                    </Th>
                                     <Th>{t('dashboard.activity.what')}</Th>
-                                    {isStaff && (
-                                        <Th>{t('dashboard.activity.by')}</Th>
-                                    )}
+                                    <Th>{t('dashboard.activity.by')}</Th>
                                 </tr>
                             </THead>
                             <TBody>
                                 {activity.length === 0 ? (
-                                    <EmptyRow colSpan={isStaff ? 5 : 3}>
+                                    <EmptyRow colSpan={5}>
                                         {t('dashboard.activity.empty')}
                                     </EmptyRow>
                                 ) : (
@@ -1333,24 +1063,16 @@ export default function Dashboard({
                                             </Td>
                                             <Td className="whitespace-nowrap">
                                                 <Link
-                                                    href={
-                                                        step.staff_link
-                                                            ? staffPermitPage({
-                                                                  permit: step.permit_id,
-                                                              })
-                                                            : permitPage({
-                                                                  permit: step.permit_id,
-                                                              })
-                                                    }
+                                                    href={staffPermitPage({
+                                                        permit: step.permit_id,
+                                                    })}
                                                     translate="no"
                                                     className="font-semibold text-primary tabular-nums underline-offset-4 hover:underline"
                                                 >
                                                     {step.reference}
                                                 </Link>
                                             </Td>
-                                            {isStaff && (
-                                                <Td>{step.organization}</Td>
-                                            )}
+                                            <Td>{step.organization}</Td>
                                             <Td>
                                                 {step.from === null ? (
                                                     <span className="font-medium">
@@ -1370,11 +1092,7 @@ export default function Dashboard({
                                                     />
                                                 )}
                                             </Td>
-                                            {isStaff && (
-                                                <Td muted>
-                                                    {step.actor ?? '—'}
-                                                </Td>
-                                            )}
+                                            <Td muted>{step.actor ?? '—'}</Td>
                                         </Tr>
                                     ))
                                 )}

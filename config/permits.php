@@ -31,20 +31,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Online Applications
-    |--------------------------------------------------------------------------
-    |
-    | Whether applicants may sign up, apply and report payments online. Off
-    | while requests come in by letter at a branch or the head office: a
-    | Registrar records them, a cashier records the payment and an Issuer
-    | issues the permit. An Admin can turn it on in System settings.
-    |
-    */
-
-    'online_applications' => (bool) env('PERMITS_ONLINE_APPLICATIONS', false),
-
-    /*
-    |--------------------------------------------------------------------------
     | Validity Limits
     |--------------------------------------------------------------------------
     |

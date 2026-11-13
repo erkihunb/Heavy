@@ -53,10 +53,8 @@ it('treats unconfirmed two-factor setup as not enabled', function () {
         ->assertRedirect(route('two-factor.show'));
 });
 
-it('does not require two-factor authentication from applicants', function () {
-    $this->actingAs(userWithRole(Role::Applicant))
-        ->get(route('dashboard'))
-        ->assertOk();
+it('signs applicants out rather than asking them for two-factor authentication', function () {
+    assertSignedOut($this->actingAs(userWithRole(Role::Applicant))->get(route('profile.edit')));
 });
 
 it('shows staff the setup screen with a notice that it is required', function () {

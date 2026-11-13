@@ -119,6 +119,7 @@ Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
         Route::get('permits/{permit}/edit', 'editPermit')->name('permits.edit');
         Route::put('permits/{permit}', 'updatePermit')->name('permits.update');
         Route::post('permits/{permit}/submit', 'submitPermit')->name('permits.submit');
+        Route::get('permits/{permit}/payment', 'paymentPermit')->name('permits.payment');
         Route::post('permits/{permit}/payments', 'storePayment')
             ->middleware('throttle:10,1')
             ->name('permits.payments.store');

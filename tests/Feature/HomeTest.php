@@ -7,7 +7,8 @@ it('shows the landing page to guests', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('welcome')
-            ->where('canRegister', true)
+            // Nobody signs up: accounts are opened at the office.
+            ->missing('canRegister')
             ->where('auth.user', null));
 });
 

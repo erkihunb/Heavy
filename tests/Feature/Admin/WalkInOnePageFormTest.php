@@ -9,7 +9,6 @@ use App\Models\PermitStatusTransition;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
-use App\Notifications\ApplicantAccountCreated;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -87,7 +86,8 @@ it('registers the person, the organization, the vehicles and submits the permit 
         ->and($permit->vehicles->pluck('plate_normalized')->sort()->values()->all())->toHaveCount(2)
         ->and(PermitStatusTransition::query()->where('permit_id', $permit->id)->pluck('actor_id')->unique()->all())->toBe([$this->registrar->id]);
 
-    Notification::assertSentTo($user, ApplicantAccountCreated::class);
+    // The account is a record only: no password link.
+    Notification::assertNothingSentTo($user);
 });
 
 it('can keep the application as a draft', function () {

@@ -19,7 +19,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 /*
  * The office workflow (owner's decision, 2026-11-12): applicants do not sign
- * up or apply online for now. A request comes in by letter at a branch or the
+ * up or apply themselves. A request comes in by letter at a branch or the
  * head office; a Registrar records it with the letter and sends it on; a
  * Reviewer examines it and decides; a cashier takes or checks the payment and
  * records the receipt; an Issuer checks the paid request, issues and prints
@@ -27,10 +27,7 @@ use Inertia\Testing\AssertableInertia as Assert;
  */
 
 beforeEach(function () {
-    config([
-        'permits.online_applications' => false,
-        'permits.two_step_approval' => false,
-    ]);
+    config(['permits.two_step_approval' => false]);
 
     Notification::fake();
     Bus::fake([GeneratePermitDocument::class]);
@@ -163,36 +160,62 @@ it('takes a request from the letter to the printed permit', function () {
             ->where('permit.issued_by', $issuer->name));
 });
 
-describe('online applying is paused', function () {
-    it('closes signing up', function () {
-        $this->get(route('register'))->assertNotFound();
-        $this->post(route('register.store'), [
+describe('applicants have no pages of their own', function () {
+    it('has no sign-up', function () {
+        $this->get('/register')->assertNotFound();
+        $this->post('/register', [
             'name' => 'X', 'email' => 'x@example.test', 'password' => 'Secret-pass-123', 'password_confirmation' => 'Secret-pass-123',
         ])->assertNotFound();
 
         expect(User::query()->where('email', 'x@example.test')->exists())->toBeFalse();
 
-        $this->get(route('login'))->assertInertia(fn (Assert $page) => $page->where('canRegister', false));
-        $this->get(route('home'))->assertInertia(fn (Assert $page) => $page->where('canRegister', false));
+        $this->get(route('login'))->assertInertia(fn (Assert $page) => $page->missing('canRegister'));
+        $this->get(route('home'))->assertInertia(fn (Assert $page) => $page->missing('canRegister'));
     });
 
-    it('stops applicants starting an application or reporting a payment themselves', function () {
+    it('gives an applicant no address to apply, pay or look at an application from', function (string $method, string $path) {
         $applicant = applicantWithOrganization();
         $permit = Permit::factory()->awaitingPayment()->create(['organization_id' => $applicant->organization_id]);
 
-        $this->actingAs($applicant)->get(route('permits.create'))->assertForbidden();
-        $this->actingAs($applicant)->post(route('permits.store'), permitPayload($applicant))->assertForbidden();
-        $this->actingAs($applicant)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page->where('canApply', false));
+        $this->actingAs($applicant)
+            ->call($method, str_replace('{permit}', $permit->id, $path))
+            ->assertNotFound();
+    })->with([
+        ['GET', '/organization'],
+        ['GET', '/vehicles'],
+        ['GET', '/vehicles/create'],
+        ['GET', '/permits'],
+        ['GET', '/permits/create'],
+        ['POST', '/permits'],
+        ['GET', '/permits/{permit}'],
+        ['POST', '/permits/{permit}/submit'],
+        ['POST', '/permits/{permit}/payments'],
+        ['GET', '/fee-estimate'],
+    ]);
 
-        expect($applicant->can('submitPayment', $permit))->toBeFalse();
+    it('does not let an applicant sign in, and ends a session left from before', function () {
+        $applicant = applicantWithOrganization();
+        $applicant->forceFill(['password' => 'A-strong-pass-2026!'])->save();
+
+        $this->post(route('login.store'), ['email' => $applicant->email, 'password' => 'A-strong-pass-2026!'])
+            ->assertSessionHasErrors(['email' => __('auth.no_sign_in')]);
+        $this->assertGuest();
+
+        foreach ([route('dashboard'), route('profile.edit'), route('staff.permits.index'), route('admin.applicants.index')] as $url) {
+            assertSignedOut($this->actingAs($applicant)->get($url));
+        }
     });
 
-    it('opens again when an Admin turns online applications on', function () {
-        config(['permits.online_applications' => true]);
+    it('still lets a person in whose roles also give them office work', function () {
+        $user = applicantWithOrganization();
+        $user->assignRole(Role::Registrar->value);
+        $user->forceFill(['password' => 'A-strong-pass-2026!'])->save();
 
-        $this->get(route('register'))->assertOk();
-        expect(applicantWithOrganization()->can('create', Permit::class))->toBeTrue();
+        $this->post(route('login.store'), ['email' => $user->email, 'password' => 'A-strong-pass-2026!'])
+            ->assertSessionHasNoErrors();
+        $this->assertAuthenticatedAs($user);
     });
+
 });
 
 describe('the request letter', function () {
@@ -222,15 +245,8 @@ describe('the request letter', function () {
 
         $this->actingAs(staffUser(Role::Reviewer))->get(route('staff.permits.letter', $permit))->assertOk();
         $this->actingAs(staffUser(Role::Registrar))->get(route('staff.permits.letter', $permit))->assertOk();
-        $this->actingAs($applicant)->get(route('staff.permits.letter', $permit))->assertNotFound();
+        assertSignedOut($this->actingAs($applicant)->get(route('staff.permits.letter', $permit)));
         $this->actingAs(staffUser(Role::TrafficOfficer))->get(route('staff.permits.letter', $permit))->assertNotFound();
-
-        config(['permits.online_applications' => true]);
-        $this->actingAs($applicant)
-            ->get(route('permits.show', $permit))
-            ->assertInertia(fn (Assert $page) => $page
-                ->where('permit.letter', null)
-                ->missing('permit.comments'));
     });
 });
 

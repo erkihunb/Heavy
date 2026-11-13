@@ -141,3 +141,56 @@ it('hides the language switch when the admin turns it off', function () {
     $this->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
         ->where('appearance.showLanguageSwitcher', false));
 });
+
+it('serves the logo to web pages as a small WebP copy and keeps the upload for the permit', function () {
+    saveGeneral(['permits__branding__logo' => UploadedFile::fake()->image('logo.png', 600, 300)]);
+    $upload = Branding::path('logo');
+
+    $response = $this->get(Branding::url('logo'))
+        ->assertOk()
+        ->assertHeader('Content-Type', 'image/webp')
+        ->assertHeader('Cache-Control', 'immutable, max-age=31536000, public');
+
+    // Scaled to fit 160 pixels (three times the largest place it is drawn), the shape kept.
+    [$width, $height] = getimagesize($response->getFile()->getPathname());
+    expect([$width, $height])->toBe([160, 80]);
+
+    // The upload itself is untouched, and it is what the permit PDF uses.
+    [$uploadWidth] = getimagesize(Storage::disk('local')->path($upload));
+    expect($uploadWidth)->toBe(600)
+        ->and(Branding::documentLogoPath())->toBe(Storage::disk('local')->path($upload));
+});
+
+it('makes the web copy once and removes it with the logo', function () {
+    saveGeneral(['permits__branding__logo' => UploadedFile::fake()->image('logo.png', 600, 300)]);
+    $upload = Branding::path('logo');
+    $copy = preg_replace('/\.png$/', '.display.webp', $upload);
+
+    $this->get(Branding::url('logo'))->assertOk();
+    Storage::disk('local')->assertExists($copy);
+    $made = Storage::disk('local')->lastModified($copy);
+
+    $this->travel(5)->seconds();
+    $this->get(Branding::url('logo'))->assertOk();
+    expect(Storage::disk('local')->lastModified($copy))->toBe($made);
+
+    saveGeneral(['remove_assets' => ['permits__branding__logo']])->assertSessionHasNoErrors();
+
+    Storage::disk('local')->assertMissing($upload);
+    Storage::disk('local')->assertMissing($copy);
+});
+
+it('asks for the logo before the scripts on the landing and sign-in pages only', function () {
+    // No logo: nothing to ask for.
+    $this->get(route('home'))->assertDontSee('rel="preload" as="image"', false);
+
+    saveGeneral(['permits__branding__logo' => UploadedFile::fake()->image('logo.png', 600, 300)]);
+    $preload = '<link rel="preload" as="image" href="'.e(Branding::url('logo')).'" fetchpriority="high">';
+    auth()->logout();
+
+    $this->get(route('home'))->assertSee($preload, false);
+    $this->get(route('login'))->assertSee($preload, false);
+
+    // Signed-in pages draw it in the sidebar, which phones fold away.
+    $this->actingAs($this->admin)->get(route('dashboard'))->assertDontSee('rel="preload" as="image"', false);
+});

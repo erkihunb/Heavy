@@ -2,7 +2,11 @@ import { usePage } from '@inertiajs/react';
 import { navigation } from '@/config/navigation';
 import type { NavItem as MenuItem } from '@/config/navigation';
 import { useTranslation } from '@/lib/i18n';
-import { activeItem, permittedSections } from '@/shell/lib/navigation';
+import {
+    activeItem,
+    isPermitted,
+    permittedSections,
+} from '@/shell/lib/navigation';
 import type { NavItem } from '@/types';
 import type { TranslationKey } from '@/types/translations';
 
@@ -41,7 +45,9 @@ export function useNavGroups(): NavGroup[] {
     });
 
     return [
-        { label: null, items: [toItem(navigation.home)] },
+        ...(isPermitted(navigation.home, can)
+            ? [{ label: null, items: [toItem(navigation.home)] }]
+            : []),
         ...groups.map((group) => ({
             label: t(group.labelKey as TranslationKey),
             items: group.items.map(toItem),

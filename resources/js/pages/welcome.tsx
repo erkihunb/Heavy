@@ -14,11 +14,10 @@ import { SamplePermit } from '@/components/sample-permit';
 import { SupportContacts } from '@/components/support-contacts';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n';
-import { dashboard, login, register } from '@/routes';
+import { dashboard, login } from '@/routes';
 import type { DualDate as DualDateValue } from '@/types';
 
 type Props = {
-    canRegister?: boolean;
     sample: {
         validFrom: DualDateValue;
         validTo: DualDateValue;
@@ -34,7 +33,7 @@ const features: {
     { key: 'security', icon: ShieldCheck },
 ];
 
-export default function Welcome({ canRegister = true, sample }: Props) {
+export default function Welcome({ sample }: Props) {
     const { auth, today, appearance } = usePage().props;
     const { t } = useTranslation();
 
@@ -126,30 +125,16 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                                         </Link>
                                     </Button>
                                 ) : (
-                                    <>
-                                        {canRegister && (
-                                            <Button
-                                                asChild
-                                                size="lg"
-                                                className="shadow-raised hover:-translate-y-0.5"
-                                            >
-                                                <Link href={register()}>
-                                                    {t('common.register')}
-                                                    <ArrowRight aria-hidden="true" />
-                                                </Link>
-                                            </Button>
-                                        )}
-                                        <Button
-                                            asChild
-                                            size="lg"
-                                            variant="outline"
-                                            className="border border-border"
-                                        >
-                                            <Link href={login()}>
-                                                {t('common.log_in')}
-                                            </Link>
-                                        </Button>
-                                    </>
+                                    <Button
+                                        asChild
+                                        size="lg"
+                                        className="shadow-raised hover:-translate-y-0.5"
+                                    >
+                                        <Link href={login()}>
+                                            {t('common.log_in')}
+                                            <ArrowRight aria-hidden="true" />
+                                        </Link>
+                                    </Button>
                                 )}
                             </div>
 
@@ -227,34 +212,6 @@ export default function Welcome({ canRegister = true, sample }: Props) {
                             ))}
                         </ul>
                     </section>
-
-                    {/* Call to action */}
-                    {!auth.user && canRegister && (
-                        <section
-                            aria-labelledby="cta-title"
-                            className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:pb-24"
-                        >
-                            <div className="flex flex-col gap-6 rounded-card border border-border bg-card p-7 shadow-raised sm:p-10 md:flex-row md:items-center md:justify-between">
-                                <div className="space-y-2">
-                                    <h2
-                                        id="cta-title"
-                                        className="text-2xl text-display sm:text-3xl"
-                                    >
-                                        {t('landing.cta.title')}
-                                    </h2>
-                                    <p className="text-lg">
-                                        {t('landing.cta.body')}
-                                    </p>
-                                </div>
-                                <Button asChild size="lg" className="shrink-0">
-                                    <Link href={register()}>
-                                        {t('common.register')}
-                                        <ArrowRight aria-hidden="true" />
-                                    </Link>
-                                </Button>
-                            </div>
-                        </section>
-                    )}
                 </main>
 
                 <footer className="surface-brand">

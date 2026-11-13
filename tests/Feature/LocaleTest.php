@@ -41,7 +41,7 @@ it('prefers the saved preference of the user over the session', function () {
 
     $this->actingAs($user)
         ->withSession(['locale' => 'am'])
-        ->get(route('dashboard'))
+        ->get(route('profile.edit'))
         ->assertInertia(fn (Assert $page) => $page->where('locale', 'en'));
 });
 
@@ -97,14 +97,14 @@ it('falls back to English for a line that has no Amharic translation', function 
 
 it('shares only whitelisted fields of the signed-in user', function () {
     $user = User::factory()->withTwoFactor()->create();
-    $user->assignRole('applicant');
+    $user->assignRole('registrar');
 
     $this->actingAs($user)
-        ->get(route('dashboard'))
+        ->get(route('profile.edit'))
         ->assertInertia(fn (Assert $page) => $page
             ->where('auth.user', fn ($shared) => collect($shared)->keys()->sort()->values()->all()
                 === ['email', 'email_verified_at', 'has_organization', 'id', 'locale', 'name', 'roles'])
-            ->where('auth.user.roles', ['applicant'])
+            ->where('auth.user.roles', ['registrar'])
             ->missing('auth.user.password')
             ->missing('auth.user.remember_token')
             ->missing('auth.user.two_factor_secret')

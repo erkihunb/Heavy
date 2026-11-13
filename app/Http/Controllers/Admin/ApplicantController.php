@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\Users\RegisterWalkInApplication;
 use App\Domain\Permits\FeeCalculator;
 use App\Domain\Permits\ValidityRules;
+use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Enums\PermitType;
 use App\Enums\PlateRegion;
-use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\RegisterApplicantRequest;
 use App\Http\Resources\VehicleTypeResource;
@@ -43,10 +43,9 @@ class ApplicantController extends Controller
         Gate::authorize('registerApplicant', User::class);
 
         $search = is_string($request->query('search')) ? trim($request->query('search')) : '';
-        $source = in_array($request->query('source'), ['office', 'online'], true) ? (string) $request->query('source') : '';
 
         $applicants = User::query()
-            ->role(Role::Applicant->value)
+            ->permission(Permission::ApplyForPermits->value)
             ->with(['organization:id,name_am,name_en,tin,phone', 'registeredBy:id,name'])
             ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $query) => $query
                 ->whereLike('name', "%{$search}%")
@@ -56,8 +55,6 @@ class ApplicantController extends Controller
                     ->orWhereLike('name_en', "%{$search}%")
                     ->orWhereLike('tin', "%{$search}%")
                     ->orWhereLike('phone', '%'.preg_replace('/\D/', '', $search).'%'))))
-            ->when($source === 'office', fn (Builder $query) => $query->whereNotNull('registered_by'))
-            ->when($source === 'online', fn (Builder $query) => $query->whereNull('registered_by'))
             ->latest('id')
             ->paginate(self::PER_PAGE)
             ->withQueryString()
@@ -78,7 +75,7 @@ class ApplicantController extends Controller
 
         return Inertia::render('admin/applicants/index', [
             'applicants' => Paginated::present($applicants),
-            'filters' => ['search' => $search, 'source' => $source],
+            'filters' => ['search' => $search],
         ]);
     }
 
@@ -98,7 +95,6 @@ class ApplicantController extends Controller
                 'max_trailers' => (int) config('permits.max_trailers'),
                 'max_duration_days' => ValidityRules::maxDurationDays(),
             ],
-            'receiptMaxKilobytes' => (int) config('permits.receipt_max_kilobytes'),
         ]);
     }
 
@@ -138,10 +134,9 @@ class ApplicantController extends Controller
             $request->vehicles(),
             $request->permit(),
             $request->user(),
-            $request->payment(),
         );
 
-        $message = __('applicants.messages.registered', ['email' => $user->email]);
+        $message = __('applicants.messages.registered');
 
         // To the application when there is one, otherwise on to the vehicles and the application.
         return $permit === null

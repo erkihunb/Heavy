@@ -115,7 +115,7 @@ it('cannot report on a permit that was never issued', function () {
 });
 
 it('keeps the officer tools to officers and Admins', function (Role $role) {
-    $user = $role === Role::Applicant ? applicantWithOrganization() : staffUser($role);
+    $user = staffUser($role);
 
     $this->actingAs($user)->get(route('officer.verify'))->assertForbidden();
     $this->actingAs($user)->post(route('officer.permits.reports.store', $this->permit), ['note' => 'x'])->assertForbidden();
@@ -125,7 +125,7 @@ it('keeps the officer tools to officers and Admins', function (Role $role) {
         ->get(route('verification.token', $this->token))
         ->assertOk()
         ->assertSee('data-result="valid"', false);
-})->with([Role::Applicant, Role::Reviewer, Role::Approver, Role::Cashier]);
+})->with([Role::Reviewer, Role::Approver, Role::Cashier]);
 
 it('gives Admins the officer view as well', function () {
     $this->actingAs(staffUser(Role::Admin))

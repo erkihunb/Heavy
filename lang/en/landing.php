@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'eyebrow' => 'Online permit service',
+    'eyebrow' => 'Movement permit service',
     'sample' => [
         'label' => 'Sample permit',
         'note' => 'Illustration only — not a real permit.',
@@ -28,9 +28,5 @@ return [
             'title' => 'Protected accounts',
             'body' => 'Staff accounts are protected with two-factor authentication, and every decision is recorded.',
         ],
-    ],
-    'cta' => [
-        'title' => 'Ready to apply?',
-        'body' => 'Create an account for your organisation to get started.',
     ],
 ];

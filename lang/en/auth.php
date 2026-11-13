@@ -17,6 +17,7 @@ return [
     'password' => 'The provided password is incorrect.',
     'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
     'deactivated' => 'This account has been deactivated. Contact the system administrator.',
+    'no_sign_in' => 'This account is not for signing in. Requests are recorded and handled at the office.',
     'two_factor_required' => 'You must enable two-factor authentication before you can continue.',
 
 ];

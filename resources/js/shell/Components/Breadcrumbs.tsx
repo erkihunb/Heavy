@@ -36,20 +36,25 @@ export default function Breadcrumbs({
     const { t } = useLocale();
     const { can } = useCan();
     const pathname = pathOf(url);
-    const home: Crumb = {
-        label: t(navigation.home.labelKey),
-        href: navigation.home.href,
-    };
+    // The trail starts at the dashboard only for those who may open it.
+    const home: Crumb[] = isPermitted(navigation.home, can)
+        ? [
+              {
+                  label: t(navigation.home.labelKey),
+                  href: navigation.home.href,
+              },
+          ]
+        : [];
 
     let crumbs: Crumb[];
     const location = navLocation(navigation, url);
     if (items && items.length > 0) {
-        crumbs = [home, ...items];
+        crumbs = [...home, ...items];
     } else if (location) {
         const { group, item } = location;
         const isCurrent = pathname === pathOf(item.href);
         crumbs = [
-            home,
+            ...home,
             // Groups organise the menu; they are not pages, so they are never links.
             { label: t(group.labelKey) },
             {

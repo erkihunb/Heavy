@@ -7,35 +7,9 @@
  */
 
 return [
-    'modules' => [
-        'applicant' => 'የአመልካች መግቢያ',
-        'processing' => 'የፍቃድ ሂደት',
-        'office' => 'የፊት ዴስክና መንገድ',
-        'administration' => 'አስተዳደር',
-    ],
-
-    'groups' => [
-        'organization' => 'ተቋም',
-        'vehicles' => 'ተሽከርካሪዎች',
-        'applications' => 'ማመልከቻዎች',
-        'permits' => 'ፍቃዶች',
-        'payments' => 'ክፍያዎች',
-        'applicants' => 'በአካል የመጡ አመልካቾች',
-        'verification' => 'ማረጋገጫ',
-        'reports' => 'ሪፖርቶች',
-        'users' => 'ተጠቃሚዎች',
-        'roles' => 'ሚናዎች',
-        'permissions' => 'መብቶች',
-        'configuration' => 'ውቅር',
-        'audit' => 'ኦዲት',
-    ],
-
     'permission_labels' => [
-        'organization.manage-own' => 'የራሳቸውን ተቋም ማስተዳደር',
-        'vehicles.manage-own' => 'የራሳቸውን ተሽከርካሪዎች ማስተዳደር',
-        'permits.apply' => 'ፍቃድ ማመልከት',
-        'payments.submit' => 'የክፍያ ደረሰኝ ማቅረብ',
-        'permits.download-own' => 'የራሳቸውን ፍቃዶች ማውረድ',
+        'dashboard.view' => 'ዳሽቦርዱን ማየት',
+        'permits.apply' => 'የአመልካች መለያ',
         'permits.view-queue' => 'የግምገማ ወረፋውን መክፈት',
         'permits.review' => 'ማመልከቻዎችን መገምገም',
         'permits.approve' => 'ማመልከቻዎችን ማጽደቅ ወይም ውድቅ ማድረግ',
@@ -63,11 +37,8 @@ return [
     ],
 
     'permission_descriptions' => [
-        'organization.manage-own' => 'አመልካቾች፦ የሚያመለክቱበት ተቋም ዝርዝር።',
-        'vehicles.manage-own' => 'አመልካቾች፦ የተቋሙን ተሽከርካሪዎች መመዝገብና ማስተካከል።',
-        'permits.apply' => 'አመልካቾች፦ ማመልከቻ ማዘጋጀት፣ ማስገባትና መከታተል።',
-        'payments.submit' => 'አመልካቾች፦ የክፍያ ደረሰኝ መጫን።',
-        'permits.download-own' => 'አመልካቾች፦ የተሰጡ ፍቃዶችን ማውረድ።',
+        'dashboard.view' => 'መነሻ ገጹ፦ አሃዞችና የሚጠብቁ ሥራዎች፣ እያንዳንዱ ሰው በተፈቀደለት ልክ።',
+        'permits.apply' => 'ጥያቄዎች የሚመዘገቡላቸውን መለያዎች ይለያል። እንዲህ ያለ መለያ ወደ ሥርዓቱ መግባት አይችልም።',
         'permits.view-queue' => 'ሠራተኞች፦ የቅርንጫፎቻቸውን ማመልከቻዎች ማየት።',
         'permits.review' => 'ማመልከቻን መርምሮ ውሳኔ መጠቆም።',
         'permits.approve' => 'በማመልከቻ ላይ መወሰን።',
@@ -92,15 +63,6 @@ return [
         'vehicle-types.manage' => 'አመልካቾች የሚመርጧቸው የተሽከርካሪ ዓይነቶች።',
         'fee-schedules.manage' => 'ለፍቃዶች የሚከፈሉ ክፍያዎች።',
         'audit-log.view' => 'ማን ምን እንደቀየረና መቼ።',
-    ],
-
-    'roleCategories' => [
-        'administration' => 'አስተዳደር',
-        'processing' => 'የፍቃድ ሂደት',
-        'payments' => 'ክፍያዎች',
-        'office' => 'የፊት ዴስክና መንገድ',
-        'applicants' => 'አመልካቾች',
-        'other' => 'ሌሎች ሚናዎች',
     ],
 
     'roles' => [
@@ -128,8 +90,6 @@ return [
         'branchRoleHelp' => 'የሚሠራው በእያንዳንዱ ተጠቃሚ የቅርንጫፍ ዝርዝር ላይ ባሉ ቅርንጫፎች ብቻ ነው። ዝርዝሩ ባዶ ከሆነ ተጠቃሚው ምንም አያይም።',
         'globalRole' => 'ሁለንተናዊ ሚና',
         'globalRoleHelp' => 'በሁሉም ቅርንጫፎችና በዋናው መሥሪያ ቤት ይሠራል። ሚናን ሁለንተናዊ የሚያደርጉት አስተዳዳሪዎች ብቻ ናቸው።',
-        'modulesCovered' => 'ክፍሎች',
-        'moreModules' => '+:count ተጨማሪ',
         'permissionCount' => 'መብቶች',
         'usersCount' => 'ተጠቃሚዎች',
         'usersN' => ':count ተጠቃሚዎች',
@@ -137,8 +97,6 @@ return [
         'defaultRole' => 'ነባሪ',
         'permissionsSection' => 'መብቶች',
         'selectedPermissions' => ':count ተመርጠዋል',
-        'selectAllInModule' => 'በዚህ ክፍል ያሉትን ሁሉ ይምረጡ',
-        'clearModule' => 'ይህን ክፍል ያጽዱ',
         'protectedNotice' => 'የአስተዳዳሪ ሚና ሁልጊዜ ሁሉንም የሠራተኛ መብቶች ይይዛል፤ ስለዚህ መብቶቹ ሊቀየሩ አይችሉም።',
         'cannotAssignPermissions' => 'የዚህን ሚና ስሞች መቀየር ይችላሉ፤ መብቶቹን ግን አይችሉም።',
         'confirmDeleteTitle' => '":name" የሚለው ሚና ይሰረዝ?',
@@ -159,11 +117,7 @@ return [
 
     'permissions' => [
         'title' => 'መብቶች',
-        'intro' => 'ሥርዓቱ የሚፈትሻቸው መብቶች በሙሉ በየክፍሉ፣ እና ስንት ሚናዎች እንደያዟቸው። መብቶች የሚጨመሩት በኮድ ነው።',
-        'modules' => 'ክፍሎች',
-        'module' => 'ክፍል',
-        'group' => 'ቡድን',
-        'allModules' => 'ሁሉም ክፍሎች',
+        'intro' => 'ሲስተሙ የሚፈትሻቸው መብቶች በሙሉ እና እያንዳንዱን ስንት ሚና እንደያዘው። መብቶች የሚጨመሩት በኮድ ነው።',
         'filters' => 'የመብት ማጣሪያዎች',
         'search' => 'መብቶችን ይፈልጉ',
         'noneFound' => 'የሚዛመድ መብት የለም።',
@@ -175,10 +129,9 @@ return [
         'unassigned' => 'ምንም ሚና የለም',
         'unassignedHelp' => 'ይህን መብት የያዘ ሚና የለም፤ ስለዚህ እስካሁን ማንም ይህን ማድረግ አይችልም።',
         'statTotal' => 'መብቶች',
-        'statModules' => 'ክፍሎች',
         'statUnassigned' => 'ምንም ሚና ያልያዛቸው',
-        'selectAllInGroup' => 'ሁሉንም ይምረጡ',
-        'clearGroup' => 'ያጽዱ',
+        'selectAll' => 'ሁሉንም ይምረጡ',
+        'clearAll' => 'ሁሉንም ያጽዱ',
         'critical' => 'ጥንቃቄ የሚያሻ',
         'criticalWarning' => 'በሌሎች ተጠቃሚዎች ወይም በሥርዓቱ በሙሉ ላይ ሥልጣን ይሰጣል። አስበው ይስጡት።',
     ],

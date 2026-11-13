@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use App\Enums\Role;
+use App\Enums\Permission;
 use App\Models\Role as RoleModel;
 use App\Support\Rbac\BranchScope;
+use App\Support\Rbac\PermissionCatalog;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Translation\HasLocalePreference;
@@ -16,6 +17,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use SensitiveParameter;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -164,12 +166,50 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     }
 
     /**
-     * Whether the user holds any role other than the applicant's: the default
-     * staff roles and every role created on the Roles screen.
+     * Whether the user does any of the office's work: holds, through any
+     * role, a permission other than the applicant's own. Decided by
+     * permissions, never by the name of a role.
      */
     public function isStaff(): bool
     {
-        return $this->roles->contains(fn (Model $role): bool => $role->getAttribute('name') !== Role::Applicant->value);
+        $staff = PermissionCatalog::staffPermissions();
+
+        // Loaded here when not already: a list of users should eager load
+        // `permissions` and `roles.permissions` (see Admin\UserController).
+        $this->loadMissing('permissions');
+
+        return $this->getAllPermissions()->contains(fn (Model $permission): bool => in_array($permission->getAttribute('name'), $staff, true));
+    }
+
+    /**
+     * Whether this is an applicant's account: one that requests are recorded for.
+     */
+    public function isApplicant(): bool
+    {
+        return $this->can(Permission::ApplyForPermits->value);
+    }
+
+    /**
+     * Whether a person signs in with this account. An applicant's account is
+     * the record of who a request was recorded for: it has no pages and no
+     * sign-in, unless its roles also give it some of the office's work.
+     */
+    public function maySignIn(): bool
+    {
+        return ! $this->isApplicant() || $this->isStaff();
+    }
+
+    /**
+     * An account nobody signs in with has no use for a password: no reset
+     * link is sent for it (the form answers the same either way).
+     */
+    public function sendPasswordResetNotification(#[SensitiveParameter] $token): void
+    {
+        if (! $this->maySignIn()) {
+            return;
+        }
+
+        parent::sendPasswordResetNotification($token);
     }
 
     /**

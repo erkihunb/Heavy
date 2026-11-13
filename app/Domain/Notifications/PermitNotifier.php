@@ -2,7 +2,7 @@
 
 namespace App\Domain\Notifications;
 
-use App\Enums\Role;
+use App\Enums\Permission;
 use App\Models\Permit;
 use App\Models\User;
 use App\Notifications\PermitNotification;
@@ -20,7 +20,7 @@ final class PermitNotifier
         $members = User::query()
             ->where('organization_id', $permit->organization_id)
             ->whereNotNull('email_verified_at')
-            ->role(Role::Applicant->value)
+            ->permission(Permission::ApplyForPermits->value)
             ->get();
 
         if (config('permits.notifications.mail') && $members->isNotEmpty()) {

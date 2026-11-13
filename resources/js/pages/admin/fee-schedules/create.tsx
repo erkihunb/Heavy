@@ -1,12 +1,11 @@
-import { Head, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { FeeScheduleForm } from '@/components/fee-schedule-form';
 import type { FeeScheduleFormData } from '@/components/fee-schedule-form';
-import { PageHeader } from '@/components/page-header';
-import AppLayout from '@/layouts/app-layout';
+import FormPageLayout from '@/layouts/form-page-layout';
 import { useTranslation } from '@/lib/i18n';
-import { create, index, store } from '@/routes/admin/fee-schedules';
-import type { BreadcrumbItem, VehicleType } from '@/types';
+import { index, store } from '@/routes/admin/fee-schedules';
+import type { VehicleType } from '@/types';
 
 type Props = {
     vehicleTypes: VehicleType[];
@@ -30,24 +29,14 @@ export default function FeeSchedulesCreate({ vehicleTypes }: Props) {
         form.post(store.url(), { preserveScroll: true });
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: t('fees.title'), href: index() },
-        { title: t('fees.create_title'), href: create() },
-    ];
-
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={t('fees.create_title')} />
-
-            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-                <PageHeader title={t('fees.create_title')} />
-                <FeeScheduleForm
-                    form={form}
-                    onSubmit={submit}
-                    vehicleTypes={vehicleTypes}
-                    cancelHref={index.url()}
-                />
-            </div>
-        </AppLayout>
+        <FormPageLayout title={t('fees.create_title')} backHref={index.url()}>
+            <FeeScheduleForm
+                form={form}
+                onSubmit={submit}
+                vehicleTypes={vehicleTypes}
+                cancelHref={index.url()}
+            />
+        </FormPageLayout>
     );
 }

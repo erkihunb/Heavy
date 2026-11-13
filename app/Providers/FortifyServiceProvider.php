@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -42,7 +41,6 @@ class FortifyServiceProvider extends ServiceProvider
     private function configureActions(): void
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
-        Fortify::createUsersUsing(CreateNewUser::class);
 
         // A deactivated account keeps its history but cannot sign in (EUISIS RBAC).
         Fortify::authenticateUsing(function (Request $request): ?User {
@@ -56,6 +54,11 @@ class FortifyServiceProvider extends ServiceProvider
                 throw ValidationException::withMessages([Fortify::username() => __('auth.deactivated')]);
             }
 
+            // Applicants do not sign in: their requests are recorded and handled at the office.
+            if (! $user->maySignIn()) {
+                throw ValidationException::withMessages([Fortify::username() => __('auth.no_sign_in')]);
+            }
+
             return $user;
         });
     }
@@ -67,7 +70,6 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/login', [
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
-            'canRegister' => Features::enabled(Features::registration()) && (bool) config('permits.online_applications'),
             'status' => $request->session()->get('status'),
         ]));
 
@@ -83,13 +85,6 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::verifyEmailView(fn (Request $request) => Inertia::render('auth/verify-email', [
             'status' => $request->session()->get('status'),
         ]));
-
-        // Signing up online is paused while requests come in by letter at the office.
-        Fortify::registerView(function () {
-            abort_unless((bool) config('permits.online_applications'), 404);
-
-            return Inertia::render('auth/register');
-        });
 
         Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/two-factor-challenge'));
 

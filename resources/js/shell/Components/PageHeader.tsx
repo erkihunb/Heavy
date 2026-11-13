@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { useLocale } from '@/shell/hooks/useLocale';
+import { useSystemSettings } from '@/shell/hooks/useSystemSettings';
 import { actionLinkClassName } from '@app/ui';
 
 interface Props {
@@ -17,6 +18,9 @@ export default function PageHeader({
     backHref,
 }: Props) {
     const { t } = useLocale();
+    const { getBoolean } = useSystemSettings();
+    // On phones the breadcrumbs above are already the way back ("‹ Parent"): one link is enough.
+    const breadcrumbsShown = getBoolean('appearance.show_breadcrumbs', true);
 
     return (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -26,7 +30,9 @@ export default function PageHeader({
                         href={backHref}
                         className={actionLinkClassName({
                             tone: 'neutral',
-                            className: 'mb-2 inline-flex items-center gap-1',
+                            className: breadcrumbsShown
+                                ? 'mb-2 hidden items-center gap-1 sm:inline-flex'
+                                : 'mb-2 inline-flex items-center gap-1',
                         })}
                     >
                         <svg

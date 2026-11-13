@@ -23,32 +23,28 @@ class PermissionController extends Controller
         Gate::authorize('permissions.view');
 
         $search = mb_strtolower(trim((string) $request->query('search', '')));
-        $module = array_key_exists((string) $request->query('module'), PermissionCatalog::MODULES) ? (string) $request->query('module') : '';
         $holders = $this->roleCounts();
 
+        // One list, in catalogue order: permissions are not put into categories.
         $rows = collect(PermissionCatalog::names())
             ->map(fn (string $name): array => [
                 ...PermissionCatalog::entry($name),
-                'group' => (string) PermissionCatalog::groupOf($name),
-                'module' => (string) PermissionCatalog::moduleOf($name),
                 'roles_count' => $holders[$name] ?? 0,
                 'showUrl' => route('admin.permissions.show', $name),
             ]);
 
         $visible = $rows
-            ->filter(fn (array $row): bool => ($module === '' || $row['module'] === $module)
-                && ($search === '' || str_contains(mb_strtolower($row['name'].' '.$row['label'].' '.$row['description']), $search)))
+            ->filter(fn (array $row): bool => $search === ''
+                || str_contains(mb_strtolower($row['name'].' '.$row['label'].' '.$row['description']), $search))
             ->values();
 
         return Inertia::render('admin/permissions/index', [
             'permissions' => $visible->all(),
-            'modules' => PermissionCatalog::modules(),
             'stats' => [
                 'total' => $rows->count(),
-                'modules' => count(PermissionCatalog::MODULES),
                 'unassigned' => $rows->where('roles_count', 0)->count(),
             ],
-            'filters' => ['search' => $search, 'module' => $module],
+            'filters' => ['search' => $search],
             'urls' => ['index' => route('admin.permissions.index')],
         ]);
     }
@@ -60,7 +56,6 @@ class PermissionController extends Controller
 
         /** @var User $actor */
         $actor = $request->user();
-        $module = (string) PermissionCatalog::moduleOf($permission);
 
         $roles = Role::query()
             ->whereHas('permissions', fn ($query) => $query->where('name', $permission))
@@ -78,12 +73,7 @@ class PermissionController extends Controller
             ->all();
 
         return Inertia::render('admin/permissions/show', [
-            'permission' => [
-                ...PermissionCatalog::entry($permission),
-                'group' => (string) PermissionCatalog::groupOf($permission),
-                'module' => $module,
-                'moduleName' => collect(PermissionCatalog::modules())->firstWhere('key', $module)['name'] ?? $module,
-            ],
+            'permission' => PermissionCatalog::entry($permission),
             'roles' => $roles,
             'urls' => ['index' => route('admin.permissions.index')],
         ]);

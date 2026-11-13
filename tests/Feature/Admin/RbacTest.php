@@ -148,10 +148,19 @@ it('lets a global role see every branch without scope rows', function () {
     expect($user->refresh()->branchScope())->toEqual(BranchScope::everywhere());
 });
 
-it('treats a member of staff holding only a created role as staff', function () {
-    RoleModel::query()->create(['name' => 'clerk', 'guard_name' => 'web']);
+it('decides who is staff by the permissions of their roles, not by a role\'s name', function () {
+    $clerk = RoleModel::query()->create(['name' => 'clerk', 'guard_name' => 'web']);
     $user = userWithRole(Role::Registrar);
     $user->syncRoles(['clerk']);
 
+    // A created role that opens nothing of the office's work makes nobody staff…
+    expect($user->refresh()->isStaff())->toBeFalse();
+
+    // …the dashboard alone does not either…
+    $clerk->givePermissionTo('dashboard.view');
+    expect($user->refresh()->isStaff())->toBeFalse();
+
+    // …any permission of the office's work does.
+    $clerk->givePermissionTo('applicants.register');
     expect($user->refresh()->isStaff())->toBeTrue();
 });

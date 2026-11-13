@@ -6,35 +6,9 @@
  */
 
 return [
-    'modules' => [
-        'applicant' => 'Applicant portal',
-        'processing' => 'Permit processing',
-        'office' => 'Front desk and road',
-        'administration' => 'Administration',
-    ],
-
-    'groups' => [
-        'organization' => 'Organisation',
-        'vehicles' => 'Vehicles',
-        'applications' => 'Applications',
-        'permits' => 'Permits',
-        'payments' => 'Payments',
-        'applicants' => 'Walk-in applicants',
-        'verification' => 'Verification',
-        'reports' => 'Reports',
-        'users' => 'Users',
-        'roles' => 'Roles',
-        'permissions' => 'Permissions',
-        'configuration' => 'Configuration',
-        'audit' => 'Audit',
-    ],
-
     'permission_labels' => [
-        'organization.manage-own' => 'Manage their own organisation',
-        'vehicles.manage-own' => 'Manage their own vehicles',
-        'permits.apply' => 'Apply for permits',
-        'payments.submit' => 'Submit payment receipts',
-        'permits.download-own' => 'Download their own permits',
+        'dashboard.view' => 'See the dashboard',
+        'permits.apply' => 'Applicant account',
         'permits.view-queue' => 'Open the review queue',
         'permits.review' => 'Review applications',
         'permits.approve' => 'Approve or reject applications',
@@ -62,11 +36,8 @@ return [
     ],
 
     'permission_descriptions' => [
-        'organization.manage-own' => 'Applicants: the details of the organisation they apply for.',
-        'vehicles.manage-own' => 'Applicants: register and edit the organisation\'s vehicles.',
-        'permits.apply' => 'Applicants: draft, submit and follow applications.',
-        'payments.submit' => 'Applicants: upload the receipt of a payment.',
-        'permits.download-own' => 'Applicants: download issued permits.',
+        'dashboard.view' => 'The home screen: figures and what waits, each for what the person may do.',
+        'permits.apply' => 'Marks the accounts requests are recorded for. Such an account cannot sign in.',
         'permits.view-queue' => 'Staff: see the applications of their branches.',
         'permits.review' => 'Examine an application and recommend a decision.',
         'permits.approve' => 'Decide on an application.',
@@ -91,15 +62,6 @@ return [
         'vehicle-types.manage' => 'The vehicle types applicants choose from.',
         'fee-schedules.manage' => 'The fees charged for permits.',
         'audit-log.view' => 'Who changed what, and when.',
-    ],
-
-    'roleCategories' => [
-        'administration' => 'Administration',
-        'processing' => 'Permit processing',
-        'payments' => 'Payments',
-        'office' => 'Front desk and road',
-        'applicants' => 'Applicants',
-        'other' => 'Other roles',
     ],
 
     'roles' => [
@@ -127,8 +89,6 @@ return [
         'branchRoleHelp' => 'Applies only in the branches on each user\'s scope list. With no branch on the list, the user sees nothing.',
         'globalRole' => 'Global role',
         'globalRoleHelp' => 'Applies in every branch and the head office. Only administrators make a role global.',
-        'modulesCovered' => 'Modules',
-        'moreModules' => '+:count more',
         'permissionCount' => 'Permissions',
         'usersCount' => 'Users',
         'usersN' => ':count users',
@@ -136,8 +96,6 @@ return [
         'defaultRole' => 'Default',
         'permissionsSection' => 'Permissions',
         'selectedPermissions' => ':count selected',
-        'selectAllInModule' => 'Select all in this module',
-        'clearModule' => 'Clear this module',
         'protectedNotice' => 'The administrator role always holds every staff permission, so its permissions cannot be changed.',
         'cannotAssignPermissions' => 'You may change this role\'s names but not its permissions.',
         'confirmDeleteTitle' => 'Delete the role ":name"?',
@@ -158,11 +116,7 @@ return [
 
     'permissions' => [
         'title' => 'Permissions',
-        'intro' => 'Every permission the system checks, by module, and how many roles hold it. Permissions are added in code.',
-        'modules' => 'Modules',
-        'module' => 'Module',
-        'group' => 'Group',
-        'allModules' => 'All modules',
+        'intro' => 'Every permission the system checks and how many roles hold it. Permissions are added in code.',
         'filters' => 'Permission filters',
         'search' => 'Search permissions',
         'noneFound' => 'No permission matches.',
@@ -174,10 +128,9 @@ return [
         'unassigned' => 'No role',
         'unassignedHelp' => 'No role holds this permission, so nobody can do this yet.',
         'statTotal' => 'Permissions',
-        'statModules' => 'Modules',
         'statUnassigned' => 'Held by no role',
-        'selectAllInGroup' => 'Select all',
-        'clearGroup' => 'Clear',
+        'selectAll' => 'Select all',
+        'clearAll' => 'Clear all',
         'critical' => 'Sensitive',
         'criticalWarning' => 'Gives power over other users or the whole system. Grant it on purpose.',
     ],

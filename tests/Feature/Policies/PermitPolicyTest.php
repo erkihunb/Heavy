@@ -9,15 +9,14 @@ use App\Policies\PermitPolicy;
 use Illuminate\Support\Facades\Gate;
 
 /*
- * Role × action matrix for permits. Applicants act on the applications of
- * their own organization, in the right stage; Reviewers and Approvers act on
- * applications that have been submitted. A Reviewer may also decide (with
+ * Role × action matrix for permits. Applicants have no pages of their own:
+ * a Registrar records their request at the office (the *For abilities).
+ * Reviewers and Approvers act on applications that have been submitted. A Reviewer may also decide (with
  * two-step approval off nobody else needs to); revoking stays with Approvers.
  * Cashiers, Issuers and the head office open applications for their own desk.
  * For staff the policy decides who, the state machine decides when.
  */
 
-const APPLICANT_ABILITIES = ['update', 'submit', 'withdraw'];
 const REVIEWER_ABILITIES = ['startReview', 'recommend', 'requestChanges'];
 const APPROVER_ABILITIES = ['approve', 'reject', 'revoke'];
 const DESK_ABILITIES = ['recordPayment', 'issue', 'comment'];
@@ -59,24 +58,6 @@ function denialStatus(User $user, string $ability, Permit $permit): ?int
 }
 
 describe('without a permit', function () {
-    it('lets only applicants reach the list of applications', function (Role $role) {
-        expect(userWithRole($role)->can('viewAny', Permit::class))->toBe($role === Role::Applicant);
-    })->with(Role::cases());
-
-    it('lets only applicants with an organization start an application', function (Role $role) {
-        $user = userWithRole($role);
-        $user->forceFill(['organization_id' => Organization::factory()->create()->id])->save();
-
-        expect($user->can('create', Permit::class))->toBe($role === Role::Applicant);
-    })->with(Role::cases());
-
-    it('does not let an applicant without an organization start an application', function () {
-        $user = userWithRole(Role::Applicant);
-
-        expect($user->can('viewAny', Permit::class))->toBeTrue()
-            ->and($user->can('create', Permit::class))->toBeFalse();
-    });
-
     it('lets the staff of the review, payment and issue desks and the head office reach the queue', function (Role $role) {
         expect(userWithRole($role)->can('viewQueue', Permit::class))
             ->toBe(in_array($role, QUEUE_ROLES, true));
@@ -84,17 +65,17 @@ describe('without a permit', function () {
 });
 
 describe('viewing', function () {
-    it('shows a draft or withdrawn application to applicants of its organization only', function (Role $role, PermitStatus $status) {
+    it('shows a draft or withdrawn application to nobody, not even its organization', function (Role $role, PermitStatus $status) {
         $permit = Permit::factory()->create(['status' => $status]);
 
-        expect(memberWithRole($role, $permit)->can('view', $permit))->toBe($role === Role::Applicant);
+        expect(memberWithRole($role, $permit)->can('view', $permit))->toBeFalse();
     })->with(Role::cases())->with([PermitStatus::Draft, PermitStatus::Withdrawn]);
 
-    it('shows a submitted application to its organization and to the staff who work the queue', function (Role $role, PermitStatus $status) {
+    it('shows a submitted application to the staff who work the queue only', function (Role $role, PermitStatus $status) {
         $permit = Permit::factory()->create(['status' => $status]);
 
         expect(memberWithRole($role, $permit)->can('view', $permit))
-            ->toBe(in_array($role, [Role::Applicant, ...QUEUE_ROLES], true));
+            ->toBe(in_array($role, QUEUE_ROLES, true));
     })->with(Role::cases())->with([
         PermitStatus::Submitted,
         PermitStatus::UnderReview,
@@ -122,59 +103,6 @@ describe('viewing', function () {
         expect(denialStatus(userWithRole(Role::Reviewer), 'view', $draft))->toBe(404)
             ->and(denialStatus(userWithRole(Role::Cashier), 'view', $draft))->toBe(404)
             ->and(denialStatus(userWithRole(Role::Applicant), 'view', $draft))->toBe(404);
-    });
-});
-
-describe('the applicant\'s actions', function () {
-    it('lets only applicants of the organization change, submit or withdraw a draft', function (Role $role) {
-        $permit = Permit::factory()->draft()->create();
-
-        expect(allowedAbilities(memberWithRole($role, $permit), $permit, APPLICANT_ABILITIES))
-            ->toBe($role === Role::Applicant ? APPLICANT_ABILITIES : []);
-    })->with(Role::cases());
-
-    it('allows each action only in the stages it belongs to', function (PermitStatus $status, array $expected) {
-        $permit = Permit::factory()->create(['status' => $status]);
-        $applicant = memberWithRole(Role::Applicant, $permit);
-
-        expect(allowedAbilities($applicant, $permit, APPLICANT_ABILITIES))->toBe($expected);
-
-        // Their own application in the wrong stage is forbidden, not hidden.
-        foreach (array_diff(APPLICANT_ABILITIES, $expected) as $ability) {
-            expect(denialStatus($applicant, $ability, $permit))->toBe(403);
-        }
-    })->with([
-        'draft' => [PermitStatus::Draft, ['update', 'submit', 'withdraw']],
-        'submitted' => [PermitStatus::Submitted, ['withdraw']],
-        'under review' => [PermitStatus::UnderReview, []],
-        'changes requested' => [PermitStatus::ChangesRequested, ['update', 'submit']],
-        'rejected' => [PermitStatus::Rejected, []],
-        'awaiting payment' => [PermitStatus::AwaitingPayment, []],
-        'payment submitted' => [PermitStatus::PaymentSubmitted, []],
-        'payment confirmed' => [PermitStatus::PaymentConfirmed, []],
-        'issued' => [PermitStatus::Issued, []],
-        'expired' => [PermitStatus::Expired, []],
-        'revoked' => [PermitStatus::Revoked, []],
-        'withdrawn' => [PermitStatus::Withdrawn, []],
-    ]);
-
-    it('hides the application of another organization from an applicant, whatever the action', function (PermitStatus $status) {
-        $permit = Permit::factory()->create(['status' => $status]);
-        $stranger = applicantWithOrganization();
-
-        expect(allowedAbilities($stranger, $permit, APPLICANT_ABILITIES))->toBe([]);
-
-        foreach (APPLICANT_ABILITIES as $ability) {
-            expect(denialStatus($stranger, $ability, $permit))->toBe(404);
-        }
-    })->with([PermitStatus::Draft, PermitStatus::Submitted, PermitStatus::ChangesRequested]);
-
-    it('does not let an applicant without an organization act on any application', function () {
-        $permit = Permit::factory()->draft()->create();
-        $user = userWithRole(Role::Applicant);
-
-        expect($user->can('view', $permit))->toBeFalse()
-            ->and(allowedAbilities($user, $permit, APPLICANT_ABILITIES))->toBe([]);
     });
 });
 
@@ -287,11 +215,9 @@ it('denies a user without any role everything', function () {
     $user = User::factory()->create();
     $user->forceFill(['organization_id' => $permit->organization_id])->save();
 
-    expect($user->can('viewAny', Permit::class))->toBeFalse()
-        ->and($user->can('create', Permit::class))->toBeFalse()
-        ->and($user->can('viewQueue', Permit::class))->toBeFalse()
+    expect($user->can('viewQueue', Permit::class))->toBeFalse()
         ->and($user->can('view', $permit))->toBeFalse()
-        ->and(allowedAbilities($user, $permit, [...APPLICANT_ABILITIES, ...REVIEWER_ABILITIES, ...APPROVER_ABILITIES]))->toBe([]);
+        ->and(allowedAbilities($user, $permit, [...REVIEWER_ABILITIES, ...APPROVER_ABILITIES]))->toBe([]);
 });
 
 it('has no policy for deleting permits', function () {
@@ -308,12 +234,12 @@ it('covers every ability of the policy', function () {
         ->values()
         ->all();
 
-    // submitPayment is covered in PaymentPolicyTest; download, reissue, scan and report in VerificationPolicyTest;
+    // download, reissue, scan and report are covered in VerificationPolicyTest;
     // the Registrar's *For abilities in Admin/WalkInApplicationTest.
     $tested = [
-        'viewAny', 'create', 'view', 'viewQueue', 'submitPayment', 'download', 'reissue', 'scan', 'report',
+        'view', 'viewQueue', 'download', 'reissue', 'scan', 'report',
         'viewFor', 'updateFor', 'submitFor', 'submitPaymentFor', 'viewLetter',
-        ...APPLICANT_ABILITIES, ...REVIEWER_ABILITIES, ...APPROVER_ABILITIES, ...DESK_ABILITIES,
+        ...REVIEWER_ABILITIES, ...APPROVER_ABILITIES, ...DESK_ABILITIES,
     ];
     sort($tested);
 

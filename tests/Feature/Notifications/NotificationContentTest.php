@@ -58,7 +58,8 @@ it('writes the e-mail in English for an English-speaking member', function () {
         ->toContain('AACRA-2018-000123')
         ->toContain('ETB 6,000.50')
         ->toContain('Meskerem 28, 2018')
-        ->toContain(route('permits.show', $this->permit));
+        // Applicants have no pages of their own, so the e-mail links to none.
+        ->not->toContain(url('/permits'));
 });
 
 it('writes the e-mail in Amharic for an Amharic-speaking member', function () {

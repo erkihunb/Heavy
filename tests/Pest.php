@@ -19,6 +19,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /*
@@ -73,6 +74,16 @@ function userWithRole(Role $role, bool $twoFactor = false): User
 function staffUser(Role $role): User
 {
     return userWithRole($role, twoFactor: true);
+}
+
+/**
+ * Applicants do not sign in (User::maySignIn()): a session of theirs is ended
+ * on its next request and sent to the login page.
+ */
+function assertSignedOut(TestResponse $response): void
+{
+    $response->assertRedirect(route('login'))->assertSessionHasErrors('email');
+    test()->assertGuest();
 }
 
 /**

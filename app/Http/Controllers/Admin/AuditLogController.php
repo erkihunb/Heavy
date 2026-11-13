@@ -81,7 +81,7 @@ class AuditLogController extends Controller
                     'created_time' => $entry->created_at?->setTimezone($timezone)->format('H:i:s'),
                     'actor' => $causer instanceof User ? ['name' => $causer->name, 'email' => $causer->email] : null,
                     'subject' => $this->subject($entry->subject, $locale),
-                    'changes' => array_values(array_map(
+                    'changes' => array_map(
                         fn (string $key): array => [
                             'key' => $key,
                             'label' => $this->label($key),
@@ -90,11 +90,11 @@ class AuditLogController extends Controller
                             'had_old' => array_key_exists($key, $old),
                         ],
                         array_values(array_unique([...array_keys($old), ...array_keys($new)])),
-                    )),
-                    'context' => array_values(array_map(
+                    ),
+                    'context' => array_map(
                         fn (string $key): array => ['key' => $key, 'label' => $this->label($key), 'value' => $this->value($key, $context[$key])],
                         array_keys($context),
-                    )),
+                    ),
                 ];
             });
 
@@ -132,6 +132,9 @@ class AuditLogController extends Controller
      * Entries about the permit, payment, person, branch or vehicle type the
      * text names: a permit number or one of its plates, a receipt number, a
      * name or e-mail, a branch code or name.
+     *
+     * @param  Builder<Activity>  $query
+     * @return Builder<Activity>
      */
     private function concerning(Builder $query, string $text): Builder
     {

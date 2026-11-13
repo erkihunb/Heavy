@@ -27,7 +27,7 @@ class PaymentPolicy
 
     public function view(User $user, Payment $payment): Response
     {
-        return $this->isCashierFor($user, $payment) || $this->isOwnedByOrganizationOf($user, $payment)
+        return $this->isCashierFor($user, $payment)
             ? Response::allow()
             : Response::denyAsNotFound();
     }
@@ -65,12 +65,5 @@ class PaymentPolicy
         $permitBranch = Permit::query()->whereKey($payment->permit_id)->value('branch_id');
 
         return $scope->allows($permitBranch === null ? null : (int) $permitBranch);
-    }
-
-    private function isOwnedByOrganizationOf(User $user, Payment $payment): bool
-    {
-        return $user->can(Permission::SubmitPayments->value)
-            && $user->organization_id !== null
-            && $user->organization_id === Permit::query()->whereKey($payment->permit_id)->value('organization_id');
     }
 }

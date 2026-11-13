@@ -7,7 +7,6 @@ use App\Exceptions\PermitException;
 use App\Exceptions\UserAlreadyHasOrganization;
 use App\Exceptions\VehiclePlateLocked;
 use App\Http\Middleware\EnsureAccountIsActive;
-use App\Http\Middleware\EnsureUserHasOrganization;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RequireTwoFactorForStaff;
@@ -45,10 +44,6 @@ return Application::configure(basePath: dirname(__DIR__))
         if (is_string($proxies) && $proxies !== '') {
             $middleware->trustProxies(at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
         }
-
-        $middleware->alias([
-            'organization' => EnsureUserHasOrganization::class,
-        ]);
 
         $middleware->web(append: [
             SetLocale::class,

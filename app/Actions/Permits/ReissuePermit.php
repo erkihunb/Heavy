@@ -3,12 +3,14 @@
 namespace App\Actions\Permits;
 
 use App\Domain\Permits\PermitTransitions;
+use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Exceptions\PermitRuleViolation;
 use App\Models\Permit;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class ReissuePermit
 {
@@ -26,6 +28,8 @@ class ReissuePermit
      */
     public function handle(Permit $permit, User $actor, string $reason): Permit
     {
+        Gate::forUser($actor)->authorize(Permission::RevokePermits->value);
+
         if (blank($reason)) {
             throw new PermitRuleViolation('reissue_reason_required');
         }

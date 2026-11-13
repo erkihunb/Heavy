@@ -52,7 +52,8 @@ class UserController extends Controller
         $status = in_array($request->query('status'), ['active', 'inactive'], true) ? (string) $request->query('status') : '';
 
         $users = User::query()
-            ->with(['roles:id,name,name_am,scope_type', 'branch'])
+            // Each row says whether the person is staff, by their permissions: load them with the page.
+            ->with(['roles:id,name,name_am,scope_type', 'roles.permissions:id,name', 'permissions:id,name', 'branch'])
             ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $query) => $query
                 ->whereLike('name', "%{$search}%")
                 ->orWhereLike('email', "%{$search}%")))
@@ -119,7 +120,7 @@ class UserController extends Controller
                 ...$this->presentRow($user),
                 'branch_id' => $user->branch_id,
                 'role_names' => $user->roles->pluck('name')->values()->all(),
-                'is_applicant' => $user->hasRole(RoleEnum::Applicant->value),
+                'is_applicant' => $user->isApplicant(),
                 'deactivated_at' => EthiopianCalendar::present($user->deactivated_at?->setTimezone((string) config('localization.display_timezone')), app()->getLocale()),
                 'deactivated_by' => $user->deactivatedBy?->name,
                 'sees_everywhere' => $scope->everywhere,

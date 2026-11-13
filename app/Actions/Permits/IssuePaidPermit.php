@@ -4,12 +4,14 @@ namespace App\Actions\Permits;
 
 use App\Domain\Notifications\PermitNotifier;
 use App\Domain\Permits\PermitTransitions;
+use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Exceptions\InvalidPermitTransition;
 use App\Models\Permit;
 use App\Models\User;
 use App\Notifications\PermitIssued;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Gate;
 
 class IssuePaidPermit
 {
@@ -28,6 +30,8 @@ class IssuePaidPermit
      */
     public function handle(Permit $permit, User $issuer, ?string $note = null): Permit
     {
+        Gate::forUser($issuer)->authorize(Permission::IssuePermits->value);
+
         $issued = $this->transitions->apply($permit, PermitStatus::Issued, $issuer, $note, function (Permit $permit) use ($issuer): void {
             $permit->issued_at = CarbonImmutable::now();
             $permit->issued_by = $issuer->id;

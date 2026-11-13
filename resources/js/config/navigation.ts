@@ -10,22 +10,16 @@ import { overview as systemSettings } from '@/routes/admin/settings';
 import { index as users } from '@/routes/admin/users';
 import { index as vehicleTypes } from '@/routes/admin/vehicle-types';
 import { verify as officerVerify } from '@/routes/officer';
-import { show as organization } from '@/routes/organization';
-import { index as permits } from '@/routes/permits';
 import { index as paymentQueue } from '@/routes/staff/payments';
 import { index as reviewQueue } from '@/routes/staff/permits';
 import { index as reports } from '@/routes/staff/reports';
-import { index as vehicles } from '@/routes/vehicles';
 import {
     BanknoteIcon,
     BillListIcon,
-    Building2,
     Buildings3Icon,
     ChartIcon,
     ClipboardListIcon,
-    DeliveryIcon,
     DocumentsIcon,
-    DocumentTextIcon,
     HistoryIcon,
     KeyIcon,
     LayoutDashboard,
@@ -82,7 +76,7 @@ export type NavSection = {
 };
 
 export type Navigation = {
-    /** The first link, always shown: the signed-in home. */
+    /** The first link: the dashboard, for those who hold its permission. */
     home: NavItem;
     sections: NavSection[];
 };
@@ -92,38 +86,9 @@ export const navigation: Navigation = {
         href: dashboard().url,
         labelKey: 'nav.dashboard',
         icon: LayoutDashboard,
+        permission: 'dashboard.view',
     },
     sections: [
-        {
-            labelKey: 'nav.sections.applicant',
-            groups: [
-                {
-                    key: 'applicant',
-                    labelKey: 'shell.menu.my_permits',
-                    icon: DocumentTextIcon,
-                    items: [
-                        {
-                            href: organization().url,
-                            labelKey: 'nav.organization',
-                            icon: Building2,
-                            permission: 'organization.manage-own',
-                        },
-                        {
-                            href: vehicles().url,
-                            labelKey: 'nav.vehicles',
-                            icon: DeliveryIcon,
-                            permission: 'vehicles.manage-own',
-                        },
-                        {
-                            href: permits().url,
-                            labelKey: 'nav.permits',
-                            icon: DocumentTextIcon,
-                            permission: 'permits.apply',
-                        },
-                    ],
-                },
-            ],
-        },
         {
             labelKey: 'nav.sections.back_office',
             groups: [

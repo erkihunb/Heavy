@@ -1,3 +1,4 @@
+import { RequiredMark } from '@/components/form-field';
 import InputError from '@/components/input-error';
 import { PlateChip } from '@/components/plate-chip';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,7 @@ export function PlateInput({
     error,
     disabled = false,
     label,
+    required = false,
 }: {
     id: string;
     value: string;
@@ -45,6 +47,8 @@ export function PlateInput({
     disabled?: boolean;
     /** The heading of the three parts; "Plate number" unless given. */
     label?: string;
+    /** Marks the heading as a field the server requires. */
+    required?: boolean;
 }) {
     const { t } = useTranslation();
     const parts = split(value);
@@ -65,6 +69,7 @@ export function PlateInput({
         >
             <legend className="mb-2 text-sm leading-none font-medium">
                 {label ?? t('vehicles.fields.plate')}
+                {required && <RequiredMark />}
             </legend>
 
             <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)] gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.6fr)_minmax(0,1.4fr)]">

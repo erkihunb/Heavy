@@ -51,6 +51,16 @@
             </div>
         </div>
     </section>
+    {{--
+        Shown before the first paint, not when verify-scanner.ts has loaded:
+        revealed later, the button pushed the form down on slow phones (layout
+        shift). Only for browsers that run the scanner (ES modules).
+    --}}
+    <script nonce="{{ Vite::cspNonce() }}">
+        if ('noModule' in HTMLScriptElement.prototype) {
+            document.querySelector('[data-scan-start]').hidden = false;
+        }
+    </script>
 
     <div class="my-6 flex items-center gap-3 text-sm font-medium text-muted-foreground" aria-hidden="true">
         <span class="h-px flex-1 bg-border"></span>

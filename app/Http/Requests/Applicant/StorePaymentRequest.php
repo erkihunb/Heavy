@@ -13,7 +13,6 @@ use Closure;
 use Illuminate\Auth\Access\Response;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\File;
 use Illuminate\Validation\Validator;
@@ -22,12 +21,9 @@ use Illuminate\Validation\Validator;
  * An applicant reports the fee of an approved permit as paid. The amount is
  * typed in birr ("1500" or "1500.50") and handled as santim from here on.
  */
-class StorePaymentRequest extends FormRequest
+abstract class StorePaymentRequest extends FormRequest
 {
-    public function authorize(): Response
-    {
-        return Gate::inspect('submitPayment', $this->route('permit'));
-    }
+    abstract public function authorize(): Response;
 
     protected function prepareForValidation(): void
     {

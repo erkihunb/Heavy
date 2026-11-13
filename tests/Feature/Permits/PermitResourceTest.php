@@ -42,10 +42,6 @@ const PERMIT_FIELDS = [
 const PERMIT_STAFF_FIELDS = ['applicant', 'waiting_hours', 'recommendation'];
 
 const PERMIT_ABILITIES = [
-    'update',
-    'submit',
-    'withdraw',
-    'submitPayment',
     'startReview',
     'recommend',
     'requestChanges',
@@ -273,14 +269,10 @@ describe('PermitResource', function () {
 
         expect(array_keys(array_filter($data['can'])))->toBe($expected);
     })->with([
-        'applicant, draft' => ['draft', 'applicant', ['update', 'submit', 'withdraw']],
-        'applicant, submitted' => ['submitted', 'applicant', ['withdraw']],
-        'applicant, under review' => ['underReview', 'applicant', []],
-        'applicant, changes requested' => ['changesRequested', 'applicant', ['update', 'submit']],
-        'applicant, awaiting payment' => ['awaitingPayment', 'applicant', ['submitPayment']],
-        'applicant, payment submitted' => ['paymentSubmitted', 'applicant', []],
+        // Applicants do nothing themselves: the office acts for them.
+        'applicant, changes requested' => ['changesRequested', 'applicant', []],
+        'applicant, awaiting payment' => ['awaitingPayment', 'applicant', []],
         'applicant, issued' => ['issued', 'applicant', []],
-        'applicant, rejected' => ['rejected', 'applicant', []],
         'reviewer, submitted' => ['submitted', 'reviewer', ['startReview']],
         'reviewer, under review' => ['underReview', 'reviewer', ['recommend', 'requestChanges']],
         'reviewer, recommended' => ['recommended', 'reviewer', ['recommend', 'requestChanges']],

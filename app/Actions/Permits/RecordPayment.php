@@ -7,6 +7,7 @@ use App\Domain\Audit\AuditEvent;
 use App\Domain\Audit\AuditLog;
 use App\Domain\Permits\PermitTransitions;
 use App\Enums\PaymentStatus;
+use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Exceptions\DuplicateReceipt;
 use App\Exceptions\InvalidPermitTransition;
@@ -16,6 +17,7 @@ use App\Models\Permit;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
@@ -38,6 +40,8 @@ class RecordPayment
      */
     public function handle(Permit $permit, User $cashier, PaymentData $data, ?string $note = null): Payment
     {
+        Gate::forUser($cashier)->authorize(Permission::VerifyPayments->value);
+
         $disk = Storage::disk(config('permits.documents_disk'));
         $path = null;
 

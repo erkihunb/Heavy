@@ -66,8 +66,9 @@ const SHELL_ROOT_DATASET = [
 // Page chrome and content share one measure, so titles line up with the content below them
 // and very wide screens keep a readable line length.
 const CONTENT_WIDTH = 'mx-auto w-full max-w-[1600px]';
-// Create and edit forms share one measure too; the prop keeps it changeable in one place.
-const FORM_WIDTH = 'w-full';
+// Create and edit forms share one measure too, narrower than the page so fields stay a
+// readable length (layouts/form-page-layout.tsx); the prop keeps it changeable in one place.
+const FORM_WIDTH = 'w-full max-w-4xl';
 
 export type ContentWidth = 'full' | 'form';
 

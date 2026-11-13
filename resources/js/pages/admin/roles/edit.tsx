@@ -7,7 +7,6 @@ import type {
 import RoleForm from '@/shell/Components/Roles/RoleForm';
 import { useLocale } from '@/shell/hooks/useLocale';
 import AuthenticatedLayout from '@/shell/Layouts/AuthenticatedLayout';
-import type { PermissionModule } from '@/shell/lib/permissionGroups';
 
 type RoleData = {
     id: number;
@@ -25,13 +24,11 @@ type RoleData = {
 export default function EditRole({
     role,
     permissions,
-    modules,
     can,
     urls,
 }: {
     role: RoleData;
-    permissions: Record<string, PermissionEntry[]>;
-    modules: PermissionModule[];
+    permissions: PermissionEntry[];
     can: { assignPermissions: boolean; manageGlobalRoles: boolean };
     urls: { index: string; update: string };
 }) {
@@ -59,7 +56,6 @@ export default function EditRole({
                     permissions: role.permissions,
                 }}
                 permissions={permissions}
-                modules={modules}
                 can={can}
                 submitUrl={urls.update}
                 method="put"
