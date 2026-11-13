@@ -93,13 +93,22 @@ describe('the sign-in page', () => {
     it('renders a usable form', () => {
         render(<Login canResetPassword />);
 
-        // The form is what people came for, and it is the whole page:
-        // nothing decorative sits beside it.
+        // The form is what people came for.
         expect(screen.getByLabelText('auth_ui.email')).toBeTruthy();
         expect(screen.getByLabelText('auth_ui.password')).toBeTruthy();
         expect(
             screen.getByRole('button', { name: /auth_ui.login.submit/ }),
         ).toBeTruthy();
+    });
+
+    it('keeps the heavy vehicle picture out of the way of assistive tech', () => {
+        const { container } = render(<Login canResetPassword />);
+
+        const picture = container.querySelector(
+            '[data-test="heavy-vehicle-motion"]',
+        );
+        expect(picture).toBeTruthy();
+        expect(picture?.getAttribute('aria-hidden')).toBe('true');
     });
 
     it('ties each field to its error, and shakes the card once', async () => {

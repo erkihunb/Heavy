@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import type { CSSProperties } from 'react';
+import { HeavyVehicleMotion } from '@/components/auth/heavy-vehicle-motion';
 import { BrandMark } from '@/components/brand-mark';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { SupportContacts } from '@/components/support-contacts';
@@ -9,9 +10,9 @@ import type { AuthLayoutProps } from '@/types';
 
 /**
  * Sign-in, registration and password pages: on a wide screen the form sits
- * beside a brand panel that says what the system is for and where an account
- * comes from (nobody signs up: accounts are opened at the office). On a
- * narrow screen the panel becomes a short header above the form.
+ * beside a brand panel that carries the Authority's mark, its name and the
+ * system's name in its centre, and no other text (the owner's decision). On
+ * a narrow screen the panel becomes a short header above the form.
  *
  * The site root redirects here, so this is the first page of the system:
  * it names the Authority, the service and the way in, and nothing else.
@@ -47,101 +48,34 @@ export default function AuthSplitLayout({
     return (
         <div className="relative flex min-h-svh flex-col bg-muted text-foreground lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             {/* ── Brand panel: the service, in the Authority's colours ── */}
-            <aside className="relative isolate overflow-hidden surface-brand px-5 py-7 sm:px-8 lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-12">
+            <aside className="relative isolate overflow-hidden surface-brand px-5 py-7 sm:px-8 lg:flex lg:flex-col lg:items-center lg:justify-center lg:px-12 lg:pt-12 lg:pb-[26svh]">
                 <AuthPanelBackdrop />
 
+                {/* The sign-in page's moving picture: heavy vehicles crossing
+                    the city along the foot of the panel, clouds across its
+                    top. The centre stays clear for the mark and the names. */}
+                {still && <HeavyVehicleMotion />}
+
+                {/* The Authority's mark, its name and the system's name: a
+                    short row above the form on a narrow screen, and the
+                    centre of the panel on a wide one. Nothing else is said
+                    here. */}
                 <div
-                    className={`flex items-center gap-3 ${reveal(0).className}`}
+                    className={`flex items-center gap-3 lg:flex-col lg:gap-0 lg:text-center ${reveal(0).className}`}
                     style={reveal(0).style}
                 >
-                    <span className="flex size-11 shrink-0 items-center justify-center rounded-card bg-white/10 p-1.5 ring-1 ring-white/25 lg:size-14">
+                    <span className="flex size-11 shrink-0 items-center justify-center lg:size-28">
                         <BrandMark className="size-full" />
                     </span>
-                    <span className="min-w-0">
-                        <span className="block text-sm leading-tight font-bold text-balance lg:text-base">
-                            {t('common.app_name')}
-                        </span>
-                        <span className="mt-0.5 block text-xs text-white/90">
+                    <span className="flex min-w-0 flex-col-reverse lg:mt-7 lg:max-w-md lg:flex-col">
+                        <span className="mt-0.5 block text-xs text-white/90 lg:mt-0 lg:text-2xl lg:leading-snug lg:font-bold lg:text-balance lg:text-white">
                             {t('common.authority')}
+                        </span>
+                        <span className="block text-sm leading-tight font-bold text-balance lg:mt-3 lg:text-base lg:font-medium lg:text-white/90">
+                            {t('common.app_name')}
                         </span>
                     </span>
                 </div>
-
-                {/* The pitch and the three facts, shown only where there is room. */}
-                <div className="mt-10 hidden lg:block">
-                    <p
-                        className={`text-eyebrow text-white/90 ${reveal(60).className}`}
-                        style={reveal(60).style}
-                    >
-                        {t('auth_ui.panel.eyebrow')}
-                    </p>
-                    <h2
-                        className={`mt-3 max-w-md text-3xl leading-tight font-bold text-balance ${reveal(110).className}`}
-                        style={reveal(110).style}
-                    >
-                        {t('auth_ui.panel.title')}
-                    </h2>
-                    <p
-                        className={`mt-4 max-w-md text-sm leading-relaxed text-white/90 ${reveal(160).className}`}
-                        style={reveal(160).style}
-                    >
-                        {t('auth_ui.panel.intro')}
-                    </p>
-
-                    <ul className="mt-9 max-w-md space-y-4">
-                        {(['apply', 'decide', 'verify'] as const).map(
-                            (step, index) => (
-                                <li
-                                    key={step}
-                                    className={`flex gap-3.5 ${reveal(220 + index * 70).className}`}
-                                    style={reveal(220 + index * 70).style}
-                                >
-                                    <span
-                                        aria-hidden="true"
-                                        className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-card bg-white/10 text-xs font-bold ring-1 ring-white/25"
-                                    >
-                                        {index + 1}
-                                    </span>
-                                    <span className="min-w-0">
-                                        <span className="block text-sm font-semibold">
-                                            {t(
-                                                `auth_ui.panel.steps.${step}.title`,
-                                            )}
-                                        </span>
-                                        <span className="mt-0.5 block text-xs leading-relaxed text-white/90">
-                                            {t(
-                                                `auth_ui.panel.steps.${step}.body`,
-                                            )}
-                                        </span>
-                                    </span>
-                                </li>
-                            ),
-                        )}
-                    </ul>
-                </div>
-
-                {/* The system's own name, in both languages. */}
-                <div
-                    className={`mt-10 hidden max-w-md border-t border-white/20 pt-5 lg:block ${reveal(420).className}`}
-                    style={reveal(420).style}
-                >
-                    <p
-                        lang="am"
-                        className="text-sm leading-relaxed font-semibold text-balance"
-                    >
-                        {t('auth_ui.hero.title')}
-                    </p>
-                    <p lang="en" className="mt-1 text-xs text-white/90">
-                        {t('auth_ui.hero.subtitle')}
-                    </p>
-                </div>
-
-                <p
-                    className={`mt-5 hidden max-w-md text-xs leading-relaxed text-white/90 lg:block ${reveal(460).className}`}
-                    style={reveal(460).style}
-                >
-                    {t('auth_ui.panel.no_account')}
-                </p>
             </aside>
 
             {/* ── The form itself ── */}
@@ -189,11 +123,9 @@ export default function AuthSplitLayout({
  * The panel's background: a plain brand surface, lit a little from its top
  * start corner so it does not read as a flat block of colour.
  *
- * Nothing is drawn here and nothing moves. A sign-in page is where somebody
- * reads a form and types a password; the official guidance for public
- * services is to remove distractions from it, and the products that feel
- * most considered keep these pages plain on purpose. Three decorative
- * treatments were tried here and removed (docs/DECISIONS.md).
+ * Nothing is drawn behind the text. Three decorative backgrounds were tried
+ * here and removed (docs/DECISIONS.md); the sign-in page's picture is the
+ * city and its heavy vehicles along the panel's foot, clear of the names.
  */
 function AuthPanelBackdrop() {
     return (

@@ -27,8 +27,9 @@ export default function Login({ status, canResetPassword }: Props) {
         <AuthLayout
             title={t('auth_ui.login.title')}
             description={t('auth_ui.login.description')}
-            // The way in, met first and used daily: nothing on this page
-            // moves on its own. The card's own entrance is below.
+            // The way in, met first and used daily: no entrance for the
+            // panel, and the heavy vehicle in its corner. The card's own
+            // entrance is below.
             still
         >
             <Head title={t('auth_ui.login.submit')} />

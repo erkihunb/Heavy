@@ -1071,13 +1071,37 @@ Registrar does now starts from **Permits**.
 - **Nothing the office did was lost**: registering a person alone (the request part switched off)
   now lands back on a fresh form with the lookup ready for their request when it comes.
 
-## The sign-in page has no decoration
+## The sign-in page carries one moving picture
 
-The sign-in panel carries the Authority's name, what the system is for and
-the three steps of a permit. Behind that text is a plain brand surface, lit
-from its top start corner. Nothing is drawn on it and nothing moves.
+The sign-in panel carries, in its centre, the Authority's logo, the
+Authority's name and the system's name, and no other text. The pitch, the
+three steps of a permit and the "accounts are opened at the office" note
+were removed at the owner's request; their `auth_ui.panel.*` strings are
+still in the language files, unused. Behind it is a plain brand surface, lit
+from its top start corner.
 
-Three decorative treatments were built and removed before settling here: a
+The panel's free space carries heavy vehicles crossing Addis Ababa, asked
+for by the owner and drawn from nothing
+(`components/auth/heavy-vehicle-motion.tsx`). Along the foot of the panel:
+the Entoto ridge, the skyline with a tower crane and a dome, the light-rail
+viaduct with a train, and a two-lane road used by five different vehicles —
+a low-bed with a chained load, a tipper and a fuel tanker in the near lane,
+a concrete mixer and a container truck coming the other way. Across the top:
+a few drifting clouds. The centre is left to the logo and the two names.
+CSS keyframe loops on `transform` and `opacity`; no library, no image
+file. It is shown from 1024px up, only on the sign-in page, and is hidden
+from assistive technology. Under `prefers-reduced-motion` or "animations
+off" the loops are never switched on and the traffic stands still.
+
+The first version of this was a single small truck in the panel's top
+corner; the owner asked for the fuller scene once the panel's text was gone.
+
+A weighbridge with a dial was built first and rejected by the owner the same
+day: "Heavy" in this system means the heavy-load vehicle itself, not a load
+being weighed. The picture has to be the vehicle.
+
+It keeps clear of the text because of what came before. Three decorative treatments were built
+and removed: a
 vehicle driving across a road motif, drifting geometric squares, and an
 illustrated scene (city roads, trucks, a 24-hour clock ring, a QR code)
 with ambient light behind it. Each was rejected on sight: they read as
@@ -1097,8 +1121,8 @@ That matches the guidance rather than contradicting it:
 - The project's own design guidance says continuous motion belongs to
   loading indicators, never decoration.
 
-**What moves, and what does not.** The page itself is still: the panel and
-its text are simply there. The card's fields arrive in order once (300ms,
+**What moves, and what does not.** The panel's text is simply there; the
+heavy vehicle is the only thing that loops. The card's fields arrive in order once (300ms,
 40ms apart) and then stop, the submit button lifts on hover, and a refused
 sign-in shakes the card a single time. All of that stops for
 `prefers-reduced-motion` and for the Admin's "animations off" switch.

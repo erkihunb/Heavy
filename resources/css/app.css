@@ -820,6 +820,98 @@
     animation: none !important;
 }
 
+/*
+ * The heavy vehicles crossing the city on the sign-in panel
+ * (components/auth/heavy-vehicle-motion.tsx).
+ *
+ * At rest the city stands still: every vehicle, the train and the clouds
+ * carry their resting place as an inline transform. That is what reduced
+ * motion and "animations off" get, because the loops below are only ever
+ * switched on for everybody else.
+ *
+ * Everything that travels crosses the same 1320 units, wider than the
+ * drawing, so it enters and leaves out of sight. Each thing brings its own
+ * duration and (negative) delay as --hv-dur and --hv-delay, which is what
+ * keeps vehicles in one lane a fixed distance apart; each wheel brings the
+ * time one turn takes at its vehicle's speed as --hv-spin.
+ */
+.hv-wheel {
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    :root:not([data-animations='off']) .hv-right {
+        animation: hv-right var(--hv-dur, 27s) linear var(--hv-delay, 0s)
+            infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-left {
+        animation: hv-left var(--hv-dur, 36s) linear var(--hv-delay, 0s)
+            infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-wheel {
+        animation: hv-wheel var(--hv-spin, 1.6s) linear infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-body {
+        animation: hv-body 1.4s ease-in-out infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-beacon {
+        animation: hv-beacon 1.6s linear infinite;
+    }
+}
+
+@keyframes hv-right {
+    from {
+        transform: translateX(-260px);
+    }
+    to {
+        transform: translateX(1060px);
+    }
+}
+
+@keyframes hv-left {
+    from {
+        transform: translateX(1060px);
+    }
+    to {
+        transform: translateX(-260px);
+    }
+}
+
+@keyframes hv-wheel {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes hv-body {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-1.5px);
+    }
+}
+
+@keyframes hv-beacon {
+    0%,
+    12%,
+    24%,
+    36%,
+    100% {
+        opacity: 1;
+    }
+    6%,
+    30% {
+        opacity: 0.2;
+    }
+}
+
 /* The brand band on the top edge of sign-in cards: brand, accent, brand. */
 @utility brand-bar {
     height: 4px;
