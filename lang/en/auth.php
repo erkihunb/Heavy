@@ -19,5 +19,7 @@ return [
     'deactivated' => 'This account has been deactivated. Contact the system administrator.',
     'no_sign_in' => 'This account is not for signing in. Requests are recorded and handled at the office.',
     'two_factor_required' => 'You must enable two-factor authentication before you can continue.',
+    'password_change_required' => 'You must choose your own password before you can continue.',
+    'default_password_refused' => 'Choose a password other than the default password.',
 
 ];

@@ -35,6 +35,7 @@ return [
         ],
         'messages' => [
             'created' => 'መለያው ተፈጥሯል። ሰውየው የይለፍ ቃል የሚመርጥበት ሊንክ ተልኮለታል።',
+            'created_default_password' => 'መለያው ተፈጥሯል። ሰውየው በነባሪው የይለፍ ቃል ይገባል፣ ከዚያም የራሱን መምረጥ አለበት።',
             'role_changed' => 'የሥራ ድርሻው ተቀምጧል።',
             'branch_changed' => 'ቅርንጫፉ ተቀምጧል።',
         ],
@@ -235,6 +236,7 @@ return [
             'permits__security__password_min_length' => 'አጭሩ የይለፍ ቃል (በሥራ ላይ)',
             'permits__security__login_per_minute' => 'በደቂቃ የሚፈቀዱ የመግቢያ ሙከራዎች',
             'session__lifetime' => 'ያለ እንቅስቃሴ የሚወጣበት (ደቂቃ)',
+            'permits__security__default_password' => 'ለአዲስ መለያዎች ነባሪ የይለፍ ቃል',
             'permits__verification_per_minute' => 'በደቂቃና በIP የሚፈቀዱ የማረጋገጫ ፍለጋዎች',
             'permits__public_shows_organization' => 'በሕዝብ ማረጋገጫ ላይ የተቋሙ ስም ይታይ',
             'app__locale' => 'መነሻ ቋንቋ',
@@ -285,6 +287,7 @@ return [
             'services__telegram__bot_token' => 'ከ@BotFather። መጀመሪያ ቦቱን ወደ ሠራተኞች ቡድን ያክሉ።',
             'services__telegram__chat_id' => 'የቡድኑ የቁጥር መለያ (ለምሳሌ -1001234567890) ወይም @channelname።',
             'permits__security__password_min_length' => 'በሥራ ላይ ትልቅና ትንሽ ፊደል፣ ቁጥር፣ ምልክት እና በታወቁ ጥሰቶች ያልተገኘ የይለፍ ቃልም ያስፈልጋል።',
+            'permits__security__default_password' => 'አዲስ የሠራተኛ መለያዎች በዚህ የይለፍ ቃል ይጀምራሉ፤ መጀመሪያ ሲገቡም መቀየር አለባቸው። ቢያንስ 8 ቁምፊ። ባዶ ከሆነ ለአዲሱ ሰው የይለፍ ቃል የሚመርጥበት ሊንክ በኢሜይል ይላካል።',
             'localization__display_timezone' => 'መቀየሩ የጊዜ ማኅተሞች የሚወድቁበትን የቀን መቁጠሪያ ቀን ይቀይራል። ካልታዘዙ በስተቀር Africa/Addis_Ababa ይተዉ።',
         ],
         'ui_styles' => [

@@ -97,7 +97,9 @@ class UserController extends Controller
             branch: $request->branch(),
         );
 
-        return to_route('admin.users.edit', $user)->with('success', __('admin.users.messages.created'));
+        return to_route('admin.users.edit', $user)->with('success', $user->must_change_password
+            ? __('admin.users.messages.created_default_password')
+            : __('admin.users.messages.created'));
     }
 
     public function edit(Request $request, User $user): Response

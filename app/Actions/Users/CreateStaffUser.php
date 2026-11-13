@@ -24,9 +24,10 @@ class CreateStaffUser
 
     /**
      * An Admin opens an account for a member of staff, with one or more
-     * roles (default or created on the Roles screen). Nobody ever chooses or
-     * sees the password: the new user gets an e-mail with a link to set
-     * their own, and must then turn on two-factor authentication. Their
+     * roles (default or created on the Roles screen). The new user starts on
+     * the default password and must change it at first sign-in; when none is
+     * set they get an e-mail with a link to choose one instead. Either way
+     * they must then turn on two-factor authentication. Their
      * branch scope starts from where they work (GiveDefaultBranchScope).
      *
      * @param  Role|list<string>  $roles  a default role, or role names
@@ -42,12 +43,17 @@ class CreateStaffUser
             throw new InvalidArgumentException('Staff accounts get staff roles.');
         }
 
-        $user = DB::transaction(function () use ($name, $email, $roles, $admin, $branch): User {
+        // With a default password in System settings › Security the person starts
+        // on it and must choose their own at first sign-in; no link is sent.
+        $default = $notify ? self::defaultPassword() : null;
+
+        $user = DB::transaction(function () use ($name, $email, $roles, $admin, $branch, $default): User {
             $user = new User([
                 'name' => trim($name),
                 'email' => Str::lower(trim($email)),
-                'password' => Str::random(64),
+                'password' => $default ?? Str::random(64),
             ]);
+            $user->must_change_password = $default !== null;
             // The Admin vouches for the address; setting the password proves it.
             $user->email_verified_at = now();
             $user->branch_id = $branch?->id;
@@ -63,10 +69,20 @@ class CreateStaffUser
 
         $this->registrar->forgetCachedPermissions();
 
-        if ($notify) {
+        if ($notify && $default === null) {
             $user->notify(new StaffAccountCreated(Password::broker()->createToken($user)));
         }
 
         return $user;
+    }
+
+    /**
+     * The password new staff accounts start with, when one is set.
+     */
+    public static function defaultPassword(): ?string
+    {
+        $default = config('permits.security.default_password');
+
+        return is_string($default) && $default !== '' ? $default : null;
     }
 }

@@ -302,6 +302,9 @@ return [
     'security' => [
         'password_min_length' => (int) env('PERMITS_PASSWORD_MIN_LENGTH', 12),
         'login_per_minute' => (int) env('PERMITS_LOGIN_PER_MINUTE', 5),
+        // The password new staff accounts start with; they must change it at first sign-in.
+        // Empty: the new person is e-mailed a link to choose a password instead.
+        'default_password' => env('PERMITS_DEFAULT_PASSWORD'),
     ],
 
 ];

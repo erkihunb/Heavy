@@ -23,6 +23,7 @@ use Spatie\Permission\Traits\HasRoles;
 /**
  * @property int|null $registered_by
  * @property int|null $branch_id
+ * @property bool $must_change_password
  * @property Carbon|null $deactivated_at
  * @property int|null $deactivated_by
  */
@@ -65,9 +66,23 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
             'deactivated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Whoever chooses a new password (in their settings or through a reset
+     * link) is no longer on the default password their account started with.
+     */
+    protected static function booted(): void
+    {
+        static::updating(function (User $user): void {
+            if ($user->isDirty('password') && ! $user->isDirty('must_change_password')) {
+                $user->must_change_password = false;
+            }
+        });
     }
 
     /**

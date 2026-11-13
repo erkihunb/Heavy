@@ -35,6 +35,7 @@ return [
         ],
         'messages' => [
             'created' => 'Account created. The person has been sent a link to choose a password.',
+            'created_default_password' => 'Account created. The person signs in with the default password and must then choose their own.',
             'role_changed' => 'Role saved.',
             'branch_changed' => 'Branch saved.',
         ],
@@ -235,6 +236,7 @@ return [
             'permits__security__password_min_length' => 'Shortest password (production)',
             'permits__security__login_per_minute' => 'Login attempts per minute',
             'session__lifetime' => 'Sign out after inactivity (minutes)',
+            'permits__security__default_password' => 'Default password for new accounts',
             'permits__verification_per_minute' => 'Verification look-ups per minute and IP',
             'permits__public_shows_organization' => 'Show the organisation name on public verification',
             'app__locale' => 'Default language',
@@ -285,6 +287,7 @@ return [
             'services__telegram__bot_token' => 'From @BotFather. Add the bot to the staff group first.',
             'services__telegram__chat_id' => 'The group\'s numeric ID (for example -1001234567890) or @channelname.',
             'permits__security__password_min_length' => 'Production also requires upper and lower case, digits, symbols and a password not found in known breaches.',
+            'permits__security__default_password' => 'New staff accounts start with this password and must change it at first sign-in. At least 8 characters. When empty, the new person is e-mailed a link to choose a password instead.',
             'localization__display_timezone' => 'Changing it changes which calendar day a timestamp falls on. Keep Africa/Addis_Ababa unless told otherwise.',
         ],
         'ui_styles' => [

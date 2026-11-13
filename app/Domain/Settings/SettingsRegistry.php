@@ -123,6 +123,7 @@ final class SettingsRegistry
             'permits.security.password_min_length' => ['section' => 'security', 'group' => 'accounts', 'type' => 'int', 'min' => 8, 'max' => 64],
             'permits.security.login_per_minute' => ['section' => 'security', 'group' => 'accounts', 'type' => 'int', 'min' => 3, 'max' => 20],
             'session.lifetime' => ['section' => 'security', 'group' => 'accounts', 'type' => 'int', 'min' => 15, 'max' => 1440],
+            'permits.security.default_password' => ['section' => 'security', 'group' => 'accounts', 'type' => 'secret', 'min' => 8],
             'permits.verification_per_minute' => ['section' => 'security', 'group' => 'verification', 'type' => 'int', 'min' => 5, 'max' => 300],
             'permits.public_shows_organization' => ['section' => 'security', 'group' => 'verification', 'type' => 'bool'],
 
@@ -168,7 +169,7 @@ final class SettingsRegistry
             'url' => [$presence, 'string', 'url:https,http', 'max:255'],
             'time' => ['required', 'date_format:H:i'],
             'timezone' => ['required', 'timezone:all'],
-            'secret' => ['nullable', 'string', 'max:500'],
+            'secret' => ['nullable', 'string', 'min:'.($setting['min'] ?? 1), 'max:500'],
             'color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             // SVG is refused: a drawing can carry script. Raster files are re-encoded on upload.
             'image' => ($setting['kind'] ?? 'logo') === 'favicon'
