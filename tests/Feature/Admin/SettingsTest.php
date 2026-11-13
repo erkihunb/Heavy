@@ -74,7 +74,7 @@ it('shows every section with its fields and never a secret', function (string $s
 })->with(SettingsRegistry::SECTIONS);
 
 it('does not know other sections', function () {
-    $this->actingAs($this->admin)->get('/admin/settings/database')->assertNotFound();
+    $this->actingAs($this->admin)->get('/system-settings/database')->assertNotFound();
 });
 
 it('saves a change, applies it at once and records before and after', function () {

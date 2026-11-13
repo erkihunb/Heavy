@@ -25,7 +25,6 @@ use Illuminate\Support\Facades\Route;
  * confirmed two-factor authentication (web middleware).
  */
 Route::middleware(['auth', 'verified', 'can:viewAny,'.FeeSchedule::class])
-    ->prefix('admin')
     ->name('admin.')
     ->group(function () {
         Route::resource('fee-schedules', FeeScheduleController::class)
@@ -34,7 +33,6 @@ Route::middleware(['auth', 'verified', 'can:viewAny,'.FeeSchedule::class])
 
 // Users: accounts, roles, branch scopes, deactivation (EUISIS RBAC; each action checked by UserPolicy).
 Route::middleware(['auth', 'verified', 'can:viewAny,'.User::class])
-    ->prefix('admin')
     ->name('admin.')
     ->whereNumber('user')
     ->group(function () {
@@ -56,14 +54,12 @@ Route::middleware(['auth', 'verified', 'can:viewAny,'.User::class])
 
 // Roles, editable (RolePolicy), and the read-only permission catalogue.
 Route::middleware(['auth', 'verified', 'can:viewAny,'.Role::class])
-    ->prefix('admin')
     ->name('admin.')
     ->group(function () {
         Route::resource('roles', RoleController::class)->except(['show'])->whereNumber('role');
     });
 
 Route::middleware(['auth', 'verified', 'can:permissions.view'])
-    ->prefix('admin')
     ->name('admin.')
     ->group(function () {
         Route::get('permissions', [PermissionController::class, 'index'])->name('permissions.index');
@@ -75,33 +71,32 @@ Route::middleware(['auth', 'verified', 'can:permissions.view'])
 // A new permit taken at the office: the one-page form registers the applicant, their
 // vehicles and the application together (Registrar, Admin). Reached from Permits.
 Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
-    ->prefix('admin')
     ->name('admin.')
     ->controller(ApplicantController::class)
     ->group(function () {
-        Route::get('permits/create', 'create')->name('permits.create');
+        Route::get('permit-register/create', 'create')->name('permits.create');
         // The fee of the request on the form, by vehicle type, before anything is saved.
-        Route::get('permits/intake-fee', 'feeEstimate')
+        Route::get('permit-register/intake-fee', 'feeEstimate')
             ->middleware('throttle:60,1')
             ->name('permits.intake-fee');
         // An organization already on record, for a new request of theirs.
-        Route::get('permits/organizations', 'organizations')
+        Route::get('permit-register/organizations', 'organizations')
             ->middleware('throttle:60,1')
             ->name('permits.organizations');
-        Route::post('permits', 'store')
+        Route::post('permit-register', 'store')
             ->middleware('throttle:30,1')
             ->name('permits.store');
     });
 
 // The register of all permits (review roles, Admins, Registrars; checked in the controller).
 Route::middleware(['auth', 'verified'])
-    ->get('admin/permits', PermitRegisterController::class)
+    ->get('permit-register', PermitRegisterController::class)
     ->name('admin.permits.index');
 
 // A request taken at the office, as the Registrar works on it (Registrar, Admin):
 // open it, correct and send it again, a vehicle it needs, the receipt. Reached from Permits.
 Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
-    ->prefix('admin/permits/{permit}')
+    ->prefix('permit-register/{permit}')
     ->name('admin.permits.')
     ->controller(WalkInController::class)
     ->whereUlid('permit')
@@ -123,7 +118,6 @@ Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
 
 // Vehicle types (spec §11).
 Route::middleware(['auth', 'verified', 'can:viewAny,'.VehicleType::class])
-    ->prefix('admin')
     ->name('admin.')
     ->group(function () {
         Route::resource('vehicle-types', VehicleTypeController::class)
@@ -132,7 +126,6 @@ Route::middleware(['auth', 'verified', 'can:viewAny,'.VehicleType::class])
 
 // Branch offices.
 Route::middleware(['auth', 'verified', 'can:viewAny,'.Branch::class])
-    ->prefix('admin')
     ->name('admin.')
     ->group(function () {
         Route::resource('branches', BranchController::class)
@@ -141,16 +134,15 @@ Route::middleware(['auth', 'verified', 'can:viewAny,'.Branch::class])
 
 // System settings and the audit log (spec §11, §15).
 Route::middleware(['auth', 'verified'])
-    ->prefix('admin')
     ->name('admin.')
     ->group(function () {
         Route::middleware('can:manageSettings')->group(function () {
             $sections = implode('|', SettingsRegistry::SECTIONS);
 
-            Route::get('settings', [SettingsController::class, 'overview'])->name('settings.overview');
-            Route::get('settings/{section}', [SettingsController::class, 'show'])->where('section', $sections)->name('settings.show');
-            Route::put('settings/{section}', [SettingsController::class, 'update'])->where('section', $sections)->name('settings.update');
-            Route::post('settings/{section}/test', [SettingsController::class, 'test'])
+            Route::get('system-settings', [SettingsController::class, 'overview'])->name('settings.overview');
+            Route::get('system-settings/{section}', [SettingsController::class, 'show'])->where('section', $sections)->name('settings.show');
+            Route::put('system-settings/{section}', [SettingsController::class, 'update'])->where('section', $sections)->name('settings.update');
+            Route::post('system-settings/{section}/test', [SettingsController::class, 'test'])
                 ->where('section', 'email|sms|telegram')
                 ->middleware('throttle:5,1')
                 ->name('settings.test');

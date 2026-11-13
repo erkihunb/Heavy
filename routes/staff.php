@@ -15,24 +15,23 @@ use Illuminate\Support\Facades\Route;
  * staff must also have confirmed two-factor authentication (web middleware).
  */
 Route::middleware(['auth', 'verified', 'can:viewQueue,'.Permit::class])
-    ->prefix('staff')
     ->name('staff.')
     ->controller(PermitReviewController::class)
     ->group(function () {
-        Route::get('permits', 'index')->name('permits.index');
-        Route::get('permits/{permit}', 'show')->name('permits.show');
+        Route::get('queue', 'index')->name('permits.index');
+        Route::get('queue/{permit}', 'show')->name('permits.show');
         // One page per role (PermitReviewController::desks()).
-        Route::get('permits/{permit}/decision', 'decision')->name('permits.decision');
-        Route::get('permits/{permit}/payment', 'payment')->name('permits.payment-desk');
-        Route::get('permits/{permit}/issue', 'issuing')->name('permits.issue-desk');
+        Route::get('queue/{permit}/decision', 'decision')->name('permits.decision');
+        Route::get('queue/{permit}/payment', 'payment')->name('permits.payment-desk');
+        Route::get('queue/{permit}/issue', 'issuing')->name('permits.issue-desk');
 
-        Route::post('permits/{permit}/start-review', 'startReview')->name('permits.start-review');
-        Route::post('permits/{permit}/recommend', 'recommend')->name('permits.recommend');
-        Route::post('permits/{permit}/request-changes', 'requestChanges')->name('permits.request-changes');
-        Route::post('permits/{permit}/approve', 'approve')->name('permits.approve');
-        Route::post('permits/{permit}/reject', 'reject')->name('permits.reject');
-        Route::post('permits/{permit}/revoke', 'revoke')->name('permits.revoke');
-        Route::post('permits/{permit}/reissue', 'reissue')->name('permits.reissue');
+        Route::post('queue/{permit}/start-review', 'startReview')->name('permits.start-review');
+        Route::post('queue/{permit}/recommend', 'recommend')->name('permits.recommend');
+        Route::post('queue/{permit}/request-changes', 'requestChanges')->name('permits.request-changes');
+        Route::post('queue/{permit}/approve', 'approve')->name('permits.approve');
+        Route::post('queue/{permit}/reject', 'reject')->name('permits.reject');
+        Route::post('queue/{permit}/revoke', 'revoke')->name('permits.revoke');
+        Route::post('queue/{permit}/reissue', 'reissue')->name('permits.reissue');
     });
 
 /*
@@ -40,20 +39,19 @@ Route::middleware(['auth', 'verified', 'can:viewQueue,'.Permit::class])
  * the head office's comments, and the scanned request letter.
  */
 Route::middleware(['auth', 'verified', 'can:viewQueue,'.Permit::class])
-    ->prefix('staff')
     ->name('staff.')
     ->controller(PermitDeskController::class)
     ->group(function () {
-        Route::post('permits/{permit}/payment', 'recordPayment')
+        Route::post('queue/{permit}/payment', 'recordPayment')
             ->middleware('throttle:30,1')
             ->name('permits.record-payment');
-        Route::post('permits/{permit}/issue', 'issue')->name('permits.issue');
-        Route::post('permits/{permit}/comments', 'comment')->name('permits.comments.store');
+        Route::post('queue/{permit}/issue', 'issue')->name('permits.issue');
+        Route::post('queue/{permit}/comments', 'comment')->name('permits.comments.store');
     });
 
 // The scanned letter: also for the Registrar who took the request (PermitPolicy::viewLetter).
 Route::middleware(['auth', 'verified'])
-    ->get('staff/permits/{permit}/letter', [PermitDeskController::class, 'letter'])
+    ->get('queue/{permit}/letter', [PermitDeskController::class, 'letter'])
     ->name('staff.permits.letter');
 
 /*
@@ -61,11 +59,11 @@ Route::middleware(['auth', 'verified'])
  * /v/{token} page, which shows officers the officer view.
  */
 Route::middleware(['auth', 'verified', 'can:scan,'.Permit::class])
-    ->prefix('officer')
+    ->prefix('roadside')
     ->name('officer.')
     ->controller(OfficerVerificationController::class)
     ->group(function () {
-        Route::get('verify', 'lookup')->name('verify');
+        Route::get('/', 'lookup')->name('verify');
         Route::post('permits/{permit}/reports', 'report')
             ->middleware('throttle:20,1')
             ->name('permits.reports.store');
@@ -75,23 +73,21 @@ Route::middleware(['auth', 'verified', 'can:scan,'.Permit::class])
  * The cashier's payment verification (spec §2: Cashier / Finance).
  */
 Route::middleware(['auth', 'verified', 'can:viewQueue,'.Payment::class])
-    ->prefix('staff')
     ->name('staff.')
     ->controller(PaymentController::class)
     ->group(function () {
-        Route::get('payments', 'index')->name('payments.index');
-        Route::get('payments/{payment}', 'show')->name('payments.show');
-        Route::get('payments/{payment}/receipt', 'receipt')->name('payments.receipt');
+        Route::get('payment-queue', 'index')->name('payments.index');
+        Route::get('payment-queue/{payment}', 'show')->name('payments.show');
+        Route::get('payment-queue/{payment}/receipt', 'receipt')->name('payments.receipt');
 
-        Route::post('payments/{payment}/verify', 'verify')->name('payments.verify');
-        Route::post('payments/{payment}/reject', 'reject')->name('payments.reject');
+        Route::post('payment-queue/{payment}/verify', 'verify')->name('payments.verify');
+        Route::post('payment-queue/{payment}/reject', 'reject')->name('payments.reject');
     });
 
 /*
  * Reporting and exports (spec §11): Approvers, Cashiers and Admins.
  */
 Route::middleware(['auth', 'verified', 'can:viewReports'])
-    ->prefix('staff')
     ->name('staff.')
     ->group(function () {
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');

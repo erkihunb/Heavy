@@ -164,17 +164,17 @@ key means entering them again. The overview page shows the state of every servic
 
 Ported from EUISIS. Under **Admin → Users and audit**:
 
-- **Users** (`admin/users`): open staff accounts (the person gets an e-mail link to choose
+- **Users** (`/users`): open staff accounts (the person gets an e-mail link to choose
   a password, then must turn on two-factor authentication), give them **one or more
   roles**, set the branch they work at, and **deactivate** or **restore** an account.
   Deactivating keeps the account and its history; the person is signed out and cannot sign
   in. Nobody changes their own roles or deactivates themselves, and the last active
   administrator is always kept. Applicants are registered at the office (Applicants) and are listed only.
-- **Roles** (`admin/roles`): the default roles (`App\Enums\Role`, marked *system*: their
+- **Roles** (`/roles`): the default roles (`App\Enums\Role`, marked *system*: their
   code name cannot change and they cannot be deleted) and any role an Admin creates, with
   an Amharic name and a picker of permissions grouped by module. The `admin` role always
   holds every staff permission. A role nobody holds can be deleted.
-- **Permissions** (`admin/permissions`): the read-only catalogue
+- **Permissions** (`/permissions`): the read-only catalogue
   (`App\Support\Rbac\PermissionCatalog`, equal to `App\Enums\Permission` — a test keeps
   them equal) and which roles hold each.
 
@@ -245,7 +245,7 @@ by `resources/js/shell/Components/NavIcons.tsx` (add a Solar icon there with `ad
 and `permission` / `anyPermission` hide it from people without that permission
 (`app/Enums/Permission.php`; the server still authorizes every route). A group whose
 person sees only one page shows as a plain link. A page is highlighted when the address
-is its `href` or below it (`/staff/permits/12` → Review queue); `owns: ['/other/path']`
+is its `href` or below it (`/queue/12` → Review queue); `owns: ['/other/path']`
 claims other paths.
 
 **Putting a page in the layout:**

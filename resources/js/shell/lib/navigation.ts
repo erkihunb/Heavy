@@ -11,17 +11,17 @@ import type {
  * Heavy has no route names in the browser (Wayfinder gives addresses), so the
  * same "nearest module" rule is applied to paths: an exact match wins,
  * then an item that `owns` the path, then the item whose address is the
- * longest prefix of it (/staff/permits/12 → Review queue).
+ * longest prefix of it (/queue/12 → Review queue).
  *
  * Several items may open one page with different query parameters
- * (/staff/permits and /staff/permits?status=awaiting_payment). Among items on
+ * (/queue and /queue?status=awaiting_payment). Among items on
  * the same path, the one whose query the address carries wins, else the
  * plain one, else the first, so exactly one item is ever highlighted.
  */
 
 export type NavLocation = { group: NavGroup; item: NavItem };
 
-/** The path of an address, without query, hash or trailing slash: "/staff/permits". */
+/** The path of an address, without query, hash or trailing slash: "/queue". */
 export function pathOf(url: string): string {
     const path = url.split(/[?#]/)[0] ?? '';
     return path.length > 1 ? path.replace(/\/+$/, '') : path || '/';
