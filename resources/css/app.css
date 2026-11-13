@@ -884,6 +884,27 @@
     transform-origin: center;
 }
 
+/*
+ * The officer's scanning arm. It is drawn raised and turned down here about
+ * the shoulder (.hv-arm) and the elbow (.hv-forearm), so at rest the scanner
+ * hangs at the officer's side.
+ *
+ * The loop is the near lane's 27s. The three cabs reach the officer at 37.8%,
+ * 63.8% and 96.8% of it; for each, the arm starts up 3% before, is up 1%
+ * before, stays up while the code is read and the answer shows (9% after),
+ * and is down again 2% later. The last of the three runs over the end of the
+ * loop, which is why the loop begins with the arm up.
+ */
+.hv-arm {
+    transform-origin: -8px -44px;
+    transform: rotate(-34deg);
+}
+
+.hv-forearm {
+    transform-origin: -15px -39px;
+    transform: rotate(-132deg);
+}
+
 @media (prefers-reduced-motion: no-preference) {
     :root:not([data-animations='off']) .hv-right {
         animation: hv-right var(--hv-dur, 27s) linear var(--hv-delay, 0s)
@@ -939,6 +960,14 @@
     :root:not([data-animations='off']) .hv-qr-line {
         animation: hv-qr-line var(--hv-dur, 27s) ease-in-out var(--hv-delay, 0s)
             infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-arm {
+        animation: hv-arm 27s ease-in-out infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-forearm {
+        animation: hv-forearm 27s ease-in-out infinite;
     }
 
     :root:not([data-animations='off']) .hv-scan {
@@ -1005,6 +1034,68 @@
     }
     100% {
         opacity: 0;
+    }
+}
+
+@keyframes hv-arm {
+    0%,
+    5.8% {
+        transform: rotate(0deg);
+    }
+    7.8%,
+    34.8% {
+        transform: rotate(-34deg);
+    }
+    36.8%,
+    46.8% {
+        transform: rotate(0deg);
+    }
+    48.8%,
+    60.8% {
+        transform: rotate(-34deg);
+    }
+    62.8%,
+    72.8% {
+        transform: rotate(0deg);
+    }
+    74.8%,
+    93.8% {
+        transform: rotate(-34deg);
+    }
+    95.8%,
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+@keyframes hv-forearm {
+    0%,
+    5.8% {
+        transform: rotate(0deg);
+    }
+    7.8%,
+    34.8% {
+        transform: rotate(-132deg);
+    }
+    36.8%,
+    46.8% {
+        transform: rotate(0deg);
+    }
+    48.8%,
+    60.8% {
+        transform: rotate(-132deg);
+    }
+    62.8%,
+    72.8% {
+        transform: rotate(0deg);
+    }
+    74.8%,
+    93.8% {
+        transform: rotate(-132deg);
+    }
+    95.8%,
+    100% {
+        transform: rotate(0deg);
     }
 }
 

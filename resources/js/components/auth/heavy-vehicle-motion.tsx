@@ -19,8 +19,9 @@ import type { CSSProperties, ReactNode } from 'react';
  *   and sets, the panel dims, windows and headlights come on, the moon and
  *   stars take over, and the heavy vehicles keep moving through all of it.
  * - The permit. Each vehicle in the near lane is one that holds a permit.
- * - The roadside check. A traffic officer stands at the kerb with a scanner;
- *   as each cab passes, the scanner flashes, the permit's QR code shows over
+ * - The roadside check. A traffic officer stands at the kerb, scanner at
+ *   their side; as each vehicle comes up they raise it, and as the cab
+ *   passes the scanner flashes, the permit's QR code shows over
  *   that vehicle with the scan line crossing it, and the code then gives way
  *   to the answer, which travels on with the vehicle: a tick for a permit in
  *   force, or a red cross for one that is refused (expired, revoked, not
@@ -605,30 +606,89 @@ export function HeavyVehicleMotion() {
                         </Vehicle>
                     ))}
 
-                    {/* The traffic officer at the kerb, scanner raised. One
-                        flash of the scanner per vehicle, as its cab passes. */}
-                    <g transform={`translate(${OFFICER_X} 258)`}>
-                        {NEAR_TRAFFIC.map((truck) => (
-                            <path
-                                key={truck.kind}
-                                className="hv-scan"
-                                style={
-                                    {
-                                        '--hv-dur': `${NEAR.seconds}s`,
-                                        '--hv-delay': `${(checkDelay(NEAR, truck.offset, truck.cab) - 0.5).toFixed(1)}s`,
-                                    } as CSSProperties
-                                }
-                                d="M-19 -50L-25 -74M-15 -51L-13 -76M-11 -50L-1 -72"
-                                strokeWidth="1.5"
-                            />
-                        ))}
-                        <path d="M-4 -17V0M4 -17V0" />
-                        <path d="M-7 -38H7L8 -17H-8Z" />
-                        <path d="M-7 -28H7" strokeWidth="1.5" opacity="0.7" />
-                        <path d="M-6 -35L-14 -42" />
-                        <rect x="-20" y="-50" width="10" height="7" rx="1.5" />
-                        <circle cx="0" cy="-45" r="5.5" />
-                        <path d="M-7 -48H8M-5 -48Q0 -56 5 -48" />
+                    {/* The traffic officer at the kerb. The scanner comes up
+                        for each vehicle and flashes once as its cab passes. */}
+                    <g transform={`translate(${OFFICER_X} 258) scale(1.15)`}>
+                        {/* Trousers and boots. */}
+                        <path d="M-7 -26H7L6 -2H1L0 -17L-1 -2H-6Z" />
+                        <path
+                            d="M-8 -2H-1V0H-9ZM1 -2H8L9 0H1Z"
+                            fill="currentColor"
+                            stroke="none"
+                        />
+
+                        {/* The arm at the side, then the jacket over it. */}
+                        <path d="M8 -44L13 -35L11 -25" strokeWidth="3.5" />
+                        <path d="M-9 -46Q0 -50 9 -46L8 -25H-8Z" />
+
+                        {/* The reflective vest: its panel, the two bands
+                            over the shoulders and the belt. */}
+                        <path
+                            d="M-6 -47L0 -37L6 -47L7 -28H-7Z"
+                            fill="currentColor"
+                            fillOpacity="0.28"
+                            stroke="none"
+                        />
+                        <path d="M-6 -47L0 -37L6 -47" strokeWidth="2.5" />
+                        <path d="M-8 -28H8" strokeWidth="2.5" />
+
+                        {/* The scanning arm, jointed at the shoulder and the
+                            elbow. It is drawn raised; the hv-arm rules lower
+                            it, and lift it again for each vehicle. The
+                            scanner and its flashes ride on the forearm. */}
+                        <g className="hv-arm">
+                            <path d="M-8 -44L-15 -39" strokeWidth="3.5" />
+                            <g className="hv-forearm">
+                                {NEAR_TRAFFIC.map((truck) => (
+                                    <path
+                                        key={truck.kind}
+                                        className="hv-scan"
+                                        style={
+                                            {
+                                                '--hv-dur': `${NEAR.seconds}s`,
+                                                '--hv-delay': `${(checkDelay(NEAR, truck.offset, truck.cab) - 0.5).toFixed(1)}s`,
+                                            } as CSSProperties
+                                        }
+                                        d="M-21 -64L-28 -86M-17 -65L-16 -90M-13 -64L-4 -86"
+                                        strokeWidth="1.5"
+                                    />
+                                ))}
+                                <path d="M-15 -39L-17 -52" strokeWidth="3.5" />
+                                <rect
+                                    x="-23"
+                                    y="-63"
+                                    width="12"
+                                    height="10"
+                                    rx="2"
+                                    fill="currentColor"
+                                    stroke="none"
+                                />
+                                <rect
+                                    x="-21"
+                                    y="-61"
+                                    width="8"
+                                    height="5"
+                                    rx="1"
+                                    fill="var(--brand-surface)"
+                                    stroke="none"
+                                />
+                            </g>
+                        </g>
+
+                        {/* The head, and the white peaked cap with its badge. */}
+                        <circle cx="0" cy="-55" r="5.5" />
+                        <path
+                            d="M-7.5 -58Q-7 -67 0 -67Q7 -67 7.5 -58Z"
+                            fill="currentColor"
+                        />
+                        <path d="M-9 -57.5H5" strokeWidth="2.5" />
+                        <circle
+                            cx="0"
+                            cy="-62.5"
+                            r="1.6"
+                            fill="var(--brand-surface)"
+                            stroke="none"
+                        />
                     </g>
                 </g>
             </svg>
