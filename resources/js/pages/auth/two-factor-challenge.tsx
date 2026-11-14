@@ -1,6 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,21 @@ export default function TwoFactorChallenge() {
     const { t } = useTranslation();
     const [showRecoveryInput, setShowRecoveryInput] = useState(false);
     const [code, setCode] = useState('');
+    // The code boxes are controlled, so the form's own reset does not empty them:
+    // a rejected code is cleared here and the cursor goes back to the first box.
+    const codeInput = useRef<HTMLInputElement>(null);
+    const [rejected, setRejected] = useState(0);
+
+    useEffect(() => {
+        if (rejected > 0) {
+            codeInput.current?.focus();
+        }
+    }, [rejected]);
+
+    const clearRejectedCode = (): void => {
+        setCode('');
+        setRejected((count) => count + 1);
+    };
 
     // The two ways in: a code from the authenticator app, or a saved recovery code.
     const content = showRecoveryInput
@@ -48,6 +63,7 @@ export default function TwoFactorChallenge() {
                 className="grid gap-5"
                 resetOnError
                 resetOnSuccess={!showRecoveryInput}
+                onError={clearRejectedCode}
             >
                 {({ errors, processing, clearErrors }) => (
                     <>
@@ -82,6 +98,7 @@ export default function TwoFactorChallenge() {
                         ) : (
                             <div className="flex flex-col items-center gap-3 text-center">
                                 <InputOTP
+                                    ref={codeInput}
                                     name="code"
                                     maxLength={OTP_MAX_LENGTH}
                                     value={code}

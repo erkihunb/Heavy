@@ -1,0 +1,5 @@
+{
+    "The provided two factor authentication code was invalid.": "ያስገቡት የማረጋገጫ ኮድ ትክክል አይደለም። ከመተግበሪያዎ አዲሱን ኮድ ያስገቡ።",
+    "The provided two factor recovery code was invalid.": "ያስገቡት የመልሶ ማግኛ ኮድ ትክክል አይደለም።",
+    "The provided password was incorrect.": "ያስገቡት የይለፍ ቃል ትክክል አይደለም።"
+}
