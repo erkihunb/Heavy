@@ -1129,8 +1129,10 @@ The panel's free space carries heavy vehicles crossing Addis Ababa, asked
 for by the owner and drawn from nothing
 (`components/auth/heavy-vehicle-motion.tsx`). Along the foot of the panel:
 the Entoto ridge, the skyline with a dome and one building still under
-construction (bare frame and scaffolding, a tower crane hoisting a beam), the light-rail
-viaduct with a train, and a two-lane road used by five different vehicles —
+construction (bare frame and scaffolding, a tower crane hoisting a beam),
+street lights along the far kerb in the Addis Ababa double-arm style, which
+come on one after another at dusk,
+the light-rail viaduct with a train, and a two-lane road used by five different vehicles —
 a low-bed with a chained load, a tipper and a fuel tanker in the near lane,
 a concrete mixer and a container truck coming the other way. Across the top:
 a few drifting clouds, an aeroplane crossing with its trail (below the
@@ -1168,6 +1170,13 @@ The scene has a little depth: as the pointer crosses the panel, the ridge,
 skyline, viaduct and road slide by different amounts. That is the one piece
 of JavaScript in it (a pointer listener writing one CSS variable), and it is
 not attached when the device asks for less motion.
+
+**Colours.** Line work is the panel's white. The buildings and the night
+are the brand colour mixed toward black, so the scene suits whatever colour
+the Admin sets (deep navy by default; a green brand gets a dark green
+night). Every source of light — sun, street lamps, lit windows — is one warm
+gold; warnings (hazard lights, a refused scan, the aeroplane's and crane's
+lights) stay amber and red.
 
 The first version of this was a single small truck in the panel's top
 corner; the owner asked for the fuller scene once the panel's text was gone.

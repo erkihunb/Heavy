@@ -1003,7 +1003,8 @@
 }
 
 .hv-windows {
-    opacity: 0.3;
+    opacity: 0.45;
+    stroke: #cbd5e1;
 }
 
 .hv-verified {
@@ -1067,6 +1068,15 @@
 }
 
 .hv-shoot {
+    opacity: 0;
+}
+
+/*
+ * The street lights' lamps and the light they throw (.hv-lamp). Off by day
+ * and at rest. On the scene's 56s day each pole waits its own --hv-delay
+ * after dusk, flickers twice as the lamp strikes, then burns until dawn.
+ */
+.hv-lamp {
     opacity: 0;
 }
 
@@ -1189,6 +1199,10 @@
 
     :root:not([data-animations='off']) .hv-night {
         animation: hv-night 56s linear infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-lamp {
+        animation: hv-lamp 56s linear var(--hv-delay, 0s) infinite;
     }
 
     :root:not([data-animations='off']) .hv-verified {
@@ -1433,14 +1447,44 @@
 @keyframes hv-windows {
     0%,
     45% {
-        opacity: 0.3;
+        opacity: 0.45;
+        stroke: #cbd5e1;
     }
     56%,
     94% {
-        opacity: 0.95;
+        opacity: 1;
+        stroke: #fcd34d;
     }
     100% {
-        opacity: 0.3;
+        opacity: 0.45;
+        stroke: #cbd5e1;
+    }
+}
+
+@keyframes hv-lamp {
+    0%,
+    46% {
+        opacity: 0;
+    }
+    46.4% {
+        opacity: 0.9;
+    }
+    46.8% {
+        opacity: 0.1;
+    }
+    47.3% {
+        opacity: 1;
+    }
+    47.7% {
+        opacity: 0.35;
+    }
+    48.4%,
+    93% {
+        opacity: 1;
+    }
+    95%,
+    100% {
+        opacity: 0;
     }
 }
 

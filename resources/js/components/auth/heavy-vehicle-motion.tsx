@@ -6,11 +6,14 @@ import type { CSSProperties, ReactNode } from 'react';
  * Ababa. It fills the brand panel's free space and leaves the centre, where
  * the Authority's mark and names are, alone.
  *
+ * - Along the far kerb: street lights like those on Addis Ababa's main
+ *   roads, a tall pole with two curved arms, that come on one after another
+ *   at dusk and throw light down onto the road.
  * - Along the bottom: the Entoto ridge, the city's skyline with a dome and
  *   a building still going up — bare frame and scaffolding above its
- *   finished floors, a tower crane lowering a beam to it — the light-rail viaduct with a train on it, and a
- *   two-lane road. Five different heavy vehicles use the road — a low-bed
- *   with a chained load, a tipper and a fuel tanker in the near lane, a
+ *   finished floors, a tower crane lowering a beam to it — the light-rail
+ *   viaduct with a train on it, and a two-lane road. Five different heavy
+ *   vehicles use the road — a low-bed with a chained load, a tipper and a fuel tanker in the near lane, a
  *   concrete mixer and a container truck coming the other way in the far
  *   lane.
  * - Along the top: a few clouds drifting across the sky, an aeroplane
@@ -26,7 +29,8 @@ import type { CSSProperties, ReactNode } from 'react';
  *
  * - The restricted hours. The scene has a day and a night: the sun crosses
  *   and sets, the panel deepens to a dark green, windows and headlights come
- *   on, the moon rises over a sky of stars — many faint, a few bright, each
+ *   on, the trucks' headlights throw gold beams down the road and their
+ *   tail lights glow red, the moon rises over a sky of stars — many faint, a few bright, each
  *   twinkling at its own pace, and now and then one falling — and the heavy vehicles keep moving through all of it.
  * - The permit. Each vehicle in the near lane is one that holds a permit.
  * - The roadside check. A traffic officer stands at the kerb, scanner at
@@ -142,13 +146,27 @@ function Cab({ x }: { x: number }) {
         <g transform={`translate(${x} 0)`}>
             <path d="M0 -24V-72A4 4 0 0 1 4 -76H34L48 -54V-24Z" />
             <path d="M12 -68H31L40 -54H12Z" strokeWidth="1.5" />
-            <path
-                className="hv-night"
-                d="M48 -40L96 -30V-20L48 -32Z"
-                fill="currentColor"
-                fillOpacity="0.3"
-                stroke="none"
+            <rect
+                x="44"
+                y="-38"
+                width="5"
+                height="5"
+                rx="1.5"
+                fill="var(--brand-surface)"
+                strokeWidth="1.2"
             />
+            <g className="hv-night" stroke="none">
+                <path d="M48 -37L126 -20V24L48 -33Z" fill="url(#hv-beam)" />
+                <circle cx="47" cy="-35.5" r="6" fill={LIGHT} opacity="0.35" />
+                <rect
+                    x="44.5"
+                    y="-37.5"
+                    width="4"
+                    height="4"
+                    rx="1.2"
+                    fill={LIGHT}
+                />
+            </g>
             <rect
                 className="hv-beacon"
                 x="13"
@@ -163,12 +181,30 @@ function Cab({ x }: { x: number }) {
     );
 }
 
+/** A red tail light at the back of a vehicle, lit only after dark. */
+function TailLight({ x, y }: { x: number; y: number }) {
+    return (
+        <g className="hv-night" stroke="none">
+            <circle cx={x} cy={y} r="5" fill={REFUSED} opacity="0.35" />
+            <rect
+                x={x - 1.5}
+                y={y - 2.5}
+                width="3"
+                height="5"
+                rx="1"
+                fill={REFUSED}
+            />
+        </g>
+    );
+}
+
 /* Each vehicle is drawn facing right, standing on y = 0. */
 
 function LowBed({ speed }: { speed: number }) {
     return (
         <>
             <g className="hv-body">
+                <TailLight x={-1} y={-30} />
                 <rect x="30" y="-84" width="118" height="52" rx="3" />
                 <path
                     d="M60 -76V-40M90 -76V-40M120 -76V-40M30 -68L14 -32M148 -68L162 -32"
@@ -193,6 +229,7 @@ function Tipper({ speed }: { speed: number }) {
     return (
         <>
             <g className="hv-body">
+                <TailLight x={2} y={-35} />
                 <path d="M14 -72Q62 -96 112 -72" />
                 <path d="M2 -30L8 -72H118V-30Z" />
                 <path
@@ -214,6 +251,7 @@ function Tanker({ speed }: { speed: number }) {
     return (
         <>
             <g className="hv-body">
+                <TailLight x={1} y={-38} />
                 <rect x="0" y="-80" width="198" height="46" rx="23" />
                 <path
                     d="M50 -80V-34M99 -80V-34M148 -80V-34"
@@ -237,6 +275,7 @@ function Mixer({ speed }: { speed: number }) {
     return (
         <>
             <g className="hv-body">
+                <TailLight x={12} y={-38} />
                 <path d="M10 -44L30 -82H92L122 -58L112 -32H20Z" />
                 <path
                     d="M50 -82L38 -32M72 -82L64 -32M94 -80L90 -32"
@@ -258,6 +297,7 @@ function ContainerTruck({ speed }: { speed: number }) {
     return (
         <>
             <g className="hv-body">
+                <TailLight x={1} y={-38} />
                 <rect x="0" y="-86" width="204" height="52" rx="2" />
                 <path
                     d="M17 -80V-40M34 -80V-40M51 -80V-40M68 -80V-40M85 -80V-40M102 -80V-40M119 -80V-40M136 -80V-40M153 -80V-40M170 -80V-40M187 -80V-40"
@@ -503,6 +543,30 @@ const STARS = Array.from({ length: 48 }, (_, index) => {
 
 const GLINT = 'M0 -6Q0.7 -0.7 6 0Q0.7 0.7 0 6Q-0.7 0.7 -6 0Q-0.7 -0.7 0 -6Z';
 
+/* The street lights along the far kerb, in the manner of Addis Ababa's main
+   roads: a tall pole with two curved arms and a flat lamp head at the end of
+   each. Where each stands, and how long after dusk it comes on, so they light
+   up one after another down the road rather than all at once. */
+const LAMPS: [number, number][] = [
+    [70, 0],
+    [250, 0.5],
+    [430, 1.0],
+    [610, 1.5],
+    [790, 2.0],
+];
+
+/*
+ * The scene's colours. The line work is the panel's own white. The city and
+ * the night are drawn from the brand colour itself, mixed toward black, so
+ * they suit whatever colour the Admin sets (navy by default, a dark green
+ * night on a green brand). Everything that gives light — sun, street lamps,
+ * lit windows — is one warm gold; warnings stay amber and red.
+ */
+const CITY = 'color-mix(in srgb, var(--brand-surface) 55%, #000)';
+const NIGHT = 'color-mix(in srgb, var(--brand-surface) 22%, #000)';
+const LIGHT = '#fcd34d';
+const MOON = '#fef3c7';
+
 const svgProps = {
     fill: 'none',
     stroke: 'currentColor',
@@ -559,7 +623,8 @@ export function HeavyVehicleMotion() {
             <div
                 ref={anchor}
                 aria-hidden="true"
-                className="hv-dusk pointer-events-none absolute inset-0 -z-10 hidden bg-[#02170b] lg:block"
+                className="hv-dusk pointer-events-none absolute inset-0 -z-10 hidden lg:block"
+                style={{ backgroundColor: NIGHT }}
             />
 
             {/* The sky. */}
@@ -571,15 +636,25 @@ export function HeavyVehicleMotion() {
                 style={depth(5)}
             >
                 {/* The sun by day; the moon and a few stars by night. */}
-                <g className="hv-sun" opacity="0.8">
-                    <circle cx="400" cy="92" r="15" />
+                <g className="hv-sun" opacity="0.9" stroke={LIGHT}>
+                    <circle
+                        cx="400"
+                        cy="92"
+                        r="15"
+                        fill={LIGHT}
+                        fillOpacity="0.3"
+                    />
                     <path
                         d="M400 66V58M400 126V118M374 92H366M434 92H426M381.6 73.6L376 68M424 116L418.4 110.4M381.6 110.4L376 116M424 68L418.4 73.6"
                         strokeWidth="1.5"
                     />
                 </g>
                 <g className="hv-sun hv-moon" opacity="0.8">
-                    <path d="M404 76A17 17 0 1 0 418 102A13 13 0 1 1 404 76Z" />
+                    <path
+                        d="M404 76A17 17 0 1 0 418 102A13 13 0 1 1 404 76Z"
+                        fill={MOON}
+                        stroke={MOON}
+                    />
                 </g>
                 <g className="hv-night" fill="currentColor" stroke="none">
                     {STARS.map((star) => (
@@ -819,6 +894,7 @@ export function HeavyVehicleMotion() {
                                         y={176 - height}
                                         width={width}
                                         height={height}
+                                        style={{ fill: CITY }}
                                         strokeOpacity="0.55"
                                         strokeWidth="1.5"
                                     />
@@ -882,6 +958,7 @@ export function HeavyVehicleMotion() {
                         </g>
                         <path
                             d="M494 176A40 32 0 0 1 574 176ZM534 144V134"
+                            style={{ fill: CITY }}
                             strokeOpacity="0.55"
                             strokeWidth="1.5"
                         />
@@ -959,6 +1036,136 @@ export function HeavyVehicleMotion() {
                             opacity="0.4"
                         />
                         <path d="M-20 252H820" opacity="0.45" />
+
+                        {/* Street lights on the far kerb. By day, grey lamp
+                            heads; at dusk each one flickers on in turn, glows
+                            warm and throws a cone of light down onto the
+                            road, and goes out again at dawn. */}
+                        <defs>
+                            <linearGradient
+                                id="hv-beam"
+                                x1="0"
+                                y1="0"
+                                x2="1"
+                                y2="0"
+                            >
+                                <stop
+                                    offset="0"
+                                    stopColor={LIGHT}
+                                    stopOpacity="0.6"
+                                />
+                                <stop
+                                    offset="1"
+                                    stopColor={LIGHT}
+                                    stopOpacity="0"
+                                />
+                            </linearGradient>
+                            <linearGradient
+                                id="hv-lamp-cone"
+                                x1="0"
+                                y1="0"
+                                x2="0"
+                                y2="1"
+                            >
+                                <stop
+                                    offset="0"
+                                    stopColor={LIGHT}
+                                    stopOpacity="0.55"
+                                />
+                                <stop
+                                    offset="1"
+                                    stopColor={LIGHT}
+                                    stopOpacity="0"
+                                />
+                            </linearGradient>
+                        </defs>
+                        {LAMPS.map(([x, after]) => (
+                            <g key={x} transform={`translate(${x} 0)`}>
+                                <g
+                                    className="hv-lamp"
+                                    style={
+                                        {
+                                            '--hv-delay': `${after}s`,
+                                        } as CSSProperties
+                                    }
+                                    stroke="none"
+                                >
+                                    <path
+                                        d="M-31 116H-17L-2 214H-46Z"
+                                        fill="url(#hv-lamp-cone)"
+                                    />
+                                    <path
+                                        d="M17 116H31L46 214H2Z"
+                                        fill="url(#hv-lamp-cone)"
+                                    />
+                                    <ellipse
+                                        cx="-24"
+                                        cy="115"
+                                        rx="11"
+                                        ry="5"
+                                        fill={LIGHT}
+                                        opacity="0.45"
+                                    />
+                                    <ellipse
+                                        cx="24"
+                                        cy="115"
+                                        rx="11"
+                                        ry="5"
+                                        fill={LIGHT}
+                                        opacity="0.45"
+                                    />
+                                </g>
+                                <path d="M0 176V112" strokeWidth="2.5" />
+                                <path
+                                    d="M0 122Q-4 110 -22 110M0 122Q4 110 22 110"
+                                    strokeWidth="1.8"
+                                />
+                                <path d="M-3 176V170H3V176" strokeWidth="1.5" />
+                                <rect
+                                    x="-31"
+                                    y="109"
+                                    width="14"
+                                    height="5"
+                                    rx="2"
+                                    fill="var(--brand-surface)"
+                                    strokeWidth="1.5"
+                                />
+                                <rect
+                                    x="17"
+                                    y="109"
+                                    width="14"
+                                    height="5"
+                                    rx="2"
+                                    fill="var(--brand-surface)"
+                                    strokeWidth="1.5"
+                                />
+                                <g
+                                    className="hv-lamp"
+                                    style={
+                                        {
+                                            '--hv-delay': `${after}s`,
+                                        } as CSSProperties
+                                    }
+                                    fill={LIGHT}
+                                    stroke="none"
+                                >
+                                    <rect
+                                        x="-30"
+                                        y="113"
+                                        width="12"
+                                        height="2.5"
+                                        rx="1"
+                                    />
+                                    <rect
+                                        x="18"
+                                        y="113"
+                                        width="12"
+                                        height="2.5"
+                                        rx="1"
+                                    />
+                                </g>
+                            </g>
+                        ))}
 
                         {/* The far lane, heading out of the city. */}
                         <Vehicle lane={FAR} leftward rest={330} offset={0.1}>
