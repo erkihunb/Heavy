@@ -3,14 +3,17 @@ import type { DualDate } from '@/types/calendar';
 
 declare module '@inertiajs/core' {
     export interface InertiaConfig {
+        /**
+         * One-off messages left by the previous request. Flash data, not a
+         * page prop: it is shown once and never kept in the browser's history.
+         */
+        flashDataType: {
+            success?: string;
+            warning?: string;
+        };
         sharedPageProps: {
             name: string;
             auth: Auth;
-            /** One-off messages set by the previous request. */
-            flash: {
-                success: string | null;
-                warning: string | null;
-            };
             /** Current interface language, e.g. "am". */
             locale: string;
             /** Supported languages: code => name written in that language. */

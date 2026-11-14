@@ -75,5 +75,9 @@ it('allows the Vite dev server only locally while it runs', function () {
     }
 
     expect($local)->toContain('http://127.0.0.1:5199')->toContain('ws://127.0.0.1:5199')
-        ->and($production)->not->toContain('5199');
+        // Vite waits for a restarted dev server in a worker made from a blob,
+        // then reloads the page; refused, the page stays on the old scripts.
+        ->toContain("worker-src 'self' blob:")
+        ->and($production)->not->toContain('5199')
+        ->and($production)->not->toContain('worker-src');
 });

@@ -44,6 +44,8 @@ type Verification = {
             to: PermitStatus;
             note: string | null;
         } & Moment)[];
+        /** Every check of this permit so far, this one included. */
+        scan_count: number;
         scans: ({
             result: ScanResult;
             channel: ScanChannel;
@@ -352,6 +354,11 @@ export default function OfficerScan({
                             <h2 id="scans-title" className="text-section-title">
                                 {t('verification.officer.scans')}
                             </h2>
+                            <p className="text-sm text-muted-foreground">
+                                {t('verification.officer.scan_count', {
+                                    count: permit.scan_count,
+                                })}
+                            </p>
                             <div className="overflow-hidden rounded-card border border-border">
                                 <Table>
                                     <THead>

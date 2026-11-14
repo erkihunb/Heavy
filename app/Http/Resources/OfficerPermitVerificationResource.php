@@ -48,6 +48,8 @@ final class OfficerPermitVerificationResource
                     ...$at($step->created_at),
                 ])
                 ->all(),
+            // Every check of this permit, the one just made included.
+            'scan_count' => VerificationScan::summaryFor($permit)['total'],
             'scans' => VerificationScan::query()
                 ->where('permit_id', $permit->id)
                 ->with('user:id,name')

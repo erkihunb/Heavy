@@ -194,3 +194,40 @@ it('asks for the logo before the scripts on the landing and sign-in pages only',
     // Signed-in pages draw it in the sidebar, which phones fold away.
     $this->actingAs($this->admin)->get(route('dashboard'))->assertDontSee('rel="preload" as="image"', false);
 });
+
+it('serves the browser-tab icon as a small PNG copy, under an address of its own', function () {
+    saveGeneral(['permits__branding__favicon' => UploadedFile::fake()->image('icon.png', 512, 512)]);
+    $upload = Branding::path('favicon');
+
+    $response = $this->get(Branding::url('favicon'))
+        ->assertOk()
+        ->assertHeader('Content-Type', 'image/png')
+        ->assertHeader('Cache-Control', 'immutable, max-age=31536000, public');
+
+    // A tab icon is drawn at 16 to 32 pixels: 64 is twice that, for sharp screens.
+    [$width, $height] = getimagesize($response->getFile()->getPathname());
+    expect([$width, $height])->toBe([64, 64]);
+
+    // The upload is kept as it is, and the page names the copy's type.
+    [$uploadWidth] = getimagesize(Storage::disk('local')->path($upload));
+    expect($uploadWidth)->toBe(512);
+    $this->get(route('dashboard'))
+        ->assertSee('<link rel="icon" href="'.e(Branding::url('favicon')).'" type="image/png">', false);
+
+    // Browsers that cached the full-size file under the old address fetch the copy.
+    expect(Branding::url('favicon'))->not->toContain(substr(md5($upload), 0, 10));
+});
+
+it('removes the small copy of the browser-tab icon with the icon', function () {
+    saveGeneral(['permits__branding__favicon' => UploadedFile::fake()->image('icon.png', 512, 512)]);
+    $upload = Branding::path('favicon');
+    $copy = preg_replace('/\.png$/', '.display.png', $upload);
+
+    $this->get(Branding::url('favicon'))->assertOk();
+    Storage::disk('local')->assertExists($copy);
+
+    saveGeneral(['remove_assets' => ['permits__branding__favicon']])->assertSessionHasNoErrors();
+
+    Storage::disk('local')->assertMissing($upload);
+    Storage::disk('local')->assertMissing($copy);
+});

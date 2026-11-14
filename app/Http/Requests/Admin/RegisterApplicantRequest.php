@@ -74,9 +74,8 @@ class RegisterApplicantRequest extends OrganizationRequest
     public function rules(): array
     {
         $apply = ['exclude_unless:apply,true'];
-        // The confirmation goes with a submitted request, not with a draft. No payment is taken
-        // here: the fee is paid once the permit is approved (SubmitPayment, RecordPayment).
-        $submitted = ['exclude_unless:apply,true', 'exclude_unless:submit,true'];
+        // No payment is taken here: the fee is paid once the permit is approved
+        // (SubmitPayment, RecordPayment).
 
         // An organization already on record: its person and organization are not typed again.
         $new = $this->filled('applicant_id') ? ['exclude'] : [];
@@ -97,7 +96,6 @@ class RegisterApplicantRequest extends OrganizationRequest
             'locale' => [...$new, 'required', 'string', Rule::in(array_keys((array) config('localization.supported')))],
             ...$organization,
             'vehicles.*.type_detail' => [...$apply, 'nullable', 'string', 'max:100'],
-            'confirmed' => [...$submitted, 'accepted'],
             'apply' => ['boolean'],
             'submit' => ['boolean'],
             'vehicles' => [...$apply, 'required', 'array', 'min:1', 'max:'.(1 + (int) config('permits.max_trailers'))],
@@ -122,7 +120,6 @@ class RegisterApplicantRequest extends OrganizationRequest
         return [
             ...parent::messages(),
             ...$this->letterMessages(),
-            'confirmed.accepted' => __('applicants.intake.confirm_required'),
         ];
     }
 
@@ -195,7 +192,6 @@ class RegisterApplicantRequest extends OrganizationRequest
             'reason' => __('permits.fields.reason'),
             ...$this->movementHoursAttributes(),
             ...$this->letterAttributes(),
-            'confirmed' => __('applicants.intake.confirm'),
         ];
     }
 

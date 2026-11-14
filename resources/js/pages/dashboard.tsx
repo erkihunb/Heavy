@@ -88,6 +88,8 @@ type Props = {
               organization: string;
               from: PermitStatus | null;
               to: PermitStatus;
+              /** The status the permit has today. */
+              now: PermitStatus;
               at: DualDateValue;
               time: string;
               actor: string | null;
@@ -1045,11 +1047,12 @@ export default function Dashboard({
                                     </Th>
                                     <Th>{t('dashboard.activity.what')}</Th>
                                     <Th>{t('dashboard.activity.by')}</Th>
+                                    <Th>{t('dashboard.activity.now')}</Th>
                                 </tr>
                             </THead>
                             <TBody>
                                 {activity.length === 0 ? (
-                                    <EmptyRow colSpan={5}>
+                                    <EmptyRow colSpan={6}>
                                         {t('dashboard.activity.empty')}
                                     </EmptyRow>
                                 ) : (
@@ -1093,6 +1096,11 @@ export default function Dashboard({
                                                 )}
                                             </Td>
                                             <Td muted>{step.actor ?? '—'}</Td>
+                                            <Td>
+                                                <StatusBadge
+                                                    status={step.now}
+                                                />
+                                            </Td>
                                         </Tr>
                                     ))
                                 )}

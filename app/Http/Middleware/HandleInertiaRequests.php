@@ -44,6 +44,8 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
+        $this->flashMessages($request);
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -62,11 +64,6 @@ class HandleInertiaRequests extends Middleware
                 'mustEnableTwoFactor' => (bool) $user?->mustEnableTwoFactor(),                // For showing or hiding navigation only (resources/js/config/navigation.ts).
                 'permissions' => $user === null ? [] : $user->getAllPermissions()->pluck('name')->values()->all(),
                 'isSuperAdmin' => false,
-            ],
-            // One-off messages set by the previous request.
-            'flash' => [
-                'success' => fn (): ?string => $request->session()->get('success'),
-                'warning' => fn (): ?string => $request->session()->get('warning'),
             ],
             'locale' => app()->getLocale(),
             'locales' => config('localization.supported'),
@@ -91,6 +88,28 @@ class HandleInertiaRequests extends Middleware
             // What the signed-in shell (resources/js/shell) reads, keyed as in the source kit.
             'settings' => fn (): array => ShellSettings::shared(),
         ];
+    }
+
+    /**
+     * The one-off message the previous request left (`->with('success', …)`),
+     * as Inertia flash data rather than a page prop. A prop is saved with the
+     * page in the browser's history, so going back to the page showed the
+     * message again each time; flash data is shown once and never saved.
+     */
+    private function flashMessages(Request $request): void
+    {
+        if (! $request->hasSession()) {
+            return;
+        }
+
+        $messages = array_filter([
+            'success' => $request->session()->get('success'),
+            'warning' => $request->session()->get('warning'),
+        ], fn (mixed $message): bool => is_string($message) && $message !== '');
+
+        if ($messages !== []) {
+            Inertia::flash($messages);
+        }
     }
 
     /**

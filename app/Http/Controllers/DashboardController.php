@@ -18,6 +18,7 @@ use App\Support\EthiopianMonth;
 use App\Support\Money;
 use App\Support\Rbac\BranchScope;
 use App\Support\Rbac\Landing;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -168,7 +169,8 @@ class DashboardController extends Controller
     }
 
     /**
-     * The latest permit status changes, newest first.
+     * The latest permit status changes, newest first, each with the status
+     * its permit has now.
      *
      * @return list<array<string, mixed>>
      */
@@ -178,7 +180,7 @@ class DashboardController extends Controller
         $locale = app()->getLocale();
 
         return PermitStatusTransition::query()
-            ->with(['permit:id,permit_number,organization_id,permit_type', 'permit.organization:id,name_am,name_en', 'actor:id,name'])
+            ->with(['permit:id,permit_number,organization_id,permit_type,status,valid_from,valid_to', 'permit.organization:id,name_am,name_en', 'actor:id,name'])
             ->whereIn('permit_id', $scope->apply(DB::table('permits'), 'branch_id')->select('id'))
             ->latest('id')
             ->limit(self::ACTIVITY)
@@ -190,6 +192,8 @@ class DashboardController extends Controller
                 'organization' => $step->permit->organization->localizedName($locale),
                 'from' => $step->from_status?->value,
                 'to' => $step->to_status->value,
+                // Where the permit stands today: a step in this list may be long past.
+                'now' => $step->permit->effectiveStatus(CarbonImmutable::now())->value,
                 'at' => EthiopianCalendar::present($step->created_at->setTimezone($timezone), $locale),
                 'time' => $step->created_at->setTimezone($timezone)->format('H:i'),
                 'actor' => $step->actor?->name,

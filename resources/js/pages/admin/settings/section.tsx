@@ -23,6 +23,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { useLiveAppearance } from '@/hooks/use-live-appearance';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes-guard';
 import AdminSettingsLayout from '@/layouts/admin-settings-layout';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -151,33 +152,10 @@ export default function SettingsSection({
     }, [dirty, form.processing]);
 
     // Leaving with unsaved changes asks first: another section, or closing the tab.
-    useEffect(() => {
-        if (!dirty) {
-            return;
-        }
-
-        const onBeforeUnload = (event: BeforeUnloadEvent) => {
-            event.preventDefault();
-        };
-        const removeRouterGuard = router.on('before', (event) => {
-            const visit = event.detail.visit;
-
-            if (visit.method !== 'get') {
-                return;
-            }
-
-            if (!window.confirm(t('admin.settings.unsaved.leave'))) {
-                event.preventDefault();
-            }
-        });
-
-        window.addEventListener('beforeunload', onBeforeUnload);
-
-        return () => {
-            window.removeEventListener('beforeunload', onBeforeUnload);
-            removeRouterGuard();
-        };
-    }, [dirty, t]);
+    const { allowLeaving } = useUnsavedChangesGuard(
+        dirty,
+        t('admin.settings.unsaved.leave'),
+    );
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -194,6 +172,8 @@ export default function SettingsSection({
                     // a <style> when a page is first loaded, which Inertia's page swaps
                     // never redo: load the page again so the new look shows at once.
                     if (section === 'appearance') {
+                        // Just saved: the browser must not ask about unsaved changes.
+                        allowLeaving();
                         window.location.reload();
                     }
                 },

@@ -1023,6 +1023,27 @@ production build served by production's own nginx config (`docker/nginx/default.
   The biggest remaining step for the first paint would be server-side rendering (`ssr.tsx`
   exists, but production runs no SSR server): the pages are drawn by JavaScript.
 
+## Speed on slow phones, second pass (2026-11-14)
+
+Measured the same way (Lighthouse mobile, slow 4G, median of three runs, nginx with production's
+gzip and `/build` caching). Sign-in: 82 → 87, first paint 2.9 s → 2.1 s. Dashboard: 79 → 82,
+first paint 3.1 s → 2.6 s. Public verify page: 97, unchanged.
+
+- **The fonts of the first screen are asked for in the page's head** (`App\Support\FontPreload`,
+  `app.blade.php`): Inter always, Abyssinica SIL on Amharic pages. The pages are drawn by scripts,
+  so the browser used to learn which fonts it needed only after they ran, and painted the words a
+  second time when the fonts arrived. Not while the Vite dev server runs.
+- **The browser-tab icon goes out as a 64-pixel PNG copy** (42 KB → 10 KB for the current icon),
+  made once beside the upload like the logo's WebP copy (`Branding::DISPLAY`). It stays a PNG:
+  every browser takes one as a tab icon. Its address changed, so cached full-size files are dropped.
+- **Tried and not kept: folding small script files together** (Rollup's
+  `experimentalMinChunkSize`). It also folds pages into each other; 17 of 50 pages lost their
+  entry in the build manifest, and Laravel looks every page up there by name.
+- **Left as they are:** Wayfinder's form variants (the sign-in and two-factor forms use them);
+  loading the toasts and the command palette on demand (about 16 KB compressed of a 109 KB
+  shell, for a real risk of a missed message). Measured against `php artisan serve` alone the
+  sign-in page scores 61: that server neither compresses nor caches, production's nginx does.
+
 ## One layout for create and edit pages (2026-11-13)
 
 Every create and edit page reads the same way, as the shell's Users and Roles forms:
@@ -1083,11 +1104,15 @@ from its top start corner.
 The panel's free space carries heavy vehicles crossing Addis Ababa, asked
 for by the owner and drawn from nothing
 (`components/auth/heavy-vehicle-motion.tsx`). Along the foot of the panel:
-the Entoto ridge, the skyline with a tower crane and a dome, the light-rail
+the Entoto ridge, the skyline with a dome and one building still under
+construction (bare frame and scaffolding, a tower crane hoisting a beam), the light-rail
 viaduct with a train, and a two-lane road used by five different vehicles —
 a low-bed with a chained load, a tipper and a fuel tanker in the near lane,
 a concrete mixer and a container truck coming the other way. Across the top:
-a few drifting clouds. The centre is left to the logo and the two names.
+a few drifting clouds, an aeroplane crossing with its trail (below the
+height of the midday sun, passing in front of it). Between the two, under
+the logo and names and over the rooftops: by day a scatter of birds, each
+on its own line, beating its wings to climb and gliding to sink. The centre is left to the logo and the two names.
 CSS keyframe loops on `transform` and `opacity`; no library, no image
 file. It is shown from 1024px up, only on the sign-in page, and is hidden
 from assistive technology. Under `prefers-reduced-motion` or "animations
@@ -1095,8 +1120,9 @@ off" the loops are never switched on and the traffic stands still.
 
 Three things in the scene are the system itself rather than scenery, added
 when the owner asked for it to reflect the project: the **restricted hours**
-(a 56s day — the sun sets, the panel dims, windows and headlights come on,
-moon and stars take over, and the vehicles keep moving), the **permit** (the
+(a 56s day — the sun sets, the panel deepens to a dark green, windows and
+headlights come on, the moon rises over four dozen twinkling stars with one
+falling star a night, and the vehicles keep moving), the **permit** (the
 near-lane vehicles are the ones holding one) and the **roadside check** (a
 traffic officer at the kerb whose scanner flashes as each cab passes; the
 permit's QR code shows over that vehicle with a scan line crossing it, then

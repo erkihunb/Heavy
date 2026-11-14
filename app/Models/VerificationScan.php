@@ -45,6 +45,36 @@ class VerificationScan extends Model
     }
 
     /**
+     * How often a permit has been checked, by how and by whom, and when last.
+     *
+     * @return array{total: int, qr: int, lookup: int, by_officers: int, by_public: int, last_at: CarbonImmutable|null}
+     */
+    public static function summaryFor(Permit $permit): array
+    {
+        $row = self::query()
+            ->where('permit_id', $permit->id)
+            ->toBase()
+            ->selectRaw(
+                'COUNT(*) AS total, COALESCE(SUM(channel = ?), 0) AS qr, COUNT(user_id) AS by_officers, MAX(scanned_at) AS last_at',
+                [ScanChannel::Qr->value],
+            )
+            ->first();
+
+        $total = (int) ($row->total ?? 0);
+        $qr = (int) ($row->qr ?? 0);
+        $byOfficers = (int) ($row->by_officers ?? 0);
+
+        return [
+            'total' => $total,
+            'qr' => $qr,
+            'lookup' => $total - $qr,
+            'by_officers' => $byOfficers,
+            'by_public' => $total - $byOfficers,
+            'last_at' => ($row->last_at ?? null) === null ? null : CarbonImmutable::parse((string) $row->last_at, 'UTC'),
+        ];
+    }
+
+    /**
      * @return BelongsTo<Permit, $this>
      */
     public function permit(): BelongsTo

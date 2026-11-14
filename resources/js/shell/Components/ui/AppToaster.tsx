@@ -1,5 +1,5 @@
 import { usePage } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Toaster } from 'sonner';
 import { toast } from '@/shell/lib/toast';
 
@@ -13,6 +13,9 @@ interface FlashProps {
 }
 
 type DocumentTheme = 'light' | 'dark';
+
+/** The flash data already shown as toasts (see AppToaster). */
+let shownFlash: FlashProps | undefined;
 
 function readDocumentTheme(): DocumentTheme {
     return typeof document !== 'undefined' &&
@@ -60,21 +63,22 @@ export default function AppToaster({
     flashToasts?: boolean;
 }) {
     const page = usePage();
-    // Heavy shares `flash.success` and `flash.warning` (HandleInertiaRequests); the other keys are read when present.
-    const flash = (flashToasts ? page.props.flash : undefined) as
+    // The message the last action left (HandleInertiaRequests sends `success`
+    // and `warning`; the other keys are read when present). It is Inertia
+    // flash data, not a page prop: a prop is saved with the page in the
+    // browser's history, and going back to the page showed the message again.
+    const flash = (flashToasts ? page.flash : undefined) as
         FlashProps | undefined;
-    const lastFlash = useRef<FlashProps | undefined>(undefined);
     const theme = useDocumentTheme();
 
-    // Keyed on the flash object itself, NOT the URL: Inertia hands out a fresh
-    // props object on every server response, so `flash` is a new reference per
-    // action even when it redirects back to the same page (back(), archive on
-    // an index, a wizard step, …). Keying on the URL swallowed exactly those
-    // messages. The ref guards against re-toasting the same response when the
-    // component re-renders for unrelated reasons.
+    // Keyed on the flash object itself, NOT the URL: every visit brings its
+    // own object, so the same text shows again after a later action, even one
+    // that redirects back to the same page. `shownFlash` lives outside the
+    // component because each page mounts its own layout: a toaster mounted
+    // again on the same page must not repeat the message.
     useEffect(() => {
-        if (!flash || flash === lastFlash.current) return;
-        lastFlash.current = flash;
+        if (!flash || flash === shownFlash) return;
+        shownFlash = flash;
 
         if (flash.success) toast.success(flash.success);
         if (flash.error) toast.error(flash.error);

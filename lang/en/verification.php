@@ -85,6 +85,14 @@ return [
         'scan_title' => 'Verification',
         'history' => 'Status history',
         'scans' => 'Recent checks',
+        'scan_count' => 'Checked :count times in total',
+        'checks' => [
+            'title' => 'Checks of this permit',
+            'total' => 'Times checked',
+            'never' => 'Nobody has checked this permit yet.',
+            'by_officers' => 'By officers',
+            'last' => 'Last check',
+        ],
         'channel' => 'How',
         'scan_by_public' => 'Public',
         'channels' => [

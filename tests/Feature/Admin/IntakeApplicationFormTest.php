@@ -61,7 +61,6 @@ function intakeForm(array $overrides = []): array
         'valid_from' => $today->addDays(3)->toDateString(),
         'valid_to' => $today->addDays(12)->toDateString(),
         ...$letter,
-        'confirmed' => true,
         ...$overrides,
     ];
 }
@@ -102,16 +101,14 @@ it('waits for the payment once the request is approved', function () {
         ->and(Payment::query()->count())->toBe(0);
 });
 
-it('asks for the confirmation when submitting, not for a draft', function () {
+it('submits the request without a separate confirmation', function () {
+    // The form no longer has a "I confirm the information is correct" tick:
+    // submitting it is the confirmation.
     $this->actingAs($this->registrar)
-        ->post(route('admin.permits.store'), intakeForm(['confirmed' => false]))
-        ->assertSessionHasErrors('confirmed');
-
-    $this->actingAs($this->registrar)
-        ->post(route('admin.permits.store'), intakeForm(['confirmed' => false, 'submit' => false]))
+        ->post(route('admin.permits.store'), intakeForm())
         ->assertSessionHasNoErrors();
 
-    expect(Permit::query()->sole()->status)->toBe(PermitStatus::Draft);
+    expect(Permit::query()->sole()->status)->toBe(PermitStatus::Submitted);
 });
 
 it('describes an "other" vehicle in words', function () {

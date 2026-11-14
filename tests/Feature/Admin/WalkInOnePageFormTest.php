@@ -44,7 +44,6 @@ function onePageForm(array $overrides = []): array
         'address' => 'Bole, Addis Ababa',
         'apply' => true,
         'submit' => true,
-        'confirmed' => true,
         'vehicles' => [
             ['plate' => 'ኢት-03-40134', 'vehicle_type_id' => $type, 'owner_name' => 'አበበ ከበደ'],
             ['plate' => 'ኢት-03-40135', 'vehicle_type_id' => $type, 'owner_name' => 'አበበ ከበደ'],

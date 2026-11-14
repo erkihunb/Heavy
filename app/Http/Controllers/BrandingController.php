@@ -14,7 +14,7 @@ class BrandingController extends Controller
 {
     public function __invoke(string $asset): BinaryFileResponse
     {
-        // The logo goes out as its small web copy; the upload is kept for the permit PDF.
+        // Each goes out as its small web copy; the logo's upload is kept for the permit PDF.
         $path = Branding::displayPath($asset);
 
         abort_if($path === null, 404);

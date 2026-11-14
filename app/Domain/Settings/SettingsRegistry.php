@@ -124,6 +124,7 @@ final class SettingsRegistry
             'permits.security.login_per_minute' => ['section' => 'security', 'group' => 'accounts', 'type' => 'int', 'min' => 3, 'max' => 20],
             'session.lifetime' => ['section' => 'security', 'group' => 'accounts', 'type' => 'int', 'min' => 15, 'max' => 1440],
             'permits.security.default_password' => ['section' => 'security', 'group' => 'accounts', 'type' => 'secret', 'min' => 8],
+            'permits.staff_two_factor_required' => ['section' => 'security', 'group' => 'accounts', 'type' => 'bool'],
             'permits.verification_per_minute' => ['section' => 'security', 'group' => 'verification', 'type' => 'int', 'min' => 5, 'max' => 300],
             'permits.public_shows_organization' => ['section' => 'security', 'group' => 'verification', 'type' => 'bool'],
 

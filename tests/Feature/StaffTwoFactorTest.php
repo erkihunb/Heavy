@@ -128,3 +128,28 @@ it('does not affect guests', function () {
     $this->get(route('home'))->assertRedirect(route('login'));
     $this->get(route('login'))->assertOk();
 });
+
+it('lets an admin switch the requirement off and on in the system settings', function () {
+    $admin = userWithRole(Role::Admin);
+    $admin->forceFill([
+        'two_factor_secret' => encrypt('secret'),
+        'two_factor_recovery_codes' => encrypt('[]'),
+        'two_factor_confirmed_at' => now(),
+    ])->save();
+    $other = userWithRole(Role::Approver);
+
+    $this->actingAs($other)->get(route('dashboard'))->assertRedirect(route('two-factor.show'));
+
+    $this->actingAs($admin)
+        ->put(route('admin.settings.update', 'security'), settingsForm('security', ['permits.staff_two_factor_required' => false]))
+        ->assertSessionHasNoErrors();
+
+    expect(config('permits.staff_two_factor_required'))->toBeFalse();
+    $this->actingAs($other)->get(route('dashboard'))->assertOk();
+
+    $this->actingAs($admin)
+        ->put(route('admin.settings.update', 'security'), settingsForm('security', ['permits.staff_two_factor_required' => true]))
+        ->assertSessionHasNoErrors();
+
+    $this->actingAs($other)->get(route('dashboard'))->assertRedirect(route('two-factor.show'));
+});

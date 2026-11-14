@@ -56,7 +56,6 @@ function letterRequest(VehicleType $type, array $overrides = []): array
         'address' => 'Bole, Addis Ababa',
         'apply' => true,
         'submit' => true,
-        'confirmed' => true,
         'vehicles' => [['plate' => 'ኢት-03-40134', 'vehicle_type_id' => $type->id, 'owner_name' => 'አበበ ከበደ']],
         'permit_type' => 'full_day',
         'valid_from' => $today->addDays(3)->toDateString(),

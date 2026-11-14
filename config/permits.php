@@ -9,8 +9,9 @@ return [
     |
     | When enabled, any user holding a staff role (reviewer, approver, cashier,
     | traffic officer, admin) is confined to the two-factor setup screens until
-    | they have confirmed two-factor authentication. Disable only for local
-    | development; it must stay on in production (spec §2, §15).
+    | they have confirmed two-factor authentication. An Admin can change it in
+    | System settings → Security; when off, two-factor authentication is
+    | each person's own choice (spec §2, §15).
     |
     */
 

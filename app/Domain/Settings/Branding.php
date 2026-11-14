@@ -23,8 +23,17 @@ final class Branding
 
     private const string DIRECTORY = 'branding';
 
-    /** The largest the web pages draw the logo is 48 CSS pixels; three times that, rounded up. */
-    private const int DISPLAY_SIZE = 160;
+    /**
+     * The copy the web pages are sent, per asset: its longer side in pixels
+     * and its format. The largest the pages draw the logo is 48 CSS pixels
+     * and a browser tab draws its icon at 16 to 32: three times the logo and
+     * twice the icon, for sharp screens. The icon stays a PNG, which every
+     * browser takes as a tab icon.
+     */
+    private const array DISPLAY = [
+        'logo' => ['size' => 160, 'format' => 'webp'],
+        'favicon' => ['size' => 64, 'format' => 'png'],
+    ];
 
     private const array TYPES = [
         'png' => 'image/png',
@@ -51,11 +60,9 @@ final class Branding
     {
         $path = self::path($asset);
 
-        // "display": the logo's address changed when it began to be served as a
-        // smaller WebP copy, so browsers that cached the old file fetch the new one.
-        $version = $asset === 'logo' ? "{$path}|display" : $path;
-
-        return $path === null ? null : route('branding', ['asset' => $asset, 'v' => substr(md5($version), 0, 10)], false);
+        // "display": the address changed when the asset began to be served as a
+        // smaller copy, so browsers that cached the full-size file fetch the copy.
+        return $path === null ? null : route('branding', ['asset' => $asset, 'v' => substr(md5("{$path}|display"), 0, 10)], false);
     }
 
     public static function absolutePath(string $asset): ?string
@@ -71,19 +78,22 @@ final class Branding
     }
 
     /**
-     * The logo as the web pages show it: at most DISPLAY_SIZE pixels on its
-     * longer side (three times the largest place it appears, for sharp phone
-     * screens) and as WebP, made once from the upload and kept beside it. The
-     * upload itself stays as it is for the permit PDF. When no smaller copy
-     * can be made (an icon file, no image support, or the copy would not be
+     * An asset as the web pages show it: scaled down to the size and format in
+     * DISPLAY, made once from the upload and kept beside it. The upload itself
+     * stays as it is (the permit PDF uses the logo). When no smaller copy can
+     * be made (an icon file, no image support, or the copy would not be
      * smaller), the upload is served.
      */
     public static function displayPath(string $asset): ?string
     {
         $path = self::path($asset);
 
-        if ($path === null || $asset !== 'logo') {
-            return $path === null ? null : Storage::disk('local')->path($path);
+        if ($path === null) {
+            return null;
+        }
+
+        if (! isset(self::DISPLAY[$asset])) {
+            return Storage::disk('local')->path($path);
         }
 
         $disk = Storage::disk('local');
@@ -95,12 +105,13 @@ final class Branding
         }
 
         $original = (string) $disk->get($path);
-        $bytes = self::displayBytes($original);
+        ['size' => $size, 'format' => $format] = self::DISPLAY[$asset];
+        $bytes = self::displayBytes($original, $size, $format);
 
         // Not worth a copy: keep the upload's bytes under the copy's name, so
         // making one is not tried again on every request.
         $copy = $bytes !== null && strlen($bytes) < strlen($original)
-            ? self::displayStem($path).'.webp'
+            ? self::displayStem($path).'.'.$format
             : self::displayStem($path).'.'.strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
         $disk->put($copy, $bytes !== null && strlen($bytes) < strlen($original) ? $bytes : $original);
@@ -124,17 +135,18 @@ final class Branding
 
         return array_values(array_unique([
             "{$stem}.webp",
+            "{$stem}.png",
             "{$stem}.".strtolower(pathinfo($path, PATHINFO_EXTENSION)),
         ]));
     }
 
     /**
-     * The picture scaled down to fit DISPLAY_SIZE (never up), with its
-     * transparency, as WebP; null when it cannot be decoded or written.
+     * The picture scaled down to fit `$size` pixels (never up), with its
+     * transparency, as WebP or PNG; null when it cannot be decoded or written.
      */
-    private static function displayBytes(string $original): ?string
+    private static function displayBytes(string $original, int $size, string $format): ?string
     {
-        if (! function_exists('imagewebp') || $original === '') {
+        if (! function_exists($format === 'webp' ? 'imagewebp' : 'imagepng') || $original === '') {
             return null;
         }
 
@@ -146,7 +158,7 @@ final class Branding
 
         $width = imagesx($image);
         $height = imagesy($image);
-        $scale = min(1, self::DISPLAY_SIZE / max($width, $height, 1));
+        $scale = min(1, $size / max($width, $height, 1));
         $targetWidth = max(1, (int) round($width * $scale));
         $targetHeight = max(1, (int) round($height * $scale));
 
@@ -162,7 +174,7 @@ final class Branding
         imagecopyresampled($copy, $image, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height);
 
         ob_start();
-        $written = imagewebp($copy, null, 90);
+        $written = $format === 'webp' ? imagewebp($copy, null, 90) : imagepng($copy, null, 9);
         $bytes = (string) ob_get_clean();
 
         return $written && $bytes !== '' ? $bytes : null;
@@ -192,7 +204,7 @@ final class Branding
 
         return $url === null
             ? '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
-            : sprintf('<link rel="icon" href="%s" type="%s">', e($url), e(self::contentType((string) self::path('favicon'))));
+            : sprintf('<link rel="icon" href="%s" type="%s">', e($url), e(self::contentType((string) self::displayPath('favicon'))));
     }
 
     /**

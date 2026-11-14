@@ -928,6 +928,37 @@
 }
 
 /*
+ * The night sky. .hv-night brings the stars in and out with the night; inside
+ * it each star (.hv-twinkle) dims and brightens about its own centre at its
+ * own pace, and one falling star (.hv-shoot) crosses once a night. At rest it
+ * is day and none of this shows. The night itself is the panel deepening to
+ * a dark green (.hv-dusk), not to black.
+ */
+.hv-twinkle {
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.hv-shoot {
+    opacity: 0;
+}
+
+/*
+ * The crane's hoist over the building going up. The cable is drawn at its
+ * full length from the jib (y 28) to the hook (y 72) and shortens about the
+ * jib; the beam on the hook (.hv-hoist) rises by the same amount at the same
+ * pace, so the two stay joined: down to the top floor, a pause, away again.
+ */
+.hv-cable {
+    transform-origin: 462px 28px;
+}
+
+/* A bird's wings hinge at its shoulder, just above the middle of the body. */
+.hv-flap {
+    transform-origin: 0 -1px;
+}
+
+/*
  * Depth. The component writes --hv-px, where the pointer is across the panel
  * from -1 to 1; each layer carries how far it slides as --hv-depth, and
  * slides the other way. Nearer things carry more.
@@ -971,6 +1002,58 @@
 
     :root:not([data-animations='off']) .hv-dusk {
         animation: hv-dusk 56s linear infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-day {
+        animation: hv-day 56s linear infinite;
+    }
+
+    /* A bird. Its line across the panel bends up or down by --hv-rise at
+       the middle. On top of that it lifts while it beats its wings and
+       sinks while it glides (.hv-bob), and the wings themselves (.hv-flap)
+       are hinged at the shoulder, so scaling them there is the beat: four
+       quick strokes, then held nearly flat for the glide. The last two
+       share one clock, --hv-beat, so the lift always goes with the beats. */
+    :root:not([data-animations='off']) .hv-bird-right {
+        animation: hv-bird-right var(--hv-dur, 24s) linear var(--hv-delay, 0s)
+            infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-bird-left {
+        animation: hv-bird-left var(--hv-dur, 24s) linear var(--hv-delay, 0s)
+            infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-bob {
+        animation: hv-bob var(--hv-beat, 3.6s) ease-in-out
+            var(--hv-beat-delay, 0s) infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-flap {
+        animation: hv-flap var(--hv-beat, 3.6s) ease-in-out
+            var(--hv-beat-delay, 0s) infinite;
+    }
+
+    /* The aeroplane's red strobe: dark, two quick flashes, dark again. */
+    :root:not([data-animations='off']) .hv-strobe {
+        animation: hv-strobe 1.5s linear infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-cable {
+        animation: hv-cable 16s ease-in-out infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-hoist {
+        animation: hv-hoist 16s ease-in-out infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-twinkle {
+        animation: hv-twinkle var(--hv-dur, 3s) ease-in-out var(--hv-delay, 0s)
+            infinite;
+    }
+
+    :root:not([data-animations='off']) .hv-shoot {
+        animation: hv-shoot 56s linear infinite;
     }
 
     :root:not([data-animations='off']) .hv-windows {
@@ -1065,10 +1148,158 @@
     }
     56%,
     94% {
-        opacity: 0.34;
+        opacity: 0.66;
     }
     100% {
         opacity: 0;
+    }
+}
+
+@keyframes hv-day {
+    0%,
+    45% {
+        opacity: 1;
+    }
+    54%,
+    94% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes hv-flap {
+    0%,
+    12%,
+    24%,
+    36% {
+        transform: scaleY(1);
+    }
+    6%,
+    18%,
+    30%,
+    42% {
+        transform: scaleY(-0.8);
+    }
+    52%,
+    88% {
+        transform: scaleY(0.2);
+    }
+    100% {
+        transform: scaleY(1);
+    }
+}
+
+@keyframes hv-bob {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    46% {
+        transform: translateY(-9px);
+    }
+    88% {
+        transform: translateY(5px);
+    }
+}
+
+@keyframes hv-bird-right {
+    0% {
+        transform: translate(-260px, 0);
+    }
+    50% {
+        transform: translate(400px, var(--hv-rise, 0px));
+    }
+    100% {
+        transform: translate(1060px, 0);
+    }
+}
+
+@keyframes hv-bird-left {
+    0% {
+        transform: translate(1060px, 0);
+    }
+    50% {
+        transform: translate(400px, var(--hv-rise, 0px));
+    }
+    100% {
+        transform: translate(-260px, 0);
+    }
+}
+
+@keyframes hv-strobe {
+    0%,
+    5% {
+        opacity: 1;
+    }
+    6%,
+    13% {
+        opacity: 0.08;
+    }
+    14%,
+    19% {
+        opacity: 1;
+    }
+    20%,
+    100% {
+        opacity: 0.08;
+    }
+}
+
+@keyframes hv-cable {
+    0%,
+    12% {
+        transform: scaleY(1);
+    }
+    50%,
+    62% {
+        transform: scaleY(0.32);
+    }
+    100% {
+        transform: scaleY(1);
+    }
+}
+
+@keyframes hv-hoist {
+    0%,
+    12% {
+        transform: translateY(0);
+    }
+    50%,
+    62% {
+        transform: translateY(-30px);
+    }
+    100% {
+        transform: translateY(0);
+    }
+}
+
+@keyframes hv-twinkle {
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.15);
+    }
+}
+
+@keyframes hv-shoot {
+    0%,
+    70% {
+        opacity: 0;
+        transform: translate(640px, 18px);
+    }
+    70.6% {
+        opacity: 1;
+    }
+    72.4%,
+    100% {
+        opacity: 0;
+        transform: translate(390px, 116px);
     }
 }
 

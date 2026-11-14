@@ -66,6 +66,14 @@ class SecurityHeaders
             'object-src' => ["'none'"],
         ];
 
+        if ($dev !== null) {
+            // When the dev server restarts, Vite's client waits for it in a
+            // worker made from a blob and then reloads the page. Refused, the
+            // page keeps its old scripts and shows no later change until it
+            // is refreshed by hand.
+            $directives['worker-src'] = ["'self'", 'blob:'];
+        }
+
         $policy = collect($directives)
             ->map(fn (array $sources, string $directive): string => $directive.' '.implode(' ', array_filter($sources)))
             ->implode('; ');

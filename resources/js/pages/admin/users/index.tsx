@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { visitWithFilters } from '@/lib/filters';
 import { Plus } from '@/shell/Components/Icons';
 import PageHeader from '@/shell/Components/PageHeader';
 import {
@@ -66,12 +67,7 @@ export default function UsersIndex({
     const filtersActive = Object.values(filters).some(Boolean);
 
     function apply(next: Partial<Filters> = {}) {
-        const params = { search, role, status, ...next };
-        router.get(
-            urls.index,
-            Object.fromEntries(Object.entries(params).filter(([, v]) => v)),
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
+        visitWithFilters(urls.index, { search, role, status, ...next });
     }
 
     function reset() {

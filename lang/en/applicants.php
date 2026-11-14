@@ -50,7 +50,6 @@ return [
             'applicant' => ['title' => 'Applicant information', 'intro' => 'The person applying and their organization.'],
             'vehicle' => ['title' => 'Vehicle information', 'intro' => 'The vehicle the permit is for, and its trailer if any.'],
             'permit' => ['title' => 'Permit details', 'intro' => 'The request letter, the period and the reason. At most :max days.'],
-            'confirm' => ['title' => 'Confirmation', 'intro' => 'Check the details before you submit.'],
         ],
         'fields' => [
             'email' => 'E-mail address',
@@ -72,8 +71,6 @@ return [
         'org_email_hint' => 'If left empty, the applicant’s e-mail is used.',
         'type_detail' => 'Vehicle type (describe)',
         'type_detail_required' => 'Describe what the “other” vehicle is.',
-        'confirm' => 'I confirm that the information I entered is correct',
-        'confirm_required' => 'Confirm that the information is correct before you submit.',
         'submit' => 'Submit',
         'save_draft' => 'Save draft',
         'cancel' => 'Cancel',

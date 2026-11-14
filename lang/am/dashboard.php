@@ -160,6 +160,7 @@ return [
         'reissued' => 'በአዲስ QR ኮድ በድጋሚ ተሰጠ',
         'when' => 'መቼ',
         'what' => 'የሆነው',
+        'now' => 'አሁን ያለበት ሁኔታ',
         'permit' => 'ፍቃድ',
         'organization' => 'ተቋም',
         'by' => 'ያደረገው',

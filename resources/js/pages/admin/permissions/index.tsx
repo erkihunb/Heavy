@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { visitWithFilters } from '@/lib/filters';
 import EmptyState from '@/shell/Components/EmptyState';
 import PageHeader from '@/shell/Components/PageHeader';
 import StatCard from '@/shell/Components/StatCard';
@@ -53,12 +54,7 @@ export default function PermissionsIndex({
     const filtersActive = Object.values(filters).some(Boolean);
 
     function go(next: Partial<Filters>) {
-        const params = { ...filters, search, ...next };
-        router.get(
-            urls.index,
-            Object.fromEntries(Object.entries(params).filter(([, v]) => v)),
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
+        visitWithFilters(urls.index, { ...filters, search, ...next });
     }
 
     return (

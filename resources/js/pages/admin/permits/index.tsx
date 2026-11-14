@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import AppLayout from '@/layouts/app-layout';
+import { visitWithFilters } from '@/lib/filters';
 import { useTranslation } from '@/lib/i18n';
 import { index } from '@/routes/admin/permits';
 import type {
@@ -82,17 +83,7 @@ export default function PermitRegister({
     const [search, setSearch] = useState(filters.search);
 
     const apply = (next: Partial<Filters>) => {
-        const query = { ...filters, ...next };
-
-        router.get(
-            index.url(),
-            Object.fromEntries(
-                Object.entries(query).filter(
-                    ([, value]) => value !== null && value !== '',
-                ),
-            ),
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
+        visitWithFilters(index.url(), { ...filters, ...next });
     };
 
     const submitSearch = (event: FormEvent<HTMLFormElement>) => {

@@ -60,6 +60,9 @@
             <link rel="preload" as="image" href="{{ $logoUrl }}" fetchpriority="high">
         @endif
 
+        {{-- The fonts of the first screen, asked for beside the scripts that draw it. --}}
+        {!! \App\Support\FontPreload::tags(app()->getLocale()) !!}
+
         @viteReactRefresh
         @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         @inertiaHead

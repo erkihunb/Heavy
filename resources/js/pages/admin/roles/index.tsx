@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { visitWithFilters } from '@/lib/filters';
 import ConfirmProvider from '@/shell/Components/ConfirmProvider';
 import EmptyState from '@/shell/Components/EmptyState';
 import { Plus } from '@/shell/Components/Icons';
@@ -70,12 +71,7 @@ function RolesIndexPage({
     const filtersActive = Object.values(filters).some(Boolean);
 
     function go(next: Partial<Filters>) {
-        const params = { ...filters, search, ...next };
-        router.get(
-            urls.index,
-            Object.fromEntries(Object.entries(params).filter(([, v]) => v)),
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
+        visitWithFilters(urls.index, { ...filters, search, ...next });
     }
 
     function resetFilters() {

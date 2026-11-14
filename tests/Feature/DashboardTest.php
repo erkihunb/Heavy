@@ -2,6 +2,7 @@
 
 use App\Enums\Permission;
 use App\Enums\Role;
+use App\Models\Permit;
 use App\Models\Role as RoleModel;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -82,4 +83,15 @@ test('every role has a name and a summary in both languages', function () {
                 ->and($roles[$role]['summary'] ?? '')->not->toBe('', "{$locale}.roles.{$role}.summary");
         }
     }
+});
+
+test('the recent activity shows each step with the status its permit has now', function () {
+    $permit = Permit::factory()->revoked()->create();
+    $permit->transitions()->create(['from_status' => 'changes_requested', 'to_status' => 'submitted']);
+
+    $this->actingAs(staffUser(Role::Admin))
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('activity.0.to', 'submitted')
+            ->where('activity.0.now', 'revoked'));
 });

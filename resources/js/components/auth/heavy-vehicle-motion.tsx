@@ -6,19 +6,28 @@ import type { CSSProperties, ReactNode } from 'react';
  * Ababa. It fills the brand panel's free space and leaves the centre, where
  * the Authority's mark and names are, alone.
  *
- * - Along the bottom: the Entoto ridge, the city's skyline with a tower
- *   crane and a dome, the light-rail viaduct with a train on it, and a
+ * - Along the bottom: the Entoto ridge, the city's skyline with a dome and
+ *   a building still going up — bare frame and scaffolding above its
+ *   finished floors, a tower crane lowering a beam to it — the light-rail viaduct with a train on it, and a
  *   two-lane road. Five different heavy vehicles use the road — a low-bed
  *   with a chained load, a tipper and a fuel tanker in the near lane, a
  *   concrete mixer and a container truck coming the other way in the far
  *   lane.
- * - Along the top: a few clouds drifting across the sky.
+ * - Along the top: a few clouds drifting across the sky, an aeroplane
+ *   crossing with its trail behind it — lower than the midday sun, and in
+ *   front of it, as an aeroplane is.
+ * - Between the two, under the Authority's mark and names and over the
+ *   rooftops: by day, a scatter of birds. Each flies its own line — its own
+ *   height, speed and heading, climbing or sinking a little on the way —
+ *   and flies the way a bird does: a few wing-beats that lift it, then a
+ *   glide on set wings that lets it sink, then again.
  *
  * Three things in it are the system itself rather than scenery:
  *
  * - The restricted hours. The scene has a day and a night: the sun crosses
- *   and sets, the panel dims, windows and headlights come on, the moon and
- *   stars take over, and the heavy vehicles keep moving through all of it.
+ *   and sets, the panel deepens to a dark green, windows and headlights come
+ *   on, the moon rises over a sky of stars — many faint, a few bright, each
+ *   twinkling at its own pace, and now and then one falling — and the heavy vehicles keep moving through all of it.
  * - The permit. Each vehicle in the near lane is one that holds a permit.
  * - The roadside check. A traffic officer stands at the kerb, scanner at
  *   their side; as each vehicle comes up they raise it, and as the cab
@@ -418,7 +427,7 @@ const BUILDINGS: [number, number, number][] = [
     [266, 54, 62],
     [324, 34, 142],
     [362, 76, 74],
-    [442, 48, 110],
+    [442, 48, 60],
     [494, 66, 58],
     [564, 40, 132],
     [608, 72, 88],
@@ -447,6 +456,52 @@ const CLOUDS: [number, number, number, number, number][] = [
     [128, 0.7, 120, 0.55, 430],
     [52, 0.85, 140, 0.8, 610],
 ];
+
+/* The birds, each on its own: height in their band, size, seconds to cross,
+   how far across it starts, whether it flies leftward, where it rests, how
+   far it climbs (negative) or sinks by mid-crossing, and the seconds one
+   beat-and-glide takes. They share nothing, so they never move as a group. */
+const BIRDS: [
+    number,
+    number,
+    number,
+    number,
+    boolean,
+    number,
+    number,
+    number,
+][] = [
+    [30, 0.9, 22, 0.1, false, 150, -16, 3.4],
+    [58, 0.7, 27, 0.9, true, 360, 12, 4.1],
+    [84, 1.0, 19, 0.55, false, 600, -10, 3.0],
+    [112, 0.8, 25, 0.3, true, 240, -18, 3.8],
+    [140, 0.9, 21, 0.75, false, 470, 14, 3.3],
+    [168, 0.7, 29, 0.45, true, 90, -8, 4.4],
+];
+
+/* The night sky: a few dozen stars at places that look scattered but are
+   the same on every visit (worked out from the star's number, not drawn at
+   random). Most are faint points; every eighth is a bright one, drawn as a
+   four-pointed glint. Each has its own size, its own pace of twinkling and
+   its own place in that pace. */
+const STARS = Array.from({ length: 48 }, (_, index) => {
+    const part = (seed: number) => {
+        const value = Math.sin((index + 1) * seed) * 10000;
+
+        return value - Math.floor(value);
+    };
+
+    return {
+        x: Math.round(part(12.9898) * 800),
+        y: Math.round(6 + part(78.233) * 204),
+        size: Number((0.5 + part(37.719) * 1.1).toFixed(2)),
+        pace: Number((2.2 + part(4.581) * 3.4).toFixed(1)),
+        lag: Number((part(93.989) * 5).toFixed(1)),
+        bright: index % 8 === 0,
+    };
+});
+
+const GLINT = 'M0 -6Q0.7 -0.7 6 0Q0.7 0.7 0 6Q-0.7 0.7 -6 0Q-0.7 -0.7 0 -6Z';
 
 const svgProps = {
     fill: 'none',
@@ -504,7 +559,7 @@ export function HeavyVehicleMotion() {
             <div
                 ref={anchor}
                 aria-hidden="true"
-                className="hv-dusk pointer-events-none absolute inset-0 -z-10 hidden bg-black lg:block"
+                className="hv-dusk pointer-events-none absolute inset-0 -z-10 hidden bg-[#02170b] lg:block"
             />
 
             {/* The sky. */}
@@ -527,14 +582,109 @@ export function HeavyVehicleMotion() {
                     <path d="M404 76A17 17 0 1 0 418 102A13 13 0 1 1 404 76Z" />
                 </g>
                 <g className="hv-night" fill="currentColor" stroke="none">
-                    <circle cx="130" cy="40" r="1.6" />
-                    <circle cx="238" cy="96" r="1.3" />
-                    <circle cx="322" cy="30" r="1.8" />
-                    <circle cx="468" cy="52" r="1.3" />
-                    <circle cx="556" cy="24" r="1.6" />
-                    <circle cx="648" cy="88" r="1.4" />
-                    <circle cx="712" cy="38" r="1.7" />
-                    <circle cx="60" cy="112" r="1.3" />
+                    {STARS.map((star) => (
+                        <g
+                            key={`${star.x}-${star.y}`}
+                            transform={`translate(${star.x} ${star.y})`}
+                        >
+                            {star.bright ? (
+                                <path
+                                    className="hv-twinkle"
+                                    style={
+                                        {
+                                            '--hv-dur': `${star.pace}s`,
+                                            '--hv-delay': `-${star.lag}s`,
+                                        } as CSSProperties
+                                    }
+                                    d={GLINT}
+                                    transform={`scale(${(0.5 + star.size * 0.45).toFixed(2)})`}
+                                />
+                            ) : (
+                                <circle
+                                    className="hv-twinkle"
+                                    style={
+                                        {
+                                            '--hv-dur': `${star.pace}s`,
+                                            '--hv-delay': `-${star.lag}s`,
+                                        } as CSSProperties
+                                    }
+                                    r={star.size}
+                                />
+                            )}
+                        </g>
+                    ))}
+
+                    {/* One falling star a night. */}
+                    <path
+                        className="hv-shoot"
+                        d="M0 0L44 -17"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                    />
+                </g>
+
+                {/* An aeroplane crossing, nose to the left, its trail
+                    thinning out behind it and a light on its tail; after
+                    dark its beacon and strobe show as well. It flies
+                    below the height the sun reaches at midday and is drawn
+                    after the sun, so it passes in front of it. */}
+                <g transform="translate(0 136)">
+                    <g
+                        className="hv-left"
+                        style={
+                            {
+                                '--hv-dur': '52s',
+                                '--hv-delay': '-21s',
+                                transform: 'translateX(560px)',
+                            } as CSSProperties
+                        }
+                    >
+                        <path
+                            d="M82 -1H128M134 -1H160M166 -1H182"
+                            strokeWidth="1.5"
+                            opacity="0.35"
+                        />
+                        <path
+                            d="M0 0Q6 -5 18 -5H58L70 -17H75L71 -5Q77 -4 77 -1Q70 3 58 3H14Q4 3 0 0Z"
+                            fill="var(--brand-surface)"
+                            strokeWidth="1.5"
+                        />
+                        <path
+                            d="M30 1L49 14H55L44 1"
+                            fill="var(--brand-surface)"
+                            strokeWidth="1.5"
+                        />
+                        <path
+                            d="M13 -1H52"
+                            strokeWidth="1.5"
+                            strokeDasharray="2 3"
+                            opacity="0.6"
+                        />
+                        <circle
+                            className="hv-beacon"
+                            cx="73"
+                            cy="-17"
+                            r="1.8"
+                            fill={REFUSED}
+                            stroke="none"
+                        />
+
+                        {/* After dark: a red beacon under the belly that
+                            flashes steadily, and a red strobe on the wing
+                            that fires twice and waits. Each has a soft halo
+                            that flashes with it. */}
+                        <g className="hv-night" stroke="none">
+                            <g className="hv-hazard" fill={REFUSED}>
+                                <circle cx="40" cy="4.5" r="6" opacity="0.3" />
+                                <circle cx="40" cy="4.5" r="2.4" />
+                            </g>
+                            <g className="hv-strobe" fill={REFUSED}>
+                                <circle cx="52" cy="14" r="6" opacity="0.3" />
+                                <circle cx="52" cy="14" r="2.2" />
+                            </g>
+                        </g>
+                    </g>
                 </g>
 
                 {CLOUDS.map(([y, size, seconds, offset, rest]) => (
@@ -553,6 +703,83 @@ export function HeavyVehicleMotion() {
                         </g>
                     </g>
                 ))}
+            </svg>
+
+            {/* The birds, in the space under the mark and the names and over
+                the rooftops; out by day, roosting by night. Each one is
+                three things at once: its line across (the outer group), the
+                lift and sink of beating and gliding (hv-bob), and the wings
+                themselves (hv-flap), on a body that stays level. */}
+            <svg
+                {...svgProps}
+                viewBox="0 0 800 200"
+                preserveAspectRatio="xMidYMid slice"
+                className="hv-layer pointer-events-none absolute inset-x-0 top-[56%] -z-10 hidden h-[18%] w-full lg:block"
+                style={depth(12)}
+            >
+                <g className="hv-day">
+                    {BIRDS.map(
+                        ([
+                            y,
+                            size,
+                            seconds,
+                            offset,
+                            leftward,
+                            rest,
+                            rise,
+                            beat,
+                        ]) => (
+                            <g key={y} transform={`translate(0 ${y})`}>
+                                <g
+                                    className={
+                                        leftward
+                                            ? 'hv-bird-left'
+                                            : 'hv-bird-right'
+                                    }
+                                    style={
+                                        {
+                                            '--hv-dur': `${seconds}s`,
+                                            '--hv-delay': `${(-offset * seconds).toFixed(1)}s`,
+                                            '--hv-rise': `${rise}px`,
+                                            '--hv-beat': `${beat}s`,
+                                            '--hv-beat-delay': `${(-offset * beat).toFixed(2)}s`,
+                                            transform: `translateX(${rest}px)`,
+                                        } as CSSProperties
+                                    }
+                                >
+                                    <g className="hv-bob">
+                                        <g
+                                            transform={`scale(${leftward ? -size : size} ${size})`}
+                                        >
+                                            {/* Seen from the side, as a
+                                                solid shape: the far wing,
+                                                the body from forked tail to
+                                                beak, then the near wing.
+                                                Both wings hinge at the
+                                                shoulder. */}
+                                            <g
+                                                fill="currentColor"
+                                                stroke="none"
+                                            >
+                                                <path
+                                                    className="hv-flap"
+                                                    d="M0 -1Q2 -8 -3 -13Q3 -12 5 -1Z"
+                                                    opacity="0.55"
+                                                />
+                                                <path d="M-9 0L-14 -3L-12.5 0.3L-14 3.2L-8 1.6Q-2 4 4 2.6Q7 2.1 8.6 0.7L12 0L8.6 -0.9Q7 -2.9 4 -2.6Q-2 -3.2 -9 0Z" />
+                                                <path
+                                                    className="hv-flap"
+                                                    d="M-3 -1Q-2 -10 -9 -16Q1 -14 4 -1Z"
+                                                    opacity="0.9"
+                                                />
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        ),
+                    )}
+                </g>
             </svg>
 
             {/* The city and its road. */}
@@ -580,7 +807,7 @@ export function HeavyVehicleMotion() {
                 <g fill="var(--brand-surface)">
                     <g className="hv-layer" style={depth(9)}>
                         <g opacity="0.55">
-                            <path d="M420 176V22M396 28H474M408 28V40H400M462 28V58M420 22L396 28M420 22L474 28" />
+                            <path d="M420 176V22M396 28H474M408 28V40H400M420 22L396 28M420 22L474 28" />
                         </g>
                         {BUILDINGS.map((building) => {
                             const [x, width, height] = building;
@@ -611,6 +838,48 @@ export function HeavyVehicleMotion() {
                                 </g>
                             );
                         })}
+                        {/* The building going up under the crane. Its lower
+                            floors are finished (they are in BUILDINGS); above
+                            them is the bare frame — columns, floor slabs and
+                            the bars standing out of the top — with
+                            scaffolding up one side. The crane lowers a beam
+                            to the top floor and lifts away again, and wears
+                            a red light after dark. */}
+                        <g strokeWidth="1.5">
+                            <path
+                                d="M442 116V70M458 116V74M474 116V70M490 116V74M442 100H490M442 84H490"
+                                strokeOpacity="0.7"
+                            />
+                            <path
+                                d="M446 84V78M452 84V79M464 84V78M470 84V79M482 84V78"
+                                strokeOpacity="0.5"
+                            />
+                            <path
+                                d="M435 176V86M435 161H442M435 146H442M435 131H442M435 116H442M435 101H442M435 176L442 161L435 146L442 131L435 116L442 101L435 86"
+                                strokeOpacity="0.45"
+                            />
+                            <path className="hv-cable" d="M462 28V72" />
+                            <g className="hv-hoist">
+                                <path d="M462 72L455 78M462 72L469 78" />
+                                <rect
+                                    x="452"
+                                    y="78"
+                                    width="20"
+                                    height="4"
+                                    fill="currentColor"
+                                    stroke="none"
+                                />
+                            </g>
+                            <g className="hv-night" stroke="none">
+                                <circle
+                                    className="hv-hazard"
+                                    cx="420"
+                                    cy="21"
+                                    r="3"
+                                    fill={REFUSED}
+                                />
+                            </g>
+                        </g>
                         <path
                             d="M494 176A40 32 0 0 1 574 176ZM534 144V134"
                             strokeOpacity="0.55"

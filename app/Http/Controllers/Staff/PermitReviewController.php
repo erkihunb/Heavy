@@ -27,6 +27,8 @@ use App\Http\Resources\VehiclePermitHistoryResource;
 use App\Models\Permit;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Models\VerificationScan;
+use App\Support\EthiopianCalendar;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -193,12 +195,31 @@ class PermitReviewController extends Controller
         return Inertia::render($page, [
             'permit' => $resource,
             'vehicleHistory' => $this->vehicleHistory($permit, $overlap),
+            'scans' => $this->scans($permit),
             'receiptMaxKilobytes' => (int) config('permits.receipt_max_kilobytes'),
             'desks' => array_map(
                 fn (string $key): array => ['key' => $key, 'url' => route($routes[$key], $permit), 'pending' => $pending[$key]],
                 array_keys(array_filter($desks)),
             ),
         ]);
+    }
+
+    /**
+     * How often the permit has been checked at the roadside or by the public
+     * (every QR scan and every number-and-plate lookup is recorded).
+     *
+     * @return array{total: int, qr: int, lookup: int, by_officers: int, by_public: int, last: array{date: array<string, mixed>, time: string}|null}
+     */
+    private function scans(Permit $permit): array
+    {
+        $summary = VerificationScan::summaryFor($permit);
+        $last = $summary['last_at']?->setTimezone(config('localization.display_timezone'));
+        unset($summary['last_at']);
+
+        return [...$summary, 'last' => $last === null ? null : [
+            'date' => EthiopianCalendar::present($last, app()->getLocale()),
+            'time' => $last->format('H:i'),
+        ]];
     }
 
     /**

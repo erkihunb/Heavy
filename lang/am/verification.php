@@ -85,6 +85,14 @@ return [
         'scan_title' => 'ማረጋገጫ',
         'history' => 'የሁኔታ ታሪክ',
         'scans' => 'የቅርብ ጊዜ ማረጋገጫዎች',
+        'scan_count' => 'በአጠቃላይ :count ጊዜ ተረጋግጧል',
+        'checks' => [
+            'title' => 'የዚህ ፍቃድ ማረጋገጫዎች',
+            'total' => 'የተረጋገጠበት ብዛት',
+            'never' => 'ይህን ፍቃድ እስካሁን ማንም አላረጋገጠም።',
+            'by_officers' => 'በትራፊክ ፖሊስ',
+            'last' => 'የመጨረሻ ማረጋገጫ',
+        ],
         'channel' => 'መንገድ',
         'scan_by_public' => 'ሕዝብ',
         'channels' => [
