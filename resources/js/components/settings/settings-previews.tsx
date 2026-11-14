@@ -266,6 +266,16 @@ const STYLE_SWATCH: Record<
         line: string;
     }
 > = {
+    authority: {
+        page: '#f3f5f9',
+        card: '#ffffff',
+        edge: '1px solid #e2e6ee',
+        radius: '12px',
+        control: '8px',
+        shadow: '0 1px 2px rgb(15 23 42 / 0.05), 0 4px 12px -4px rgb(15 23 42 / 0.08)',
+        text: '#0f172a',
+        line: '#dbe1ea',
+    },
     swiss: {
         page: '#f6f6f6',
         card: '#ffffff',
@@ -350,16 +360,17 @@ export function UiStylePicker({
     };
 
     return (
-        <div className="flex flex-col gap-2">
+        <div className="@container flex flex-col gap-2">
+            {/* Columns follow the card's width: five styles never squeeze below a readable card. */}
             <div
                 id={id}
                 role="radiogroup"
                 aria-label={groupLabel}
                 aria-describedby={describedBy}
-                className="grid grid-cols-2 gap-3 lg:grid-cols-4"
+                className="grid grid-cols-1 gap-3 @xs:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-5"
             >
                 {options.map((option, index) => {
-                    const look = STYLE_SWATCH[option] ?? STYLE_SWATCH.swiss;
+                    const look = STYLE_SWATCH[option] ?? STYLE_SWATCH.authority;
                     const checked = value === option;
 
                     return (

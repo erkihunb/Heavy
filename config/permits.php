@@ -253,8 +253,8 @@ return [
         'primary_color' => env('PERMITS_PRIMARY_COLOR'),
         'accent_color' => env('PERMITS_ACCENT_COLOR'),
         'sidebar_color' => env('PERMITS_SIDEBAR_COLOR'),
-        // Interface style (swiss, classic, soft, contrast), buttons, cards and tables.
-        'ui_style' => env('PERMITS_UI_STYLE', 'swiss'),
+        // Interface style (authority, swiss, classic, soft, contrast), buttons, cards and tables.
+        'ui_style' => env('PERMITS_UI_STYLE', 'authority'),
         'button_style' => 'auto',
         'card_radius' => 'auto',
         'table_density' => 'comfortable',

@@ -60,7 +60,8 @@ export default function StaffPaymentsIndex({ payments, filters }: Props) {
         { title: t('payments.cashier.queue_title'), href: index() },
     ];
 
-    const labelClass = 'text-eyebrow text-muted-foreground';
+    // Filter labels match every other field label (sentence case, not an eyebrow).
+    const labelClass = 'text-sm font-medium text-foreground';
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>

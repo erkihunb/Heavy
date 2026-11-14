@@ -97,7 +97,8 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
         { title: t('permits.staff.queue_title'), href: index() },
     ];
 
-    const labelClass = 'text-eyebrow text-muted-foreground';
+    // Filter labels match every other field label (sentence case, not an eyebrow).
+    const labelClass = 'text-sm font-medium text-foreground';
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -112,7 +113,7 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                 <form
                     role="search"
                     onSubmit={search}
-                    className="grid gap-4 rounded-card border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4"
+                    className="grid gap-4 rounded-card border border-border bg-card p-4 sm:grid-cols-2 xl:grid-cols-4"
                 >
                     <div className="grid content-start gap-1.5">
                         <label htmlFor="filter-status" className={labelClass}>
@@ -206,7 +207,7 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                             onChange={setSubmittedTo}
                         />
                     </div>
-                    <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row lg:col-span-4">
+                    <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row xl:col-span-4">
                         <Button type="submit" className="h-11">
                             <Search aria-hidden="true" />
                             {t('permits.filters.apply')}
@@ -303,14 +304,16 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                                             </span>
                                         </Td>
                                         <Td className="whitespace-nowrap">
-                                            <span className="flex flex-wrap items-baseline gap-x-1.5">
+                                            <span className="flex items-start gap-x-2">
                                                 <DualDate
+                                                    stacked
                                                     date={permit.valid_from}
                                                 />
                                                 <span aria-hidden="true">
                                                     –
                                                 </span>
                                                 <DualDate
+                                                    stacked
                                                     date={permit.valid_to}
                                                 />
                                             </span>
@@ -318,6 +321,7 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                                         <Td className="whitespace-nowrap">
                                             {permit.submitted_at ? (
                                                 <DualDate
+                                                    stacked
                                                     date={permit.submitted_at}
                                                 />
                                             ) : (

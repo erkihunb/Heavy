@@ -110,19 +110,16 @@ function DefaultIcon({ variant }: { variant: ConfirmVariant }) {
 }
 
 const iconWrapperCls: Record<ConfirmVariant, string> = {
-    danger: 'rounded-full bg-red-100 p-2 text-red-600 dark:bg-red-900/30 dark:text-red-400',
-    warning:
-        'rounded-full bg-amber-100 p-2 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
-    success:
-        'rounded-full bg-green-100 p-2 text-green-600 dark:bg-green-900/30 dark:text-green-400',
-    default:
-        'rounded-full bg-blue-100 p-2 text-primary dark:bg-blue-900/30 dark:text-primary',
+    danger: 'rounded-full bg-danger-soft p-2 text-danger-strong',
+    warning: 'rounded-full bg-warning-soft p-2 text-warning-strong',
+    success: 'rounded-full bg-success-soft p-2 text-success-strong',
+    default: 'rounded-full bg-brand-soft p-2 text-brand-strong',
 };
 
 const confirmBtnCls: Record<ConfirmVariant, string> = {
     danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 disabled:opacity-60',
     warning:
-        'bg-amber-500 text-(--app-foreground) hover:bg-amber-600 focus:ring-amber-400 disabled:opacity-60',
+        'bg-amber-700 text-white hover:bg-amber-800 focus:ring-amber-500 disabled:opacity-60',
     success:
         'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500 disabled:opacity-60',
     default:

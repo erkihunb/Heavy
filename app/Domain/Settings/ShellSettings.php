@@ -16,10 +16,18 @@ final class ShellSettings
 {
     /** The brand colour of each colour preset; mirrors resources/css/app.css. */
     private const array PRESET_PRIMARY = [
-        'navy' => '#122170',
+        'navy' => '#1e3a8a',
         'forest' => '#166534',
         'sunset' => '#b4410f',
         'graphite' => '#27272a',
+    ];
+
+    /** The sidebar colour of each preset: a deep shade of its brand colour. */
+    private const array PRESET_SIDEBAR = [
+        'navy' => '#0b1b3f',
+        'forest' => '#0b2e1c',
+        'sunset' => '#2b1206',
+        'graphite' => '#18181b',
     ];
 
     /**
@@ -34,11 +42,12 @@ final class ShellSettings
         return [
             'appearance.primary_color' => self::color($appearance['primary_color'] ?? null)
                 ?? self::PRESET_PRIMARY[$theme] ?? self::PRESET_PRIMARY['navy'],
-            'appearance.secondary_color' => '#1d3084',
-            'appearance.accent_color' => self::color($appearance['accent_color'] ?? null) ?? '#d12908',
-            'appearance.sidebar_color' => self::color($appearance['sidebar_color'] ?? null) ?? '#ffffff',
+            'appearance.secondary_color' => '#2a4a9f',
+            'appearance.accent_color' => self::color($appearance['accent_color'] ?? null) ?? '#b45309',
+            'appearance.sidebar_color' => self::color($appearance['sidebar_color'] ?? null)
+                ?? self::PRESET_SIDEBAR[$theme] ?? self::PRESET_SIDEBAR['navy'],
             'appearance.ui_style' => in_array($appearance['ui_style'] ?? null, SettingsRegistry::UI_STYLES, true)
-                ? $appearance['ui_style'] : 'swiss',
+                ? $appearance['ui_style'] : 'authority',
             'appearance.button_style' => (string) ($appearance['button_style'] ?? 'auto'),
             'appearance.card_radius' => (string) ($appearance['card_radius'] ?? 'auto'),
             'appearance.table_density' => (string) ($appearance['table_density'] ?? 'comfortable'),

@@ -19,14 +19,14 @@ it('shares the signed-in person\'s permissions for the menu', function () {
             ->where('auth.isSuperAdmin', false));
 });
 
-it('shares the brand colour of the chosen preset', function () {
+it('shares the brand and sidebar colours of the chosen preset', function () {
     config(['permits.appearance.theme' => 'forest', 'permits.appearance.primary_color' => null]);
 
     $this->actingAs(staffUser(Role::Approver))
         ->get(route('dashboard'))
         ->assertInertia(fn (Assert $page) => $page
             ->where('settings', fn ($settings) => $settings['appearance.primary_color'] === '#166534'
-                && $settings['appearance.sidebar_color'] === '#ffffff'));
+                && $settings['appearance.sidebar_color'] === '#0b2e1c'));
 });
 
 it('prefers a custom brand colour and ignores an invalid one', function () {
@@ -36,7 +36,7 @@ it('prefers a custom brand colour and ignores an invalid one', function () {
         ->get(route('dashboard'))
         ->assertInertia(fn (Assert $page) => $page
             ->where('settings', fn ($settings) => $settings['appearance.primary_color'] === '#ab12cd'
-                && $settings['appearance.sidebar_color'] === '#ffffff'));
+                && $settings['appearance.sidebar_color'] === '#0b1b3f'));
 });
 
 it('maps the appearance switches to the shell\'s keys', function () {

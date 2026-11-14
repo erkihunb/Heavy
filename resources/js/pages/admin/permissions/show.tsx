@@ -123,8 +123,8 @@ export default function ShowPermission({
                                         className={cx(
                                             'rounded-full px-2 py-0.5 text-xs font-medium',
                                             role.scope_type === 'global'
-                                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-                                                : 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
+                                                ? 'bg-brand-soft text-brand-strong'
+                                                : 'bg-info-soft text-info-strong',
                                         )}
                                     >
                                         {role.scope_type === 'global'

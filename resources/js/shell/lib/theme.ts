@@ -16,8 +16,9 @@ export type {
  * ThemeStyle (PHP) writes the admin choice on <html data-ui-style> for the
  * first paint.
  */
-export type UiStyle = 'swiss' | 'classic' | 'soft' | 'contrast';
+export type UiStyle = 'authority' | 'swiss' | 'classic' | 'soft' | 'contrast';
 export const UI_STYLES: readonly UiStyle[] = [
+    'authority',
     'swiss',
     'classic',
     'soft',
@@ -52,7 +53,7 @@ export function resolveUiStyle(
     adminStyle: unknown,
     allowUserSwitching: boolean,
 ): UiStyle {
-    const fallback: UiStyle = isUiStyle(adminStyle) ? adminStyle : 'swiss';
+    const fallback: UiStyle = isUiStyle(adminStyle) ? adminStyle : 'authority';
     return (allowUserSwitching ? getStoredUiStyle() : null) ?? fallback;
 }
 
@@ -69,5 +70,5 @@ export function setUiStylePreference(
             // Storage unavailable: the choice still applies for this visit.
         }
     }
-    applyUiStyle(style ?? (isUiStyle(adminStyle) ? adminStyle : 'swiss'));
+    applyUiStyle(style ?? (isUiStyle(adminStyle) ? adminStyle : 'authority'));
 }

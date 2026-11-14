@@ -294,6 +294,7 @@ return [
         ],
         'ui_styles' => [
             'live' => 'Shown on this page as you choose. Save to apply it for everyone, or Discard to go back.',
+            'authority' => 'Navy and gold: rounded cards lifted by soft shadows, a dark sidebar, bold titles.',
             'swiss' => 'Flat and sharp: hairline borders, 2px corners, no shadows.',
             'classic' => 'Tinted cards, 8px corners and light shadows.',
             'soft' => 'Rounded and airy: raised cards, controls that press in.',
@@ -338,7 +339,8 @@ return [
             'permits__number_year_format' => ['full' => 'Four digits (2019)', 'short' => 'Two digits (19)'],
             'permits__number_reset' => ['yearly' => 'Each Ethiopian year', 'never' => 'Never'],
             'permits__appearance__ui_style' => [
-                'swiss' => 'Swiss (default)',
+                'authority' => 'Authority (default)',
+                'swiss' => 'Swiss',
                 'classic' => 'Classic',
                 'soft' => 'Soft',
                 'contrast' => 'High contrast',

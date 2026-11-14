@@ -200,7 +200,7 @@ export function VehicleHistoryCard({
                                             </Td>
                                             <Td>
                                                 {other.conflicts && (
-                                                    <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-800 ring-1 ring-red-200 ring-inset dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900">
+                                                    <span className="inline-flex items-center gap-1 rounded-badge bg-danger-soft px-2 py-0.5 text-xs font-medium text-danger-strong ring-1 ring-danger-strong/20 ring-inset">
                                                         <TriangleAlert
                                                             aria-hidden="true"
                                                             className="size-3.5"

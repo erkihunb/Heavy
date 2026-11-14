@@ -116,8 +116,10 @@ function Tile({
 }) {
     return (
         <div className="rounded-card border border-border bg-card p-5">
-            <p className="text-eyebrow text-muted-foreground">{label}</p>
-            <p className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
+            <p className="text-sm font-medium text-muted-foreground">{label}</p>
+            <p className="mt-2 text-2xl leading-tight font-bold tabular-nums sm:text-3xl">
+                {value}
+            </p>
             {hint && (
                 <p className="mt-1 text-sm text-muted-foreground">{hint}</p>
             )}

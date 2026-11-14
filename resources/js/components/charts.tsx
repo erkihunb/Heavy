@@ -530,14 +530,14 @@ export function SegmentedBar({
 const METER_TONE = {
     primary: { fill: 'bg-chart-1', track: 'bg-chart-1/15' },
     success: {
-        fill: 'bg-emerald-600 dark:bg-emerald-500',
-        track: 'bg-emerald-600/15',
+        fill: 'bg-success',
+        track: 'bg-success/15',
     },
     warning: {
-        fill: 'bg-amber-500',
-        track: 'bg-amber-500/15',
+        fill: 'bg-warning',
+        track: 'bg-warning/15',
     },
-    critical: { fill: 'bg-red-600', track: 'bg-red-600/15' },
+    critical: { fill: 'bg-destructive', track: 'bg-destructive/15' },
 } as const;
 
 /** How far something has got, as a share of a whole. */

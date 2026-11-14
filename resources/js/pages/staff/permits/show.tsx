@@ -120,7 +120,7 @@ export default function StaffPermitsShow({
             vehicleHistory={vehicleHistory}
             title={t('permits.staff.detail_title')}
         >
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
                 <div className="space-y-6">
                     <PermitDetailsCard permit={permit} />
                     <VehicleHistoryCard vehicleHistory={vehicleHistory} />

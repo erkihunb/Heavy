@@ -689,12 +689,12 @@ const actionItemTones: Record<ActionMenuTone, { text: string; focus: string }> =
             focus: 'bg-(--app-surface-muted)',
         },
         warning: {
-            text: 'text-amber-700 dark:text-amber-400',
-            focus: 'bg-amber-50 dark:bg-amber-900/20',
+            text: 'text-warning-strong',
+            focus: 'bg-warning-soft',
         },
         danger: {
-            text: 'text-red-700 dark:text-red-400',
-            focus: 'bg-red-50 dark:bg-red-900/20',
+            text: 'text-danger-strong',
+            focus: 'bg-danger-soft',
         },
     };
 /** The item's own icon, else the glyph the app's action-icon rules give its label; a span keeps the row's gap even when there is none. */

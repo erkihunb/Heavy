@@ -184,7 +184,7 @@ export default function PermitShow({ applicant, permit, actions }: Props) {
                     </section>
                 )}
 
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+                <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
                     <section
                         aria-labelledby="details-title"
                         className="rounded-card border border-border bg-card p-5 sm:p-6"

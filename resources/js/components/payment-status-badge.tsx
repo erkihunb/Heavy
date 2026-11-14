@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { PaymentStatus } from '@/types/enums';
+import { badgeClassName } from '@app/ui';
 
 const PRESENTATION: Record<
     PaymentStatus,
@@ -10,18 +11,15 @@ const PRESENTATION: Record<
 > = {
     submitted: {
         icon: Hourglass,
-        className:
-            'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900',
+        className: badgeClassName('warning'),
     },
     verified: {
         icon: CircleCheck,
-        className:
-            'bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900',
+        className: badgeClassName('success'),
     },
     rejected: {
         icon: CircleX,
-        className:
-            'bg-red-50 text-red-800 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900',
+        className: badgeClassName('danger'),
     },
 };
 
@@ -40,14 +38,7 @@ export function PaymentStatusBadge({
     const { icon: Icon, className: tone } = PRESENTATION[status];
 
     return (
-        <span
-            data-status={status}
-            className={cn(
-                'inline-flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset',
-                tone,
-                className,
-            )}
-        >
+        <span data-status={status} className={cn('w-fit', tone, className)}>
             <Icon aria-hidden="true" className="size-3.5 shrink-0" />
             {t(`payments.status.${status}`)}
         </span>

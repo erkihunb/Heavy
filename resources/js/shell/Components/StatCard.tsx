@@ -11,12 +11,10 @@ interface Props {
 }
 
 const toneChip: Record<Tone, string> = {
-    primary: 'bg-blue-50 text-primary dark:bg-blue-900/30 dark:text-blue-300',
-    success:
-        'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300',
-    warning:
-        'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300',
-    neutral: 'bg-(--app-surface-muted) text-(--app-muted-foreground)',
+    primary: 'bg-brand-soft text-brand-strong',
+    success: 'bg-success-soft text-success-strong',
+    warning: 'bg-warning-soft text-warning-strong',
+    neutral: 'bg-neutral-soft text-neutral-strong',
 };
 
 /**
@@ -38,13 +36,13 @@ export default function StatCard({
                 </p>
                 {icon && (
                     <div
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${toneChip[tone]}`}
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-control ${toneChip[tone]}`}
                     >
                         {icon}
                     </div>
                 )}
             </div>
-            <p className="mt-2 text-2xl font-semibold text-(--app-foreground) tabular-nums">
+            <p className="mt-2 text-3xl leading-tight font-bold text-(--app-foreground) tabular-nums">
                 {value}
             </p>
             {hint && (

@@ -22,34 +22,34 @@ interface AppMetricCardProps {
 
 const variantStyles: Record<Variant, { icon: string; value: string }> = {
     primary: {
-        icon: 'bg-primary-100 text-primary dark:bg-primary/20 dark:text-primary',
-        value: 'text-primary dark:text-primary',
+        icon: 'bg-brand-soft text-brand-strong',
+        value: 'text-(--app-foreground)',
     },
     success: {
-        icon: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
-        value: 'text-green-700 dark:text-green-400',
+        icon: 'bg-success-soft text-success-strong',
+        value: 'text-(--app-foreground)',
     },
     warning: {
-        icon: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
-        value: 'text-amber-700 dark:text-amber-400',
+        icon: 'bg-warning-soft text-warning-strong',
+        value: 'text-(--app-foreground)',
     },
     danger: {
-        icon: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
-        value: 'text-red-600 dark:text-red-400',
+        icon: 'bg-danger-soft text-danger-strong',
+        value: 'text-danger-strong',
     },
     accent: {
-        icon: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
-        value: 'text-orange-600 dark:text-orange-400',
+        icon: 'bg-warning-soft text-brand-accent',
+        value: 'text-(--app-foreground)',
     },
     neutral: {
-        icon: 'bg-(--app-surface-muted) text-(--app-muted-foreground)',
+        icon: 'bg-neutral-soft text-neutral-strong',
         value: 'text-(--app-foreground)',
     },
 };
 
 const trendStyles: Record<Trend, { cls: string; Icon: typeof TrendingUp }> = {
-    up: { cls: 'text-green-600 dark:text-green-400', Icon: TrendingUp },
-    down: { cls: 'text-red-600 dark:text-red-400', Icon: TrendingDown },
+    up: { cls: 'text-success-strong', Icon: TrendingUp },
+    down: { cls: 'text-danger-strong', Icon: TrendingDown },
     neutral: { cls: 'text-(--app-muted-foreground)', Icon: Minus },
 };
 
@@ -84,7 +84,7 @@ export default function AppMetricCard({
                 </p>
                 {icon && (
                     <div
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${styles.icon}`}
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-control ${styles.icon}`}
                     >
                         {icon}
                     </div>
@@ -92,7 +92,7 @@ export default function AppMetricCard({
             </div>
 
             <p
-                className={`mt-2 text-2xl font-bold tabular-nums ${styles.value}`}
+                className={`mt-2 text-3xl leading-tight font-bold tabular-nums ${styles.value}`}
             >
                 {value}
             </p>

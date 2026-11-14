@@ -147,7 +147,7 @@ export default function BranchScopesCard({
                                 <button
                                     type="button"
                                     onClick={() => void remove(scope)}
-                                    className="text-xs font-medium text-red-700 hover:underline dark:text-red-400"
+                                    className="text-xs font-medium text-danger-strong hover:underline"
                                 >
                                     {t('rbac.scopes.remove')}
                                 </button>

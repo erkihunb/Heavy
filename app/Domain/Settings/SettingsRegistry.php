@@ -29,7 +29,7 @@ final class SettingsRegistry
     public const array THEMES = ['navy', 'forest', 'sunset', 'graphite'];
 
     /** Interface style presets (EUISIS): radius, depth and contrast. */
-    public const array UI_STYLES = ['swiss', 'classic', 'soft', 'contrast'];
+    public const array UI_STYLES = ['authority', 'swiss', 'classic', 'soft', 'contrast'];
 
     /**
      * @return array<string, array{section: string, group: string, type: string, required?: bool, min?: int, max?: int, options?: list<string>, pattern?: string, kind?: string}>

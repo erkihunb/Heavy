@@ -88,9 +88,7 @@ export function RoleScopeField({
                 ))}
             </div>
             {error && (
-                <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                    {error}
-                </p>
+                <p className="mt-1 text-xs text-danger-strong">{error}</p>
             )}
         </fieldset>
     );

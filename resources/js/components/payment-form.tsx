@@ -70,7 +70,7 @@ export function PaymentForm({
             onSubmit={submit}
             noValidate
             encType="multipart/form-data"
-            className="space-y-6"
+            className="@container space-y-6"
         >
             <fieldset
                 aria-describedby={
@@ -81,7 +81,8 @@ export function PaymentForm({
                 <legend className="mb-2 text-sm leading-none font-medium">
                     {t('payments.fields.method')}
                 </legend>
-                <div className="grid gap-3 sm:grid-cols-2">
+                {/* Columns follow the form's own width, so it also fits a narrow side rail. */}
+                <div className="grid gap-3 @md:grid-cols-2">
                     {methods.map((method) => (
                         <label
                             key={method}
@@ -106,7 +107,7 @@ export function PaymentForm({
                 />
             </fieldset>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 @xl:grid-cols-2">
                 <FormField
                     id="receipt_number"
                     label={t('payments.fields.receipt_number')}

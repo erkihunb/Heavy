@@ -23,7 +23,7 @@
                     try {
                         const style = localStorage.getItem('ui-style');
 
-                        if (['swiss', 'classic', 'soft', 'contrast'].includes(style)) {
+                        if (['authority', 'swiss', 'classic', 'soft', 'contrast'].includes(style)) {
                             document.documentElement.dataset.uiStyle = style;
                         }
                     } catch (e) {}
@@ -34,11 +34,11 @@
         {{-- Inline style to set the HTML background color based on our theme in app.css --}}
         <style>
             html {
-                background-color: #f6f6f6;
+                background-color: #f3f5f9;
             }
 
             html.dark {
-                background-color: #111112;
+                background-color: #0e1117;
             }
         </style>
 

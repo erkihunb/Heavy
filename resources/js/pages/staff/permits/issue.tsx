@@ -39,7 +39,7 @@ export default function StaffPermitIssue({
             description={t('permits.staff.desks.issue_intro')}
             rolePage={!direct}
         >
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
                 <PermitDetailsCard permit={permit} />
 
                 <div className="h-fit space-y-4 lg:sticky lg:top-6">

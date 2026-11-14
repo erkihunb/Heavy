@@ -22,10 +22,10 @@ const controlBase = cx(
     'bg-(--app-surface) px-3 text-sm text-(--app-foreground) placeholder:text-(--app-muted-foreground)',
     'focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20',
     'disabled:cursor-not-allowed disabled:bg-(--app-surface-muted) disabled:opacity-70',
-    'aria-invalid:border-red-600 aria-invalid:ring-red-600/20',
+    'aria-invalid:border-destructive aria-invalid:ring-destructive/20',
     // The browser's own checks (required, type=email, min/max…) mark a field
     // only after the person has edited it or tried to submit, never on load.
-    'user-invalid:border-red-600 user-invalid:ring-red-600/20',
+    'user-invalid:border-destructive user-invalid:ring-destructive/20',
     // On a <select>, keep room for the native chevron: `:is(select)` outranks
     // `px-3`, so one shared input style serves inputs and selects alike.
     '[select]:pr-9',
@@ -109,7 +109,7 @@ export function FormLabel({
         >
             {children}
             {required && (
-                <span className="ml-1 text-red-600" aria-hidden="true">
+                <span className="ml-1 text-destructive" aria-hidden="true">
                     *
                 </span>
             )}
@@ -143,7 +143,7 @@ export function FieldError({
         <p
             role="alert"
             className={cx(
-                'text-helper font-medium text-red-600 dark:text-red-400',
+                'text-helper font-medium text-danger-strong',
                 className,
             )}
             {...props}

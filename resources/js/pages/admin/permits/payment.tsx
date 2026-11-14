@@ -62,7 +62,7 @@ export default function PermitPayment({
                     action={<StatusBadge status={permit.effective_status} />}
                 />
 
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+                <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
                     <section
                         aria-labelledby="details-title"
                         className="h-fit rounded-card border border-border bg-card p-5 sm:p-6"

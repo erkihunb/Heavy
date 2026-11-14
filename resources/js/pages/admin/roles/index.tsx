@@ -47,8 +47,8 @@ type RoleRow = {
 type Filters = { search: string; scope: string };
 
 const SCOPE_DOT: Record<Scope, string> = {
-    branch: 'bg-sky-500',
-    global: 'bg-purple-500',
+    branch: 'bg-info',
+    global: 'bg-primary',
 };
 
 /** The roles in one list, filtered by scope: roles are not put into categories. */
@@ -264,7 +264,7 @@ function RolesIndexPage({
                                                                 {r.label}
                                                             </span>
                                                             {r.is_protected && (
-                                                                <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                                                                <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand-strong">
                                                                     {t(
                                                                         'rbac.roles.fullAccess',
                                                                     )}
@@ -293,8 +293,8 @@ function RolesIndexPage({
                                                                 'rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap',
                                                                 r.scope_type ===
                                                                     'global'
-                                                                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-                                                                    : 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
+                                                                    ? 'bg-brand-soft text-brand-strong'
+                                                                    : 'bg-info-soft text-info-strong',
                                                             )}
                                                         >
                                                             {r.scope_type ===

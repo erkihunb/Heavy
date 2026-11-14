@@ -43,7 +43,7 @@ const buttonVariants: Record<ButtonVariant, string> = {
         'bg-red-700 text-white shadow-(--neu-raised-sm) hover:bg-red-800 active:shadow-none dark:bg-red-700 dark:hover:bg-red-600',
     // A harmful action that is not the page's main one (Remove, Revoke next to Save).
     destructiveOutline:
-        'border border-red-300 bg-(--app-surface) text-red-700 shadow-(--neu-raised-sm) hover:bg-red-50 active:shadow-(--neu-inset) dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/30',
+        'border border-danger-strong/40 bg-(--app-surface) text-danger-strong shadow-(--neu-raised-sm) hover:bg-danger-soft active:shadow-(--neu-inset)',
     link: 'h-auto p-0 text-primary underline-offset-4 hover:underline',
 };
 
@@ -81,9 +81,8 @@ export type ActionTone = 'primary' | 'neutral' | 'danger' | 'success';
 const actionTones: Record<ActionTone, string> = {
     primary: 'text-primary hover:text-primary-hover',
     neutral: 'text-(--app-muted-foreground) hover:text-(--app-foreground)',
-    danger: 'text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300',
-    success:
-        'text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300',
+    danger: 'text-danger-strong hover:underline',
+    success: 'text-success-strong hover:underline',
 };
 
 /**

@@ -268,6 +268,7 @@ export default function AppSidebar({
                     {selected && (
                         <span
                             aria-hidden="true"
+                            data-nav-indicator
                             className="absolute inset-y-1.5 inset-s-0 w-0.5 rounded-full bg-(--sidebar-accent)"
                         />
                     )}
@@ -426,6 +427,7 @@ export default function AppSidebar({
             className="flex h-full min-h-0 w-full flex-col border-e border-(--sidebar-border) bg-(--sidebar-bg) text-(--sidebar-fg)"
         >
             <div
+                data-sidebar-brand
                 className={
                     collapsed
                         ? 'flex h-16 shrink-0 items-center justify-center border-b border-(--sidebar-border)'
@@ -612,13 +614,13 @@ export default function AppSidebar({
                         <span
                             title={environmentLabel}
                             aria-label={environmentLabel}
-                            className="mx-auto mt-1 mb-1 block h-2 w-2 rounded-full bg-amber-400"
+                            className="mx-auto mt-1 mb-1 block h-2 w-2 rounded-full bg-brand-gold"
                         />
                     ) : (
                         <p className="px-3 pt-1 pb-1">
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-semibold text-amber-600 ring-1 ring-amber-400/40 ring-inset dark:text-amber-300">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-gold/15 px-2 py-0.5 text-[11px] font-semibold text-(--sidebar-fg) ring-1 ring-brand-gold/50 ring-inset">
                                 <span
-                                    className="h-1.5 w-1.5 rounded-full bg-amber-400"
+                                    className="h-1.5 w-1.5 rounded-full bg-brand-gold"
                                     aria-hidden="true"
                                 />
                                 {environmentLabel}

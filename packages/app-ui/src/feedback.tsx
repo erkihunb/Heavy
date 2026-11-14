@@ -5,19 +5,28 @@ import { cx } from './primitives';
 export type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 /** The tone's surface alone, for a table row or cell that carries a status (a matching field, an invalid value). */
 const surfaces: Record<Tone, string> = {
-    neutral: 'bg-(--app-surface-muted)',
-    info: 'bg-primary-50 dark:bg-primary-950',
-    success: 'bg-emerald-50 dark:bg-emerald-950/40',
-    warning: 'bg-amber-50 dark:bg-amber-950/40',
-    danger: 'bg-red-50 dark:bg-red-950/40',
+    neutral: 'bg-neutral-soft',
+    info: 'bg-brand-soft',
+    success: 'bg-success-soft',
+    warning: 'bg-warning-soft',
+    danger: 'bg-danger-soft',
 };
+/* Soft fill, strong text and a faint ring of the text colour (app.css status tones). */
 const tones: Record<Tone, string> = {
-    neutral: `${surfaces.neutral} text-(--app-foreground) ring-(--app-border-strong)`,
-    info: `${surfaces.info} text-primary-800 ring-primary-200 dark:text-primary-200 dark:ring-primary-800`,
-    success: `${surfaces.success} text-emerald-800 ring-emerald-200 dark:text-emerald-300 dark:ring-emerald-900`,
-    warning: `${surfaces.warning} text-amber-800 ring-amber-200 dark:text-amber-300 dark:ring-amber-900`,
-    danger: `${surfaces.danger} text-red-800 ring-red-200 dark:text-red-300 dark:ring-red-900`,
+    neutral: `${surfaces.neutral} text-neutral-strong ring-neutral-strong/20`,
+    info: `${surfaces.info} text-brand-strong ring-brand-strong/20`,
+    success: `${surfaces.success} text-success-strong ring-success-strong/20`,
+    warning: `${surfaces.warning} text-warning-strong ring-warning-strong/25`,
+    danger: `${surfaces.danger} text-danger-strong ring-danger-strong/20`,
 };
+
+/** Soft fill and strong text of a tone, for icon tiles and small marks. */
+export function toneClassName(
+    tone: Tone = 'neutral',
+    className?: string,
+): string {
+    return cx(tones[tone], className);
+}
 
 export function toneSurfaceClassName(
     tone: Tone = 'neutral',
@@ -32,7 +41,7 @@ export function badgeClassName(
     className?: string,
 ): string {
     return cx(
-        'inline-flex items-center rounded-control px-2 py-0.5 text-xs font-medium ring-1 ring-inset',
+        'inline-flex items-center gap-1.5 rounded-badge px-2 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset',
         tones[tone],
         className,
     );

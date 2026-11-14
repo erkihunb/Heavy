@@ -146,7 +146,7 @@ export default function RoleForm({
                     t={t}
                 />
                 {form.errors.permissions && (
-                    <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                    <p className="mt-2 text-xs text-danger-strong">
                         {form.errors.permissions}
                     </p>
                 )}

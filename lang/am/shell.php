@@ -225,6 +225,7 @@ return [
         'interface_style' => 'የገጽ ዘይቤ',
         'organization_default' => 'የተቋሙ ነባሪ',
         'styles' => [
+            'authority' => 'ባለሥልጣን',
             'swiss' => 'ስዊስ',
             'classic' => 'ክላሲክ',
             'soft' => 'ለስላሳ',

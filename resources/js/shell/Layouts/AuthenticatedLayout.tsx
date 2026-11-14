@@ -57,6 +57,7 @@ const SHELL_ROOT_PROPERTIES = [
  */
 const SHELL_ROOT_DATASET = [
     'shell',
+    'sidebarTone',
     'uiStyle',
     'buttonStyle',
     'cardRadius',
@@ -118,11 +119,11 @@ function Shell({
     const { url: pageUrl } = usePage();
 
     /* Defaults mirror the brand tokens in app.css. */
-    const primary = getString('appearance.primary_color', '#122170');
-    const secondary = getString('appearance.secondary_color', '#1d3084');
-    const accent = getString('appearance.accent_color', '#d12908');
-    const sidebarColor = getString('appearance.sidebar_color', '#ffffff');
-    const uiStyle = getString('appearance.ui_style', 'swiss');
+    const primary = getString('appearance.primary_color', '#1e3a8a');
+    const secondary = getString('appearance.secondary_color', '#2a4a9f');
+    const accent = getString('appearance.accent_color', '#b45309');
+    const sidebarColor = getString('appearance.sidebar_color', '#0b1b3f');
+    const uiStyle = getString('appearance.ui_style', 'authority');
     // A person's own style (ThemeToggle) wins over the organisation's while switching is allowed.
     const allowUserTheme = getBoolean(
         'appearance.allow_user_theme_switching',
@@ -247,6 +248,8 @@ function Shell({
         );
 
         root.dataset.shell = 'admin';
+        // A dark sidebar marks the selected item in gold (authority style).
+        root.dataset.sidebarTone = isLight(sidebarColor) ? 'light' : 'dark';
         root.dataset.uiStyle = resolveUiStyle(uiStyle, allowUserTheme);
         root.dataset.buttonStyle = buttonStyle;
         root.dataset.cardRadius = cardRadius;
@@ -351,7 +354,7 @@ function Shell({
                 {maintenanceEnabled && maintenanceMessage && (
                     <div
                         role="status"
-                        className="shrink-0 border-b border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
+                        className="shrink-0 border-b border-warning/40 bg-warning-soft px-4 py-2 text-sm text-warning-strong"
                     >
                         {maintenanceMessage}
                     </div>

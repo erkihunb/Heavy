@@ -18,7 +18,7 @@ final class ThemeStyle
     {
         return [
             'data-theme' => self::choice('theme', SettingsRegistry::THEMES, 'navy'),
-            'data-ui-style' => self::choice('ui_style', SettingsRegistry::UI_STYLES, 'swiss'),
+            'data-ui-style' => self::choice('ui_style', SettingsRegistry::UI_STYLES, 'authority'),
             'data-button-style' => self::choice('button_style', ['auto', 'square', 'rounded', 'pill'], 'auto'),
             'data-card-radius' => self::choice('card_radius', ['auto', 'none', 'sm', 'md', 'lg', 'xl'], 'auto'),
             'data-table-density' => self::choice('table_density', ['comfortable', 'compact'], 'comfortable'),

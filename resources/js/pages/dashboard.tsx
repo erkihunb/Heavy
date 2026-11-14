@@ -48,6 +48,7 @@ import type { DualDate as DualDateValue, Money } from '@/types';
 import { PERMIT_STATUSES } from '@/types/enums';
 import type { PaymentStatus, PermitStatus, ScanResult } from '@/types/enums';
 import type { TranslationKey } from '@/types/translations';
+import { badgeClassName } from '@app/ui';
 
 type CountKey =
     | 'in_force'
@@ -128,12 +129,12 @@ type Insights = {
 
 /* Scan results keep their meaning: good, warning, serious, critical or neutral. */
 const SCAN_COLOR: Record<ScanResult, string> = {
-    valid: 'bg-emerald-600 dark:bg-emerald-500',
-    outside_hours: 'bg-amber-500',
-    not_yet_valid: 'bg-sky-500',
-    expired: 'bg-zinc-400 dark:bg-zinc-500',
-    revoked: 'bg-red-600',
-    not_found: 'bg-orange-400',
+    valid: 'bg-success',
+    outside_hours: 'bg-warning',
+    not_yet_valid: 'bg-info',
+    expired: 'bg-muted-foreground/50',
+    revoked: 'bg-destructive',
+    not_found: 'bg-brand-accent/70',
 };
 
 const SCAN_ORDER: ScanResult[] = [
@@ -161,41 +162,30 @@ const byDay = (rows: DayCount[], locale: string): ChartPoint[] =>
 
 type Tone = 'primary' | 'success' | 'warning' | 'critical' | 'neutral';
 
-/* EUISIS KPI tones: a solid icon tile in light, a quiet one in dark. */
+/* KPI tones: the tone lives in the icon tile only (soft fill, strong glyph); the card stays neutral. */
 const TONE_ICON: Record<Tone, string> = {
-    primary:
-        'bg-primary text-primary-foreground dark:bg-primary/15 dark:text-primary',
-    success:
-        'bg-emerald-700 text-white dark:bg-emerald-950/60 dark:text-emerald-400',
-    warning: 'bg-amber-700 text-white dark:bg-amber-950/60 dark:text-amber-400',
-    critical: 'bg-red-700 text-white dark:bg-red-950/60 dark:text-red-400',
-    neutral:
-        'bg-muted-foreground text-white dark:bg-muted dark:text-muted-foreground',
-};
-
-const TONE_EDGE: Record<Tone, string> = {
-    primary: 'before:bg-primary',
-    success: 'before:bg-emerald-500',
-    warning: 'before:bg-amber-500',
-    critical: 'before:bg-red-500',
-    neutral: 'before:bg-border-strong',
+    primary: 'bg-brand-soft text-brand-strong',
+    success: 'bg-success-soft text-success-strong',
+    warning: 'bg-warning-soft text-warning-strong',
+    critical: 'bg-danger-soft text-danger-strong',
+    neutral: 'bg-neutral-soft text-neutral-strong',
 };
 
 /* Colour of each status in the distribution bar. */
 const STATUS_COLOR: Record<PermitStatus, string> = {
-    draft: 'bg-zinc-300 dark:bg-zinc-600',
-    submitted: 'bg-primary/60',
+    draft: 'bg-muted-foreground/30',
+    submitted: 'bg-primary/55',
     under_review: 'bg-primary',
-    changes_requested: 'bg-amber-400',
-    rejected: 'bg-red-500',
-    awaiting_payment: 'bg-amber-600',
-    payment_submitted: 'bg-sky-500',
-    payment_confirmed: 'bg-teal-500',
-    issued: 'bg-emerald-400',
-    active: 'bg-emerald-600',
-    expired: 'bg-zinc-400 dark:bg-zinc-500',
-    revoked: 'bg-red-700',
-    withdrawn: 'bg-zinc-200 dark:bg-zinc-700',
+    changes_requested: 'bg-warning/60',
+    rejected: 'bg-destructive/70',
+    awaiting_payment: 'bg-warning',
+    payment_submitted: 'bg-info/60',
+    payment_confirmed: 'bg-info',
+    issued: 'bg-success/60',
+    active: 'bg-success',
+    expired: 'bg-muted-foreground/55',
+    revoked: 'bg-destructive',
+    withdrawn: 'bg-muted-foreground/20',
 };
 
 type Kpi = {
@@ -214,8 +204,8 @@ type Kpi = {
 };
 
 const DELTA_STYLE = {
-    up: { icon: ArrowUp, className: 'text-emerald-700 dark:text-emerald-400' },
-    down: { icon: ArrowDown, className: 'text-red-700 dark:text-red-400' },
+    up: { icon: ArrowUp, className: 'text-success-strong' },
+    down: { icon: ArrowDown, className: 'text-danger-strong' },
     same: { icon: Minus, className: 'text-muted-foreground' },
 } as const;
 
@@ -245,14 +235,14 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
                 <span
                     aria-hidden="true"
                     className={cn(
-                        'hidden size-7 shrink-0 place-items-center rounded-md sm:grid',
+                        'hidden size-10 shrink-0 place-items-center rounded-control sm:grid',
                         TONE_ICON[kpi.tone],
                     )}
                 >
-                    <kpi.icon className="size-4" />
+                    <kpi.icon className="size-5" />
                 </span>
             </div>
-            <p className="pt-3 text-2xl leading-tight font-semibold tracking-tight sm:text-3xl">
+            <p className="pt-2 text-2xl leading-tight font-bold tracking-tight tabular-nums sm:text-3xl">
                 {kpi.value}
             </p>
             {(kpi.delta || kpi.trend) && (
@@ -269,18 +259,15 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
         </>
     );
 
-    const className = cn(
-        'relative flex h-full flex-col overflow-hidden rounded-card border border-border bg-card p-4 sm:p-5',
-        'before:absolute before:inset-y-0 before:start-0 before:w-[3px]',
-        TONE_EDGE[kpi.tone],
-    );
+    const className =
+        'relative flex h-full flex-col overflow-hidden rounded-card border border-border bg-card p-4 shadow-md sm:p-5';
 
     return kpi.href ? (
         <Link
             href={kpi.href}
             className={cn(
                 className,
-                'transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+                'transition-[box-shadow,border-color] hover:border-primary/40 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
             )}
         >
             {body}
@@ -298,8 +285,8 @@ type Attention = {
 };
 
 const RANK_DOT: Record<Attention['rank'], string> = {
-    high: 'bg-red-500',
-    medium: 'bg-amber-500',
+    high: 'bg-destructive',
+    medium: 'bg-warning',
     low: 'bg-primary',
 };
 
@@ -703,7 +690,7 @@ export default function Dashboard({
                                                         'dashboard.charts.decisions.approved',
                                                     ),
                                                     value: decisions.approved,
-                                                    color: 'bg-emerald-600 dark:bg-emerald-500',
+                                                    color: 'bg-success',
                                                 },
                                                 {
                                                     key: 'changes_requested',
@@ -711,7 +698,7 @@ export default function Dashboard({
                                                         'dashboard.charts.decisions.changes_requested',
                                                     ),
                                                     value: decisions.changes_requested,
-                                                    color: 'bg-amber-500',
+                                                    color: 'bg-warning',
                                                 },
                                                 {
                                                     key: 'rejected',
@@ -719,7 +706,7 @@ export default function Dashboard({
                                                         'dashboard.charts.decisions.rejected',
                                                     ),
                                                     value: decisions.rejected,
-                                                    color: 'bg-red-600',
+                                                    color: 'bg-destructive',
                                                 },
                                             ]}
                                         />
@@ -777,7 +764,7 @@ export default function Dashboard({
                                                     ),
                                                     value: payments.verified
                                                         .count,
-                                                    color: 'bg-emerald-600 dark:bg-emerald-500',
+                                                    color: 'bg-success',
                                                 },
                                                 {
                                                     key: 'submitted',
@@ -786,7 +773,7 @@ export default function Dashboard({
                                                     ),
                                                     value: payments.submitted
                                                         .count,
-                                                    color: 'bg-sky-500',
+                                                    color: 'bg-info',
                                                 },
                                                 {
                                                     key: 'rejected',
@@ -795,7 +782,7 @@ export default function Dashboard({
                                                     ),
                                                     value: payments.rejected
                                                         .count,
-                                                    color: 'bg-red-600',
+                                                    color: 'bg-destructive',
                                                 },
                                             ]}
                                         />
@@ -885,11 +872,11 @@ export default function Dashboard({
                                 {t('dashboard.attention.title')}
                             </h2>
                             <span
-                                className={cn(
-                                    'inline-flex rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset',
+                                className={badgeClassName(
                                     attention.length > 0
-                                        ? 'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900'
-                                        : 'bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900',
+                                        ? 'warning'
+                                        : 'success',
+                                    'tabular-nums',
                                 )}
                             >
                                 {attention.length}

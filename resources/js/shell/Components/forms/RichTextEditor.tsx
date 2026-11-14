@@ -268,7 +268,7 @@ export default function RichTextEditor({
                     'rich-text-field rounded-control border bg-(--app-surface)',
                     'focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20',
                     error
-                        ? 'border-red-600 ring-red-600/20'
+                        ? 'border-destructive ring-destructive/20'
                         : 'border-(--app-border-strong)',
                     (disabled || readOnly) && 'bg-(--app-surface-muted)',
                     disabled && 'cursor-not-allowed opacity-70',
@@ -282,7 +282,7 @@ export default function RichTextEditor({
                             <div className="space-y-3 p-3">
                                 <p
                                     role="alert"
-                                    className="text-helper text-amber-700 dark:text-amber-300"
+                                    className="text-helper text-warning-strong"
                                 >
                                     {t('shell.rich_text.loadFailed')}
                                 </p>
@@ -374,7 +374,7 @@ export default function RichTextEditor({
                     className={cx(
                         'text-helper tabular-nums',
                         over
-                            ? 'font-medium text-red-600 dark:text-red-400'
+                            ? 'font-medium text-danger-strong'
                             : 'text-(--app-muted-foreground)',
                     )}
                 >

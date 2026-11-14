@@ -66,7 +66,7 @@ export default function BranchPicker({
             <div
                 className={cx(
                     'max-h-64 overflow-y-auto rounded-control border',
-                    invalid ? 'border-red-500' : 'border-(--app-border)',
+                    invalid ? 'border-destructive' : 'border-(--app-border)',
                 )}
             >
                 {shown.length === 0 ? (
@@ -107,11 +107,7 @@ export default function BranchPicker({
                     String(selected.length),
                 )}
             </p>
-            {error && (
-                <p className="text-xs text-red-600 dark:text-red-400">
-                    {error}
-                </p>
-            )}
+            {error && <p className="text-xs text-danger-strong">{error}</p>}
         </div>
     );
 }

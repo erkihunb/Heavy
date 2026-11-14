@@ -59,6 +59,8 @@
     --radius-control: 2px;
     --radius-card: 2px;
     --radius-panel: 4px;
+    /* Status badges: square in the flat styles, pills in authority and soft. */
+    --radius-badge: 2px;
 
     /* EUISIS caps weight at bold: heavier cuts look crude in Ethiopic. */
     --font-weight-extrabold: 700;
@@ -125,6 +127,22 @@
     --color-success: var(--success);
     --color-success-foreground: var(--success-foreground);
     --color-warning: var(--warning);
+    --color-info: var(--info);
+    --color-brand-gold: var(--brand-gold);
+
+    /* Status tones (soft fill + strong text): bg-success-soft text-success-strong … */
+    --color-success-soft: var(--success-soft);
+    --color-success-strong: var(--success-strong);
+    --color-warning-soft: var(--warning-soft);
+    --color-warning-strong: var(--warning-strong);
+    --color-info-soft: var(--info-soft);
+    --color-info-strong: var(--info-strong);
+    --color-danger-soft: var(--danger-soft);
+    --color-danger-strong: var(--danger-strong);
+    --color-neutral-soft: var(--neutral-soft);
+    --color-neutral-strong: var(--neutral-strong);
+    --color-brand-soft: var(--brand-soft);
+    --color-brand-strong: var(--brand-strong);
 
     --color-chart-1: var(--chart-1);
     --color-chart-2: var(--chart-2);
@@ -159,69 +177,92 @@
 }
 
 :root {
-    /* EUISIS navy scale; 700 is the brand value. */
-    --navy-50: #eef1fa;
-    --navy-100: #dde3f5;
-    --navy-200: #bcc7eb;
-    --navy-300: #8f9fd8;
-    --navy-400: #5d72bf;
-    --navy-500: #33499f;
-    --navy-600: #1d3084;
-    --navy-700: #122170;
-    --navy-800: #0f1c5c;
-    --navy-900: #0d1749;
+    /* Authority navy scale; 700 is the brand value, 900 the sidebar. */
+    --navy-50: #eef2fb;
+    --navy-100: #dbe4f7;
+    --navy-200: #b9c9ee;
+    --navy-300: #8ea8e0;
+    --navy-400: #5f7fcd;
+    --navy-500: #3d5fb8;
+    --navy-600: #2a4a9f;
+    --navy-700: #1e3a8a;
+    --navy-800: #172e6e;
+    --navy-900: #0b1b3f;
 
-    /* Surfaces: the page sits one step below the cards on it. */
-    --background: #f6f6f6;
-    --foreground: #141414;
+    /* Surfaces: a cool, lightly tinted page under white cards. */
+    --background: #f3f5f9;
+    --foreground: #0f172a;
     --card: #ffffff;
-    --card-foreground: #141414;
+    --card-foreground: #0f172a;
     --popover: #ffffff;
-    --popover-foreground: #141414;
+    --popover-foreground: #0f172a;
 
-    /* Navy is near-black, so hover lightens. */
-    --primary: #122170;
-    --primary-hover: #1d3084;
+    /* Authority navy; hover lightens one step. Gold is the brand accent. */
+    --primary: #1e3a8a;
+    --primary-hover: #2a4a9f;
     --primary-foreground: #ffffff;
-    --primary-light: #dde3f5;
-    --brand-accent: #d12908;
+    --primary-light: #dbe4f7;
+    --brand-accent: #b45309;
+    /* Gold for marks on the dark sidebar and brand surfaces (non-text, 3:1+). */
+    --brand-gold: #f0b44c;
 
-    --secondary: #ededed;
-    --secondary-foreground: #141414;
-    --muted: #ededed;
-    --muted-foreground: #5c5c5c;
+    --secondary: #eef1f6;
+    --secondary-foreground: #0f172a;
+    --muted: #eef1f6;
+    --muted-foreground: #526075;
     /* Selected and highlighted rows: a wash of the brand colour. */
-    --accent: #dde3f5;
-    --accent-foreground: #122170;
+    --accent: #e3eafb;
+    --accent-foreground: #1e3a8a;
 
     --destructive: #b91c1c;
     --destructive-foreground: #b91c1c;
     --success: #15803d;
     --success-foreground: #ffffff;
     --warning: #b45309;
+    --info: #0369a1;
 
-    --border: #dcdcdc;
-    --border-strong: #767676;
-    --input: #767676;
-    --ring: #122170;
+    /*
+     * Status tones: a soft fill with strong text (badges, callouts, icon
+     * tiles). Every pair reads at 4.5:1 or better, in both themes.
+     */
+    --success-soft: #e6f4ea;
+    --success-strong: #166534;
+    --warning-soft: #fdf1dc;
+    --warning-strong: #92400e;
+    --info-soft: #e1effa;
+    --info-strong: #075985;
+    --danger-soft: #fdeaea;
+    --danger-strong: #991b1b;
+    --neutral-soft: #eef1f6;
+    --neutral-strong: #334155;
+    /* Follow the colour theme. */
+    --brand-soft: var(--accent);
+    --brand-strong: var(--accent-foreground);
+
+    --border: #e2e6ee;
+    --border-strong: #7b8494;
+    --input: #7b8494;
+    --ring: #1e3a8a;
 
     --highlight: #fde68a;
-    --highlight-foreground: #141414;
-    --asphalt: #141414;
-    --asphalt-foreground: #f4f4f5;
-    --asphalt-muted: #c7c7cc;
-    --brand-surface: #122170;
+    --highlight-foreground: #0f172a;
+    --asphalt: #0b1b3f;
+    --asphalt-foreground: #f1f5fb;
+    --asphalt-muted: #c3cde3;
+    --brand-surface: #1e3a8a;
 
-    --chart-1: #122170;
-    --chart-2: #767676;
-    --chart-3: #5d72bf;
-    --chart-4: #d12908;
-    --chart-5: #bcc7eb;
+    --chart-1: #1e3a8a;
+    --chart-2: #94a3b8;
+    --chart-3: #4f6fc7;
+    --chart-4: #b45309;
+    --chart-5: #c7d4f0;
 
-    --elev-sm: 0 1px 0 0 rgb(0 0 0 / 0.06);
-    --elev-md: 0 1px 2px 0 rgb(0 0 0 / 0.1), 0 0 0 1px rgb(0 0 0 / 0.04);
-    --elev-lg: 0 2px 6px -1px rgb(0 0 0 / 0.14), 0 0 0 1px rgb(0 0 0 / 0.05);
-    --elev-xl: 0 8px 24px -10px rgb(0 0 0 / 0.28), 0 0 0 1px rgb(0 0 0 / 0.05);
+    --elev-sm: 0 1px 0 0 rgb(15 23 42 / 0.06);
+    --elev-md: 0 1px 2px 0 rgb(15 23 42 / 0.1), 0 0 0 1px rgb(15 23 42 / 0.04);
+    --elev-lg:
+        0 2px 6px -1px rgb(15 23 42 / 0.14), 0 0 0 1px rgb(15 23 42 / 0.05);
+    --elev-xl:
+        0 8px 24px -10px rgb(15 23 42 / 0.28), 0 0 0 1px rgb(15 23 42 / 0.05);
 
     /* shadcn components read --radius. */
     --radius: var(--radius-card);
@@ -230,24 +271,24 @@
     --control-h-md: 36px;
     --control-h-lg: 40px;
 
-    /* White sidebar; the selected item is marked with the brand colour. */
-    --sidebar: #ffffff;
-    --sidebar-foreground: #1f2937;
+    /* Deep navy sidebar with light text; the selected item is marked in gold. */
+    --sidebar: #0b1b3f;
+    --sidebar-foreground: #e6ecf7;
     --sidebar-muted: color-mix(
         in srgb,
         var(--sidebar-foreground) 72%,
         var(--sidebar)
     );
-    --sidebar-primary: #122170;
-    --sidebar-primary-foreground: #ffffff;
+    --sidebar-primary: #f0b44c;
+    --sidebar-primary-foreground: #0b1b3f;
     --sidebar-accent: color-mix(
         in srgb,
-        var(--sidebar-foreground) 8%,
+        var(--sidebar-foreground) 10%,
         var(--sidebar)
     );
-    --sidebar-accent-foreground: #141414;
-    --sidebar-border: #dcdcdc;
-    --sidebar-ring: #122170;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #1c2c55;
+    --sidebar-ring: #f0b44c;
 
     /*
      * Typography. Each stack names the other script's face second, so a stray
@@ -290,61 +331,81 @@
 }
 
 .dark {
-    --background: #111112;
-    --foreground: #f4f4f5;
-    --card: #19191b;
-    --card-foreground: #f4f4f5;
-    --popover: #19191b;
-    --popover-foreground: #f4f4f5;
+    --background: #0e1117;
+    --foreground: #e8ecf3;
+    --card: #161a22;
+    --card-foreground: #e8ecf3;
+    --popover: #1a1f29;
+    --popover-foreground: #e8ecf3;
 
     /* The 700 navy is too dark to act on a dark surface: step up the scale. */
-    --primary: #5d72bf;
-    --primary-hover: #8f9fd8;
-    --primary-foreground: #ffffff;
-    --primary-light: #1d3084;
-    --brand-accent: #f76b3c;
+    --primary: #8ea8e0;
+    --primary-hover: #b9c9ee;
+    --primary-foreground: #0b1b3f;
+    --primary-light: #1f2f5c;
+    --brand-accent: #f0b44c;
+    --brand-gold: #f0b44c;
 
-    --secondary: #222225;
-    --secondary-foreground: #f4f4f5;
-    --muted: #222225;
-    --muted-foreground: #a3a3aa;
-    --accent: #1d3084;
-    --accent-foreground: #eef1fa;
+    --secondary: #1e2430;
+    --secondary-foreground: #e8ecf3;
+    --muted: #1e2430;
+    --muted-foreground: #9aa5b8;
+    --accent: #1f2f5c;
+    --accent-foreground: #e3eafb;
 
     --destructive: #ef4444;
-    --destructive-foreground: #f87171;
-    --success: #22c55e;
+    --destructive-foreground: #fca5a5;
+    --success: #4ade80;
     --success-foreground: #052e16;
-    --warning: #f59e0b;
+    --warning: #f6c56b;
+    --info: #7cc4ee;
 
-    --border: #2e2e32;
-    --border-strong: #6e6e75;
-    --input: #6e6e75;
-    --ring: #8f9fd8;
+    --success-soft: #10291b;
+    --success-strong: #86efac;
+    --warning-soft: #2d2111;
+    --warning-strong: #f6c56b;
+    --info-soft: #0d2434;
+    --info-strong: #93d0f2;
+    --danger-soft: #2f1517;
+    --danger-strong: #fca5a5;
+    --neutral-soft: #1e2430;
+    --neutral-strong: #cbd5e1;
+
+    --border: #262d3a;
+    --border-strong: #64708a;
+    --input: #64708a;
+    --ring: #8ea8e0;
 
     --highlight: #fde68a;
-    --highlight-foreground: #141414;
-    --asphalt: #0b0b0c;
-    --brand-surface: #0f1c5c;
+    --highlight-foreground: #0f172a;
+    --asphalt: #070b14;
+    --brand-surface: #0b1b3f;
 
-    --chart-1: #8f9fd8;
-    --chart-2: #a3a3aa;
-    --chart-3: #5d72bf;
-    --chart-4: #f76b3c;
-    --chart-5: #33499f;
+    --chart-1: #8ea8e0;
+    --chart-2: #64708a;
+    --chart-3: #4f6fc7;
+    --chart-4: #f0b44c;
+    --chart-5: #2a4a9f;
 
-    --sidebar: #0b1020;
-    --sidebar-foreground: #f1f5f9;
-    --sidebar-primary: #8f9fd8;
-    --sidebar-primary-foreground: #0b1020;
+    --elev-sm: 0 1px 0 0 rgb(0 0 0 / 0.3);
+    --elev-md: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 0 0 1px rgb(255 255 255 / 0.03);
+    --elev-lg:
+        0 4px 10px -2px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.04);
+    --elev-xl:
+        0 12px 32px -10px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.05);
+
+    --sidebar: #0a1222;
+    --sidebar-foreground: #e6ecf7;
+    --sidebar-primary: #f0b44c;
+    --sidebar-primary-foreground: #0a1222;
     --sidebar-accent: color-mix(
         in srgb,
         var(--sidebar-foreground) 10%,
         var(--sidebar)
     );
     --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: #1f2638;
-    --sidebar-ring: #8f9fd8;
+    --sidebar-border: #1a2440;
+    --sidebar-ring: #f0b44c;
 }
 
 /*
@@ -443,10 +504,41 @@
 }
 
 /*
- * Interface styles (System settings → Appearance → Interface style), as in
- * EUISIS. "swiss" is the base above: true greys, hairlines, 2px corners.
+ * Interface styles (System settings → Appearance → Interface style).
+ * The base above is the flat "swiss" shape: hairlines, 2px corners.
+ *
+ * "authority" (the default) is Soft UI Evolution for a public authority:
+ * 8px controls, 12px cards, soft layered shadows that lift cards off the
+ * tinted page, bolder page titles and a gold mark on the navy sidebar.
  */
+:root[data-ui-style='authority'] {
+    --radius-control: 8px;
+    --radius-card: 12px;
+    --radius-panel: 14px;
+    --elev-sm: 0 1px 2px 0 rgb(15 23 42 / 0.06);
+    --elev-md:
+        0 1px 2px 0 rgb(15 23 42 / 0.05), 0 4px 12px -4px rgb(15 23 42 / 0.08);
+    --elev-lg:
+        0 2px 4px -1px rgb(15 23 42 / 0.06),
+        0 12px 28px -8px rgb(15 23 42 / 0.16);
+    --elev-xl:
+        0 4px 8px -2px rgb(15 23 42 / 0.08),
+        0 24px 48px -12px rgb(15 23 42 / 0.28);
+    --text-page-title: 1.75rem;
+    --radius-badge: 9999px;
+}
+
+:root[data-ui-style='authority'].dark {
+    --elev-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+    --elev-md: 0 1px 2px 0 rgb(0 0 0 / 0.45), 0 0 0 1px rgb(255 255 255 / 0.03);
+    --elev-lg:
+        0 4px 12px -2px rgb(0 0 0 / 0.55), 0 0 0 1px rgb(255 255 255 / 0.04);
+    --elev-xl:
+        0 16px 40px -12px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.05);
+}
+
 :root[data-ui-style='classic'] {
+    --radius-badge: 6px;
     --radius-control: 6px;
     --radius-card: 8px;
     --radius-panel: 10px;
@@ -455,6 +547,7 @@
 }
 
 :root[data-ui-style='soft'] {
+    --radius-badge: 9999px;
     --radius-control: 10px;
     --radius-card: 16px;
     --radius-panel: 20px;
@@ -587,8 +680,33 @@
 }
 
 /* Cards lift a little in the classic and soft styles. */
-:root:is([data-ui-style='classic'], [data-ui-style='soft']) .bg-card.border {
+:root:is(
+        [data-ui-style='authority'],
+        [data-ui-style='classic'],
+        [data-ui-style='soft']
+    )
+    .bg-card.border {
     box-shadow: var(--elev-md);
+}
+
+/* Authority: every content card lifts off the tinted page; a card inside a card stays flat. */
+:root[data-ui-style='authority']
+    #main-content
+    :is(.rounded-card, .rounded-panel):is(
+        .bg-card,
+        [class~='bg-(--app-surface)']
+    ):not(input, select, textarea, button, .fixed, .absolute, .inline-flex) {
+    box-shadow: var(--elev-md);
+}
+
+:root[data-ui-style='authority']
+    #main-content
+    :is(.rounded-card, .rounded-panel)
+    :is(.rounded-card, .rounded-panel):is(
+        .bg-card,
+        [class~='bg-(--app-surface)']
+    ) {
+    box-shadow: none;
 }
 
 /* Soft: controls give under the pointer, quickly (150 ms), unless motion is reduced. */
@@ -714,6 +832,15 @@
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+}
+
+/* Ethiopic has no capitals and reads worse tracked out: the eyebrow keeps
+   the smallest readable step instead of shrinking to 11px. */
+:lang(am) .text-eyebrow,
+.text-eyebrow:lang(am) {
+    font-size: var(--fs-xs);
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 /* The few elements that should lift off the page. */

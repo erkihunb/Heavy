@@ -225,6 +225,7 @@ return [
         'interface_style' => 'Interface style',
         'organization_default' => 'Organisation default',
         'styles' => [
+            'authority' => 'Authority',
             'swiss' => 'Swiss',
             'classic' => 'Classic',
             'soft' => 'Soft UI',

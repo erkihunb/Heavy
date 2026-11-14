@@ -55,7 +55,7 @@ export default function ThemeToggle({
         'appearance.allow_user_theme_switching',
         true,
     );
-    const adminStyle = getString('appearance.ui_style', 'swiss');
+    const adminStyle = getString('appearance.ui_style', 'authority');
 
     const [ownStyle, setOwnStyle] = useState<UiStyle | null>(getStoredUiStyle);
 

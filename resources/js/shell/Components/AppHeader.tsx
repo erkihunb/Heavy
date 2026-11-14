@@ -239,7 +239,7 @@ export default function AppHeader({
                                         as="button"
                                         // Signed out, no page from this session may come back from the cache.
                                         onClick={() => router.flushAll()}
-                                        className="flex min-h-10 w-full items-center gap-3 rounded-md px-3 text-start text-sm text-red-700 data-focus:bg-red-50 dark:text-red-400 dark:data-focus:bg-red-950/40"
+                                        className="flex min-h-10 w-full items-center gap-3 rounded-md px-3 text-start text-sm text-danger-strong data-focus:bg-danger-soft"
                                     >
                                         <LogOut
                                             className="h-[18px] w-[18px]"

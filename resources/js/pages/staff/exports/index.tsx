@@ -58,11 +58,9 @@ type Props = {
 
 const STATUS_TONE: Record<ExportStatus, string> = {
     pending: 'bg-muted text-muted-foreground ring-border',
-    running:
-        'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900',
-    completed:
-        'bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900',
-    failed: 'bg-red-50 text-red-800 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900',
+    running: 'bg-warning-soft text-warning-strong ring-warning-strong/25',
+    completed: 'bg-success-soft text-success-strong ring-success-strong/20',
+    failed: 'bg-danger-soft text-danger-strong ring-danger-strong/20',
 };
 
 /** Statuses staff can export permits by: never drafts or withdrawn applications. */
