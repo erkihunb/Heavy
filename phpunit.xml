@@ -33,7 +33,7 @@
         <!-- Two-step approval is switched off in production for now; most tests cover it,
              and the office flow's own tests switch it off (tests/Feature/Workflow). -->
         <env name="PERMITS_TWO_STEP_APPROVAL" value="true" force="true"/>
-        <!-- Permit PDFs are rendered by a fake; the Gotenberg smoke test opts in by itself. -->
+        <!-- Permit PDFs are rendered by a fake; the Chrome smoke test runs where Chrome is installed. -->
         <env name="PERMITS_PDF_RENDERER" value="fake" force="true"/>
         <env name="PERMITS_VERIFY_URL" value="https://verify.example.test" force="true"/>
         <env name="MAIL_MAILER" value="array"/>

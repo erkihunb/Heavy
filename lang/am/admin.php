@@ -482,7 +482,7 @@ return [
             'debug_on' => 'የስህተት ማረሚያ ሁነታ በሥራ ላይ በርቷል። APP_DEBUG=false ያድርጉ።',
             'mail_log' => 'ኢሜይል በመዝገብ ብቻ እየተጻፈ ነው (ኢሜይል)።',
             'sms_log' => 'አጭር መልዕክት በርቷል ግን በመዝገብ ብቻ ይጻፋል (አጭር መልዕክት)።',
-            'pdf_fake' => 'የፍቃድ PDFዎች የሙከራ ማዘጋጃ ይጠቀማሉ። PERMITS_PDF_RENDERER=gotenberg ያድርጉ።',
+            'pdf_fake' => 'የፍቃድ PDFዎች የሙከራ ማዘጋጃ ይጠቀማሉ። PERMITS_PDF_RENDERER=chrome ያድርጉ።',
             'no_error_tracking' => 'የስህተት ክትትል አልተዘጋጀም። SENTRY_LARAVEL_DSN ያስገቡ።',
             'failed_jobs' => 'አንዳንድ የበስተጀርባ ሥራዎች አልተሳኩም። በ php artisan queue:failed ይመልከቱ።',
         ],

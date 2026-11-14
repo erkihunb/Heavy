@@ -53,8 +53,8 @@ Everything is listed in `.env.example`. Project-specific ones:
 | `PERMITS_STAFF_TWO_FACTOR_REQUIRED` | `true` | Mandatory 2FA for staff — keep on in production |
 | `FORWARD_DB_PORT` | `3306` | Host port of the compose MariaDB service |
 | `PERMITS_VERIFY_URL` | `APP_URL` | Public HTTPS address printed in QR codes (`<url>/v/<token>`) |
-| `GOTENBERG_URL` | `http://127.0.0.1:3000` | PDF renderer (`docker compose up -d gotenberg`) |
-| `PERMITS_PDF_RENDERER` | `gotenberg` | `fake` on machines without Gotenberg |
+| `PERMITS_PDF_RENDERER` | `chrome` | `fake` on machines without Chrome (blank placeholder PDFs) |
+| `CHROME_BINARY` | `google-chrome` | Google Chrome or Chromium that prints permit PDFs: its path, or its name on the PATH |
 | `PERMITS_DOCUMENT_LOGO_PATH` | — | Logo file for the PDF; otherwise the logo uploaded in System settings → General is used (placeholder when neither) |
 | `PERMITS_SUPPORT_EMAIL` / `PERMITS_SUPPORT_PHONE` | — | Support contacts shown on every page; also editable in System settings → General |
 | `PERMITS_EXPORTS_KEEP_DAYS` | `7` | Days a spreadsheet export is kept before `exports:prune` deletes it |
@@ -210,7 +210,16 @@ php artisan schedule:work            # or cron: * * * * * php artisan schedule:r
 All three commands are safe to run by hand at any time. Until an SMS provider is chosen,
 `SMS_DRIVER=log` writes text messages to the log with the number masked.
 
-Permit PDFs are rendered by the queue worker. If one is missing or is a placeholder
+Permit PDFs are printed by the queue worker with headless Google Chrome installed on the
+server; nothing else needs to run. On Ubuntu, install Google's own package (the snap
+Chromium cannot be run by the web server's user) and point `CHROME_BINARY` at it:
+
+```bash
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo apt install -y ./google-chrome-stable_current_amd64.deb   # CHROME_BINARY=/usr/bin/google-chrome
+```
+
+If one is missing or is a placeholder
 (written while `PERMITS_PDF_RENDERER=fake`), the download link shows it as being prepared;
 rebuild it with the real renderer:
 

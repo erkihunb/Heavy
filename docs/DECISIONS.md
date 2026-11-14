@@ -1023,6 +1023,30 @@ production build served by production's own nginx config (`docker/nginx/default.
   The biggest remaining step for the first paint would be server-side rendering (`ssr.tsx`
   exists, but production runs no SSR server): the pages are drawn by JavaScript.
 
+## Permit PDFs are printed by Chrome on the server, not Gotenberg (owner's decision, 2026-11-14)
+
+The live server does not run Docker, and Gotenberg is published only as a Docker image, so
+permit documents were never made there. `ChromePdfRenderer` now runs Google Chrome (or
+Chromium) installed on the server, headless, once per document: `PERMITS_PDF_RENDERER=chrome`
+(the default) and `CHROME_BINARY`. `GotenbergPdfRenderer` and its settings are removed.
+
+- **Same output.** Chrome reads the page size, margins and colours from the template itself
+  (`@page { size: A4 landscape; margin: 0 }`, `print-color-adjust: exact`), which is what the
+  Gotenberg request asked for. The same permit printed both ways: same page size, same text,
+  visually identical (the only differences are anti-aliasing in the background pattern).
+- **Each run is on its own:** a fresh folder in the system temp directory for the page, the PDF
+  and Chrome's profile, removed afterwards; `HOME` points there, since the web server's user
+  may have none.
+- **No sandbox** (`--no-sandbox`): Chrome's sandbox needs privileges the web server's user
+  usually lacks (unprivileged user namespaces are restricted on current Ubuntu). The page is
+  the permit template, built here: no scripts, nothing loaded from the network (a test checks).
+- **On Ubuntu, Google's `.deb`, not the snap Chromium**, which the web server's user cannot run.
+- **An unknown renderer name is refused** at once (`gotenberg` included), rather than failing
+  quietly in the queue.
+- **The Docker files are left as they were** (the owner does not deploy with Docker): the
+  `gotenberg` services in `compose.yaml` and `compose.production.yaml` are now unused, and the
+  `app` image does not install Chrome, so a Docker deployment would need Chrome added first.
+
 ## Speed on slow phones, second pass (2026-11-14)
 
 Measured the same way (Lighthouse mobile, slow 4G, median of three runs, nginx with production's

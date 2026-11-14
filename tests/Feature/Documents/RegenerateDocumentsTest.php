@@ -19,7 +19,7 @@ beforeEach(function () {
     Storage::fake('documents');
     Queue::fake();
     // As in production: the real renderer, whose PDFs are tens of kilobytes.
-    config(['permits.pdf_renderer' => 'gotenberg']);
+    config(['permits.pdf_renderer' => 'chrome']);
 });
 
 /**

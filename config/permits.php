@@ -209,8 +209,9 @@ return [
         ],
     ],
 
-    // "gotenberg" (Chromium; required in production) or "fake" (tests, machines without Gotenberg).
-    'pdf_renderer' => env('PERMITS_PDF_RENDERER', 'gotenberg'),
+    // "chrome" (Google Chrome or Chromium on this server; required in production, see
+    // services.chrome) or "fake" (tests, and machines without Chrome: blank placeholders).
+    'pdf_renderer' => env('PERMITS_PDF_RENDERER', 'chrome'),
 
     /*
     |--------------------------------------------------------------------------

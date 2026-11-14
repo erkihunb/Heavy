@@ -1,7 +1,7 @@
 <?php
 
+use App\Domain\Documents\ChromePdfRenderer;
 use App\Domain\Documents\FakePdfRenderer;
-use App\Domain\Documents\GotenbergPdfRenderer;
 use App\Domain\Documents\PdfRenderer;
 use App\Domain\Documents\PermitDocument;
 use App\Domain\Documents\PermitQrCode;
@@ -12,10 +12,11 @@ use App\Models\Payment;
 use App\Models\Permit;
 use App\Models\Vehicle;
 use App\Support\EthiopianCalendar;
-use Illuminate\Http\Client\Request as HttpRequest;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Process\ExecutableFinder;
 
 /*
  * The permit document (spec §8): rendered by a queued job through a
@@ -169,43 +170,90 @@ it('builds self-contained HTML', function () {
         ->not->toContain('<script');
 });
 
-describe('Gotenberg renderer', function () {
-    it('posts the HTML to Chromium and returns the PDF', function () {
-        Http::fake(['gotenberg.test/*' => Http::response('%PDF-1.7 fake', 200)]);
+describe('Chrome renderer', function () {
+    /**
+     * A stand-in for Chrome: writes the given bytes where Chrome was told to
+     * print, and remembers the command it was given.
+     */
+    function fakeChrome(string $pdf, int $exitCode = 0): void
+    {
+        Process::fake(function (PendingProcess $process) use ($pdf, $exitCode) {
+            $command = (array) $process->command;
+            $target = substr((string) collect($command)->first(fn (string $arg): bool => str_starts_with($arg, '--print-to-pdf=')), 15);
 
-        $pdf = (new GotenbergPdfRenderer('http://gotenberg.test'))->render('<html>ሰላም</html>');
+            if ($exitCode === 0 && $pdf !== '') {
+                file_put_contents($target, $pdf);
+            }
 
-        expect($pdf)->toBe('%PDF-1.7 fake');
+            return Process::result(errorOutput: $exitCode === 0 ? '' : 'Chrome crashed', exitCode: $exitCode);
+        });
+    }
 
-        Http::assertSent(fn (HttpRequest $request): bool => $request->url() === 'http://gotenberg.test/forms/chromium/convert/html'
-            && str_contains($request->body(), 'ሰላም')
-            && str_contains($request->body(), 'filename="index.html"')
-            // A4 landscape: 11.69in wide, 8.27in high.
-            && preg_match('/name="paperWidth"(?:(?!name=).)*?\s11\.69\s/s', $request->body()) === 1
-            && preg_match('/name="paperHeight"(?:(?!name=).)*?\s8\.27\s/s', $request->body()) === 1);
+    it('prints the HTML with headless Chrome and returns the PDF', function () {
+        fakeChrome('%PDF-1.4 printed');
+
+        $pdf = (new ChromePdfRenderer('/usr/bin/google-chrome'))->render('<html>ሰላም</html>');
+
+        expect($pdf)->toBe('%PDF-1.4 printed');
+
+        Process::assertRan(function (PendingProcess $process): bool {
+            $command = (array) $process->command;
+            $page = (string) end($command);
+
+            return $command[0] === '/usr/bin/google-chrome'
+                && in_array('--headless=new', $command, true)
+                && in_array('--no-pdf-header-footer', $command, true)
+                && collect($command)->contains(fn (string $arg): bool => str_starts_with($arg, '--user-data-dir='))
+                && str_starts_with($page, 'file:///')
+                && str_ends_with($page, '/index.html');
+        });
     });
 
-    it('fails loudly when the renderer answers with an error', function () {
-        Http::fake(['gotenberg.test/*' => Http::response('boom', 503)]);
+    it('leaves no files behind', function () {
+        fakeChrome('%PDF-1.4 printed');
+        $before = glob(sys_get_temp_dir().'/heavy-pdf-*') ?: [];
 
-        expect(fn () => (new GotenbergPdfRenderer('http://gotenberg.test'))->render('<html></html>'))
-            ->toThrow(RuntimeException::class, 'HTTP 503');
+        (new ChromePdfRenderer('/usr/bin/google-chrome'))->render('<html></html>');
+
+        expect(glob(sys_get_temp_dir().'/heavy-pdf-*') ?: [])->toBe($before);
     });
+
+    it('fails loudly when Chrome fails or prints no PDF', function (string $pdf, int $exitCode, string $message) {
+        fakeChrome($pdf, $exitCode);
+
+        expect(fn () => (new ChromePdfRenderer('/usr/bin/google-chrome'))->render('<html></html>'))
+            ->toThrow(RuntimeException::class, $message);
+    })->with([
+        'Chrome exits with an error' => ['', 1, 'exit code 1'],
+        'Chrome writes nothing' => ['', 0, 'no PDF'],
+        'Chrome writes something else' => ['<html>not a pdf</html>', 0, 'no PDF'],
+    ]);
 
     it('renders a real PDF with Ethiopic text (integration smoke test)', function () {
-        $url = (string) env('GOTENBERG_URL', 'http://127.0.0.1:3000');
+        $binary = (string) env('CHROME_BINARY', 'google-chrome');
 
-        try {
-            Http::timeout(2)->get(rtrim($url, '/').'/health')->throw();
-        } catch (Throwable) {
-            $this->markTestSkipped("Gotenberg is not reachable at {$url}.");
+        if (! is_file($binary) && (new ExecutableFinder)->find($binary) === null) {
+            $this->markTestSkipped("Chrome is not installed at [{$binary}].");
         }
 
-        $pdf = (new GotenbergPdfRenderer($url))->render(PermitDocument::html($this->permit, $this->token));
+        $pdf = (new ChromePdfRenderer($binary))->render(PermitDocument::html($this->permit, $this->token));
 
         expect($pdf)->toStartWith('%PDF')
-            ->and(strlen($pdf))->toBeGreaterThan(10_000);
+            ->and(strlen($pdf))->toBeGreaterThan(10_000)
+            // A4 landscape, the page size the template asks for.
+            ->and($pdf)->toMatch('#/MediaBox \[0 0 841\.9\d* 594\.9\d*\]#');
     })->group('integration');
+});
+
+it('chooses the renderer named in the configuration, and refuses an unknown one', function () {
+    config(['permits.pdf_renderer' => 'chrome']);
+    expect(app(PdfRenderer::class))->toBeInstanceOf(ChromePdfRenderer::class);
+
+    config(['permits.pdf_renderer' => 'fake']);
+    expect(app(PdfRenderer::class))->toBeInstanceOf(FakePdfRenderer::class);
+
+    config(['permits.pdf_renderer' => 'gotenberg']);
+    expect(fn () => app(PdfRenderer::class))->toThrow(InvalidArgumentException::class, 'PERMITS_PDF_RENDERER');
 });
 
 it('prints the logo when one is set, and a marked placeholder otherwise', function () {

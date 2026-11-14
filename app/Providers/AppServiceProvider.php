@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domain\Documents\ChromePdfRenderer;
 use App\Domain\Documents\FakePdfRenderer;
-use App\Domain\Documents\GotenbergPdfRenderer;
 use App\Domain\Documents\PdfRenderer;
 use App\Domain\Settings\SystemSettings;
 use App\Domain\Sms\HttpSmsGateway;
@@ -42,12 +42,14 @@ class AppServiceProvider extends ServiceProvider
             default => throw new InvalidArgumentException('Unknown SMS_DRIVER ['.config('services.sms.driver').'].'),
         });
 
-        $this->app->bind(PdfRenderer::class, fn (): PdfRenderer => config('permits.pdf_renderer') === 'fake'
-            ? new FakePdfRenderer
-            : new GotenbergPdfRenderer(
-                (string) config('services.gotenberg.url'),
-                (int) config('services.gotenberg.timeout'),
-            ));
+        $this->app->bind(PdfRenderer::class, fn (): PdfRenderer => match (config('permits.pdf_renderer')) {
+            'chrome' => new ChromePdfRenderer(
+                (string) config('services.chrome.binary'),
+                (int) config('services.chrome.timeout'),
+            ),
+            'fake' => new FakePdfRenderer,
+            default => throw new InvalidArgumentException('Unknown PERMITS_PDF_RENDERER ['.config('permits.pdf_renderer').']: use "chrome" or "fake".'),
+        });
     }
 
     /**

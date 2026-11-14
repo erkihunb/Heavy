@@ -98,13 +98,13 @@ sequenceDiagram
     participant Cashier
     participant App
     participant Queue
-    participant Gotenberg
+    participant Chrome as Chrome (headless)
     participant Phone as Phone / officer
     Cashier->>App: verify payment
     App->>App: transaction: status issued, token = 32 random bytes,<br/>store sha256(token) only
     App-->>Queue: after commit: GeneratePermitDocument(permit, token)<br/>(payload encrypted)
-    Queue->>Gotenberg: HTML (QR SVG, fonts embedded)
-    Gotenberg-->>Queue: PDF
+    Queue->>Chrome: HTML (QR SVG, fonts embedded)
+    Chrome-->>Queue: PDF
     Queue->>App: store on private disk if the token is still current
     Phone->>App: GET /v/{token} (QR) or POST /verify (number + plate)
     App->>App: sha256(token) lookup → effectiveStatus() → result
@@ -146,7 +146,7 @@ flowchart LR
     APP --> R[(redis<br/>cache · sessions · queue)]
     WK[worker<br/>queue:work] --> R
     WK --> DB
-    WK --> G[gotenberg<br/>PDF]
+    WK --> G[Chrome headless<br/>PDF]
     SC[scheduler<br/>schedule:work] --> R
     APP & WK & SC --- V[(storage volume<br/>private documents)]
     B[backup<br/>daily dump + files] --> DB

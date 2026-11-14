@@ -482,7 +482,7 @@ return [
             'debug_on' => 'Debug mode is on in production. Set APP_DEBUG=false.',
             'mail_log' => 'E-mail is only written to the log (E-mail).',
             'sms_log' => 'SMS is on but only written to the log (SMS).',
-            'pdf_fake' => 'Permit PDFs use the test renderer. Set PERMITS_PDF_RENDERER=gotenberg.',
+            'pdf_fake' => 'Permit PDFs use the test renderer. Set PERMITS_PDF_RENDERER=chrome.',
             'no_error_tracking' => 'Error tracking is not set up. Set SENTRY_LARAVEL_DSN.',
             'failed_jobs' => 'Some background jobs failed. Check them with php artisan queue:failed.',
         ],

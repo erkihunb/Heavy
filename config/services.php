@@ -28,10 +28,11 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    // Chromium-based PDF renderer for permit documents (spec §8).
-    'gotenberg' => [
-        'url' => env('GOTENBERG_URL', 'http://127.0.0.1:3000'),
-        'timeout' => (int) env('GOTENBERG_TIMEOUT', 60),
+    // Google Chrome or Chromium on this server, which prints permit documents
+    // (spec §8): its path, or its name when it is on the PATH.
+    'chrome' => [
+        'binary' => env('CHROME_BINARY', 'google-chrome'),
+        'timeout' => (int) env('CHROME_TIMEOUT', 60),
     ],
 
     // SMS provider (open question §14.7): "log" writes messages to the log;

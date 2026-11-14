@@ -36,7 +36,7 @@ class RegenerateDocumentsCommand extends Command
     public function handle(IssuePermit $issuePermit, AuditLog $audit): int
     {
         if (config('permits.pdf_renderer') === 'fake' && ! app()->environment('testing')) {
-            $this->error('PERMITS_PDF_RENDERER is "fake": it would write placeholders again. Set it to "gotenberg" first.');
+            $this->error('PERMITS_PDF_RENDERER is "fake": it would write placeholders again. Set it to "chrome" first.');
 
             return self::FAILURE;
         }
