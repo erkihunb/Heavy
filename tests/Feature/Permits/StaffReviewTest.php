@@ -344,7 +344,9 @@ describe('the detail page', function () {
             ->get(route('staff.permits.show', $permit))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('staff/permits/show')
+                // The decision waits for the Approver, so it opens directly.
+                ->component('staff/permits/decision')
+                ->where('direct', true)
                 ->where('permit.id', $permit->id)
                 ->where('permit.status', 'under_review')
                 ->where('permit.applicant', 'አበበ ከበደ')

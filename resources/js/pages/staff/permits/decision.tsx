@@ -23,6 +23,8 @@ import type { Permit, VehicleHistory } from '@/types';
 type Props = {
     permit: Permit;
     vehicleHistory: VehicleHistory[];
+    /** Opened on the application's own address, because it waits for this person. */
+    direct: boolean;
 };
 
 /**
@@ -32,7 +34,11 @@ type Props = {
  * once issued, revoke or reissue. Only what this person may do now is shown;
  * the server checks every action again.
  */
-export default function StaffPermitDecision({ permit, vehicleHistory }: Props) {
+export default function StaffPermitDecision({
+    permit,
+    vehicleHistory,
+    direct,
+}: Props) {
     const { t } = useTranslation();
     const { auth } = usePage().props;
     const args = { permit: permit.id };
@@ -62,7 +68,7 @@ export default function StaffPermitDecision({ permit, vehicleHistory }: Props) {
             vehicleHistory={vehicleHistory}
             title={t('permits.staff.desks.decision_title')}
             description={t('permits.staff.desks.decision_intro')}
-            rolePage
+            rolePage={!direct}
         >
             <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
                 <div className="space-y-6">

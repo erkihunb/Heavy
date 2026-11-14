@@ -11,6 +11,8 @@ import type { Permit, VehicleHistory } from '@/types';
 type Props = {
     permit: Permit;
     vehicleHistory: VehicleHistory[];
+    /** Opened on the application's own address, because it waits for this person. */
+    direct: boolean;
 };
 
 /**
@@ -18,7 +20,11 @@ type Props = {
  * then issuing the permit (it gets its number and its documents) and
  * printing it — only once the payment is confirmed.
  */
-export default function StaffPermitIssue({ permit, vehicleHistory }: Props) {
+export default function StaffPermitIssue({
+    permit,
+    vehicleHistory,
+    direct,
+}: Props) {
     const { t } = useTranslation();
     const { can } = permit;
     const verifiedPayment = permit.payments?.find(
@@ -31,7 +37,7 @@ export default function StaffPermitIssue({ permit, vehicleHistory }: Props) {
             vehicleHistory={vehicleHistory}
             title={t('permits.staff.desks.issue_title')}
             description={t('permits.staff.desks.issue_intro')}
-            rolePage
+            rolePage={!direct}
         >
             <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
                 <PermitDetailsCard permit={permit} />

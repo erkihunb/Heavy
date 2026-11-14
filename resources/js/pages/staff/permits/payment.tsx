@@ -12,6 +12,8 @@ import { PAYMENT_METHODS } from '@/types/enums';
 type Props = {
     permit: Permit;
     vehicleHistory: VehicleHistory[];
+    /** Opened on the application's own address, because it waits for this person. */
+    direct: boolean;
     receiptMaxKilobytes: number;
 };
 
@@ -25,6 +27,7 @@ type Props = {
 export default function StaffPermitPayment({
     permit,
     vehicleHistory,
+    direct,
     receiptMaxKilobytes,
 }: Props) {
     const { t } = useTranslation();
@@ -37,7 +40,7 @@ export default function StaffPermitPayment({
             vehicleHistory={vehicleHistory}
             title={t('permits.staff.desks.payment_title')}
             description={t('permits.staff.desks.payment_intro')}
-            rolePage
+            rolePage={!direct}
         >
             <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
                 <div className="space-y-6">

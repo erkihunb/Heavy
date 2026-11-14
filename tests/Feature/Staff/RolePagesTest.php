@@ -20,13 +20,15 @@ beforeEach(function () {
 });
 
 it('keeps the application page read only and links each role to its own page', function (Role $role, array $desks) {
-    $permit = Permit::factory()->submitted()->create();
+    // Issued: nothing waits for anyone, so every role sees the read-only page.
+    $permit = Permit::factory()->issued()->create();
 
     $this->actingAs(staffUser($role))
         ->get(route('staff.permits.show', $permit))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('staff/permits/show')
+            ->where('direct', false)
             ->where('desks', fn ($given) => collect($given)->pluck('key')->all() === $desks));
 })->with([
     'reviewer' => [Role::Reviewer, ['decision']],
@@ -35,6 +37,33 @@ it('keeps the application page read only and links each role to its own page', f
     'issuer' => [Role::Issuer, ['issue']],
     'supervisor' => [Role::Supervisor, []],
 ]);
+
+it('opens the work waiting for the person directly on the application page', function (PermitStatus $status, Role $role, string $component) {
+    $permit = Permit::factory()->awaitingPayment()->create(['status' => $status, 'fee_cents' => 100_000]);
+
+    $this->actingAs(staffUser($role))
+        ->get(route('staff.permits.show', $permit))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component($component)
+            ->where('direct', true));
+})->with([
+    'a decision for the Reviewer' => [PermitStatus::Submitted, Role::Reviewer, 'staff/permits/decision'],
+    'a payment for the Cashier' => [PermitStatus::AwaitingPayment, Role::Cashier, 'staff/permits/payment'],
+    'issuing for the Issuer' => [PermitStatus::PaymentConfirmed, Role::Issuer, 'staff/permits/issue'],
+]);
+
+it('shows the read-only page when nothing waits for the person', function () {
+    // Submitted: waiting for a review, not for the Cashier.
+    $permit = Permit::factory()->submitted()->create();
+
+    $this->actingAs(staffUser(Role::Cashier))
+        ->get(route('staff.permits.show', $permit))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('staff/permits/show')
+            ->where('desks.0.key', 'payment')
+            ->where('desks.0.pending', false));
+});
 
 it('marks the page where something waits for the person now', function () {
     $permit = Permit::factory()->submitted()->create();

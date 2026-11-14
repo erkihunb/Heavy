@@ -133,13 +133,23 @@ class PermitReviewController extends Controller
     /**
      * The application, read only: its details, the vehicles' permit history,
      * the head office's comments and the timeline. Each role works on it on
-     * its own page (decision, payment, issue), linked from here.
+     * its own page (decision, payment, issue), linked from here — except the
+     * work waiting for this person now, which this address opens directly.
      */
     public function show(Request $request, Permit $permit, OverlapGuard $overlap): Response
     {
         Gate::authorize('view', $permit);
 
-        return $this->render('staff/permits/show', $request, $permit, $overlap);
+        // When the application waits for this person to move it on (decide, take the
+        // payment, issue), that work opens here directly instead of behind a link.
+        $abilities = PermitResource::make($permit)->abilitiesFor($request->user());
+        $waiting = array_keys(array_filter([
+            'staff/permits/decision' => $abilities['startReview'] || $abilities['recommend'] || $abilities['approve'] || $abilities['requestChanges'] || $abilities['reject'],
+            'staff/permits/payment' => $abilities['recordPayment'],
+            'staff/permits/issue' => $abilities['issue'],
+        ]));
+
+        return $this->render($waiting[0] ?? 'staff/permits/show', $request, $permit, $overlap, direct: $waiting !== []);
     }
 
     /**
@@ -178,7 +188,11 @@ class PermitReviewController extends Controller
         return $this->render('staff/permits/issue', $request, $permit, $overlap);
     }
 
-    private function render(string $page, Request $request, Permit $permit, OverlapGuard $overlap): Response
+    /**
+     * @param  bool  $direct  A role's page shown on the application's own address,
+     *                        so it has no "back to the application" link.
+     */
+    private function render(string $page, Request $request, Permit $permit, OverlapGuard $overlap, bool $direct = false): Response
     {
         $permit->load(['vehicles.vehicleType', 'organization', 'branch', 'applicant', 'recommender', 'issuer', 'comments.author', 'transitions.actor', 'payments']);
         $resource = PermitResource::make($permit);
@@ -197,6 +211,7 @@ class PermitReviewController extends Controller
             'vehicleHistory' => $this->vehicleHistory($permit, $overlap),
             'scans' => $this->scans($permit),
             'receiptMaxKilobytes' => (int) config('permits.receipt_max_kilobytes'),
+            'direct' => $direct,
             'desks' => array_map(
                 fn (string $key): array => ['key' => $key, 'url' => route($routes[$key], $permit), 'pending' => $pending[$key]],
                 array_keys(array_filter($desks)),
