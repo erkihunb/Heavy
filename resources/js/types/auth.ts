@@ -24,7 +24,7 @@ export type User = {
 export type Auth = {
     user: User;
     /** True while a staff member has not yet confirmed two-factor authentication. */
-    mustEnableTwoFactor: boolean;    /** The person's permission names (app/Enums/Permission.php), for showing or hiding navigation only. */
+    mustEnableTwoFactor: boolean; /** The person's permission names (app/Enums/Permission.php), for showing or hiding navigation only. */
     permissions?: string[];
     /** Always false here: Admins hold every staff permission instead (shell's useCan). */
     isSuperAdmin?: boolean;

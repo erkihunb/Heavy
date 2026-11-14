@@ -13,9 +13,9 @@ const items = [queue, collect, issue, reports];
 
 describe('activeItem', () => {
     it('picks the item whose query the address carries', () => {
-        expect(
-            activeItem(items, '/queue?status=awaiting_payment'),
-        ).toBe(collect);
+        expect(activeItem(items, '/queue?status=awaiting_payment')).toBe(
+            collect,
+        );
         expect(
             activeItem(items, '/queue?status=payment_confirmed&page=2'),
         ).toBe(issue);
