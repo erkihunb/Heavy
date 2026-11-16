@@ -1,4 +1,5 @@
 import { usePage } from '@inertiajs/react';
+import { DecisionActions } from '@/components/decision-actions';
 import { PermitDocumentLinks } from '@/components/permit-document-links';
 import { PermitLetter } from '@/components/permit-letter';
 import { StaffAction } from '@/components/staff-action';
@@ -122,43 +123,17 @@ export default function StaffPermitDecision({
                         />
                     )}
 
-                    {can.approve && (
-                        <StaffAction
-                            id="approve"
-                            title={t('permits.staff.approve.title')}
-                            hint={t('permits.staff.approve.hint')}
-                            action={approve.url(args)}
-                            submitLabel={t('permits.staff.approve.submit')}
-                            note="optional"
-                        />
-                    )}
-
-                    {can.requestChanges && (
-                        <StaffAction
-                            id="request-changes"
-                            title={t('permits.staff.request_changes.title')}
-                            hint={t('permits.staff.request_changes.hint')}
-                            action={requestChanges.url(args)}
-                            submitLabel={t(
-                                'permits.staff.request_changes.submit',
-                            )}
-                            note="required"
-                            noteLabel={t('permits.staff.note_for_applicant')}
-                        />
-                    )}
-
-                    {can.reject && (
-                        <StaffAction
-                            id="reject"
-                            title={t('permits.staff.reject.title')}
-                            hint={t('permits.staff.reject.hint')}
-                            action={reject.url(args)}
-                            submitLabel={t('permits.staff.reject.submit')}
-                            note="required"
-                            noteLabel={t('permits.staff.note_for_applicant')}
-                            destructive
-                        />
-                    )}
+                    <DecisionActions
+                        urls={{
+                            approve: can.approve
+                                ? approve.url(args)
+                                : undefined,
+                            requestChanges: can.requestChanges
+                                ? requestChanges.url(args)
+                                : undefined,
+                            reject: can.reject ? reject.url(args) : undefined,
+                        }}
+                    />
 
                     {permit.document_urls && (can.reissue || can.revoke) && (
                         <PermitDocumentLinks

@@ -269,6 +269,11 @@ return [
             'submit' => 'Record recommendation',
             'current' => 'Current recommendation',
         ],
+        // Approve, request changes and reject share one note (DecisionActions).
+        'decide' => [
+            'title' => 'Decide',
+            'hint' => 'Approving gives the permit its number and it waits for payment; the note is optional. Requesting changes or rejecting needs a note; rejection is final.',
+        ],
         'request_changes' => [
             'title' => 'Request changes',
             'hint' => 'Send the application back and tell the applicant what to change.',

@@ -269,6 +269,11 @@ return [
             'submit' => 'የውሳኔ ሐሳቡን ይመዝግቡ',
             'current' => 'አሁን ያለው የውሳኔ ሐሳብ',
         ],
+        // Approve, request changes and reject share one note (DecisionActions).
+        'decide' => [
+            'title' => 'ውሳኔ ይስጡ',
+            'hint' => 'ሲያጸድቁ ፈቃዱ ቁጥር ያገኛል ክፍያም ይጠባበቃል፤ ማስታወሻው አማራጭ ነው። ማስተካከያ ለመጠየቅ ወይም ውድቅ ለማድረግ ማስታወሻ ያስፈልጋል፤ ውድቅ ማድረግ የመጨረሻ ነው።',
+        ],
         'request_changes' => [
             'title' => 'ማስተካከያ ይጠይቁ',
             'hint' => 'ማመልከቻውን መልሰው ለአመልካቹ ምን መቀየር እንዳለበት ይንገሩ።',

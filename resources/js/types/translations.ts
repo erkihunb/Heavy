@@ -1125,6 +1125,8 @@ export type TranslationKey =
     | 'permits.staff.approve.submit'
     | 'permits.staff.approve.title'
     | 'permits.staff.awaiting_recommendation'
+    | 'permits.staff.decide.hint'
+    | 'permits.staff.decide.title'
     | 'permits.staff.decision'
     | 'permits.staff.desks.back'
     | 'permits.staff.desks.decision'
