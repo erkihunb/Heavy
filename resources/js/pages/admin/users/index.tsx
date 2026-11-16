@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { visitWithFilters } from '@/lib/filters';
-import { Plus } from '@/shell/Components/Icons';
 import PageHeader from '@/shell/Components/PageHeader';
 import {
     EmptyState,
@@ -33,7 +33,6 @@ export type UserRow = {
     roles: { name: string; label: string }[];
     branch: { code: string; name: string } | null;
     is_staff: boolean;
-    is_admin: boolean;
     active: boolean;
     two_factor: boolean;
     created_at: {

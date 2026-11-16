@@ -280,27 +280,25 @@ messages (`->with('success', …)`, `->with('warning', …)`) show as toasts; in
 
 ### UI kit
 
-Tables, cards, forms, buttons, icons, dialogs, badges, toasts and loading states, the
-same in light and dark mode and in both languages. **See them all at `/ui-kit`** (signed
-in; the route exists outside production only, `routes/ui-kit.php`).
+Cards, forms, buttons, badges, table styles, pagination, filter panels, the row action
+menu and toasts, the same in light and dark mode and in both languages.
 
 **Install:** nothing to add. The kit is a local package, `packages/app-ui`, resolved
 through the `@app/ui` alias (`tsconfig.json`, `vite.config.ts`, `vitest.config.ts`); its
-npm dependencies (`@headlessui/react`, `@tanstack/react-table`, `sonner`, `cmdk`, and for
-formatted text `tinymce`, `@tinymce/tinymce-react`, `dompurify`) are in `package.json`.
+npm dependencies (`@headlessui/react`, `sonner`, `cmdk`) are in `package.json`.
 
 **Import paths:**
 
 | What | Import |
 |---|---|
-| Kit primitives (Button, Card, inputs, table parts, dialogs) | `@app/ui` |
-| Kit + app wrappers (data table, filter bar, action menu…) in one import | `@/shell/Components/ui` |
-| Other components | `@/shell/Components/<Name>` (Modal, ConfirmationDialog, ConfirmProvider, Dropdown, StatusBadge, RoleBadge, StatCard, FormSection, PageHeader, EmptyState, UserAvatar) |
-| Formatted text | `@/shell/Components/forms/RichTextEditor`, `…/RichTextViewer` |
-| Icons | `@/shell/Components/Icons` (page content), `@/shell/Components/NavIcons` (menu, toolbar) |
+| Kit primitives (Button, Card, inputs, badges, table class names) | `@app/ui` |
+| Kit + app wrappers (action menu, numbered pagination…) in one import | `@/shell/Components/ui` |
+| Tables in pages | `@/components/data-table` (`TableCard`, `Table`, `THead`, `TBody`, `Tr`, `Th`, `Td`, `EmptyRow`) and `@/components/pagination` |
+| Other components | `@/shell/Components/<Name>` (ConfirmationDialog, ConfirmProvider, StatCard, PageHeader, EmptyState, UserAvatar) |
+| Icons | `@/shell/Components/NavIcons` (menu, toolbar), `lucide-react` (page content) |
 | Toasts / confirm | `@/shell/lib/toast`, `@/shell/hooks/useConfirm` (inside `<ConfirmProvider>`) |
 
-The kit's own labels (pagination, filters, table tools, upload, editor) come from
+The kit's own labels (pagination, filters, table tools, upload) come from
 `lang/{en,am}/shell.php` through `LocalizedUiProvider`, which the layout mounts.
 
 **Buttons and badges**
@@ -309,8 +307,7 @@ The kit's own labels (pagination, filters, table tools, upload, editor) come fro
 <Button>{t('shell.actions.save')}</Button>                    {/* "Save" gets its icon by itself */}
 <Button variant="outline" size="sm" loading={form.processing}>…</Button>
 <Tooltip content="Print"><Button size="icon" variant="ghost" aria-label="Print"><PrinterIcon className="h-4 w-4" /></Button></Tooltip>
-<StatusBadge status="awaiting_payment" />                   {/* tone from shell/lib/statusStyles.ts */}
-<RoleBadge role="cashier" />
+<span className={badgeClassName('warning')}>…</span>         {/* or <StatusBadge tone="warning"> */}
 ```
 
 Variants: `default primary secondary outline ghost destructive destructiveOutline link`;
@@ -320,68 +317,49 @@ sizes: `xs sm default lg icon`.
 
 ```tsx
 <Card><CardHeader><CardTitle>…</CardTitle></CardHeader>…<CardFooter>…</CardFooter></Card>
-<AppMetricCard label="Active permits" value="1,284" variant="primary" trend="up" trendLabel="+8%" />
 <StatCard label="Waiting for review" value={37} tone="warning" />
 ```
 
 **Forms** (errors show under their field; the first invalid field gets focus after a submit)
 
 ```tsx
-<FormSection title="Vehicle details" description="…">
-    <FormField label="E-mail" required error={form.errors.email}>
-        {({ id, describedBy, invalid }) => (
-            <Input id={id} type="email" aria-describedby={describedBy} aria-invalid={invalid}
-                value={form.data.email} onChange={(e) => form.setData('email', e.target.value)} />
-        )}
-    </FormField>
-    <FileUpload label="Registration document" accept=".pdf" maxSizeMb={2}
-        value={form.data.document} error={form.errors.document} onChange={(file) => form.setData('document', file)} />
-</FormSection>
+<FormField label="E-mail" required error={form.errors.email}>
+    {({ id, describedBy, invalid }) => (
+        <Input id={id} type="email" aria-describedby={describedBy} aria-invalid={invalid}
+            value={form.data.email} onChange={(e) => form.setData('email', e.target.value)} />
+    )}
+</FormField>
+<FileUpload label="Registration document" accept=".pdf" maxSizeMb={2}
+    value={form.data.document} error={form.errors.document} onChange={(file) => form.setData('document', file)} />
 ```
 
-Also `Select`, `Textarea`, `SearchInput`, `SearchableSelect`, and
-`<RichTextEditor label="…" value={html} onChange={setHtml} preset="standard" maxLength={5000} />`.
-The rich-text editor (TinyMCE, bundled and self-hosted, loaded only on pages that use it)
-keeps to the allowlist in `resources/js/shell/richtext/policy.json`, and the viewer
-sanitizes again before drawing. **A field that accepts formatted text must also be
-sanitized on the server** before it is stored: the kit does not include a server-side
-sanitizer. TinyMCE 7+ is GPL-2.0-or-later unless a commercial licence is bought; the
-editor runs with the `gpl` licence key.
+Also `Select`, `Textarea` and `SearchInput`.
 
-**Tables, filters, pagination**
+**Tables and pagination**
 
 ```tsx
-const column = createColumnHelper<Vehicle>();
-const columns = [
-    column.accessor('plate', { header: t('vehicles.fields.plate') }),
-    column.accessor('status', { header: 'Status', cell: ({ getValue }) => <StatusBadge status={getValue()} /> }),
-    column.display({ id: 'actions', header: () => <span className="sr-only">Actions</span>,
-        cell: ({ row }) => <AppActionMenu items={[{ label: 'Edit', href: edit(row.original).url }]} /> }),
-];
-
-<AppFilterBar href={vehicles().url} filters={filters}>
-    <FilterField label="Plate" wide><Input name="plate" defaultValue={filters.plate} /></FilterField>
-</AppFilterBar>
-<AppDataTable id="vehicles" data={list.data} columns={columns} meta={list.meta}
-    filters={filters} href={vehicles().url} loading={false} emptyTitle="No vehicles" />
+<TableCard title="Permits" footer={<Pagination links={list.links} meta={list.meta} />}>
+    <Table>
+        <THead><Tr><Th>Plate</Th><Th>Status</Th></Tr></THead>
+        <TBody>{list.data.map((row) => <Tr key={row.id}><Td>{row.plate}</Td><Td>…</Td></Tr>)}</TBody>
+    </Table>
+</TableCard>
+<ListPagination meta={list.meta} />   {/* numbered pages, from '@/shell/Components/ui' */}
+<AppActionMenu items={[{ label: 'Edit', href: edit(row.original).url }]} />
 ```
 
-`meta` is a Laravel paginator's page fields (`current_page`, `last_page`, `per_page`,
-`total`, `from`, `to`); `laravelPageMeta()` converts a camelCase one. On tables of three
-or more columns the viewer can sort the page by a header, hide columns, choose row
-density and keep the header visible (remembered per `id`).
+`ListPagination`'s `meta` is a Laravel paginator's page fields (`current_page`,
+`last_page`, `per_page`, `total`, `from`, `to`). Wrapped in `<TableTools>`, a table of
+three or more columns lets the viewer sort the page by a header, hide columns, choose
+row density and keep the header visible.
 
-**Dialogs, menus, feedback**
+**Confirm and feedback**
 
 ```tsx
-<Modal show={open} onClose={() => setOpen(false)}>…</Modal>   {/* Esc closes, focus stays inside */}
 const { confirm } = useConfirm();
 const { confirmed, reason } = await confirm({ title: 'Revoke this permit?', variant: 'danger', requireReason: true });
-<Dropdown><Dropdown.Trigger>…</Dropdown.Trigger><Dropdown.Content><Dropdown.Link href="…">…</Dropdown.Link></Dropdown.Content></Dropdown>
 <Alert tone="warning" title="…">…</Alert>   <ErrorState title="…" />   <EmptyState title="…" />
 toast.success('Saved');                     // or a server flash: ->with('success', …)
-<AppTabNav label="Sections" current={tab} items={[{ key: 'a', label: 'A', href: page().url, data: { tab: 'a' } }]} />
-<AppTableSkeleton rows={6} cols={4} />   <AppMetricCardSkeleton />   <AppPageLoader />
 ```
 
 **Changing the brand colour:** don't edit components. Set the colour in **Admin → System
@@ -390,22 +368,10 @@ component reads it through the tokens (`--primary` in `resources/css/app.css`, m
 the kit's names in `packages/app-ui/src/tokens.css` and `resources/css/shell.css`), and
 the hover and dark-mode variants are derived from it.
 
-**Adding an icon:** for page content, add a component to
-`resources/js/shell/Components/Icons.tsx` (a 24×24 stroke SVG, as the others):
-
-```tsx
-export function TruckIcon(p: IconProps) {
-    return <svg {...base} {...p}><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7" /><circle cx="7" cy="17" r="2" /><circle cx="17" cy="17" r="2" /></svg>;
-}
-```
-
-For the menu or toolbar, add a Solar icon to `NavIcons.tsx`:
+**Adding an icon:** for page content, import it from `lucide-react`. For the menu or
+toolbar, add a Solar icon to `NavIcons.tsx`:
 `import { GarageIcon as SolarGarageIcon } from '@solar-icons/react/linear/garage';` then
 `export const GarageIcon = adapt(SolarGarageIcon);` (names: `node_modules/@solar-icons/react/dist/icons/linear/`).
-Either kind then shows on `/ui-kit` too.
-
-Only the Dashboard and Vehicles pages use the kit so far; the other pages still use
-`resources/js/components/`.
 
 **Brand colour and logo:** both come from **Admin → System settings**. Appearance sets the
 colour preset or a custom brand, accent and sidebar colour (`PERMITS_THEME`,

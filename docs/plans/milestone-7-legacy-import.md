@@ -1,5 +1,10 @@
 # Milestone 7 — Legacy Import: plan
 
+> **Removed (owner's decision, 2026-11-12).** Organizations register in this system from
+> scratch. The import's code was deleted and the migration
+> `2026_11_19_000003_remove_legacy_import.php` drops its tables, the permits' legacy
+> reference and the `imports.run` permission. Kept for history only; nothing below exists.
+
 Scope (spec §13): `php artisan legacy:import {file.csv} {--dry-run} {--batch=}` for the CSV
 exported from the Google Sheet "Form Responses 1" (~6,750 rows), plus the Admin "legacy
 import runner" (spec §11). Assumptions are recorded in [../DECISIONS.md](../DECISIONS.md).

@@ -50,6 +50,8 @@ enum Permission: string
     case CreateRoles = 'roles.create';
     case UpdateRoles = 'roles.update';
     case DeleteRoles = 'roles.delete';
+    // Global roles see every branch; the administrator role is changed only with this.
+    case ManageGlobalRoles = 'roles.manage-global';
     case ViewPermissions = 'permissions.view';
 
     // Admin: configuration and the audit log

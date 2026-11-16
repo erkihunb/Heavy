@@ -5,7 +5,6 @@ namespace App\Actions\Users;
 use App\Domain\Audit\AuditEvent;
 use App\Domain\Audit\AuditLog;
 use App\Models\User;
-use App\Support\Rbac\PermissionCatalog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -27,7 +26,7 @@ final class DeactivateUser
             throw ValidationException::withMessages(['user' => __('rbac.users.errors.deactivate_self')]);
         }
 
-        if ($user->isActive() && $this->isLastActiveAdmin($user)) {
+        if ($user->isActive() && $user->isLastActiveAdmin()) {
             throw ValidationException::withMessages(['user' => __('rbac.users.errors.last_admin')]);
         }
 
@@ -49,17 +48,5 @@ final class DeactivateUser
 
             return $user;
         });
-    }
-
-    private function isLastActiveAdmin(User $user): bool
-    {
-        if (! $user->hasRole(PermissionCatalog::PROTECTED_ROLE)) {
-            return false;
-        }
-
-        return User::role(PermissionCatalog::PROTECTED_ROLE)
-            ->whereKeyNot($user->getKey())
-            ->whereNull('deactivated_at')
-            ->doesntExist();
     }
 }

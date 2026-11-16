@@ -1,20 +1,4 @@
 import type { DualDate } from '@/types';
-import type { Role } from '@/types/enums';
-
-/** Mirrors App\Http\Controllers\Admin\UserController::present(). */
-export type AdminUser = {
-    id: number;
-    name: string;
-    email: string;
-    roles: Role[];
-    branch: BranchOption | null;
-    /** Only staff are placed at a branch. */
-    is_staff: boolean;
-    two_factor: boolean;
-    created_at: DualDate | null;
-    can_change_role: boolean;
-    role_locked_reason: string | null;
-};
 
 /** Mirrors App\Http\Controllers\Admin\UserController::presentBranch(); the name is in the interface language. */
 export type BranchOption = {

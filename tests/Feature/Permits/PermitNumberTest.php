@@ -187,12 +187,4 @@ describe('code rule options (System settings → Code rules)', function () {
         expect($this->numbers->next($this->in2019))->toBe('AACRA-2019-000001')
             ->and($this->numbers->next($this->in2020))->toBe('AACRA-2020-000002');
     });
-
-    it('shows the next number without taking it', function () {
-        $this->numbers->next($this->in2019);
-
-        expect($this->numbers->peek($this->in2019))->toBe(2)
-            ->and($this->numbers->peek($this->in2019))->toBe(2)
-            ->and($this->numbers->next($this->in2019))->toBe('AACRA-2019-000002');
-    });
 });

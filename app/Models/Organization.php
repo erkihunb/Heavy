@@ -25,7 +25,7 @@ class Organization extends Model
 
     /**
      * `created_by` is deliberately not fillable: ownership is set by the
-     * CreateOrganization action, never from request input.
+     * RegisterApplicant action, never from request input.
      *
      * @var list<string>
      */

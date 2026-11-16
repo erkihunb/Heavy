@@ -29,7 +29,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VerificationScan;
 use App\Support\EthiopianCalendar;
-use Carbon\CarbonImmutable;
+use App\Support\QueryFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -56,19 +56,19 @@ class PermitReviewController extends Controller
         Gate::authorize('viewQueue', Permit::class);
 
         $all = $request->query('status') === self::ALL_STATUSES;
-        $status = PermitStatus::tryFrom($this->text($request, 'status'));
+        $status = PermitStatus::tryFrom(QueryFilter::text($request, 'status'));
         $status = $status?->isVisibleToStaff() ? $status : null;
-        $permitType = PermitType::tryFrom($this->text($request, 'permit_type'));
-        $plate = $this->text($request, 'plate');
-        $organization = $this->text($request, 'organization');
-        $submittedFrom = $this->date($request, 'submitted_from');
-        $submittedTo = $this->date($request, 'submitted_to');
+        $permitType = PermitType::tryFrom(QueryFilter::text($request, 'permit_type'));
+        $plate = QueryFilter::text($request, 'plate');
+        $organization = QueryFilter::text($request, 'organization');
+        $submittedFrom = QueryFilter::date($request, 'submitted_from');
+        $submittedTo = QueryFilter::date($request, 'submitted_to');
 
         $like = fn (string $term): string => '%'.addcslashes($term, '%_\\').'%';
 
         $permits = Permit::query()
             ->with(['vehicles.vehicleType', 'organization', 'branch', 'applicant', 'recommender'])
-            ->whereNotIn('status', [PermitStatus::Draft, PermitStatus::Withdrawn])
+            ->whereNotIn('status', PermitStatus::hiddenFromStaff())
             // Staff placed at a branch work on that branch's applications only.
             ->inBranchOf($request->user())
             ->when($status !== null, fn (Builder $query) => $query->inEffectiveStatus($status))
@@ -315,7 +315,7 @@ class PermitReviewController extends Controller
 
         $others = Permit::query()
             ->whereKeyNot($permit->id)
-            ->whereNotIn('status', [PermitStatus::Draft, PermitStatus::Withdrawn])
+            ->whereNotIn('status', PermitStatus::hiddenFromStaff())
             ->whereHas('vehicles', fn (Builder $query) => $query->whereKey($permit->vehicles->modelKeys()))
             ->with('vehicles:id')
             ->orderByDesc('valid_from')
@@ -344,29 +344,5 @@ class PermitReviewController extends Controller
             })
             ->values()
             ->all();
-    }
-
-    private function text(Request $request, string $key): string
-    {
-        return is_string($request->query($key)) ? trim($request->query($key)) : '';
-    }
-
-    /**
-     * A Gregorian `Y-m-d` filter value as that calendar day in the display
-     * timezone, or null when it is missing or malformed.
-     */
-    private function date(Request $request, string $key): ?CarbonImmutable
-    {
-        $value = $this->text($request, $key);
-
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) !== 1) {
-            return null;
-        }
-
-        [$year, $month, $day] = array_map(intval(...), explode('-', $value));
-
-        return checkdate($month, $day, $year)
-            ? CarbonImmutable::create($year, $month, $day, 0, 0, 0, config('localization.display_timezone'))
-            : null;
     }
 }

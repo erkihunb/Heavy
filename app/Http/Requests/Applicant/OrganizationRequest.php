@@ -9,12 +9,13 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Unique;
 
 /**
- * Validation shared by creating and updating the organization profile.
+ * The organization part of a form that registers an applicant
+ * (Admin\RegisterApplicantRequest).
  */
 abstract class OrganizationRequest extends FormRequest
 {
     /**
-     * The uniqueness rule for the TIN (updating ignores the organization itself).
+     * The uniqueness rule for the TIN.
      */
     abstract protected function uniqueTin(): Unique;
 

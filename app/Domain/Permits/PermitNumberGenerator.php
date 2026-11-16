@@ -54,17 +54,6 @@ final class PermitNumberGenerator
     }
 
     /**
-     * The number the next approval would get, without taking it: for the
-     * live preview in System settings.
-     */
-    public function peek(CarbonImmutable $at): int
-    {
-        $last = DB::table('permit_number_sequences')->where('year', self::counterRow(self::year($at)))->value('last_number');
-
-        return $last === null ? self::start() : (int) $last + 1;
-    }
-
-    /**
      * A permit number from its parts, under the current rule.
      */
     public static function format(int $number, int $year, ?string $branchCode = null, ?PermitType $type = null): string

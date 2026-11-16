@@ -1,9 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { visitWithFilters } from '@/lib/filters';
 import ConfirmProvider from '@/shell/Components/ConfirmProvider';
 import EmptyState from '@/shell/Components/EmptyState';
-import { Plus } from '@/shell/Components/Icons';
 import PageHeader from '@/shell/Components/PageHeader';
 import {
     AppActionMenu,

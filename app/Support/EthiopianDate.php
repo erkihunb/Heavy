@@ -29,18 +29,6 @@ final readonly class EthiopianDate implements Stringable
     }
 
     /**
-     * Parse the numeric form "DD/MM/YYYY".
-     */
-    public static function fromString(string $value): self
-    {
-        if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', trim($value), $matches) !== 1) {
-            throw new InvalidArgumentException("Invalid Ethiopian date string [{$value}].");
-        }
-
-        return new self((int) $matches[3], (int) $matches[2], (int) $matches[1]);
-    }
-
-    /**
      * Numeric form "DD/MM/YYYY".
      */
     public function format(): string

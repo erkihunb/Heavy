@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\Role;
 use App\Models\User;
-use App\Support\Rbac\PermissionCatalog;
 use Illuminate\Auth\Access\Response;
 
 /**
@@ -23,7 +22,8 @@ class RolePolicy
     }
 
     /**
-     * The administrator role is changed only by an administrator.
+     * The administrator role is changed only by whoever may manage global roles
+     * (by default, administrators).
      */
     public function update(User $user, Role $role): Response
     {
@@ -31,7 +31,7 @@ class RolePolicy
             return Response::deny();
         }
 
-        if ($role->isProtected() && ! $user->hasRole(PermissionCatalog::PROTECTED_ROLE)) {
+        if ($role->isProtected() && ! $user->can('roles.manage-global')) {
             return Response::deny(__('rbac.roles.errors.protected'));
         }
 
@@ -47,11 +47,12 @@ class RolePolicy
     }
 
     /**
-     * Global roles see every branch, so only an administrator makes or keeps one.
+     * Global roles see every branch, so only those who may manage them make or
+     * keep one (by default, administrators).
      */
     public function manageGlobal(User $user): bool
     {
-        return $user->hasRole(PermissionCatalog::PROTECTED_ROLE);
+        return $user->can('roles.manage-global');
     }
 
     /**

@@ -55,19 +55,6 @@ export type FeeSchedule = {
     is_current: boolean;
 };
 
-/** Mirrors App\Http\Resources\OrganizationResource. */
-export type Organization = {
-    id: number;
-    /** Name in the current interface language. */
-    name: string;
-    name_am: string;
-    name_en: string | null;
-    tin: string | null;
-    phone: string;
-    email: string;
-    address: string;
-};
-
 /** Mirrors App\Http\Resources\VehicleTypeResource. */
 export type VehicleType = {
     id: number;

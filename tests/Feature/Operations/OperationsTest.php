@@ -1,9 +1,6 @@
 <?php
 
 use App\Actions\Permits\SubmitPermit;
-use App\Actions\Vehicles\UpdateVehicle;
-use App\Data\VehicleData;
-use App\Domain\Vehicles\PlateNumber;
 use App\Models\Permit;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -13,7 +10,7 @@ use Illuminate\Support\Facades\Notification;
 
 /*
  * Operations and hardening (spec §15, §16): the health check, the first
- * Admin, rate limits on the account forms and the plate lock.
+ * Admin, rate limits on the account forms and the vehicle lock at submission.
  */
 
 describe('health check', function () {
@@ -68,8 +65,8 @@ describe('rate limits on the account forms', function () {
     });
 });
 
-describe('plate lock', function () {
-    it('locks the vehicle rows when an application is submitted and when a plate changes', function () {
+describe('vehicle lock', function () {
+    it('locks the vehicle rows when an application is submitted', function () {
         $applicant = applicantWithOrganization();
         $vehicle = Vehicle::factory()->create(['organization_id' => $applicant->organization_id]);
         $permit = Permit::factory()->forVehicles($vehicle)->draft()->create([
@@ -86,9 +83,5 @@ describe('plate lock', function () {
 
         app(SubmitPermit::class)->handle($permit, $applicant);
         expect($locks)->toHaveCount(1);
-
-        $other = Vehicle::factory()->create(['organization_id' => $applicant->organization_id]);
-        app(UpdateVehicle::class)->handle($other, new VehicleData(PlateNumber::parse('ኢት-03-99998'), $other->vehicle_type_id, 'ሌላ ባለንብረት'));
-        expect($locks)->toHaveCount(2);
     });
 });

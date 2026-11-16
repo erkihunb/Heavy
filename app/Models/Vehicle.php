@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\PermitStatus;
 use App\Enums\VehicleRole;
 use Database\Factories\VehicleFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -77,17 +76,6 @@ class Vehicle extends Model
         return $this->belongsToMany(Permit::class, 'permit_vehicles')
             ->using(PermitVehicle::class)
             ->withPivot(['role', 'is_blocking']);
-    }
-
-    /**
-     * Once the vehicle is on an application that has been submitted, its plate
-     * is part of that record and can no longer be corrected by the applicant.
-     */
-    public function hasLockedPlate(): bool
-    {
-        return $this->permits()
-            ->whereNotIn('status', [PermitStatus::Draft, PermitStatus::Withdrawn])
-            ->exists();
     }
 
     /**

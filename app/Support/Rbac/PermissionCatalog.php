@@ -49,6 +49,7 @@ final class PermissionCatalog
         'roles.create',
         'roles.update',
         'roles.delete',
+        'roles.manage-global',
         'permissions.view',
         'settings.manage',
         'vehicle-types.manage',

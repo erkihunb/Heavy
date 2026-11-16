@@ -78,9 +78,7 @@ class ApplicantController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'organization' => $locale === 'en' && filled($user->organization?->name_en)
-                    ? (string) $user->organization->name_en
-                    : (string) $user->organization?->name_am,
+                'organization' => (string) $user->organization?->localizedName($locale),
                 'tin' => $user->organization?->tin,
                 'phone' => $user->organization?->phone,
             ])->values()->all(),

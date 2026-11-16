@@ -16,7 +16,7 @@ use App\Models\Vehicle;
 use App\Models\VehicleType;
 use App\Support\EthiopianCalendar;
 use App\Support\Paginated;
-use Carbon\CarbonImmutable;
+use App\Support\QueryFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -26,7 +26,6 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Activitylog\Models\Activity;
-use Throwable;
 
 /**
  * The audit log viewer (spec §11, §15): newest first, filtered by event (by
@@ -43,11 +42,11 @@ class AuditLogController extends Controller
     {
         Gate::authorize('viewAuditLog');
 
-        $event = AuditEvent::tryFrom($this->text($request, 'event'));
-        $actor = $this->text($request, 'actor');
-        $subject = $this->text($request, 'subject');
-        $from = $this->date($this->text($request, 'from'));
-        $to = $this->date($this->text($request, 'to'));
+        $event = AuditEvent::tryFrom(QueryFilter::text($request, 'event'));
+        $actor = QueryFilter::text($request, 'actor');
+        $subject = QueryFilter::text($request, 'subject');
+        $from = QueryFilter::date($request, 'from');
+        $to = QueryFilter::date($request, 'to');
         $locale = app()->getLocale();
         $timezone = (string) config('localization.display_timezone');
 
@@ -200,26 +199,6 @@ class AuditLogController extends Controller
         };
 
         return $translation !== null && Lang::has($translation) ? __($translation) : $value;
-    }
-
-    private function text(Request $request, string $name): string
-    {
-        $value = $request->query($name);
-
-        return is_string($value) ? trim($value) : '';
-    }
-
-    private function date(string $value): ?CarbonImmutable
-    {
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) !== 1) {
-            return null;
-        }
-
-        try {
-            return CarbonImmutable::createFromFormat('Y-m-d', $value, (string) config('localization.display_timezone'));
-        } catch (Throwable) {
-            return null;
-        }
     }
 
     /**

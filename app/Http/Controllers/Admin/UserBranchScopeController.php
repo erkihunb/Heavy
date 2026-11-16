@@ -28,7 +28,7 @@ class UserBranchScopeController extends Controller
     {
         Gate::authorize('assignRoles', $user);
 
-        $openBranches = Branch::query()->where('is_active', true)->pluck('id')->map(fn (int $id): string => (string) $id)->all();
+        $openBranches = Branch::query()->active()->pluck('id')->map(fn (int $id): string => (string) $id)->all();
 
         $validated = $request->validate([
             'branches' => ['required', 'array', 'min:1'],

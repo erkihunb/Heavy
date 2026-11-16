@@ -16,7 +16,7 @@ it('shares the signed-in person\'s permissions for the menu', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->where('auth.permissions', fn ($permissions) => collect($permissions)->contains(Permission::VerifyPayments->value)
                 && ! collect($permissions)->contains(Permission::ViewUsers->value))
-            ->where('auth.isSuperAdmin', false));
+            ->missing('auth.isSuperAdmin'));
 });
 
 it('shares the brand and sidebar colours of the chosen preset', function () {

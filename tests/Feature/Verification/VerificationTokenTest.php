@@ -59,8 +59,3 @@ it('maps each effective status to one verification result', function (PermitStat
     [PermitStatus::AwaitingPayment, ScanResult::NotFound],
     [PermitStatus::Draft, ScanResult::NotFound],
 ]);
-
-it('lets only a valid permit allow movement', function () {
-    expect(array_values(array_filter(ScanResult::cases(), fn (ScanResult $result): bool => $result->allowsMovement())))
-        ->toBe([ScanResult::Valid]);
-});

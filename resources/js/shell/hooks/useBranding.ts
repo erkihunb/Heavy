@@ -2,9 +2,6 @@ import { usePage } from '@inertiajs/react';
 import { useLocale } from '@/shell/hooks/useLocale';
 import { useSystemSettings } from '@/shell/hooks/useSystemSettings';
 import { BRANDING_FALLBACK, brandNameFor } from '@/shell/lib/branding';
-import type { Branding } from '@/shell/lib/branding';
-
-export { BRANDING_FALLBACK, type Branding };
 
 /**
  * The product's identity for the shell: live settings → the translations in

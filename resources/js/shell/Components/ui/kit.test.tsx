@@ -1,20 +1,12 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-    AppActionMenu,
-    AppDataTable,
-    AppFilterBar,
-    FilterField,
-    Input,
-    ListPagination,
-    createColumnHelper,
-} from '@/shell/Components/ui';
+import { AppActionMenu, ListPagination } from '@/shell/Components/ui';
 import LocalizedUiProvider from '@/shell/Components/ui/LocalizedUiProvider';
 
 /*
- * The table, filter and pagination parts ported from the source system, rendered with
- * the shell's translations (lang/en/shell.php).
+ * The pagination and row action parts ported from the source system, rendered
+ * with the shell's translations (lang/en/shell.php).
  */
 
 const { get, page } = vi.hoisted(() => ({
@@ -74,14 +66,6 @@ afterEach(() => {
     localStorage.clear();
 });
 
-type Vehicle = { id: number; plate: string; type: string; axles?: number };
-const column = createColumnHelper<Vehicle>();
-const columns = [
-    column.accessor('plate', { header: 'Plate' }),
-    column.accessor('type', { header: 'Type' }),
-    column.accessor('axles', { header: 'Axles' }),
-];
-
 describe('ListPagination', () => {
     const meta = {
         current_page: 5,
@@ -138,127 +122,6 @@ describe('ListPagination', () => {
         );
 
         expect(container.innerHTML).toBe('');
-    });
-});
-
-describe('AppDataTable', () => {
-    const rows = [
-        { id: 1, plate: 'AA 3-12345', type: 'Truck' },
-        { id: 2, plate: 'AA 3-67890', type: 'Trailer' },
-    ];
-    const cellsOf = (container: HTMLElement, index: number) =>
-        [...container.querySelectorAll('tbody tr')].map(
-            (tr) => tr.querySelectorAll('td')[index]?.textContent,
-        );
-
-    it('draws the rows under their headers, with the table tools', () => {
-        const { container } = render(
-            <LocalizedUiProvider>
-                <AppDataTable id="vehicles" data={rows} columns={columns} />
-            </LocalizedUiProvider>,
-        );
-
-        expect(
-            [...container.querySelectorAll('thead th')].map(
-                (th) => th.textContent,
-            ),
-        ).toEqual(['Plate', 'Type', 'Axles']);
-        expect(cellsOf(container, 0)).toEqual(['AA 3-12345', 'AA 3-67890']);
-        expect(screen.getByRole('button', { name: /Columns/ })).toBeTruthy();
-    });
-
-    it('sorts the rows on this page when a header is clicked', async () => {
-        const { container } = render(
-            <LocalizedUiProvider>
-                <AppDataTable
-                    id="vehicles-sort"
-                    data={rows}
-                    columns={columns}
-                />
-            </LocalizedUiProvider>,
-        );
-        const typeHeader = [
-            ...container.querySelectorAll('thead th'),
-        ][1] as HTMLElement;
-
-        await userEvent.click(typeHeader);
-        const first = cellsOf(container, 1);
-        await userEvent.click(typeHeader);
-        const second = cellsOf(container, 1);
-
-        expect([first, second]).toEqual(
-            expect.arrayContaining([
-                ['Trailer', 'Truck'],
-                ['Truck', 'Trailer'],
-            ]),
-        );
-        expect(first).not.toEqual(second);
-    });
-
-    it('shows the empty state when there are no rows', () => {
-        render(
-            <LocalizedUiProvider>
-                <AppDataTable data={[]} columns={columns} />
-            </LocalizedUiProvider>,
-        );
-
-        expect(screen.getByText('No results found')).toBeTruthy();
-        expect(screen.queryByRole('table')).toBeNull();
-    });
-
-    it('requests the list address, with its filters, for another page', async () => {
-        render(
-            <LocalizedUiProvider>
-                <AppDataTable
-                    data={[{ id: 1, plate: 'AA 3-12345', type: 'Truck' }]}
-                    columns={columns}
-                    href="/vehicles"
-                    filters={{ search: 'AA', status: '' }}
-                    meta={{
-                        current_page: 1,
-                        last_page: 3,
-                        per_page: 1,
-                        total: 3,
-                        from: 1,
-                        to: 1,
-                    }}
-                />
-            </LocalizedUiProvider>,
-        );
-
-        await userEvent.click(screen.getByRole('button', { name: 'Page 2' }));
-
-        expect(get).toHaveBeenCalledWith(
-            '/vehicles',
-            { search: 'AA', page: 2 },
-            { preserveState: true, preserveScroll: true },
-        );
-    });
-});
-
-describe('AppFilterBar', () => {
-    it('sends the filled filters as the query string and leaves out empty ones', async () => {
-        render(
-            <LocalizedUiProvider>
-                <AppFilterBar href="/vehicles" filters={{}}>
-                    <FilterField label="Search">
-                        <Input name="search" defaultValue="" />
-                    </FilterField>
-                    <FilterField label="Type">
-                        <Input name="type" defaultValue="" />
-                    </FilterField>
-                </AppFilterBar>
-            </LocalizedUiProvider>,
-        );
-
-        await userEvent.type(screen.getByLabelText('Search'), 'AA 3');
-        await userEvent.click(screen.getByRole('button', { name: 'Filter' }));
-
-        expect(get).toHaveBeenCalledWith(
-            '/vehicles',
-            { search: 'AA 3' },
-            { preserveState: true },
-        );
     });
 });
 

@@ -148,7 +148,7 @@ class SettingsController extends Controller
         return [
             'year' => $year,
             'last' => ['yearly' => $last($year), 'never' => $last(PermitNumberGenerator::NEVER_RESETS)],
-            'branch' => Branch::query()->where('is_active', true)->orderBy('code')->value('code'),
+            'branch' => Branch::query()->active()->orderBy('code')->value('code'),
         ];
     }
 

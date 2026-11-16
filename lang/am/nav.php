@@ -1,13 +1,8 @@
 <?php
 
 return [
-    'menu' => 'ማውጫ',
     'dashboard' => 'ዳሽቦርድ',
-    'settings' => 'ቅንብሮች',
-    'log_out' => 'ይውጡ',
-    'organization' => 'ተቋም',
     'vehicles' => 'ተሽከርካሪዎች',
-    'permits' => 'ፍቃዶች',
     'review_queue' => 'የግምገማ ወረፋ',
     'payments' => 'ክፍያዎች',
     'fee_schedules' => 'የክፍያ ተመን',
@@ -18,19 +13,13 @@ return [
     'system_settings' => 'የሥርዓት ቅንብሮች',
     'audit_log' => 'የኦዲት መዝገብ',
     'sections' => [
-        'applicant' => 'የእኔ ተቋም',
         'back_office' => 'የጽሕፈት ቤት ሥራ',
         'administration' => 'አስተዳደር',
     ],
     'search' => 'ምናሌውን ይፈልጉ',
-    'search_hint' => 'ገጽ ለማግኘት ይጻፉ፣ ከዚያ Enter ይጫኑ።',
-    'search_placeholder' => 'ይፈልጉ…',
-    'search_empty' => 'የሚዛመድ ገጽ የለም።',
     'theme_dark' => 'ወደ ጨለማ ገጽታ ይቀይሩ',
     'theme_light' => 'ወደ ብሩህ ገጽታ ይቀይሩ',
     'open_menu' => 'ምናሌውን ይክፈቱ',
     'expand_sidebar' => 'የጎን ምናሌውን ያስፉ',
     'collapse_sidebar' => 'የጎን ምናሌውን ያጥብቡ',
-    'account_menu' => 'የመለያ ምናሌ',
-    'signed_in_as' => 'የገቡት በ',
 ];

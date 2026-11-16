@@ -30,12 +30,4 @@ enum ScanResult: string
             default => self::NotFound,
         };
     }
-
-    /**
-     * The vehicle may move under this permit right now.
-     */
-    public function allowsMovement(): bool
-    {
-        return $this === self::Valid;
-    }
 }

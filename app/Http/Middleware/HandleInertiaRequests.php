@@ -57,13 +57,11 @@ class HandleInertiaRequests extends Middleware
                     'email' => $user->email,
                     'email_verified_at' => $user->email_verified_at,
                     'locale' => $user->locale,
-                    'has_organization' => $user->organization_id !== null,
                     // For navigation and display only; authorization is enforced by Policies.
                     'roles' => $user->getRoleNames()->values()->all(),
                 ],
                 'mustEnableTwoFactor' => (bool) $user?->mustEnableTwoFactor(),                // For showing or hiding navigation only (resources/js/config/navigation.ts).
                 'permissions' => $user === null ? [] : $user->getAllPermissions()->pluck('name')->values()->all(),
-                'isSuperAdmin' => false,
             ],
             'locale' => app()->getLocale(),
             'locales' => config('localization.supported'),

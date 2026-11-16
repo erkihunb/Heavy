@@ -4,8 +4,6 @@ use App\Domain\Settings\Branding;
 use App\Exceptions\DuplicateReceipt;
 use App\Exceptions\DuplicateVehiclePlate;
 use App\Exceptions\PermitException;
-use App\Exceptions\UserAlreadyHasOrganization;
-use App\Exceptions\VehiclePlateLocked;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -24,7 +22,6 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Sentry\Laravel\Integration;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -66,16 +63,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'plate' => $e->userMessage(),
         ]));
 
-        $exceptions->map(fn (VehiclePlateLocked $e) => ValidationException::withMessages([
-            'plate' => $e->userMessage(),
-        ]));
-
         // Spec §4.5: a duplicate receipt is a validation error on the receipt number.
         $exceptions->map(fn (DuplicateReceipt $e) => ValidationException::withMessages([
             'receipt_number' => $e->userMessage(),
         ]));
-
-        $exceptions->map(fn (UserAlreadyHasOrganization $e) => new ConflictHttpException($e->getMessage(), $e));
 
         // A permit rule stopped an Action (wrong stage, overlapping permit, …):
         // nothing was changed, and the person is told why on the page they were on.

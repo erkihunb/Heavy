@@ -204,7 +204,7 @@ class WalkInController extends Controller
         return [
             'id' => $applicant->id,
             'name' => $applicant->name,
-            'organization' => app()->getLocale() === 'en' && filled($organization->name_en) ? (string) $organization->name_en : $organization->name_am,
+            'organization' => $organization->localizedName(app()->getLocale()),
         ];
     }
 

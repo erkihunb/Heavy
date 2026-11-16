@@ -86,8 +86,9 @@ it('allows nothing beyond the listed transitions', function () {
 it('treats rejected, expired, revoked and withdrawn as final', function (PermitStatus $status, bool $terminal) {
     $machine = new PermitStateMachine;
 
-    expect($machine->isTerminal($status))->toBe($terminal)
-        ->and($machine->targets($status) === [])->toBe($terminal);
+    $targets = array_filter(PermitStatus::cases(), fn (PermitStatus $to): bool => $machine->canTransition($status, $to));
+
+    expect($targets === [])->toBe($terminal);
 })->with([
     [PermitStatus::Rejected, true],
     [PermitStatus::Expired, true],

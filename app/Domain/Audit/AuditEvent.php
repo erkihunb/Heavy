@@ -16,7 +16,8 @@ enum AuditEvent: string
     case DocumentDownloaded = 'permit.document_downloaded';
     case PaymentVerified = 'payment.verified';
     case PaymentRecorded = 'payment.recorded';
-    // A receipt the Registrar took with the request, before the decision.
+    // A receipt the Registrar took with the request, before the decision. No longer
+    // recorded; kept so audit-log rows written before that change keep their label.
     case PaymentTakenAtIntake = 'payment.taken_at_intake';
     case PermitCommented = 'permit.commented';
     case PaymentRejected = 'payment.rejected';

@@ -7,8 +7,8 @@ return [
     | Mandatory Two-Factor Authentication For Staff
     |--------------------------------------------------------------------------
     |
-    | When enabled, any user holding a staff role (reviewer, approver, cashier,
-    | traffic officer, admin) is confined to the two-factor setup screens until
+    | When enabled, any member of staff (User::isStaff(), decided by their
+    | permissions) is confined to the two-factor setup screens until
     | they have confirmed two-factor authentication. An Admin can change it in
     | System settings → Security; when off, two-factor authentication is
     | each person's own choice (spec §2, §15).

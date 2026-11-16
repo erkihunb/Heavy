@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Support\EthiopianCalendar;
 use App\Support\Paginated;
+use App\Support\QueryFilter;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -58,11 +59,11 @@ class PermitRegisterController extends Controller
             $viewer->can(Permission::ViewReviewQueue->value) || $viewer->can(Permission::RegisterApplicants->value),
             403,
         );
-        $search = $this->text($request, 'search');
-        $status = PermitStatus::tryFrom($this->text($request, 'status'));
-        $permitType = PermitType::tryFrom($this->text($request, 'permit_type'));
-        $from = $this->date($request, 'from');
-        $to = $this->date($request, 'to');
+        $search = QueryFilter::text($request, 'search');
+        $status = PermitStatus::tryFrom(QueryFilter::text($request, 'status'));
+        $permitType = PermitType::tryFrom(QueryFilter::text($request, 'permit_type'));
+        $from = QueryFilter::date($request, 'from');
+        $to = QueryFilter::date($request, 'to');
 
         // What the viewer may open: the review screens show what reached the Authority;
         // a Registrar works on drafts too, from the applicant's page.
@@ -73,7 +74,7 @@ class PermitRegisterController extends Controller
 
         $base = fn (): Builder => Permit::query()
             ->inBranchOf($viewer)
-            ->when(! $registrar, fn (Builder $query) => $query->whereNotIn('status', [PermitStatus::Draft, PermitStatus::Withdrawn]))
+            ->when(! $registrar, fn (Builder $query) => $query->whereNotIn('status', PermitStatus::hiddenFromStaff()))
             ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $query) => $query
                 ->whereLike('permit_number', $like($search))
                 ->orWhereHas('vehicles', fn (Builder $query) => $query
@@ -91,7 +92,7 @@ class PermitRegisterController extends Controller
 
         $statuses = array_values(array_filter(
             self::STATUSES,
-            fn (PermitStatus $status): bool => $registrar || ! in_array($status, [PermitStatus::Draft, PermitStatus::Withdrawn], true),
+            fn (PermitStatus $status): bool => $registrar || $status->isVisibleToStaff(),
         ));
 
         $permits = $base()
@@ -158,21 +159,5 @@ class PermitRegisterController extends Controller
         }
 
         return null;
-    }
-
-    private function text(Request $request, string $key): string
-    {
-        return is_string($request->query($key)) ? trim($request->query($key)) : '';
-    }
-
-    private function date(Request $request, string $key): ?CarbonImmutable
-    {
-        $value = $this->text($request, $key);
-
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) !== 1) {
-            return null;
-        }
-
-        return CarbonImmutable::createFromFormat('!Y-m-d', $value, (string) config('localization.display_timezone'));
     }
 }

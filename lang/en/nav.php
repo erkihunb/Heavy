@@ -1,13 +1,8 @@
 <?php
 
 return [
-    'menu' => 'Menu',
     'dashboard' => 'Dashboard',
-    'settings' => 'Settings',
-    'log_out' => 'Log out',
-    'organization' => 'Organisation',
     'vehicles' => 'Vehicles',
-    'permits' => 'Permits',
     'review_queue' => 'Review queue',
     'payments' => 'Payments',
     'fee_schedules' => 'Fee schedule',
@@ -18,19 +13,13 @@ return [
     'system_settings' => 'System settings',
     'audit_log' => 'Audit log',
     'sections' => [
-        'applicant' => 'My organisation',
         'back_office' => 'Back office',
         'administration' => 'Administration',
     ],
     'search' => 'Search the menu',
-    'search_hint' => 'Type to find a page, then press Enter.',
-    'search_placeholder' => 'Search…',
-    'search_empty' => 'No page matches.',
     'theme_dark' => 'Switch to dark mode',
     'theme_light' => 'Switch to light mode',
     'open_menu' => 'Open the menu',
     'expand_sidebar' => 'Expand the sidebar',
     'collapse_sidebar' => 'Collapse the sidebar',
-    'account_menu' => 'Account menu',
-    'signed_in_as' => 'Signed in as',
 ];

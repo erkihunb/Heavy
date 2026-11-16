@@ -9,7 +9,6 @@ use App\Actions\Permits\RevokePermit;
 use App\Actions\Permits\StartReview;
 use App\Actions\Permits\SubmitPermit;
 use App\Actions\Permits\UpdateDraftPermit;
-use App\Actions\Permits\WithdrawPermit;
 use App\Data\RecommendationData;
 use App\Domain\Permits\ValidityRules;
 use App\Enums\PermitStatus;
@@ -332,34 +331,6 @@ describe('SubmitPermit', function () {
         PermitStatus::UnderReview,
         PermitStatus::Rejected,
         PermitStatus::AwaitingPayment,
-        PermitStatus::Withdrawn,
-    ]);
-});
-
-describe('WithdrawPermit', function () {
-    it('takes back a draft or an application nobody has started reviewing', function (PermitStatus $status) {
-        $permit = Permit::factory()->forVehicles($this->vehicle)->create(['status' => $status]);
-
-        app(WithdrawPermit::class)->handle($permit, $this->applicant);
-
-        expect($permit->refresh()->status)->toBe(PermitStatus::Withdrawn)
-            ->and(permitHistory($permit))->toBe([[$status->value, 'withdrawn', $this->applicant->id, null]])
-            ->and(permitVehicleRows($permit)->pluck('is_blocking')->all())->toBe([false]);
-    })->with([PermitStatus::Draft, PermitStatus::Submitted]);
-
-    it('cannot withdraw once the review has started', function (PermitStatus $status) {
-        $permit = Permit::factory()->forVehicles($this->vehicle)->create(['status' => $status]);
-
-        expect(fn () => app(WithdrawPermit::class)->handle($permit, $this->applicant))
-            ->toThrow(InvalidPermitTransition::class);
-
-        expect($permit->refresh()->status)->toBe($status)
-            ->and(permitHistory($permit))->toBe([]);
-    })->with([
-        PermitStatus::UnderReview,
-        PermitStatus::ChangesRequested,
-        PermitStatus::AwaitingPayment,
-        PermitStatus::Issued,
         PermitStatus::Withdrawn,
     ]);
 });
@@ -749,12 +720,12 @@ it('decides on the stored status, not on a stale copy of the permit', function (
     $permit = Permit::factory()->forVehicles($this->vehicle)->submitted()->create();
     $stale = Permit::findOrFail($permit->id);
 
-    app(WithdrawPermit::class)->handle($permit, $this->applicant);
+    app(StartReview::class)->handle($permit, $this->reviewer);
 
     expect(fn () => app(StartReview::class)->handle($stale, $this->reviewer))
         ->toThrow(InvalidPermitTransition::class);
 
-    expect($permit->refresh()->status)->toBe(PermitStatus::Withdrawn);
+    expect($permit->refresh()->status)->toBe(PermitStatus::UnderReview);
 });
 
 it('writes the whole story of an application to its history, in order', function () {

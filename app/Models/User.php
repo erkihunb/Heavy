@@ -159,9 +159,24 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     }
 
     /**
-     * The Registrar or Admin who registered this applicant at the office;
-     * null for applicants who registered themselves online. Set only by
-     * the RegisterApplicant action, never from request input.
+     * Whether this is an administrator and no other active account holds
+     * the administrator role, so the system would lose whoever can manage it.
+     */
+    public function isLastActiveAdmin(): bool
+    {
+        if (! $this->hasRole(PermissionCatalog::PROTECTED_ROLE)) {
+            return false;
+        }
+
+        return self::role(PermissionCatalog::PROTECTED_ROLE)
+            ->whereKeyNot($this->getKey())
+            ->whereNull('deactivated_at')
+            ->doesntExist();
+    }
+
+    /**
+     * The Registrar or Admin who registered this applicant at the office.
+     * Set only by the RegisterApplicant action, never from request input.
      *
      * @return BelongsTo<User, $this>
      */

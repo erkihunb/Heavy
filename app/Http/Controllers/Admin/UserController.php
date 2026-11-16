@@ -21,7 +21,6 @@ use App\Models\UserBranchScope;
 use App\Support\EthiopianCalendar;
 use App\Support\Paginated;
 use App\Support\Rbac\BranchScope;
-use App\Support\Rbac\PermissionCatalog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
@@ -254,7 +253,7 @@ class UserController extends Controller
     {
         return [
             ['key' => BranchScope::HEAD_OFFICE_KEY, 'code' => null, 'name' => __('rbac.scopes.headOffice')],
-            ...Branch::query()->where('is_active', true)->orderBy('code')->get()->map(fn (Branch $branch): array => [
+            ...Branch::query()->active()->orderBy('code')->get()->map(fn (Branch $branch): array => [
                 'key' => (string) $branch->id,
                 'code' => $branch->code,
                 'name' => $branch->localizedName(app()->getLocale()),
@@ -277,7 +276,6 @@ class UserController extends Controller
             ])->values()->all(),
             'branch' => $user->branch === null ? null : ['code' => $user->branch->code, 'name' => $user->branch->localizedName(app()->getLocale())],
             'is_staff' => $user->isStaff(),
-            'is_admin' => $user->roles->contains('name', PermissionCatalog::PROTECTED_ROLE),
             'active' => $user->isActive(),
             'two_factor' => $user->two_factor_confirmed_at !== null,
             'created_at' => EthiopianCalendar::present($user->created_at?->setTimezone((string) config('localization.display_timezone')), app()->getLocale()),

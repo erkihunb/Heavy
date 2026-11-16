@@ -34,7 +34,7 @@ const choiceClass = (selected: boolean) =>
 
 /**
  * The person's appearance menu: light / dark / follow the device,
- * and the interface style (Swiss, Classic, Soft UI, High contrast) when the
+ * and the interface style (Authority, Swiss, Classic, Soft UI, High contrast) when the
  * organisation allows people to choose (System settings → Appearance).
  * Light and dark are kept by Heavy's own appearance store, so every page,
  * old shell or new, shows the same mode.

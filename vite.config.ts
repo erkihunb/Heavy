@@ -42,26 +42,4 @@ export default defineConfig({
     esbuild: {
         jsx: 'automatic',
     },
-    build: {
-        rollupOptions: {
-            output: {
-                /*
-                 * The rich-text policy and sanitizer are shared by the editor
-                 * field and its lazily loaded TinyMCE adapter. Left alone, Rollup
-                 * folds them into the chunk of the first page that uses the
-                 * editor; that page's chunk then also serves the adapter, loses
-                 * its name in the manifest and Laravel cannot find the page.
-                 */
-                manualChunks(id) {
-                    if (
-                        /[\\/]resources[\\/]js[\\/]shell[\\/]richtext[\\/](policy|sanitize)/.test(
-                            id,
-                        )
-                    ) {
-                        return 'rich-text-policy';
-                    }
-                },
-            },
-        },
-    },
 });

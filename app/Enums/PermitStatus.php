@@ -50,7 +50,17 @@ enum PermitStatus: string
      */
     public function isVisibleToStaff(): bool
     {
-        return ! in_array($this, [self::Draft, self::Withdrawn], true);
+        return ! in_array($this, self::hiddenFromStaff(), true);
+    }
+
+    /**
+     * The statuses isVisibleToStaff() leaves out, for query filters.
+     *
+     * @return list<self>
+     */
+    public static function hiddenFromStaff(): array
+    {
+        return [self::Draft, self::Withdrawn];
     }
 
     /**

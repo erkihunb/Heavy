@@ -39,11 +39,6 @@ final readonly class BranchScope
         return new self(false, $headOffice, array_values(array_unique($branchIds)));
     }
 
-    public static function nothing(): self
-    {
-        return new self(false, false, []);
-    }
-
     /**
      * The scope as stored with a queued export: null for everywhere.
      *

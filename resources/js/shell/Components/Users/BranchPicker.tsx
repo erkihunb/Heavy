@@ -8,8 +8,6 @@ import { useLocale } from '@/shell/hooks/useLocale';
  */
 export type PickableBranch = { key: string; code: string | null; name: string };
 
-export const HEAD_OFFICE = 'head-office';
-
 /**
  * The branches a user is scoped to, as a searchable checklist (EUISIS
  * OrganizationPicker). The search box shows from eight branches up.

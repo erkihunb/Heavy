@@ -52,17 +52,4 @@ final class PermitStateMachine
             throw new InvalidPermitTransition($from, $to);
         }
     }
-
-    /**
-     * @return list<PermitStatus> the statuses a permit in the given status can move to
-     */
-    public function targets(PermitStatus $from): array
-    {
-        return self::TRANSITIONS[$from->value];
-    }
-
-    public function isTerminal(PermitStatus $status): bool
-    {
-        return self::TRANSITIONS[$status->value] === [];
-    }
 }

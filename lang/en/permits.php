@@ -1,24 +1,10 @@
 <?php
 
 return [
-    'title' => 'Permits',
-    'intro' => 'Your organisation\'s permit applications and issued permits.',
-    'new' => 'New application',
-    'create_title' => 'Apply for a permit',
     'edit_title' => 'Edit application',
     'show_title' => 'Permit application',
-    'count' => ':count applications',
     'not_numbered' => 'Number assigned on approval',
     'duration_days' => ':count days',
-    'empty' => [
-        'title' => 'No applications yet',
-        'body' => 'Apply for a permit for one of your registered vehicles.',
-    ],
-    'no_results' => 'No applications match your search.',
-    'no_vehicles' => [
-        'title' => 'Register a vehicle first',
-        'body' => 'An application needs at least one vehicle from your register.',
-    ],
     'types' => [
         'full_day' => 'Full day',
         'pass' => 'Pass',
@@ -67,7 +53,6 @@ return [
         'recommendation' => 'Recommendation',
     ],
     'calendar' => [
-        'day' => 'Day',
         'month' => 'Month',
         'year' => 'Year',
         'gregorian' => 'Gregorian: :date',
@@ -129,7 +114,6 @@ return [
         'edit' => 'Edit',
         'submit' => 'Submit application',
         'resubmit' => 'Submit again',
-        'withdraw' => 'Withdraw',
         'back' => 'Back to the list',
         'download' => 'Download permit (PDF)',
         'download_am' => 'Amharic PDF',
@@ -142,13 +126,10 @@ return [
     ],
     'document' => [
         'pending' => 'The permit document is being prepared. Refresh this page in a minute.',
-        'ready' => 'Print the permit or keep it on the phone. The QR code on it shows its current status when scanned.',
     ],
     'review' => [
         'title' => 'Review and submit',
-        'draft' => 'Check the details below. Once submitted, the application can no longer be changed unless the Authority asks for changes.',
         'changes_requested' => 'The Authority asked for changes. Edit the application, then submit it again.',
-        'withdraw_hint' => 'Withdrawing is final: a withdrawn application cannot be reopened.',
         'details' => 'Application details',
     ],
     'timeline' => [
@@ -184,7 +165,6 @@ return [
     'messages' => [
         'draft_saved' => 'Draft saved. Review it and submit when ready.',
         'submitted' => 'Application submitted.',
-        'withdrawn' => 'Application withdrawn.',
         'review_started' => 'Review started.',
         'recommended' => 'Recommendation recorded.',
         'changes_requested' => 'The applicant has been asked for changes.',
@@ -275,18 +255,12 @@ return [
             'hint' => 'Approving gives the permit its number and it waits for payment; the note is optional. Requesting changes or rejecting needs a note; rejection is final.',
         ],
         'request_changes' => [
-            'title' => 'Request changes',
-            'hint' => 'Send the application back and tell the applicant what to change.',
             'submit' => 'Request changes',
         ],
         'approve' => [
-            'title' => 'Approve',
-            'hint' => 'The permit gets its number and waits for payment.',
             'submit' => 'Approve application',
         ],
         'reject' => [
-            'title' => 'Reject',
-            'hint' => 'Rejection is final. The applicant sees your note.',
             'submit' => 'Reject application',
         ],
         'revoke' => [

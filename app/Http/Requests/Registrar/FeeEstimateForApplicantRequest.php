@@ -2,14 +2,35 @@
 
 namespace App\Http\Requests\Registrar;
 
-use App\Http\Requests\Applicant\FeeEstimateRequest;
+use App\Enums\PermitType;
+use App\Models\Vehicle;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class FeeEstimateForApplicantRequest extends FeeEstimateRequest
+/**
+ * What the application form sends to ask what a permit would cost today,
+ * for the applicant a request at the office was filed for.
+ */
+class FeeEstimateForApplicantRequest extends FormRequest
 {
     use ActsForApplicant;
 
     public function authorize(): bool
     {
         return $this->mayActForApplicant();
+    }
+
+    /**
+     * @return array<string, array<int, mixed>>
+     */
+    public function rules(): array
+    {
+        return [
+            'permit_type' => ['required', Rule::enum(PermitType::class)],
+            'primary_vehicle_id' => ['bail', 'required', 'string', Rule::exists(Vehicle::class, 'id')
+                ->where('organization_id', $this->organizationId() ?? 0)],
+            'valid_from' => ['bail', 'required', 'date_format:Y-m-d'],
+            'valid_to' => ['bail', 'required', 'date_format:Y-m-d', 'after_or_equal:valid_from'],
+        ];
     }
 }

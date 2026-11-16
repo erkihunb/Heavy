@@ -76,22 +76,6 @@ return [
             'week' => 'Checks each day, the last :count days',
             'empty' => 'No checks yet today.',
         ],
-        'setup' => [
-            'title' => 'Getting started',
-            'description' => ':done of :total steps done',
-            'complete' => 'All set. You can apply for permits.',
-            'steps' => [
-                'organization' => 'Create your organisation profile',
-                'vehicle' => 'Register a vehicle',
-                'applied' => 'Send in an application',
-                'issued' => 'Receive your first permit',
-                'two_factor' => 'Turn on two-factor authentication',
-            ],
-        ],
-        'validity' => [
-            'days_left' => ':count days left',
-            'last_day' => 'Last day today',
-        ],
         'period' => 'Period',
         'count' => 'Count',
         'share' => 'Share',
@@ -165,19 +149,10 @@ return [
         'organization' => 'Organisation',
         'by' => 'By',
     ],
-    'recent' => [
-        'title' => 'My recent applications',
-        'empty' => 'You have not applied for a permit yet.',
-        'all' => 'All applications',
-    ],
     'actions' => [
-        'apply' => 'Apply for a permit',
-        'register_vehicle' => 'Register a vehicle',
         'queue' => 'Review queue',
         'payments' => 'Verify payments',
         'scan' => 'Check a permit',
         'collect' => 'Payments to take',
-        'issue' => 'Permits to issue',
-        'reports' => 'Reports',
     ],
 ];

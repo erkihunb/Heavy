@@ -1,7 +1,6 @@
 <?php
 
 use App\Support\EthiopianCalendar;
-use App\Support\EthiopianDate;
 use Carbon\CarbonImmutable;
 
 /*
@@ -124,14 +123,3 @@ it('presents both calendars for API resources', function () {
         'ethiopian_label' => 'መስከረም 28, 2018',
     ])->and(EthiopianCalendar::present(null))->toBeNull();
 });
-
-it('parses numeric Ethiopian date strings', function () {
-    $date = EthiopianDate::fromString('28/01/2018');
-
-    expect([$date->year, $date->month, $date->day])->toBe([2018, 1, 28])
-        ->and((string) $date)->toBe('28/01/2018');
-});
-
-it('rejects malformed Ethiopian date strings', function (string $value) {
-    expect(fn () => EthiopianDate::fromString($value))->toThrow(InvalidArgumentException::class);
-})->with(['', '2018-01-28', '28/01', '31/01/2018', 'abc', '28/01/2018 extra']);

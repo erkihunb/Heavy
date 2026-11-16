@@ -87,7 +87,7 @@ final class ExportDatasets
         $query = Permit::query()
             ->with(['organization:id,name_am,name_en', 'vehicles.vehicleType'])
             // Drafts and withdrawn applications are the applicant's business only.
-            ->whereNotIn('status', [PermitStatus::Draft, PermitStatus::Withdrawn])
+            ->whereNotIn('status', PermitStatus::hiddenFromStaff())
             ->tap(fn (Builder $query) => BranchScope::fromFilters($filters)->apply($query, 'branch_id'))
             ->when($status !== null, fn (Builder $query) => $query->inEffectiveStatus($status))
             ->when(isset($filters['from']), fn (Builder $query) => $query->where('valid_to', '>=', $filters['from']))

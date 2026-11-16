@@ -16,8 +16,6 @@ export type User = {
     avatar?: string;
     email_verified_at: string | null;
     locale: string;
-    /** Whether the user belongs to an organization (applicants only). */
-    has_organization: boolean;
     roles: Role[];
 };
 
@@ -26,8 +24,6 @@ export type Auth = {
     /** True while a staff member has not yet confirmed two-factor authentication. */
     mustEnableTwoFactor: boolean; /** The person's permission names (app/Enums/Permission.php), for showing or hiding navigation only. */
     permissions?: string[];
-    /** Always false here: Admins hold every staff permission instead (shell's useCan). */
-    isSuperAdmin?: boolean;
 };
 
 export type TwoFactorSetupData = {

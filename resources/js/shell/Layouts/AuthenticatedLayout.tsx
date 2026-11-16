@@ -76,7 +76,6 @@ export type ContentWidth = 'full' | 'form';
 type Props = PropsWithChildren<{
     /** The heading band: usually a <PageHeader />. Breadcrumbs sit above it. */
     header?: ReactNode;
-    variant?: 'default' | 'portal';
     contentWidth?: ContentWidth;
     /** A trail for a page the menu does not cover (after home); otherwise it comes from the menu. */
     breadcrumbs?: Crumb[];
@@ -109,7 +108,6 @@ export default function AuthenticatedLayout(props: Props) {
 function Shell({
     header,
     children,
-    variant = 'default',
     contentWidth = 'full',
     breadcrumbs,
     bare = false,
@@ -282,9 +280,7 @@ function Shell({
     ]);
 
     return (
-        <div
-            className={`${variant === 'portal' ? 'portal-shell' : 'admin-shell'} min-h-screen bg-(--app-background)`}
-        >
+        <div className="admin-shell min-h-screen bg-(--app-background)">
             <a
                 href="#main-content"
                 className={buttonClassName({

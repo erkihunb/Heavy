@@ -20,21 +20,6 @@ const tones: Record<Tone, string> = {
     danger: `${surfaces.danger} text-danger-strong ring-danger-strong/20`,
 };
 
-/** Soft fill and strong text of a tone, for icon tiles and small marks. */
-export function toneClassName(
-    tone: Tone = 'neutral',
-    className?: string,
-): string {
-    return cx(tones[tone], className);
-}
-
-export function toneSurfaceClassName(
-    tone: Tone = 'neutral',
-    className?: string,
-): string {
-    return cx(surfaces[tone], className);
-}
-
 /** The badge style, for markup that must stay a plain element. */
 export function badgeClassName(
     tone: Tone = 'neutral',

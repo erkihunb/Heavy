@@ -36,9 +36,8 @@ class SubmitPermit
     public function handle(Permit $permit, User $applicant): Permit
     {
         return $this->transitions->apply($permit, PermitStatus::Submitted, $applicant, changes: function (Permit $permit): void {
-            // From now on the vehicles' plates are fixed. Locking their rows (in id order,
-            // so two submissions cannot deadlock) waits for a plate change in progress
-            // (UpdateVehicle locks the same row) and makes the next one see this submission.
+            // Locking the vehicles' rows (in id order, so two submissions cannot deadlock)
+            // makes the next submission with the same vehicles wait and see this one.
             Vehicle::query()
                 ->whereIn('id', DB::table('permit_vehicles')->where('permit_id', $permit->id)->select('vehicle_id'))
                 ->orderBy('id')

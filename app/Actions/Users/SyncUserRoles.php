@@ -38,7 +38,7 @@ final class SyncUserRoles
             throw ValidationException::withMessages(['roles' => __('rbac.users.errors.own_admin')]);
         }
 
-        if ($losesAdmin && $user->isActive() && User::role($admin)->whereKeyNot($user->getKey())->whereNull('deactivated_at')->doesntExist()) {
+        if ($losesAdmin && $user->isActive() && $user->isLastActiveAdmin()) {
             throw ValidationException::withMessages(['roles' => __('rbac.users.errors.last_admin')]);
         }
 
