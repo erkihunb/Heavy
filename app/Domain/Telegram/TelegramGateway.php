@@ -2,6 +2,7 @@
 
 namespace App\Domain\Telegram;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -25,13 +26,21 @@ final class TelegramGateway
             throw new RuntimeException('The Telegram bot token or chat is not set.');
         }
 
-        $response = Http::asJson()
-            ->timeout(15)
-            ->post('https://api.telegram.org/bot'.config('services.telegram.bot_token').'/sendMessage', [
-                'chat_id' => config('services.telegram.chat_id'),
-                'text' => $text,
-                'disable_web_page_preview' => true,
-            ]);
+        $token = (string) config('services.telegram.bot_token');
+
+        try {
+            $response = Http::asJson()
+                ->timeout(15)
+                ->post('https://api.telegram.org/bot'.$token.'/sendMessage', [
+                    'chat_id' => config('services.telegram.chat_id'),
+                    'text' => $text,
+                    'disable_web_page_preview' => true,
+                ]);
+        } catch (ConnectionException $exception) {
+            // cURL puts the request URL — token included — in its message: mask it
+            // before it reaches the log or the screen.
+            throw new RuntimeException('Could not reach Telegram: '.str_replace($token, '***', $exception->getMessage()));
+        }
 
         if (! $response->successful() || $response->json('ok') !== true) {
             // The token is part of the URL: never put the request in the message.
