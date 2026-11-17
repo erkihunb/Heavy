@@ -8,5 +8,7 @@ namespace App\Enums;
 enum Recommendation: string
 {
     case Approve = 'approve';
+    // The applicant should correct or complete the application first.
+    case Changes = 'changes';
     case Reject = 'reject';
 }

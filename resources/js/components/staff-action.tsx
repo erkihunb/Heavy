@@ -1,17 +1,13 @@
 import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { FormField } from '@/components/form-field';
-import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/lib/i18n';
-import { RECOMMENDATIONS } from '@/types/enums';
-import type { Recommendation } from '@/types/enums';
 
 type ActionData = {
     note: string;
-    recommendation: Recommendation | '';
 };
 
 /**
@@ -27,7 +23,6 @@ export function StaffAction({
     submitLabel,
     note = 'none',
     noteLabel,
-    withRecommendation = false,
     destructive = false,
 }: {
     /** Unique on the page; prefixes the ids of the controls. */
@@ -39,12 +34,10 @@ export function StaffAction({
     submitLabel: string;
     note?: 'none' | 'optional' | 'required';
     noteLabel?: string;
-    /** Adds the approve / reject recommendation choice. */
-    withRecommendation?: boolean;
     destructive?: boolean;
 }) {
     const { t } = useTranslation();
-    const form = useForm<ActionData>({ note: '', recommendation: '' });
+    const form = useForm<ActionData>({ note: '' });
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -67,36 +60,6 @@ export function StaffAction({
                 </h3>
                 <p className="text-sm text-muted-foreground">{hint}</p>
             </div>
-
-            {withRecommendation && (
-                <fieldset className="space-y-2">
-                    <legend className="sr-only">
-                        {t('permits.fields.recommendation')}
-                    </legend>
-                    {RECOMMENDATIONS.map((choice) => (
-                        <label
-                            key={choice}
-                            className="flex cursor-pointer items-center gap-3 rounded-card border border-input px-4 py-3 font-medium has-checked:border-primary has-checked:bg-accent has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50"
-                        >
-                            <input
-                                type="radio"
-                                name={`${id}-recommendation`}
-                                value={choice}
-                                checked={form.data.recommendation === choice}
-                                onChange={() =>
-                                    form.setData('recommendation', choice)
-                                }
-                                className="size-4 accent-primary"
-                            />
-                            {t(`permits.staff.recommend.${choice}`)}
-                        </label>
-                    ))}
-                    <InputError
-                        role="alert"
-                        message={form.errors.recommendation}
-                    />
-                </fieldset>
-            )}
 
             {note !== 'none' && (
                 <FormField

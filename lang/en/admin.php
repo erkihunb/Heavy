@@ -551,6 +551,7 @@ return [
             'payment.recorded' => 'Payment recorded at the office',
             'payment.taken_at_intake' => 'Receipt taken with the request',
             'permit.commented' => 'Comment on an application',
+            'permit.reviewed' => 'Application reviewed',
             'payment.rejected' => 'Payment rejected',
             'fee_schedule.saved' => 'Fee schedule saved',
             'user.created' => 'Staff account created',

@@ -8,6 +8,7 @@ use App\Domain\Permits\PermitStateMachine;
 use App\Enums\PermitStatus;
 use App\Models\Permit;
 use App\Models\PermitComment;
+use App\Models\PermitReview;
 use App\Models\User;
 use App\Support\EthiopianCalendar;
 use App\Support\Money;
@@ -91,6 +92,17 @@ class PermitResource extends JsonResource
                     'time' => $comment->created_at->setTimezone($timezone)->format('H:i'),
                 ])->all()),
                 'issued_by' => $this->whenLoaded('issuer', fn (): ?string => $this->issuer?->name),
+                // Every Reviewer's assessment in this round, oldest first: what the Approver reads before deciding.
+                'reviews' => $this->whenLoaded('reviews', fn (): array => $this->reviews
+                    ->filter(fn (PermitReview $review): bool => $this->resource->isCurrentReview($review))
+                    ->map(fn (PermitReview $review): array => [
+                        'id' => $review->id,
+                        'recommendation' => $review->recommendation->value,
+                        'assessment' => $review->assessment,
+                        'by' => $review->reviewer->name,
+                        'at' => EthiopianCalendar::present($review->created_at->setTimezone($timezone), $locale),
+                        'time' => $review->created_at->setTimezone($timezone)->format('H:i'),
+                    ])->values()->all()),
                 'recommendation' => $this->recommendation === null ? null : [
                     'decision' => $this->recommendation->value,
                     'note' => $this->recommendation_note,
@@ -132,8 +144,8 @@ class PermitResource extends JsonResource
 
         return [
             'startReview' => $canMoveTo(PermitStatus::UnderReview) && $may('startReview'),
-            // Without two-step approval the Reviewer decides, so there is nothing to recommend.
-            'recommend' => (bool) config('permits.two_step_approval') && $status === PermitStatus::UnderReview && $may('recommend'),
+            // A Reviewer's assessment, while the application is under review (with or without two-step approval).
+            'recommend' => $status === PermitStatus::UnderReview && $may('recommend'),
             'requestChanges' => $canMoveTo(PermitStatus::ChangesRequested) && $may('requestChanges'),
             'approve' => $canMoveTo(PermitStatus::AwaitingPayment) && $may('approve') && $mayDecide(),
             'reject' => $canMoveTo(PermitStatus::Rejected) && $may('reject') && $mayDecide(),

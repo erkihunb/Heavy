@@ -28,7 +28,7 @@ return [
     |
     */
 
-    'two_step_approval' => (bool) env('PERMITS_TWO_STEP_APPROVAL', false),
+    'two_step_approval' => (bool) env('PERMITS_TWO_STEP_APPROVAL', true),
 
     /*
     |--------------------------------------------------------------------------

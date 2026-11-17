@@ -20,8 +20,8 @@ class RecommendPermitRequest extends PermitActionRequest
     {
         return [
             'recommendation' => ['required', Rule::enum(Recommendation::class)],
-            // Advising rejection needs a reason; advising approval may have a remark.
-            'note' => ['nullable', 'required_if:recommendation,'.Recommendation::Reject->value, 'string', 'max:2000'],
+            // The assessment: what the Reviewer found, whatever they recommend.
+            'note' => ['required', 'string', 'max:2000'],
         ];
     }
 
@@ -31,7 +31,7 @@ class RecommendPermitRequest extends PermitActionRequest
     public function messages(): array
     {
         return [
-            'note.required_if' => __('permits.errors.note_required'),
+            'note.required' => __('permits.errors.assessment_required'),
         ];
     }
 

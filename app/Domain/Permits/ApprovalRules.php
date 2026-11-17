@@ -8,8 +8,8 @@ use App\Models\User;
 
 /**
  * Two-step approval (spec §14, question 5): with `permits.two_step_approval`
- * on, an Approver decides only after a Reviewer has recorded a
- * recommendation, and may not be that Reviewer.
+ * on, an Approver decides only after a Reviewer has assessed the application,
+ * and may not be one of the people who assessed it in this round.
  */
 final class ApprovalRules
 {
@@ -23,7 +23,8 @@ final class ApprovalRules
             return new PermitRuleViolation('recommendation_required');
         }
 
-        if ($permit->recommended_by === $approver->id) {
+        if ($permit->recommended_by === $approver->id
+            || $permit->wasReviewedBy($approver)) {
             return new PermitRuleViolation('approver_is_recommender');
         }
 

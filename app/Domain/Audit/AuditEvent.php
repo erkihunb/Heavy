@@ -20,6 +20,8 @@ enum AuditEvent: string
     // recorded; kept so audit-log rows written before that change keep their label.
     case PaymentTakenAtIntake = 'payment.taken_at_intake';
     case PermitCommented = 'permit.commented';
+    // A Reviewer's assessment and recommendation to the Approver.
+    case PermitReviewed = 'permit.reviewed';
     case PaymentRejected = 'payment.rejected';
     case FeeScheduleSaved = 'fee_schedule.saved';
     case UserCreated = 'user.created';

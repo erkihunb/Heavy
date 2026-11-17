@@ -201,6 +201,8 @@ export type Permit = {
     issued_by?: string | null;
     /** Staff viewers only: whole hours waiting for the Authority. */
     waiting_hours?: number | null;
+    /** Staff viewers only: every Reviewer's assessment in this round, oldest first. */
+    reviews?: PermitReview[];
     /** Staff viewers only. */
     recommendation?: {
         decision: Recommendation;
@@ -208,6 +210,16 @@ export type Permit = {
         by?: string | null;
         at: DualDate | null;
     } | null;
+};
+
+/** One Reviewer's assessment (PermitResource `reviews`). */
+export type PermitReview = {
+    id: number;
+    recommendation: Recommendation;
+    assessment: string;
+    by: string;
+    at: DualDate | null;
+    time: string;
 };
 
 /** Mirrors App\Http\Resources\VehiclePermitHistoryResource. */

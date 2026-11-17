@@ -30,7 +30,7 @@ export const VEHICLE_ROLES = ['primary', 'trailer'] as const;
 export type VehicleRole = (typeof VEHICLE_ROLES)[number];
 
 /** Mirrors App\Enums\Recommendation. */
-export const RECOMMENDATIONS = ['approve', 'reject'] as const;
+export const RECOMMENDATIONS = ['approve', 'changes', 'reject'] as const;
 
 export type Recommendation = (typeof RECOMMENDATIONS)[number];
 

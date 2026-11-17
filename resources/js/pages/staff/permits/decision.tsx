@@ -2,10 +2,10 @@ import { usePage } from '@inertiajs/react';
 import { DecisionActions } from '@/components/decision-actions';
 import { PermitDocumentLinks } from '@/components/permit-document-links';
 import { PermitLetter } from '@/components/permit-letter';
+import { ReviewForm, ReviewList } from '@/components/permit-reviews';
 import { StaffAction } from '@/components/staff-action';
 import {
     PermitDetailsCard,
-    RecommendationCard,
     StaffPermitFrame,
     VehicleHistoryCard,
 } from '@/components/staff-permit-frame';
@@ -31,7 +31,8 @@ type Props = {
 /**
  * The Reviewer's and Approver's page: the registered details, the letter and
  * the vehicles' permits on the left, the decision on the right — start the
- * review, recommend (two-step approval), approve, ask for changes or reject;
+ * review, write a review (an assessment and a recommendation, read by the
+ * Approver with every other review), approve, ask for changes or reject;
  * once issued, revoke or reissue. Only what this person may do now is shown;
  * the server checks every action again.
  */
@@ -86,7 +87,12 @@ export default function StaffPermitDecision({
                     </h2>
 
                     {permit.letter && <PermitLetter letter={permit.letter} />}
-                    <RecommendationCard permit={permit} />
+                    {/* What the Reviewers found, read before the decision below. */}
+                    {permit.reviews &&
+                        (permit.reviews.length > 0 ||
+                            permit.status === 'under_review') && (
+                            <ReviewList reviews={permit.reviews} />
+                        )}
 
                     {blockedDecision && (
                         <p className="rounded-card border border-border bg-card p-5 text-sm font-medium">
@@ -111,16 +117,7 @@ export default function StaffPermitDecision({
                     )}
 
                     {can.recommend && (
-                        <StaffAction
-                            id="recommend"
-                            title={t('permits.staff.recommend.title')}
-                            hint={t('permits.staff.recommend.hint')}
-                            action={recommend.url(args)}
-                            submitLabel={t('permits.staff.recommend.submit')}
-                            note="optional"
-                            noteLabel={t('permits.fields.note')}
-                            withRecommendation
-                        />
+                        <ReviewForm action={recommend.url(args)} />
                     )}
 
                     <DecisionActions

@@ -38,7 +38,7 @@ it('refuses direct staff actions after their role permission is removed', functi
     $target = in_array($action, [Permits\VerifyPayment::class, Permits\RejectPayment::class], true)
         ? new Payment : new Permit;
     $arguments = match ($action) {
-        Permits\RecommendPermit::class => [new RecommendationData(Recommendation::Approve, null)],
+        Permits\RecommendPermit::class => [new RecommendationData(Recommendation::Approve, 'ሰነዶቹ ተሟልተዋል')],
         Permits\RecordPayment::class => [new PaymentData(PaymentMethod::Cash, 'RBAC-1', 100_000, CarbonImmutable::now())],
         Permits\RequestChanges::class, Permits\RejectPermit::class, Permits\RevokePermit::class,
         Permits\ReissuePermit::class, Permits\RejectPayment::class, Permits\CommentOnPermit::class => ['Reason'],

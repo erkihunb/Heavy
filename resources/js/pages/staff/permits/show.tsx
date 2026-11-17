@@ -2,11 +2,11 @@ import { DualDate } from '@/components/dual-date';
 import { PermitComments } from '@/components/permit-comments';
 import { PermitDocumentLinks } from '@/components/permit-document-links';
 import { PermitLetter } from '@/components/permit-letter';
+import { ReviewList } from '@/components/permit-reviews';
 import { PermitTimeline } from '@/components/permit-timeline';
 import {
     DeskLinks,
     PermitDetailsCard,
-    RecommendationCard,
     StaffPermitFrame,
     VehicleHistoryCard,
 } from '@/components/staff-permit-frame';
@@ -154,7 +154,9 @@ export default function StaffPermitsShow({
 
                 <div className="h-fit space-y-4 lg:sticky lg:top-6">
                     <DeskLinks desks={desks} />
-                    <RecommendationCard permit={permit} />
+                    {permit.reviews && permit.reviews.length > 0 && (
+                        <ReviewList reviews={permit.reviews} />
+                    )}
                     {permit.letter && <PermitLetter letter={permit.letter} />}
                     {permit.permit_number && <ScansCard scans={scans} />}
 

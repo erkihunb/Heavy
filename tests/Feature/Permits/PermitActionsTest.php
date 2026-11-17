@@ -381,28 +381,31 @@ describe('RecommendPermit', function () {
             ->and(permitHistory($permit))->toBe([]);
     });
 
-    it('lets a later recommendation replace the earlier one', function () {
-        $permit = Permit::factory()->forVehicles($this->vehicle)->recommended(Recommendation::Reject)->create();
+    it('keeps every assessment, the permit carrying the latest', function () {
+        $permit = Permit::factory()->forVehicles($this->vehicle)->underReview()->create();
         $second = userWithRole(Role::Reviewer);
 
-        app(RecommendPermit::class)->handle($permit, $second, new RecommendationData(Recommendation::Approve, null));
+        app(RecommendPermit::class)->handle($permit, $this->reviewer, new RecommendationData(Recommendation::Reject, 'መንገዱ አይፈቅድም'));
+        app(RecommendPermit::class)->handle($permit, $second, new RecommendationData(Recommendation::Approve, 'ሰነዶቹ ተሟልተዋል'));
         $permit->refresh();
 
         expect($permit->recommendation)->toBe(Recommendation::Approve)
             ->and($permit->recommended_by)->toBe($second->id)
-            ->and($permit->recommendation_note)->toBeNull();
+            ->and($permit->recommendation_note)->toBe('ሰነዶቹ ተሟልተዋል')
+            ->and($permit->reviews()->pluck('reviewer_id')->all())->toBe([$this->reviewer->id, $second->id]);
     });
 
-    it('needs a note when advising rejection', function (?string $note) {
+    it('needs a written assessment, whatever is recommended', function (Recommendation $recommendation, ?string $note) {
         $permit = Permit::factory()->forVehicles($this->vehicle)->underReview()->create();
 
         expectPermitRule(
-            fn () => app(RecommendPermit::class)->handle($permit, $this->reviewer, new RecommendationData(Recommendation::Reject, $note)),
+            fn () => app(RecommendPermit::class)->handle($permit, $this->reviewer, new RecommendationData($recommendation, $note)),
             'note_required',
         );
 
-        expect($permit->refresh()->recommendation)->toBeNull();
-    })->with([null, '', '   ']);
+        expect($permit->refresh()->recommendation)->toBeNull()
+            ->and($permit->reviews()->count())->toBe(0);
+    })->with([Recommendation::Approve, Recommendation::Changes, Recommendation::Reject])->with([null, '', '   ']);
 
     it('records a recommendation to reject with its note', function () {
         $permit = Permit::factory()->forVehicles($this->vehicle)->underReview()->create();
@@ -417,7 +420,7 @@ describe('RecommendPermit', function () {
         $permit = Permit::factory()->forVehicles($this->vehicle)->create(['status' => $status]);
 
         expectPermitRule(
-            fn () => app(RecommendPermit::class)->handle($permit, $this->reviewer, new RecommendationData(Recommendation::Approve, null)),
+            fn () => app(RecommendPermit::class)->handle($permit, $this->reviewer, new RecommendationData(Recommendation::Approve, 'ሰነዶቹ ተሟልተዋል')),
             'not_under_review',
         );
 
@@ -738,7 +741,7 @@ it('writes the whole story of an application to its history, in order', function
     app(UpdateDraftPermit::class)->handle($permit, permitData($this->vehicle));
     app(SubmitPermit::class)->handle($permit, $this->applicant);
     app(StartReview::class)->handle($permit, $second);
-    app(RecommendPermit::class)->handle($permit, $second, new RecommendationData(Recommendation::Approve, null));
+    app(RecommendPermit::class)->handle($permit, $second, new RecommendationData(Recommendation::Approve, 'ሰነዶቹ ተሟልተዋል'));
     app(ApprovePermit::class)->handle($permit, $this->approver, 'ጸድቋል');
 
     expect($permit->refresh()->status)->toBe(PermitStatus::AwaitingPayment)

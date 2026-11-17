@@ -551,6 +551,7 @@ return [
             'payment.recorded' => 'ክፍያ በቢሮ ተመዘገበ',
             'payment.taken_at_intake' => 'ከጥያቄው ጋር ደረሰኝ ተያዘ',
             'permit.commented' => 'በማመልከቻ ላይ አስተያየት',
+            'permit.reviewed' => 'ማመልከቻው ተገምግሟል',
             'payment.rejected' => 'ክፍያ ውድቅ ተደረገ',
             'fee_schedule.saved' => 'የክፍያ ተመን ተቀመጠ',
             'user.created' => 'የሠራተኛ መለያ ተፈጠረ',

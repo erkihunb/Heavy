@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Audit\AuditEvent;
 use App\Domain\Permits\ValidityRules;
 use App\Enums\PermitStatus;
 use App\Enums\PermitType;
@@ -7,12 +8,14 @@ use App\Enums\Recommendation;
 use App\Enums\Role;
 use App\Models\Organization;
 use App\Models\Permit;
+use App\Models\PermitReview;
 use App\Models\PermitStatusTransition;
 use App\Models\User;
 use App\Models\Vehicle;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Activitylog\Models\Activity;
 
 /*
  * The back office over HTTP: the review queue, the detail page with the
@@ -513,43 +516,64 @@ describe('starting the review', function () {
     });
 });
 
-describe('recommending', function () {
+describe('reviewing', function () {
     beforeEach(function () {
         $this->permit = Permit::factory()->forVehicles($this->vehicle)->underReview()->create();
     });
 
-    it('records a recommendation to approve, with or without a remark', function (?string $note) {
+    it('records the assessment and the recommendation, without changing the status', function (string $recommendation) {
         $this->actingAs($this->reviewer)
-            ->post(route('staff.permits.recommend', $this->permit), ['recommendation' => 'approve', 'note' => $note])
+            ->post(route('staff.permits.recommend', $this->permit), ['recommendation' => $recommendation, 'note' => 'ሰነዶቹ ተሟልተዋል'])
             ->assertRedirect(route('staff.permits.show', $this->permit))
             ->assertSessionHas('success', __('permits.messages.recommended'));
 
         $this->permit->refresh();
+        $review = PermitReview::sole();
 
         expect($this->permit->status)->toBe(PermitStatus::UnderReview)
-            ->and($this->permit->recommendation)->toBe(Recommendation::Approve)
+            ->and($this->permit->recommendation)->toBe(Recommendation::from($recommendation))
             ->and($this->permit->recommended_by)->toBe($this->reviewer->id)
             ->and($this->permit->recommended_at)->not->toBeNull()
-            ->and($this->permit->recommendation_note)->toBe($note)
-            ->and(PermitStatusTransition::count())->toBe(0);
-    })->with([null, 'ሰነዶቹ ተሟልተዋል']);
+            ->and($this->permit->recommendation_note)->toBe('ሰነዶቹ ተሟልተዋል')
+            ->and($review->permit_id)->toBe($this->permit->id)
+            ->and($review->reviewer_id)->toBe($this->reviewer->id)
+            ->and($review->recommendation)->toBe(Recommendation::from($recommendation))
+            ->and($review->assessment)->toBe('ሰነዶቹ ተሟልተዋል')
+            ->and(PermitStatusTransition::count())->toBe(0)
+            ->and(Activity::query()->where('event', AuditEvent::PermitReviewed->value)->count())->toBe(1);
+    })->with(['approve', 'changes', 'reject']);
 
-    it('records a recommendation to reject with its reason', function () {
+    it('keeps every Reviewer\'s assessment and shows them all to the Approver', function () {
+        $second = staffUser(Role::Reviewer);
+
         $this->actingAs($this->reviewer)
-            ->post(route('staff.permits.recommend', $this->permit), ['recommendation' => 'reject', 'note' => 'መንገዱ አይፈቅድም'])
-            ->assertSessionHasNoErrors();
+            ->post(route('staff.permits.recommend', $this->permit), ['recommendation' => 'approve', 'note' => 'ደብዳቤው ትክክል ነው']);
+        $this->actingAs($second)
+            ->post(route('staff.permits.recommend', $this->permit), ['recommendation' => 'changes', 'note' => 'የመንገዱ ዝርዝር ይጎድላል']);
 
-        expect($this->permit->refresh()->recommendation)->toBe(Recommendation::Reject)
-            ->and($this->permit->recommendation_note)->toBe('መንገዱ አይፈቅድም');
+        expect(PermitReview::count())->toBe(2)
+            ->and($this->permit->refresh()->recommended_by)->toBe($second->id);
+
+        $this->actingAs($this->approver)
+            ->get(route('staff.permits.decision', $this->permit))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('permit.reviews', 2)
+                ->where('permit.reviews.0.recommendation', 'approve')
+                ->where('permit.reviews.0.assessment', 'ደብዳቤው ትክክል ነው')
+                ->where('permit.reviews.0.by', $this->reviewer->name)
+                ->where('permit.reviews.1.recommendation', 'changes')
+                ->where('permit.reviews.1.by', $second->name));
     });
 
-    it('needs a note to recommend rejection', function (?string $note) {
+    it('needs a written assessment, whatever is recommended', function (string $recommendation, ?string $note) {
         $this->actingAs($this->reviewer)
-            ->post(route('staff.permits.recommend', $this->permit), ['recommendation' => 'reject', 'note' => $note])
-            ->assertSessionHasErrors(['note' => __('permits.errors.note_required')]);
+            ->post(route('staff.permits.recommend', $this->permit), ['recommendation' => $recommendation, 'note' => $note])
+            ->assertSessionHasErrors(['note' => __('permits.errors.assessment_required')]);
 
-        expect($this->permit->refresh()->recommendation)->toBeNull();
-    })->with([null, '', '   ']);
+        expect($this->permit->refresh()->recommendation)->toBeNull()
+            ->and(PermitReview::count())->toBe(0);
+    })->with(['approve', 'reject'])->with([null, '', '   ']);
 
     it('rejects invalid input', function (array $input, string $field) {
         $this->actingAs($this->reviewer)
@@ -558,15 +582,15 @@ describe('recommending', function () {
 
         expect($this->permit->refresh()->recommendation)->toBeNull();
     })->with([
-        'no recommendation' => [[], 'recommendation'],
-        'unknown recommendation' => [['recommendation' => 'maybe'], 'recommendation'],
+        'no recommendation' => [['note' => 'x'], 'recommendation'],
+        'unknown recommendation' => [['recommendation' => 'maybe', 'note' => 'x'], 'recommendation'],
         'note too long' => [['recommendation' => 'approve', 'note' => str_repeat('ሀ', 2001)], 'note'],
         'note as array' => [['recommendation' => 'approve', 'note' => ['x']], 'note'],
     ]);
 
     it('is not for Approvers', function () {
         $this->actingAs($this->approver)
-            ->post(route('staff.permits.recommend', $this->permit), ['recommendation' => 'approve'])
+            ->post(route('staff.permits.recommend', $this->permit), ['recommendation' => 'approve', 'note' => 'x'])
             ->assertForbidden();
 
         expect($this->permit->refresh()->recommendation)->toBeNull();
@@ -577,11 +601,27 @@ describe('recommending', function () {
 
         $this->actingAs($this->reviewer)
             ->from(route('staff.permits.show', $permit))
-            ->post(route('staff.permits.recommend', $permit), ['recommendation' => 'approve'])
+            ->post(route('staff.permits.recommend', $permit), ['recommendation' => 'approve', 'note' => 'x'])
             ->assertRedirect(route('staff.permits.show', $permit))
             ->assertSessionHas('warning', __('permits.errors.not_under_review'));
 
-        expect($permit->refresh()->recommendation)->toBeNull();
+        expect($permit->refresh()->recommendation)->toBeNull()
+            ->and(PermitReview::count())->toBe(0);
+    });
+
+    it('keeps an earlier round\'s reviews out of the current one', function () {
+        $this->permit->forceFill(['submitted_at' => now()->subDay()])->save();
+        $old = new PermitReview(['recommendation' => Recommendation::Reject, 'assessment' => 'ያለፈው ዙር']);
+        $old->permit_id = $this->permit->id;
+        $old->reviewer_id = $this->approver->id;
+        $old->created_at = now()->subDays(3);
+        $old->save();
+
+        expect($this->permit->refresh()->wasReviewedBy($this->approver))->toBeFalse();
+
+        $this->actingAs($this->reviewer)
+            ->get(route('staff.permits.decision', $this->permit))
+            ->assertInertia(fn (Assert $page) => $page->has('permit.reviews', 0));
     });
 });
 
@@ -861,7 +901,7 @@ it('takes an application through review and approval', function () {
     $permit = Permit::factory()->forVehicles($this->vehicle)->submitted()->create();
 
     $this->actingAs($this->reviewer)->post(route('staff.permits.start-review', $permit))->assertSessionHas('success');
-    $this->actingAs($this->reviewer)->post(route('staff.permits.recommend', $permit), ['recommendation' => 'approve'])->assertSessionHas('success');
+    $this->actingAs($this->reviewer)->post(route('staff.permits.recommend', $permit), ['recommendation' => 'approve', 'note' => 'ሰነዶቹ ተሟልተዋል'])->assertSessionHas('success');
     $this->actingAs($this->approver)->post(route('staff.permits.approve', $permit))->assertSessionHas('success');
 
     expect($permit->refresh()->status)->toBe(PermitStatus::AwaitingPayment)

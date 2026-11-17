@@ -201,6 +201,37 @@ class Permit extends Model
     }
 
     /**
+     * Every Reviewer's assessment, oldest first, from every round.
+     *
+     * @return HasMany<PermitReview, $this>
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(PermitReview::class)->orderBy('id');
+    }
+
+    /**
+     * Whether an assessment was written in the current round: since the
+     * application was last submitted. A resubmitted application is assessed
+     * afresh; the earlier rounds stay in the table and the audit log.
+     */
+    public function isCurrentReview(PermitReview $review): bool
+    {
+        return $this->submitted_at === null || $review->created_at->greaterThanOrEqualTo($this->submitted_at);
+    }
+
+    /**
+     * Whether this person assessed the application in the current round.
+     */
+    public function wasReviewedBy(User $user): bool
+    {
+        return $this->reviews()
+            ->where('reviewer_id', $user->id)
+            ->when($this->submitted_at !== null, fn ($query) => $query->where('created_at', '>=', $this->submitted_at))
+            ->exists();
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function issuer(): BelongsTo

@@ -194,7 +194,7 @@ class PermitReviewController extends Controller
      */
     private function render(string $page, Request $request, Permit $permit, OverlapGuard $overlap, bool $direct = false): Response
     {
-        $permit->load(['vehicles.vehicleType', 'organization', 'branch', 'applicant', 'recommender', 'issuer', 'comments.author', 'transitions.actor', 'payments']);
+        $permit->load(['vehicles.vehicleType', 'organization', 'branch', 'applicant', 'recommender', 'reviews.reviewer', 'issuer', 'comments.author', 'transitions.actor', 'payments']);
         $resource = PermitResource::make($permit);
         $can = $resource->abilitiesFor($request->user());
         $desks = $this->desks($request->user());

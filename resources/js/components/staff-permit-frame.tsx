@@ -223,40 +223,6 @@ export function VehicleHistoryCard({
     );
 }
 
-/** The Reviewer's recommendation, when two-step approval asked for one. */
-export function RecommendationCard({ permit }: { permit: Permit }) {
-    const { t } = useTranslation();
-    const { recommendation } = permit;
-
-    if (!recommendation) {
-        return null;
-    }
-
-    return (
-        <div className="space-y-2 rounded-card border border-border bg-muted p-5">
-            <p className="text-eyebrow text-muted-foreground">
-                {t('permits.staff.recommend.current')}
-            </p>
-            <p className="text-section-title">
-                {t(`permits.staff.recommend.${recommendation.decision}`)}
-            </p>
-            <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-muted-foreground">
-                {recommendation.by && (
-                    <span>
-                        {t('permits.timeline.by', { name: recommendation.by })}
-                    </span>
-                )}
-                {recommendation.at && <DualDate date={recommendation.at} />}
-            </p>
-            {recommendation.note && (
-                <p className="text-sm leading-relaxed whitespace-pre-line">
-                    {recommendation.note}
-                </p>
-            )}
-        </div>
-    );
-}
-
 /**
  * The role pages open to this person, on the read-only application page:
  * the one where something waits for them now stands out.
