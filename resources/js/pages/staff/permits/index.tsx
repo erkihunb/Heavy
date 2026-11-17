@@ -1,5 +1,4 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Search } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import {
@@ -12,6 +11,7 @@ import {
     THead,
     Tr,
 } from '@/components/data-table';
+import { DateFilterField } from '@/components/date-filter-field';
 import { DualDate } from '@/components/dual-date';
 import { EthiopianDateInput } from '@/components/ethiopian-date-input';
 import { PageHeader } from '@/components/page-header';
@@ -19,11 +19,10 @@ import { Pagination } from '@/components/pagination';
 import { PlateChip } from '@/components/plate-chip';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { NativeSelect } from '@/components/ui/native-select';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
 import { index, show } from '@/routes/staff/permits';
+import { FilterField, FilterPanel, Input, Select } from '@/shell/Components/ui';
 import type { BreadcrumbItem, Paginated, Permit } from '@/types';
 import { PERMIT_STATUSES, PERMIT_TYPES } from '@/types/enums';
 import type { PermitStatus, PermitType } from '@/types/enums';
@@ -97,9 +96,6 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
         { title: t('permits.staff.queue_title'), href: index() },
     ];
 
-    // Filter labels match every other field label (sentence case, not an eyebrow).
-    const labelClass = 'text-sm font-medium text-foreground';
-
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('permits.staff.queue_title')} />
@@ -110,16 +106,16 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                     description={t('permits.staff.queue_intro')}
                 />
 
-                <form
-                    role="search"
+                <FilterPanel
+                    label={t('permits.staff.queue_title')}
                     onSubmit={search}
-                    className="grid gap-4 rounded-card border border-border bg-card p-4 sm:grid-cols-2 xl:grid-cols-4"
+                    onReset={() => router.get(index.url())}
+                    hasActiveFilters={filtered}
+                    submitLabel={t('permits.filters.apply')}
+                    resetLabel={t('permits.filters.clear')}
                 >
-                    <div className="grid content-start gap-1.5">
-                        <label htmlFor="filter-status" className={labelClass}>
-                            {t('permits.filters.status')}
-                        </label>
-                        <NativeSelect
+                    <FilterField label={t('permits.filters.status')}>
+                        <Select
                             id="filter-status"
                             value={status}
                             onChange={(event) => setStatus(event.target.value)}
@@ -135,13 +131,10 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                                     {t(`permits.status.${value}`)}
                                 </option>
                             ))}
-                        </NativeSelect>
-                    </div>
-                    <div className="grid content-start gap-1.5">
-                        <label htmlFor="filter-type" className={labelClass}>
-                            {t('permits.filters.permit_type')}
-                        </label>
-                        <NativeSelect
+                        </Select>
+                    </FilterField>
+                    <FilterField label={t('permits.filters.permit_type')}>
+                        <Select
                             id="filter-type"
                             value={permitType}
                             onChange={(event) =>
@@ -156,12 +149,9 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                                     {t(`permits.types.${value}`)}
                                 </option>
                             ))}
-                        </NativeSelect>
-                    </div>
-                    <div className="grid content-start gap-1.5">
-                        <label htmlFor="filter-plate" className={labelClass}>
-                            {t('permits.filters.plate')}
-                        </label>
+                        </Select>
+                    </FilterField>
+                    <FilterField label={t('permits.filters.plate')}>
                         <Input
                             id="filter-plate"
                             type="search"
@@ -169,14 +159,8 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                             maxLength={50}
                             onChange={(event) => setPlate(event.target.value)}
                         />
-                    </div>
-                    <div className="grid content-start gap-1.5">
-                        <label
-                            htmlFor="filter-organization"
-                            className={labelClass}
-                        >
-                            {t('permits.filters.organization')}
-                        </label>
+                    </FilterField>
+                    <FilterField label={t('permits.filters.organization')}>
                         <Input
                             id="filter-organization"
                             type="search"
@@ -186,8 +170,8 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                                 setOrganization(event.target.value)
                             }
                         />
-                    </div>
-                    <div className="sm:col-span-2">
+                    </FilterField>
+                    <DateFilterField>
                         <EthiopianDateInput
                             id="filter-submitted-from"
                             label={t('permits.filters.submitted_from')}
@@ -196,8 +180,8 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                             yearsAfter={0}
                             onChange={setSubmittedFrom}
                         />
-                    </div>
-                    <div className="sm:col-span-2">
+                    </DateFilterField>
+                    <DateFilterField>
                         <EthiopianDateInput
                             id="filter-submitted-to"
                             label={t('permits.filters.submitted_to')}
@@ -206,21 +190,8 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                             yearsAfter={0}
                             onChange={setSubmittedTo}
                         />
-                    </div>
-                    <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row xl:col-span-4">
-                        <Button type="submit" className="h-11">
-                            <Search aria-hidden="true" />
-                            {t('permits.filters.apply')}
-                        </Button>
-                        {filtered && (
-                            <Button asChild variant="outline" className="h-11">
-                                <Link href={index()}>
-                                    {t('permits.filters.clear')}
-                                </Link>
-                            </Button>
-                        )}
-                    </div>
-                </form>
+                    </DateFilterField>
+                </FilterPanel>
 
                 <p
                     className="text-sm text-muted-foreground tabular-nums"
@@ -233,7 +204,7 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                           })}
                 </p>
 
-                <TableCard>
+                <TableCard toolsId="review-queue">
                     <Table>
                         <THead>
                             <tr>

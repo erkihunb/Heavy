@@ -4,11 +4,10 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { usePageBreadcrumbs } from '@/lib/page-context';
 
 /**
- * The heading band at the top of an application screen (EUISIS layout): a
- * white band across the whole content area with the breadcrumbs above the
- * title, the description below it and the page's actions on the right.
- * It is drawn as the first element of the page container and reaches past
- * the container's padding to the edges of the content area.
+ * The heading at the top of an application screen: the breadcrumbs above the
+ * title, the description below it and the page's actions on the right. It
+ * sits on the page's own background as the first element of the page
+ * container, the same as the shell's heading (AuthenticatedLayout).
  */
 export function PageHeader({
     title,
@@ -23,7 +22,7 @@ export function PageHeader({
     const showBreadcrumbs = usePage().props.appearance?.showBreadcrumbs ?? true;
 
     return (
-        <header className="relative isolate -mt-6 py-5 before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2 before:border-b before:border-border before:bg-card">
+        <header>
             {showBreadcrumbs && breadcrumbs.length > 1 && (
                 <div className="mb-2.5 text-sm">
                     <Breadcrumbs breadcrumbs={breadcrumbs} />

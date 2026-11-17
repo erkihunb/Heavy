@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ChevronDown, Search, X } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import {
@@ -15,13 +15,10 @@ import {
 import { DualDate } from '@/components/dual-date';
 import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
 import { index } from '@/routes/admin/audit-log';
+import { FilterField, FilterPanel, Input, Select } from '@/shell/Components/ui';
 import type { BreadcrumbItem, Paginated } from '@/types';
 import type { AuditEntry } from '@/types/admin';
 import type { TranslationKey } from '@/types/translations';
@@ -219,16 +216,16 @@ export default function AuditLogIndex({
                     description={t('admin.audit.intro')}
                 />
 
-                <form
-                    role="search"
+                <FilterPanel
+                    label={t('admin.audit.title')}
                     onSubmit={submitSearch}
-                    className="grid gap-4 rounded-card border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_minmax(0,1fr)_auto_auto] lg:items-end"
+                    onReset={clear}
+                    hasActiveFilters={filtered}
+                    submitLabel={t('admin.audit.apply')}
+                    resetLabel={t('admin.audit.clear')}
                 >
-                    <div className="grid gap-1.5">
-                        <Label htmlFor="event">
-                            {t('admin.audit.filter_event')}
-                        </Label>
-                        <NativeSelect
+                    <FilterField label={t('admin.audit.filter_event')}>
+                        <Select
                             id="event"
                             value={filters.event ?? ''}
                             onChange={(event) =>
@@ -256,13 +253,9 @@ export default function AuditLogIndex({
                                     </optgroup>
                                 ),
                             )}
-                        </NativeSelect>
-                    </div>
-
-                    <div className="grid gap-1.5">
-                        <Label htmlFor="subject">
-                            {t('admin.audit.filter_subject')}
-                        </Label>
+                        </Select>
+                    </FilterField>
+                    <FilterField label={t('admin.audit.filter_subject')} wide>
                         <Input
                             id="subject"
                             type="search"
@@ -271,12 +264,8 @@ export default function AuditLogIndex({
                             placeholder={t('admin.audit.subject_placeholder')}
                             onChange={(event) => setSubject(event.target.value)}
                         />
-                    </div>
-
-                    <div className="grid gap-1.5">
-                        <Label htmlFor="actor">
-                            {t('admin.audit.filter_actor')}
-                        </Label>
+                    </FilterField>
+                    <FilterField label={t('admin.audit.filter_actor')} wide>
                         <Input
                             id="actor"
                             type="search"
@@ -284,56 +273,32 @@ export default function AuditLogIndex({
                             placeholder={t('admin.audit.actor_placeholder')}
                             onChange={(event) => setActor(event.target.value)}
                         />
-                    </div>
+                    </FilterField>
+                    <FilterField label={t('admin.audit.from')}>
+                        <Input
+                            id="from"
+                            type="date"
+                            value={filters.from ?? ''}
+                            max={filters.to ?? undefined}
+                            onChange={(event) =>
+                                filter({ from: event.target.value })
+                            }
+                        />
+                    </FilterField>
+                    <FilterField label={t('admin.audit.to')}>
+                        <Input
+                            id="to"
+                            type="date"
+                            value={filters.to ?? ''}
+                            min={filters.from ?? undefined}
+                            onChange={(event) =>
+                                filter({ to: event.target.value })
+                            }
+                        />
+                    </FilterField>
+                </FilterPanel>
 
-                    <div className="grid grid-cols-2 gap-2">
-                        <div className="grid gap-1.5">
-                            <Label htmlFor="from">
-                                {t('admin.audit.from')}
-                            </Label>
-                            <Input
-                                id="from"
-                                type="date"
-                                value={filters.from ?? ''}
-                                max={filters.to ?? undefined}
-                                onChange={(event) =>
-                                    filter({ from: event.target.value })
-                                }
-                            />
-                        </div>
-                        <div className="grid gap-1.5">
-                            <Label htmlFor="to">{t('admin.audit.to')}</Label>
-                            <Input
-                                id="to"
-                                type="date"
-                                value={filters.to ?? ''}
-                                min={filters.from ?? undefined}
-                                onChange={(event) =>
-                                    filter({ to: event.target.value })
-                                }
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                        <Button type="submit">
-                            <Search aria-hidden="true" />
-                            {t('admin.audit.apply')}
-                        </Button>
-                        {filtered && (
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={clear}
-                            >
-                                <X aria-hidden="true" />
-                                {t('admin.audit.clear')}
-                            </Button>
-                        )}
-                    </div>
-                </form>
-
-                <TableCard>
+                <TableCard toolsId="audit-log">
                     <Table>
                         <THead>
                             <tr>

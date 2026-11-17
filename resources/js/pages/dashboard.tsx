@@ -565,8 +565,12 @@ export default function Dashboard({
                 {kpis.length > 0 && (
                     <div
                         className={cn(
-                            'grid gap-3 sm:grid-cols-2',
-                            kpis.length >= 4
+                            'grid gap-4 sm:grid-cols-2',
+                            // Whichever of four or three columns leaves the fuller last row: nine tiles are 3×3, not 4+4+1.
+                            kpis.length >= 4 &&
+                                (kpis.length % 4 === 0 ||
+                                    (kpis.length % 3 !== 0 &&
+                                        kpis.length % 4 >= kpis.length % 3))
                                 ? 'xl:grid-cols-4'
                                 : 'xl:grid-cols-3',
                         )}

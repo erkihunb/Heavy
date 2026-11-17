@@ -276,7 +276,7 @@ export default function Exports({
                         </Button>
                     </div>
 
-                    <TableCard>
+                    <TableCard toolsId="exports">
                         <Table>
                             <THead>
                                 <tr>

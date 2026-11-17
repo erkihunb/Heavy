@@ -1,5 +1,4 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Search } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import {
@@ -18,11 +17,10 @@ import { Pagination } from '@/components/pagination';
 import { PaymentStatusBadge } from '@/components/payment-status-badge';
 import { PlateChip } from '@/components/plate-chip';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { NativeSelect } from '@/components/ui/native-select';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
 import { index, show } from '@/routes/staff/payments';
+import { FilterField, FilterPanel, Input, Select } from '@/shell/Components/ui';
 import type { BreadcrumbItem, Paginated, Payment } from '@/types';
 import { PAYMENT_STATUSES } from '@/types/enums';
 import type { PaymentStatus } from '@/types/enums';
@@ -60,9 +58,6 @@ export default function StaffPaymentsIndex({ payments, filters }: Props) {
         { title: t('payments.cashier.queue_title'), href: index() },
     ];
 
-    // Filter labels match every other field label (sentence case, not an eyebrow).
-    const labelClass = 'text-sm font-medium text-foreground';
-
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('payments.cashier.queue_title')} />
@@ -73,16 +68,16 @@ export default function StaffPaymentsIndex({ payments, filters }: Props) {
                     description={t('payments.cashier.queue_intro')}
                 />
 
-                <form
-                    role="search"
+                <FilterPanel
+                    label={t('payments.cashier.queue_title')}
                     onSubmit={search}
-                    className="grid gap-3 rounded-card border border-border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] sm:items-end"
+                    onReset={() => router.get(index.url())}
+                    hasActiveFilters={filtered}
+                    submitLabel={t('payments.cashier.filters.apply')}
+                    resetLabel={t('payments.cashier.filters.clear')}
                 >
-                    <div className="grid gap-1.5">
-                        <label htmlFor="filter-status" className={labelClass}>
-                            {t('payments.cashier.filters.status')}
-                        </label>
-                        <NativeSelect
+                    <FilterField label={t('payments.cashier.filters.status')}>
+                        <Select
                             id="filter-status"
                             value={status}
                             onChange={(event) => setStatus(event.target.value)}
@@ -100,12 +95,12 @@ export default function StaffPaymentsIndex({ payments, filters }: Props) {
                                     {t(`payments.status.${value}`)}
                                 </option>
                             ))}
-                        </NativeSelect>
-                    </div>
-                    <div className="grid gap-1.5">
-                        <label htmlFor="filter-receipt" className={labelClass}>
-                            {t('payments.cashier.filters.receipt')}
-                        </label>
+                        </Select>
+                    </FilterField>
+                    <FilterField
+                        label={t('payments.cashier.filters.receipt')}
+                        wide
+                    >
                         <Input
                             id="filter-receipt"
                             type="search"
@@ -114,19 +109,8 @@ export default function StaffPaymentsIndex({ payments, filters }: Props) {
                             translate="no"
                             onChange={(event) => setReceipt(event.target.value)}
                         />
-                    </div>
-                    <Button type="submit" className="h-11">
-                        <Search aria-hidden="true" />
-                        {t('payments.cashier.filters.apply')}
-                    </Button>
-                    {filtered && (
-                        <Button asChild variant="outline" className="h-11">
-                            <Link href={index()}>
-                                {t('payments.cashier.filters.clear')}
-                            </Link>
-                        </Button>
-                    )}
-                </form>
+                    </FilterField>
+                </FilterPanel>
 
                 <p
                     className="text-sm text-muted-foreground tabular-nums"
@@ -139,7 +123,7 @@ export default function StaffPaymentsIndex({ payments, filters }: Props) {
                           })}
                 </p>
 
-                <TableCard>
+                <TableCard toolsId="payment-queue">
                     <Table>
                         <THead>
                             <tr>

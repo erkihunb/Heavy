@@ -14,6 +14,7 @@ import AppSidebar from '@/shell/Components/AppSidebar';
 import Breadcrumbs from '@/shell/Components/Breadcrumbs';
 import type { Crumb } from '@/shell/Components/Breadcrumbs';
 import ConfirmProvider from '@/shell/Components/ConfirmProvider';
+import { ChevronRight } from '@/shell/Components/NavIcons';
 import AppToaster from '@/shell/Components/ui/AppToaster';
 import LocalizedUiProvider from '@/shell/Components/ui/LocalizedUiProvider';
 import { LocaleProvider } from '@/shell/contexts/LocaleContext';
@@ -89,9 +90,10 @@ type Props = PropsWithChildren<{
 }>;
 
 /**
- * The signed-in shell, ported from the source system: fixed sidebar (collapsible to an
- * icon rail, a drawer below `lg`), top bar, breadcrumbs, the heading band,
- * the page and a quiet footer, with the brand colours from System settings.
+ * The signed-in shell: fixed 260px sidebar (collapsible to an icon rail from
+ * the handle on its edge, a drawer below `lg`), a 64px top bar on the same
+ * line as the sidebar's brand row, then breadcrumbs, the page title, the page
+ * and a quiet footer, with the brand colours from System settings.
  */
 export default function AuthenticatedLayout(props: Props) {
     return (
@@ -306,7 +308,7 @@ function Shell({
                     className={[
                         'fixed inset-y-0 left-0 z-30 flex h-screen flex-col',
                         'overflow-hidden transition-[width] duration-200 ease-in-out',
-                        collapsed ? 'w-16' : 'w-70',
+                        collapsed ? 'w-16' : 'w-65',
                     ].join(' ')}
                 >
                     <AppSidebar
@@ -314,6 +316,32 @@ function Shell({
                         onToggleCollapse={toggleSidebarCollapse}
                     />
                 </div>
+                {/* The collapse handle rides the sidebar's edge, on the line under the top bar. */}
+                <button
+                    type="button"
+                    onClick={toggleSidebarCollapse}
+                    aria-label={t(
+                        collapsed
+                            ? 'shell.nav.expand_sidebar'
+                            : 'shell.nav.collapse_sidebar',
+                    )}
+                    aria-expanded={!collapsed}
+                    className={[
+                        'fixed top-[52px] z-40 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full',
+                        'border border-(--app-border) bg-(--app-surface) text-(--app-muted-foreground) shadow-sm',
+                        'transition-[left,color] duration-200 ease-in-out hover:text-(--app-foreground)',
+                        'focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden',
+                        collapsed ? 'left-16' : 'left-65',
+                    ].join(' ')}
+                >
+                    <ChevronRight
+                        className={[
+                            'h-3.5 w-3.5 transition-transform duration-200',
+                            collapsed ? '' : 'rotate-180',
+                        ].join(' ')}
+                        aria-hidden="true"
+                    />
+                </button>
             </div>
 
             {/* Mobile sidebar drawer. Headless UI owns focus trapping, Escape,
@@ -345,14 +373,10 @@ function Shell({
                 className={[
                     'flex min-h-screen flex-col',
                     'transition-[margin-left] duration-200 ease-in-out',
-                    collapsed ? 'lg:ml-16' : 'lg:ml-70',
+                    collapsed ? 'lg:ml-16' : 'lg:ml-65',
                 ].join(' ')}
             >
-                <AppHeader
-                    onMenuClick={() => setSidebarOpen(true)}
-                    onToggleSidebar={toggleSidebarCollapse}
-                    sidebarCollapsed={collapsed}
-                />
+                <AppHeader onMenuClick={() => setSidebarOpen(true)} />
 
                 {maintenanceEnabled && maintenanceMessage && (
                     <div
@@ -363,14 +387,11 @@ function Shell({
                     </div>
                 )}
 
-                {/* Breadcrumbs sit above the title they lead to, in the same band. */}
+                {/* Breadcrumbs sit above the title they lead to. The heading is part of
+                    the page, on the page's own background, not a band of its own. */}
                 {header && (
-                    <div className="app-page-heading app-dot-grid shrink-0 border-b border-(--app-border) bg-(--app-surface)">
-                        <div
-                            className={
-                                CONTENT_WIDTH + ' px-4 py-5 sm:px-6 lg:px-8'
-                            }
-                        >
+                    <div className="app-page-heading shrink-0 px-4 pt-6 sm:px-6 lg:px-8">
+                        <div className={CONTENT_WIDTH}>
                             {showBreadcrumbs && (
                                 <Breadcrumbs
                                     className="mb-2.5"

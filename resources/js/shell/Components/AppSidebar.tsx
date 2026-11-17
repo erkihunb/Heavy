@@ -1,16 +1,19 @@
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { navigation } from '@/config/navigation';
 import type { NavGroup, NavItem, NavSection } from '@/config/navigation';
+import { logout } from '@/routes';
+import { edit as profileEdit } from '@/routes/profile';
 import ApplicationLogo from '@/shell/Components/ApplicationLogo';
 import {
     ChevronDown,
-    ChevronRight,
+    LogOut,
     SearchIcon,
     X,
 } from '@/shell/Components/NavIcons';
+import UserAvatar from '@/shell/Components/UserAvatar';
 import { useBranding } from '@/shell/hooks/useBranding';
 import { useCan } from '@/shell/hooks/useCan';
 import { useLocale } from '@/shell/hooks/useLocale';
@@ -60,6 +63,12 @@ export default function AppSidebar({
     const environmentLabel = getString('general.system_environment_label');
     const logoCentered =
         getString('appearance.logo_position', 'start') === 'center';
+    // A centred logo stacks the names under it, so that block takes the height it needs.
+    const stackedBrand = logoCentered && !collapsed;
+    const user = usePage().props.auth.user;
+    const displayName = user?.name ?? t('shell.common.user');
+    const firstRole = user?.roles?.[0];
+    const role = firstRole ? t(`roles.${firstRole}.name`) : undefined;
 
     const homeNav = navigation.home;
     // The dashboard link, for those who hold its permission.
@@ -250,14 +259,14 @@ export default function AppSidebar({
                     title={compact ? label : undefined}
                     className={[
                         // scroll-my keeps an auto-scrolled current page clear of the list's fading edges.
-                        'relative flex scroll-my-12 items-center gap-2.5 rounded-md text-sm transition-colors duration-150',
+                        'relative flex scroll-my-12 items-center gap-3 rounded-lg text-sm transition-colors duration-150',
                         focusRing,
                         hoverSurface,
                         compact
                             ? 'mx-auto h-10 w-10 justify-center'
                             : nested
-                              ? 'min-h-8 px-2.5 py-1.5'
-                              : 'min-h-9 px-2.5 py-2',
+                              ? 'min-h-8 px-3 py-1.5'
+                              : 'min-h-9 px-3 py-2',
                         selected
                             ? selectedSurface + ' font-semibold'
                             : nested
@@ -314,7 +323,7 @@ export default function AppSidebar({
                 {collapsed ? (
                     <div className="mx-3 my-2 border-t border-(--sidebar-border)" />
                 ) : (
-                    <p className="px-2.5 pt-1 pb-1.5 text-[11px] leading-relaxed font-semibold tracking-[0.08em] text-(--sidebar-muted) uppercase">
+                    <p className="px-3 pt-1 pb-1.5 text-[11px] leading-relaxed font-semibold tracking-[0.08em] text-(--sidebar-muted) uppercase">
                         {t(labelKey)}
                     </p>
                 )}
@@ -387,7 +396,7 @@ export default function AppSidebar({
                             }));
                     }}
                     className={[
-                        'flex min-h-9 w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm text-(--sidebar-fg) transition-colors duration-150',
+                        'flex min-h-9 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-(--sidebar-fg) transition-colors duration-150',
                         focusRing,
                         hoverSurface,
                         // Only the page itself carries the selected surface; its group is marked by weight and an accent icon.
@@ -413,7 +422,7 @@ export default function AppSidebar({
                     />
                 </button>
                 <div id={panelId} hidden={!isOpen}>
-                    <div className="ms-[19px] mt-0.5 mb-1.5 border-s border-(--sidebar-border) ps-2">
+                    <div className="ms-[21px] mt-0.5 mb-1.5 border-s border-(--sidebar-border) ps-2">
                         {renderGroupItems(items)}
                     </div>
                 </div>
@@ -426,40 +435,51 @@ export default function AppSidebar({
             data-sidebar
             className="flex h-full min-h-0 w-full flex-col border-e border-(--sidebar-border) bg-(--sidebar-bg) text-(--sidebar-fg)"
         >
+            {/* The brand row is as tall as the top bar, so their bottom edges make one line across the page. */}
             <div
                 data-sidebar-brand
                 className={
                     collapsed
                         ? 'flex h-16 shrink-0 items-center justify-center border-b border-(--sidebar-border)'
-                        : 'app-dot-grid shrink-0 border-b border-(--sidebar-border) px-4 py-3.5'
+                        : stackedBrand
+                          ? 'shrink-0 border-b border-(--sidebar-border) px-4 py-3.5'
+                          : 'flex h-16 shrink-0 items-center border-b border-(--sidebar-border) px-4'
                 }
             >
-                <div className="flex items-start gap-2">
+                <div className="flex w-full min-w-0 items-center gap-2">
                     <Link
                         href={homeNav.href}
                         onClick={onClose}
                         aria-label={appName}
-                        title={collapsed ? appName : undefined}
+                        title={appName}
                         className={[
-                            'flex min-w-0 flex-1 gap-3 rounded-md',
+                            'flex min-w-0 flex-1 gap-3 rounded-lg',
                             focusRing,
-                            logoCentered && !collapsed
+                            stackedBrand
                                 ? 'flex-col items-center text-center'
                                 : 'items-center',
                         ].join(' ')}
                     >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-(--sidebar-bg) p-1 ring-1 ring-(--sidebar-border)">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-(--sidebar-bg) p-1 ring-1 ring-(--sidebar-border)">
                             <ApplicationLogo className="h-full w-full object-contain" />
                         </span>
                         {!collapsed && (
                             <div className="min-w-0">
-                                <p className="text-[15px] leading-snug font-medium wrap-break-word whitespace-normal">
+                                <p
+                                    className={[
+                                        'text-sm leading-snug font-semibold',
+                                        // One line beside the logo (the full name is the link's title); the stacked block wraps.
+                                        stackedBrand
+                                            ? 'wrap-break-word'
+                                            : 'truncate',
+                                    ].join(' ')}
+                                >
                                     {appName}
                                 </p>
-                                <p className="text-[11px] font-semibold tracking-wide wrap-break-word whitespace-normal text-(--sidebar-muted) uppercase">
+                                <p className="mt-0.5 truncate text-[10px] font-semibold tracking-[0.08em] text-(--sidebar-muted) uppercase">
                                     {shortName}
                                 </p>
-                                {orgName && (
+                                {stackedBrand && orgName && (
                                     <p className="mt-1 text-xs leading-relaxed wrap-break-word whitespace-normal text-(--sidebar-muted)">
                                         {orgName}
                                     </p>
@@ -547,7 +567,7 @@ export default function AppSidebar({
 
             <nav
                 ref={navRef}
-                className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain mask-[linear-gradient(to_bottom,transparent,#000_12px,#000_94%,transparent)] px-2 pt-3 pb-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_12px,#000_94%,transparent)]"
+                className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain mask-[linear-gradient(to_bottom,transparent,#000_12px,#000_94%,transparent)] px-3 pt-3 pb-6 [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_12px,#000_94%,transparent)]"
                 aria-label={t('shell.nav.main_navigation')}
             >
                 {showHome && (!normalizedQuery || matches(homeNav)) && (
@@ -568,45 +588,7 @@ export default function AppSidebar({
                     )}
             </nav>
 
-            <div className="shrink-0 border-t border-(--sidebar-border) p-2">
-                {onToggleCollapse ? (
-                    <button
-                        type="button"
-                        onClick={onToggleCollapse}
-                        aria-label={t(
-                            collapsed
-                                ? 'shell.nav.expand_sidebar'
-                                : 'shell.nav.collapse_sidebar',
-                        )}
-                        title={
-                            collapsed
-                                ? t('shell.nav.expand_sidebar')
-                                : undefined
-                        }
-                        className={[
-                            'flex min-h-10 items-center gap-3 rounded-md text-sm text-(--sidebar-muted)',
-                            focusRing,
-                            hoverSurface,
-                            collapsed
-                                ? 'mx-auto w-10 justify-center'
-                                : 'w-full px-2.5',
-                        ].join(' ')}
-                    >
-                        <ChevronRight
-                            className={
-                                collapsed ? 'h-4 w-4' : 'h-4 w-4 rotate-180'
-                            }
-                            aria-hidden="true"
-                        />
-                        {!collapsed && (
-                            <span>{t('shell.nav.collapse_sidebar')}</span>
-                        )}
-                    </button>
-                ) : (
-                    <p className="px-3 py-2 text-xs text-(--sidebar-muted)">
-                        {shortName}
-                    </p>
-                )}
+            <div className="shrink-0 border-t border-(--sidebar-border) p-3">
                 {/* Non-production environments are flagged where every page shows it, so test data is never mistaken for live. */}
                 {environmentLabel &&
                     environmentLabel.toLowerCase() !== 'production' &&
@@ -614,10 +596,10 @@ export default function AppSidebar({
                         <span
                             title={environmentLabel}
                             aria-label={environmentLabel}
-                            className="mx-auto mt-1 mb-1 block h-2 w-2 rounded-full bg-brand-gold"
+                            className="mx-auto mb-2 block h-2 w-2 rounded-full bg-brand-gold"
                         />
                     ) : (
-                        <p className="px-3 pt-1 pb-1">
+                        <p className="px-1.5 pb-2">
                             <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-gold/15 px-2 py-0.5 text-[11px] font-semibold text-(--sidebar-fg) ring-1 ring-brand-gold/50 ring-inset">
                                 <span
                                     className="h-1.5 w-1.5 rounded-full bg-brand-gold"
@@ -627,6 +609,71 @@ export default function AppSidebar({
                             </span>
                         </p>
                     ))}
+                {/* Who is signed in, with the way out beside it. */}
+                <div
+                    className={
+                        collapsed
+                            ? 'flex flex-col items-center gap-1'
+                            : 'flex items-center gap-1'
+                    }
+                >
+                    <Link
+                        href={profileEdit().url}
+                        onClick={onClose}
+                        aria-label={
+                            t('shell.account.profile_settings') +
+                            ': ' +
+                            displayName
+                        }
+                        title={collapsed ? displayName : undefined}
+                        className={[
+                            'flex min-w-0 items-center gap-3 rounded-lg transition-colors duration-150',
+                            focusRing,
+                            hoverSurface,
+                            collapsed
+                                ? 'h-10 w-10 justify-center'
+                                : 'flex-1 p-1.5',
+                        ].join(' ')}
+                    >
+                        <UserAvatar
+                            src={user?.avatar}
+                            name={displayName}
+                            size={32}
+                            className="bg-(--sidebar-hover)! text-(--sidebar-fg)! ring-1 ring-(--sidebar-border)"
+                        />
+                        {!collapsed && (
+                            <span className="min-w-0">
+                                <span className="block truncate text-sm leading-snug font-semibold">
+                                    {displayName}
+                                </span>
+                                {role && (
+                                    <span className="block truncate text-xs leading-snug text-(--sidebar-muted)">
+                                        {role}
+                                    </span>
+                                )}
+                            </span>
+                        )}
+                    </Link>
+                    <Link
+                        href={logout().url}
+                        method="post"
+                        as="button"
+                        // Signed out, no page from this session may come back from the cache.
+                        onClick={() => router.flushAll()}
+                        aria-label={t('shell.account.sign_out')}
+                        title={t('shell.account.sign_out')}
+                        className={[
+                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-(--sidebar-muted) transition-colors duration-150 hover:text-(--sidebar-fg)',
+                            focusRing,
+                            hoverSurface,
+                        ].join(' ')}
+                    >
+                        <LogOut
+                            className="h-[18px] w-[18px]"
+                            aria-hidden="true"
+                        />
+                    </Link>
+                </div>
             </div>
         </div>
     );

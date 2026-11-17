@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import { Plus, ShieldCheck, Users } from 'lucide-react';
 import { useState } from 'react';
 import { visitWithFilters } from '@/lib/filters';
 import ConfirmProvider from '@/shell/Components/ConfirmProvider';
@@ -11,16 +11,9 @@ import {
     FilterPanel,
     Input,
     ListPagination,
-    TableCard,
-    TableTools,
     buttonClassName,
     cx,
-    tableBodyClassName,
-    tableCellClassName,
-    tableClassName,
-    tableHeadClassName,
-    tableHeaderCellClassName,
-    tableRowClassName,
+    tableContainerClassName,
 } from '@/shell/Components/ui';
 import type { LaravelPageMeta } from '@/shell/Components/ui';
 import { useConfirm } from '@/shell/hooks/useConfirm';
@@ -51,7 +44,7 @@ const SCOPE_DOT: Record<Scope, string> = {
     global: 'bg-primary',
 };
 
-/** The roles in one list, filtered by scope: roles are not put into categories. */
+/** The roles as cards in one list, filtered by scope: roles are not put into categories. */
 function RolesIndexPage({
     roles,
     filters,
@@ -196,8 +189,8 @@ function RolesIndexPage({
                     </FilterField>
                 </FilterPanel>
 
-                <TableCard footer={<ListPagination meta={roles} bare />}>
-                    {roles.data.length === 0 ? (
+                {roles.data.length === 0 ? (
+                    <div className={tableContainerClassName}>
                         <EmptyState
                             title={
                                 filtersActive
@@ -205,180 +198,113 @@ function RolesIndexPage({
                                     : t('rbac.roles.none')
                             }
                         />
-                    ) : (
-                        <TableTools id="roles-index">
-                            <div className="relative overflow-x-auto">
-                                <table
-                                    className={cx(
-                                        tableClassName,
-                                        'min-w-full text-left',
-                                    )}
-                                >
-                                    <thead className={tableHeadClassName}>
-                                        <tr>
-                                            {[
-                                                t('rbac.roles.role'),
-                                                t('rbac.roles.scopeType'),
-                                                t('rbac.roles.permissionCount'),
-                                                t('rbac.roles.usersCount'),
-                                            ].map((h) => (
-                                                <th
-                                                    key={h}
-                                                    scope="col"
-                                                    className={cx(
-                                                        tableHeaderCellClassName,
-                                                        'text-left',
-                                                    )}
-                                                >
-                                                    {h}
-                                                </th>
-                                            ))}
-                                            <th
-                                                scope="col"
-                                                className={
-                                                    tableHeaderCellClassName
-                                                }
-                                            >
-                                                <span className="sr-only">
-                                                    {t('shell.ui.actions')}
+                    </div>
+                ) : (
+                    <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                        {roles.data.map((r) => (
+                            <li
+                                key={r.id}
+                                className="flex min-w-0 flex-col rounded-card border border-(--app-border) bg-(--app-surface) p-5"
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <h2 className="text-base font-semibold wrap-break-word text-(--app-foreground)">
+                                                {r.can.update ? (
+                                                    <Link
+                                                        href={r.editUrl}
+                                                        className="hover:text-primary hover:underline"
+                                                    >
+                                                        {r.label}
+                                                    </Link>
+                                                ) : (
+                                                    r.label
+                                                )}
+                                            </h2>
+                                            {r.is_protected && (
+                                                <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand-strong">
+                                                    {t('rbac.roles.fullAccess')}
                                                 </span>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className={tableBodyClassName}>
-                                        {roles.data.map((r) => {
-                                            return (
-                                                <tr
-                                                    key={r.id}
-                                                    className={
-                                                        tableRowClassName
-                                                    }
-                                                >
-                                                    <td
-                                                        className={
-                                                            tableCellClassName
-                                                        }
-                                                    >
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            <span className="font-medium text-(--app-foreground)">
-                                                                {r.label}
-                                                            </span>
-                                                            {r.is_protected && (
-                                                                <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand-strong">
-                                                                    {t(
-                                                                        'rbac.roles.fullAccess',
-                                                                    )}
-                                                                </span>
-                                                            )}
-                                                            {r.is_system &&
-                                                                !r.is_protected && (
-                                                                    <span className="rounded-full bg-(--app-surface-muted) px-2 py-0.5 text-xs text-(--app-muted-foreground)">
-                                                                        {t(
-                                                                            'rbac.roles.defaultRole',
-                                                                        )}
-                                                                    </span>
-                                                                )}
-                                                        </div>
-                                                        <span className="font-mono text-xs text-(--app-muted-foreground)">
-                                                            {r.name}
-                                                        </span>
-                                                    </td>
-                                                    <td
-                                                        className={
-                                                            tableCellClassName
-                                                        }
-                                                    >
-                                                        <span
-                                                            className={cx(
-                                                                'rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap',
-                                                                r.scope_type ===
-                                                                    'global'
-                                                                    ? 'bg-brand-soft text-brand-strong'
-                                                                    : 'bg-info-soft text-info-strong',
-                                                            )}
-                                                        >
-                                                            {r.scope_type ===
-                                                            'global'
-                                                                ? t(
-                                                                      'rbac.roles.globalRole',
-                                                                  )
-                                                                : t(
-                                                                      'rbac.roles.branchRole',
-                                                                  )}
-                                                        </span>
-                                                    </td>
-                                                    <td
-                                                        className={
-                                                            tableCellClassName
-                                                        }
-                                                    >
-                                                        {r.is_protected ? (
-                                                            <span className="text-xs text-(--app-muted-foreground)">
-                                                                {t(
-                                                                    'rbac.roles.fullAccess',
-                                                                )}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="inline-flex items-center rounded-full bg-(--app-surface-muted) px-2.5 py-0.5 text-xs font-medium text-(--app-foreground) tabular-nums">
-                                                                {
-                                                                    r.permissions_count
-                                                                }
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td
-                                                        className={cx(
-                                                            tableCellClassName,
-                                                            'text-(--app-muted-foreground) tabular-nums',
-                                                        )}
-                                                    >
-                                                        {r.users_count}
-                                                    </td>
-                                                    <td
-                                                        className={
-                                                            tableCellClassName
-                                                        }
-                                                    >
-                                                        <div className="flex justify-end">
-                                                            <AppActionMenu
-                                                                items={[
-                                                                    {
-                                                                        label: t(
-                                                                            'shell.actions.edit',
-                                                                        ),
-                                                                        href: r.editUrl,
-                                                                        show: r
-                                                                            .can
-                                                                            .update,
-                                                                    },
-                                                                    {
-                                                                        label: t(
-                                                                            'shell.actions.delete',
-                                                                        ),
-                                                                        onClick:
-                                                                            () =>
-                                                                                void destroy(
-                                                                                    r,
-                                                                                ),
-                                                                        variant:
-                                                                            'danger',
-                                                                        show: r
-                                                                            .can
-                                                                            .delete,
-                                                                    },
-                                                                ]}
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </TableTools>
-                    )}
-                </TableCard>
+                                            )}
+                                            {r.is_system && !r.is_protected && (
+                                                <span className="rounded-full bg-(--app-surface-muted) px-2 py-0.5 text-xs text-(--app-muted-foreground)">
+                                                    {t(
+                                                        'rbac.roles.defaultRole',
+                                                    )}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="mt-0.5 font-mono text-xs text-(--app-muted-foreground)">
+                                            {r.name}
+                                        </p>
+                                    </div>
+                                    <AppActionMenu
+                                        items={[
+                                            {
+                                                label: t('shell.actions.edit'),
+                                                href: r.editUrl,
+                                                show: r.can.update,
+                                            },
+                                            {
+                                                label: t(
+                                                    'shell.actions.delete',
+                                                ),
+                                                onClick: () => void destroy(r),
+                                                variant: 'danger',
+                                                show: r.can.delete,
+                                            },
+                                        ]}
+                                    />
+                                </div>
+
+                                <p className="mt-3 mb-auto">
+                                    <span
+                                        className={cx(
+                                            'rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap',
+                                            r.scope_type === 'global'
+                                                ? 'bg-brand-soft text-brand-strong'
+                                                : 'bg-info-soft text-info-strong',
+                                        )}
+                                    >
+                                        {r.scope_type === 'global'
+                                            ? t('rbac.roles.globalRole')
+                                            : t('rbac.roles.branchRole')}
+                                    </span>
+                                </p>
+
+                                {/* What the role can do and who holds it, at the foot of every card. */}
+                                <dl className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-(--app-border) pt-4 text-sm text-(--app-muted-foreground)">
+                                    <div className="flex items-center gap-2">
+                                        <ShieldCheck
+                                            aria-hidden="true"
+                                            className="h-4 w-4 shrink-0"
+                                        />
+                                        <dt>
+                                            {t('rbac.roles.permissionCount')}
+                                        </dt>
+                                        <dd className="font-semibold text-(--app-foreground) tabular-nums">
+                                            {r.is_protected
+                                                ? t('rbac.roles.fullAccess')
+                                                : r.permissions_count}
+                                        </dd>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Users
+                                            aria-hidden="true"
+                                            className="h-4 w-4 shrink-0"
+                                        />
+                                        <dt>{t('rbac.roles.usersCount')}</dt>
+                                        <dd className="font-semibold text-(--app-foreground) tabular-nums">
+                                            {r.users_count}
+                                        </dd>
+                                    </div>
+                                </dl>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+
+                <ListPagination meta={roles} bare />
             </div>
         </AuthenticatedLayout>
     );

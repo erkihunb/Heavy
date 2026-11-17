@@ -5,6 +5,7 @@ import type {
     ThHTMLAttributes,
 } from 'react';
 import { cn } from '@/lib/utils';
+import { TableTools } from '@/shell/Components/ui';
 
 /*
  * The one table style for lists (EUISIS): a hairline-bordered card, a muted
@@ -29,11 +30,18 @@ export function TableCard({
     actions,
     footer,
     className,
+    toolsId,
     children,
 }: {
     title?: ReactNode;
     /** id of the title, for `aria-labelledby` on the table. */
     titleId?: string;
+    /**
+     * A list's stable name ("permit-register"): gives the table the toolbar
+     * every list has (columns, row density, kept header) and header sorting,
+     * and remembers the viewer's choices under this name.
+     */
+    toolsId?: string;
     description?: ReactNode;
     actions?: ReactNode;
     footer?: ReactNode;
@@ -72,7 +80,11 @@ export function TableCard({
                     )}
                 </header>
             )}
-            {children}
+            {toolsId ? (
+                <TableTools id={toolsId}>{children}</TableTools>
+            ) : (
+                children
+            )}
             {footer && (
                 <footer className="border-t border-border px-4 py-3">
                     {footer}

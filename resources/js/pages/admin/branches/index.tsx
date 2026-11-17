@@ -55,7 +55,7 @@ export default function BranchesIndex({ branches, in_number }: Props) {
                         : t('admin.branches.not_in_number')}
                 </p>
 
-                <TableCard>
+                <TableCard toolsId="branches">
                     <Table>
                         <THead>
                             <tr>

@@ -14,7 +14,8 @@ use Inertia\Response;
 /**
  * The permission catalogue, read-only (EUISIS PermissionController without
  * create, edit or delete): in Heavy a permission exists because code checks
- * it, so new ones are added in code (see the README).
+ * it, so new ones are added in code (see the README). The list is a matrix:
+ * a row per permission, a column per role, a tick where the role holds it.
  */
 class PermissionController extends Controller
 {
@@ -23,15 +24,30 @@ class PermissionController extends Controller
         Gate::authorize('permissions.view');
 
         $search = mb_strtolower(trim((string) $request->query('search', '')));
-        $holders = $this->roleCounts();
+        // The matrix's columns: default roles first, then the created ones by name.
+        $roles = Role::query()
+            ->with('permissions:id,name')
+            ->orderByDesc('is_system')
+            ->orderBy('name')
+            ->get();
 
         // One list, in catalogue order: permissions are not put into categories.
         $rows = collect(PermissionCatalog::names())
-            ->map(fn (string $name): array => [
-                ...PermissionCatalog::entry($name),
-                'roles_count' => $holders[$name] ?? 0,
-                'showUrl' => route('admin.permissions.show', $name),
-            ]);
+            ->map(function (string $name) use ($roles): array {
+                $holders = $roles
+                    ->filter(fn (Role $role): bool => $role->permissions->contains('name', $name))
+                    ->pluck('name')
+                    ->values()
+                    ->all();
+
+                return [
+                    ...PermissionCatalog::entry($name),
+                    // The names of the roles that hold it: a tick in that role's column.
+                    'roles' => $holders,
+                    'roles_count' => count($holders),
+                    'showUrl' => route('admin.permissions.show', $name),
+                ];
+            });
 
         $visible = $rows
             ->filter(fn (array $row): bool => $search === ''
@@ -40,6 +56,9 @@ class PermissionController extends Controller
 
         return Inertia::render('admin/permissions/index', [
             'permissions' => $visible->all(),
+            'roles' => $roles
+                ->map(fn (Role $role): array => ['name' => $role->name, 'label' => $role->label()])
+                ->all(),
             'stats' => [
                 'total' => $rows->count(),
                 'unassigned' => $rows->where('roles_count', 0)->count(),
@@ -77,20 +96,5 @@ class PermissionController extends Controller
             'roles' => $roles,
             'urls' => ['index' => route('admin.permissions.index')],
         ]);
-    }
-
-    /**
-     * permission name => how many roles hold it.
-     *
-     * @return array<string, int>
-     */
-    private function roleCounts(): array
-    {
-        return Role::query()
-            ->with('permissions:id,name')
-            ->get()
-            ->flatMap(fn (Role $role) => $role->permissions->pluck('name'))
-            ->countBy()
-            ->all();
     }
 }

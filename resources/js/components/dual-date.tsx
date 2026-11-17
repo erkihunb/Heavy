@@ -18,6 +18,7 @@ export function DualDate({
 }) {
     return (
         <span
+            data-dual-date
             className={cn(
                 stacked
                     ? 'inline-flex flex-col'

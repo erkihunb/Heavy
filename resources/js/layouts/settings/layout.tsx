@@ -1,15 +1,16 @@
 import type { PropsWithChildren } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { PageTabs } from '@/components/page-tabs';
+import { ProfileSummary } from '@/components/profile-summary';
 import { useTranslation } from '@/lib/i18n';
 import { edit } from '@/routes/profile';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
 
 /**
- * A person's own account (EUISIS profile page): the heading band, underlined
- * tabs for account, password and two-factor authentication, then the
- * section cards of the open tab. Light or dark is chosen in the top bar; the
+ * A person's own account: the heading, a summary of who is signed in,
+ * underlined tabs for account, password and two-factor authentication, then
+ * the section cards of the open tab. Light or dark is chosen in the top bar; the
  * look of the system is the Admin's (System settings → Appearance).
  */
 export default function SettingsLayout({ children }: PropsWithChildren) {
@@ -21,6 +22,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                 title={t('settings.title')}
                 description={t('settings.intro')}
             />
+            <ProfileSummary />
             <PageTabs
                 label={t('settings.title')}
                 tabs={[

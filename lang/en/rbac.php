@@ -129,6 +129,8 @@ return [
         'permission' => 'Permission',
         'meaning' => 'What it allows',
         'heldBy' => 'Held by',
+        'granted' => 'Granted',
+        'notGranted' => 'Not granted',
         'heldByIntro' => 'The roles that hold this permission.',
         'rolesCount' => ':count roles',
         'unassigned' => 'No role',

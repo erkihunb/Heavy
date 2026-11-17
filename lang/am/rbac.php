@@ -130,6 +130,8 @@ return [
         'permission' => 'መብት',
         'meaning' => 'የሚፈቅደው',
         'heldBy' => 'የያዙት',
+        'granted' => 'ተሰጥቷል',
+        'notGranted' => 'አልተሰጠም',
         'heldByIntro' => 'ይህን መብት የያዙ ሚናዎች።',
         'rolesCount' => ':count ሚናዎች',
         'unassigned' => 'ምንም ሚና የለም',

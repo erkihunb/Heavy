@@ -14,11 +14,11 @@ import { DualDate } from '@/components/dual-date';
 import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
 import { Button } from '@/components/ui/button';
-import { NativeSelect } from '@/components/ui/native-select';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { create, edit, index } from '@/routes/admin/fee-schedules';
+import { FilterField, Select } from '@/shell/Components/ui';
 import type { BreadcrumbItem, FeeSchedule, Paginated } from '@/types';
 import { PERMIT_TYPES } from '@/types/enums';
 import type { PermitType } from '@/types/enums';
@@ -41,9 +41,6 @@ export default function FeeSchedulesIndex({ schedules, filters }: Props) {
             permitType === '' ? {} : { permit_type: permitType },
             { preserveState: true, replace: true },
         );
-
-    // Filter labels match every other field label (sentence case, not an eyebrow).
-    const labelClass = 'text-sm font-medium text-foreground';
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -68,11 +65,8 @@ export default function FeeSchedulesIndex({ schedules, filters }: Props) {
                     {t('fees.placeholder_notice')}
                 </p>
 
-                <div className="grid max-w-xs gap-1.5">
-                    <label htmlFor="filter-type" className={labelClass}>
-                        {t('fees.fields.permit_type')}
-                    </label>
-                    <NativeSelect
+                <FilterField label={t('fees.fields.permit_type')}>
+                    <Select
                         id="filter-type"
                         value={filters.permit_type ?? ''}
                         onChange={(event) => filter(event.target.value)}
@@ -85,10 +79,10 @@ export default function FeeSchedulesIndex({ schedules, filters }: Props) {
                                 {t(`permits.types.${type}`)}
                             </option>
                         ))}
-                    </NativeSelect>
-                </div>
+                    </Select>
+                </FilterField>
 
-                <TableCard>
+                <TableCard toolsId="fee-schedules">
                     <Table>
                         <THead>
                             <tr>

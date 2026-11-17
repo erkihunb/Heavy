@@ -10,7 +10,6 @@ import {
     LogOut,
     SettingsIcon,
     SearchIcon as Search,
-    SidebarIcon,
 } from '@/shell/Components/NavIcons';
 import NotificationBell from '@/shell/Components/NotificationBell';
 import ThemeToggle from '@/shell/Components/ThemeToggle';
@@ -21,9 +20,6 @@ import { useLocale } from '@/shell/hooks/useLocale';
 interface Props {
     /** Opens the navigation drawer (below the lg breakpoint). */
     onMenuClick: () => void;
-    /** Collapses the desktop sidebar to its icon rail and back; absent on layouts without one. */
-    onToggleSidebar?: () => void;
-    sidebarCollapsed?: boolean;
 }
 
 const focusRing =
@@ -32,12 +28,8 @@ const focusRing =
 const iconButton =
     'flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-(--app-muted-foreground) transition-colors duration-150 hover:bg-(--app-surface-muted) hover:text-(--app-foreground)';
 
-/** The top bar: menu and sidebar toggles, the command palette, the bell, appearance, language and the account menu. */
-export default function AppHeader({
-    onMenuClick,
-    onToggleSidebar,
-    sidebarCollapsed = false,
-}: Props) {
+/** The top bar: the menu button, the command palette, the bell, appearance, language and the account menu. */
+export default function AppHeader({ onMenuClick }: Props) {
     const { auth } = usePage().props;
     const user = auth.user;
     const { t } = useLocale();
@@ -75,7 +67,7 @@ export default function AppHeader({
             />
             <header
                 data-admin-header
-                className="sticky top-0 z-20 flex h-16 min-w-0 shrink-0 items-center justify-between gap-2 border-b border-(--app-border) bg-(--app-surface) px-3 sm:gap-4 sm:px-6 lg:px-8"
+                className="sticky top-0 z-20 flex h-16 min-w-0 shrink-0 items-center justify-between gap-2 border-b border-(--app-border) bg-(--app-surface)/85 px-3 backdrop-blur-md sm:gap-4 sm:px-6 lg:px-8"
             >
                 <div className="flex min-w-0 items-center gap-1 sm:flex-1 sm:gap-2">
                     <button
@@ -88,28 +80,6 @@ export default function AppHeader({
                     >
                         <MenuIcon className="h-5 w-5" aria-hidden="true" />
                     </button>
-                    {onToggleSidebar && (
-                        <button
-                            type="button"
-                            onClick={onToggleSidebar}
-                            aria-label={t(
-                                sidebarCollapsed
-                                    ? 'shell.nav.expand_sidebar'
-                                    : 'shell.nav.collapse_sidebar',
-                            )}
-                            aria-expanded={!sidebarCollapsed}
-                            className={[
-                                iconButton,
-                                'hidden lg:flex',
-                                focusRing,
-                            ].join(' ')}
-                        >
-                            <SidebarIcon
-                                className="h-5 w-5"
-                                aria-hidden="true"
-                            />
-                        </button>
-                    )}
                     <button
                         type="button"
                         onClick={() => setPaletteOpen(true)}
@@ -172,16 +142,7 @@ export default function AppHeader({
                                 size={30}
                                 className="bg-(--app-surface-muted)! text-(--app-foreground)! ring-1 ring-(--app-border)"
                             />
-                            <span className="hidden min-w-0 lg:block">
-                                <span className="block max-w-40 truncate text-sm leading-snug font-semibold">
-                                    {displayName}
-                                </span>
-                                {roles[0] && (
-                                    <span className="mt-0.5 block max-w-40 truncate text-[11px] leading-snug text-(--app-muted-foreground)">
-                                        {roles[0]}
-                                    </span>
-                                )}
-                            </span>
+                            {/* The name and role are on the sidebar's account card and in this menu. */}
                             <ChevronDown
                                 className="hidden h-4 w-4 shrink-0 text-(--app-muted-foreground) sm:block"
                                 aria-hidden="true"

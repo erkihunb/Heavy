@@ -9,15 +9,16 @@ export type PageTab = {
 };
 
 /**
- * EUISIS underlined tabs under a page's heading band. Each tab is its own
+ * Underlined tabs under a page's heading. Each tab is its own
  * page (a link), so the address and the browser history follow the tab.
  */
 export function PageTabs({ tabs, label }: { tabs: PageTab[]; label: string }) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
 
     return (
-        <nav aria-label={label} className="-mt-6 mb-0">
-            <ul className="relative isolate flex max-w-full gap-1 overflow-x-auto pt-1 before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2 before:border-b before:border-border before:bg-muted">
+        <nav aria-label={label} className="border-b border-border">
+            {/* The row scrolls sideways on a narrow screen; the active tab's rule sits on the nav's border. */}
+            <ul className="-mb-px flex max-w-full gap-1 overflow-x-auto">
                 {tabs.map((tab) => {
                     const active = isCurrentOrParentUrl(tab.href);
 
@@ -37,7 +38,7 @@ export function PageTabs({ tabs, label }: { tabs: PageTab[]; label: string }) {
                                 {active && (
                                     <span
                                         aria-hidden="true"
-                                        className="absolute inset-x-0 -bottom-px h-0.5 bg-primary"
+                                        className="absolute inset-x-0 bottom-0 h-0.5 bg-primary"
                                     />
                                 )}
                             </Link>

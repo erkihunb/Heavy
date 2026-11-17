@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ChevronRight, Plus, Search, X } from 'lucide-react';
+import { ChevronRight, Plus } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import {
@@ -12,19 +12,18 @@ import {
     THead,
     Tr,
 } from '@/components/data-table';
+import { DateFilterField } from '@/components/date-filter-field';
 import { DualDate } from '@/components/dual-date';
 import { EthiopianDateInput } from '@/components/ethiopian-date-input';
 import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
 import AppLayout from '@/layouts/app-layout';
 import { visitWithFilters } from '@/lib/filters';
 import { useTranslation } from '@/lib/i18n';
 import { index } from '@/routes/admin/permits';
+import { FilterField, FilterPanel, Input, Select } from '@/shell/Components/ui';
 import type {
     BreadcrumbItem,
     DualDate as DualDateValue,
@@ -122,115 +121,78 @@ export default function PermitRegister({
                     }
                 />
 
-                <section
-                    aria-label={t('register.search')}
-                    className="space-y-4 rounded-card border border-border bg-card p-4 sm:p-5"
+                <FilterPanel
+                    label={t('register.search')}
+                    onSubmit={submitSearch}
+                    onReset={() => {
+                        setSearch('');
+                        router.get(index.url(), {}, { replace: true });
+                    }}
+                    hasActiveFilters={filtered}
+                    submitLabel={t('register.apply')}
+                    resetLabel={t('register.reset')}
                 >
-                    <form
-                        role="search"
-                        onSubmit={submitSearch}
-                        className="flex flex-col gap-2 sm:flex-row sm:items-end"
-                    >
-                        <div className="grid flex-1 gap-1.5">
-                            <Label htmlFor="search">
-                                {t('register.search')}
-                            </Label>
-                            <Input
-                                id="search"
-                                type="search"
-                                value={search}
-                                placeholder={t('register.search_placeholder')}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
-                                }
-                            />
-                        </div>
-                        <Button type="submit">
-                            <Search aria-hidden="true" />
-                            {t('register.apply')}
-                        </Button>
-                    </form>
-
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-                        <div className="grid gap-1.5">
-                            <Label htmlFor="status">
-                                {t('register.status')}
-                            </Label>
-                            <NativeSelect
-                                id="status"
-                                value={filters.status ?? ''}
-                                onChange={(event) =>
-                                    apply({ status: event.target.value })
-                                }
-                            >
-                                <option value="">
-                                    {t('register.any_status')}
+                    <FilterField label={t('register.search')} wide>
+                        <Input
+                            id="search"
+                            type="search"
+                            value={search}
+                            placeholder={t('register.search_placeholder')}
+                            onChange={(event) => setSearch(event.target.value)}
+                        />
+                    </FilterField>
+                    <FilterField label={t('register.status')}>
+                        <Select
+                            id="status"
+                            value={filters.status ?? ''}
+                            onChange={(event) =>
+                                apply({ status: event.target.value })
+                            }
+                        >
+                            <option value="">{t('register.any_status')}</option>
+                            {statuses.map((status) => (
+                                <option key={status} value={status}>
+                                    {t(`permits.status.${status}`)}
                                 </option>
-                                {statuses.map((status) => (
-                                    <option key={status} value={status}>
-                                        {t(`permits.status.${status}`)}
-                                    </option>
-                                ))}
-                            </NativeSelect>
-                        </div>
-                        <div className="grid gap-1.5">
-                            <Label htmlFor="permit_type">
-                                {t('register.type')}
-                            </Label>
-                            <NativeSelect
-                                id="permit_type"
-                                value={filters.permit_type ?? ''}
-                                onChange={(event) =>
-                                    apply({ permit_type: event.target.value })
-                                }
-                            >
-                                <option value="">
-                                    {t('register.any_type')}
+                            ))}
+                        </Select>
+                    </FilterField>
+                    <FilterField label={t('register.type')}>
+                        <Select
+                            id="permit_type"
+                            value={filters.permit_type ?? ''}
+                            onChange={(event) =>
+                                apply({ permit_type: event.target.value })
+                            }
+                        >
+                            <option value="">{t('register.any_type')}</option>
+                            {PERMIT_TYPES.map((type) => (
+                                <option key={type} value={type}>
+                                    {t(`permits.types.${type}`)}
                                 </option>
-                                {PERMIT_TYPES.map((type) => (
-                                    <option key={type} value={type}>
-                                        {t(`permits.types.${type}`)}
-                                    </option>
-                                ))}
-                            </NativeSelect>
-                        </div>
+                            ))}
+                        </Select>
+                    </FilterField>
+                    <DateFilterField>
                         <EthiopianDateInput
                             id="from"
                             label={t('register.from')}
                             value={filters.from ?? ''}
                             onChange={(iso) => apply({ from: iso })}
                         />
+                    </DateFilterField>
+                    <DateFilterField>
                         <EthiopianDateInput
                             id="to"
                             label={t('register.to')}
                             value={filters.to ?? ''}
                             onChange={(iso) => apply({ to: iso })}
                         />
-                    </div>
-
-                    {filtered && (
-                        <div className="flex justify-end">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                    setSearch('');
-                                    router.get(
-                                        index.url(),
-                                        {},
-                                        { replace: true },
-                                    );
-                                }}
-                            >
-                                <X aria-hidden="true" />
-                                {t('register.reset')}
-                            </Button>
-                        </div>
-                    )}
-                </section>
+                    </DateFilterField>
+                </FilterPanel>
 
                 <TableCard
+                    toolsId="permit-register"
                     title={t('register.count', {
                         count: String(permits.meta.total),
                     })}

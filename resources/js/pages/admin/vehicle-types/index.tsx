@@ -48,7 +48,7 @@ export default function VehicleTypesIndex({ types }: Props) {
                     }
                 />
 
-                <TableCard>
+                <TableCard toolsId="vehicle-types">
                     <Table>
                         <THead>
                             <tr>

@@ -779,6 +779,17 @@
     --table-py: 0.375rem;
 }
 
+/* A date in a table cell is two lines, the Ethiopian date over the Gregorian
+   one, like the other two-line cells. Side by side, the pair wrapped or ran
+   under the next column, because a wrapping flex row reports only its widest
+   item as the width the column needs. */
+td [data-dual-date] {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    vertical-align: middle;
+}
+
 /* Animations switched off for everyone (also honours prefers-reduced-motion below). */
 :root[data-animations='off'] *,
 :root[data-animations='off'] *::before,
