@@ -1,6 +1,5 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import {
-    BriefcaseBusiness,
     Check,
     CircleAlert,
     ClipboardList,
@@ -28,7 +27,7 @@ import UserAvatar from '@/shell/Components/UserAvatar';
 import RolePicker from '@/shell/Components/Users/RolePicker';
 import type { PickableRole } from '@/shell/Components/Users/RolePicker';
 import {
-    EmploymentFields,
+    BranchField,
     FormSection,
     IdentityFields,
     PreferenceFields,
@@ -62,8 +61,7 @@ type CreateData = StaffFormData & {
     avatar: File | null;
 };
 
-type SectionId =
-    'personal' | 'account' | 'employment' | 'access' | 'preferences' | 'record';
+type SectionId = 'personal' | 'account' | 'access' | 'preferences' | 'record';
 
 /** Which section a server error belongs to, by the field it names. */
 const SECTION_OF: Record<string, SectionId> = {
@@ -80,13 +78,7 @@ const SECTION_OF: Record<string, SectionId> = {
     password: 'account',
     password_confirmation: 'account',
     active: 'account',
-    institution: 'employment',
-    department: 'employment',
-    job_title: 'employment',
-    employee_number: 'employment',
-    manager_id: 'employment',
-    employment_status: 'employment',
-    branch_id: 'employment',
+    branch_id: 'access',
     roles: 'access',
     permissions: 'access',
     locale: 'preferences',
@@ -180,12 +172,6 @@ export default function CreateUser({
         active: true,
         password: '',
         password_confirmation: '',
-        institution: '',
-        department: '',
-        job_title: '',
-        employee_number: '',
-        manager_id: '',
-        employment_status: '',
         branch_id: '',
         roles: [],
         permissions: [],
@@ -219,15 +205,6 @@ export default function CreateUser({
     const errorsIn = (id: SectionId) =>
         errorList.filter(([field]) => sectionOf(field) === id).length;
 
-    const employmentFilled = [
-        data.institution,
-        data.department,
-        data.job_title,
-        data.employee_number,
-        data.manager_id,
-        data.employment_status,
-    ].some((value) => value.trim() !== '');
-
     const sections: {
         id: SectionId;
         icon: ReactNode;
@@ -255,13 +232,6 @@ export default function CreateUser({
                 data.password === data.password_confirmation
                     ? 'ready'
                     : 'todo',
-        },
-        {
-            id: 'employment',
-            icon: <BriefcaseBusiness className="size-4.5" />,
-            title: t('rbac.users.employmentSection'),
-            help: t('rbac.users.employmentSectionHelp'),
-            state: employmentFilled ? 'ready' : 'optional',
         },
         {
             id: 'access',
@@ -409,13 +379,9 @@ export default function CreateUser({
                                         : name}
                                 </p>
                                 <p className="truncate text-xs text-(--app-muted-foreground)">
-                                    {data.job_title.trim() !== ''
-                                        ? data.job_title
-                                        : data.email.trim() !== ''
-                                          ? data.email
-                                          : t(
-                                                'rbac.users.create.previewNoEmail',
-                                            )}
+                                    {data.email.trim() !== ''
+                                        ? data.email
+                                        : t('rbac.users.create.previewNoEmail')}
                                 </p>
                             </div>
                         </div>
@@ -697,15 +663,6 @@ export default function CreateUser({
                         </div>
                     </FormSection>
 
-                    <FormSection {...meta('employment')}>
-                        <EmploymentFields
-                            {...section}
-                            managers={options.managers}
-                            employmentStatuses={options.employmentStatuses}
-                            branches={branches}
-                        />
-                    </FormSection>
-
                     <FormSection {...meta('access')}>
                         <div>
                             <h3 className="text-sm font-medium text-(--app-foreground)">
@@ -733,6 +690,7 @@ export default function CreateUser({
                                 }
                             />
                         </div>
+                        <BranchField {...section} branches={branches} />
                         {permissions.length > 0 && (
                             <details
                                 className="rounded-control border border-(--app-border)"

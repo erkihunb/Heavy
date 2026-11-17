@@ -11,8 +11,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Activitylog\Models\Activity;
 
 /*
- * A staff account carries a photo, job title, staff number, phone and
- * preferred language. Photos are cropped to a square, re-encoded, kept on the
+ * A staff account carries a photo, phone and preferred language. Photos are cropped to a square, re-encoded, kept on the
  * private disk and shown only to people who are signed in.
  */
 
@@ -22,15 +21,13 @@ beforeEach(function () {
     $this->admin = staffUser(Role::Admin);
 });
 
-it('opens an account with a photo and work details', function () {
+it('opens an account with a photo, phone and language', function () {
     $this->actingAs($this->admin)
         ->post(route('admin.users.store'), [
             'name' => 'Selam Tesfaye',
             'email' => 'selam@example.test',
             'roles' => ['cashier'],
             'phone' => '0911 234 567',
-            'job_title' => 'Senior cashier',
-            'employee_number' => 'TMA/0042',
             'locale' => 'en',
             'avatar' => UploadedFile::fake()->image('selam.jpg', 800, 600),
         ])
@@ -38,9 +35,7 @@ it('opens an account with a photo and work details', function () {
         ->assertSessionHasNoErrors();
 
     $user = User::query()->where('email', 'selam@example.test')->firstOrFail();
-    expect($user->job_title)->toBe('Senior cashier')
-        ->and($user->employee_number)->toBe('TMA/0042')
-        ->and($user->locale)->toBe('en')
+    expect($user->locale)->toBe('en')
         ->and($user->phone)->not->toBeNull()
         ->and($user->avatar_path)->toStartWith(UserAvatar::DIRECTORY.'/');
 
@@ -49,19 +44,16 @@ it('opens an account with a photo and work details', function () {
     expect([$width, $height])->toBe([UserAvatar::SIZE, UserAvatar::SIZE]);
 });
 
-it('refuses a bad phone, a taken staff number and a file that is not a photo', function () {
-    staffUser(Role::Cashier)->forceFill(['employee_number' => 'TMA-1'])->save();
-
+it('refuses a bad phone and a file that is not a photo', function () {
     $this->actingAs($this->admin)
         ->post(route('admin.users.store'), [
             'name' => 'Bad Input',
             'email' => 'bad@example.test',
             'roles' => ['cashier'],
             'phone' => '12',
-            'employee_number' => 'TMA-1',
             'avatar' => UploadedFile::fake()->create('cv.pdf', 10, 'application/pdf'),
         ])
-        ->assertSessionHasErrors(['phone', 'employee_number', 'avatar']);
+        ->assertSessionHasErrors(['phone', 'avatar']);
 
     expect(User::query()->where('email', 'bad@example.test')->exists())->toBeFalse();
 });
@@ -73,23 +65,22 @@ it('changes the details, replaces the photo and removes it, auditing each', func
         ->put(route('admin.users.update', $user), [
             'name' => $user->name,
             'branch_id' => null,
-            'job_title' => 'Reviewer',
             'locale' => 'en',
             'avatar' => UploadedFile::fake()->image('a.png', 300, 300),
         ])
         ->assertSessionHasNoErrors();
 
     $first = $user->refresh()->avatar_path;
-    expect($first)->not->toBeNull()->and($user->job_title)->toBe('Reviewer');
+    expect($first)->not->toBeNull()->and($user->locale)->toBe('en');
 
     $this->actingAs($this->admin)
-        ->put(route('admin.users.update', $user), ['name' => $user->name, 'branch_id' => null, 'job_title' => 'Reviewer', 'avatar' => UploadedFile::fake()->image('b.png', 300, 300)]);
+        ->put(route('admin.users.update', $user), ['name' => $user->name, 'branch_id' => null, 'avatar' => UploadedFile::fake()->image('b.png', 300, 300)]);
     $second = $user->refresh()->avatar_path;
     expect($second)->not->toBe($first);
     Storage::disk('local')->assertMissing($first);
 
     $this->actingAs($this->admin)
-        ->put(route('admin.users.update', $user), ['name' => $user->name, 'branch_id' => null, 'job_title' => 'Reviewer', 'remove_avatar' => true]);
+        ->put(route('admin.users.update', $user), ['name' => $user->name, 'branch_id' => null, 'remove_avatar' => true]);
     expect($user->refresh()->avatar_path)->toBeNull();
     Storage::disk('local')->assertMissing($second);
 

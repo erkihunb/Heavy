@@ -102,13 +102,7 @@ export default function Profile({
         national_id: profile.national_id ?? '',
         gender: profile.gender ?? '',
         phone: localPhone(profile.phone),
-        // Kept empty and never sent: a person does not set their own employment.
-        institution: '',
-        department: '',
-        job_title: '',
-        employee_number: '',
-        manager_id: '',
-        employment_status: '',
+        // Kept empty and never sent: a person does not set their own branch.
         branch_id: '',
         locale: profile.locale,
         timezone: profile.timezone ?? options.defaultTimezone,

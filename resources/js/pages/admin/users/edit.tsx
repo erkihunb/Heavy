@@ -18,7 +18,7 @@ import type { BranchScopeRow } from '@/shell/Components/Users/BranchScopesCard';
 import RolePicker from '@/shell/Components/Users/RolePicker';
 import type { PickableRole } from '@/shell/Components/Users/RolePicker';
 import {
-    EmploymentFields,
+    BranchField,
     IdentityFields,
     PreferenceFields,
     RecordList,
@@ -52,12 +52,6 @@ type EditableUser = UserRow & {
     phone: string | null;
     national_id: string | null;
     gender: string | null;
-    institution: string | null;
-    department: string | null;
-    job_title: string | null;
-    employee_number: string | null;
-    manager_id: number | null;
-    employment_status: string | null;
     locale: string;
     timezone: string | null;
     theme: string | null;
@@ -142,12 +136,6 @@ function EditUserPage({
         national_id: user.national_id ?? '',
         gender: user.gender ?? '',
         phone: localPhone(user.phone),
-        institution: user.institution ?? '',
-        department: user.department ?? '',
-        job_title: user.job_title ?? '',
-        employee_number: user.employee_number ?? '',
-        manager_id: user.manager_id === null ? '' : String(user.manager_id),
-        employment_status: user.employment_status ?? '',
         branch_id: user.branch_id === null ? '' : String(user.branch_id),
         locale: user.locale,
         timezone: user.timezone ?? options.defaultTimezone,
@@ -364,23 +352,14 @@ function EditUserPage({
                                         )}
                                     </FormField>
                                     <UsernameField {...section} />
+                                    <BranchField
+                                        {...section}
+                                        branches={branches}
+                                    />
                                 </div>
                             </Step>
                             <Step
                                 number={3}
-                                title={t('rbac.users.employmentSection')}
-                            >
-                                <EmploymentFields
-                                    {...section}
-                                    managers={options.managers}
-                                    employmentStatuses={
-                                        options.employmentStatuses
-                                    }
-                                    branches={branches}
-                                />
-                            </Step>
-                            <Step
-                                number={4}
                                 title={t('rbac.users.preferencesSection')}
                             >
                                 <PreferenceFields

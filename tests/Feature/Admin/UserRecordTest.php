@@ -14,8 +14,10 @@ use Spatie\Activitylog\Models\Activity;
 
 /*
  * The full staff record: the name in three parts, a username to sign in
- * with, where the person sits in the institution, preferences, permissions
- * given directly on top of roles, and what the system records by itself.
+ * with, preferences, permissions given directly on top of roles, and what
+ * the system records by itself. The employment details (institution,
+ * department, job title, staff number, manager, employment status) are no
+ * longer taken from the forms; what a record already holds is kept.
  */
 
 beforeEach(function () {
@@ -33,11 +35,6 @@ function fullRecord(array $overrides = []): array
         'email' => 'abebe.k@example.test',
         'username' => 'Abebe.K',
         'roles' => ['reviewer'],
-        'institution' => 'City Roads Authority',
-        'department' => 'Permit directorate',
-        'job_title' => 'Permit officer',
-        'employee_number' => 'CRA-100',
-        'employment_status' => 'permanent',
         'locale' => 'en',
         'timezone' => 'Africa/Addis_Ababa',
         'theme' => 'dark',
@@ -47,10 +44,8 @@ function fullRecord(array $overrides = []): array
 }
 
 it('opens an account with the whole record', function () {
-    $manager = staffUser(Role::Approver);
-
     $this->actingAs($this->admin)
-        ->post(route('admin.users.store'), fullRecord(['manager_id' => $manager->id]))
+        ->post(route('admin.users.store'), fullRecord())
         ->assertRedirect()
         ->assertSessionHasNoErrors();
 
@@ -59,10 +54,6 @@ it('opens an account with the whole record', function () {
     expect($user->name)->toBe('Abebe Kebede Tesfaye')
         ->and([$user->first_name, $user->middle_name, $user->last_name])->toBe(['Abebe', 'Kebede', 'Tesfaye'])
         ->and($user->username)->toBe('abebe.k')
-        ->and($user->institution)->toBe('City Roads Authority')
-        ->and($user->department)->toBe('Permit directorate')
-        ->and($user->manager_id)->toBe($manager->id)
-        ->and($user->employment_status)->toBe('permanent')
         ->and($user->timezone)->toBe('Africa/Addis_Ababa')
         ->and($user->theme)->toBe('dark')
         ->and($user->wantsEmailNotifications())->toBeFalse()
@@ -78,31 +69,60 @@ it('still takes the whole name alone and splits it into its parts', function () 
     expect([$user->first_name, $user->middle_name, $user->last_name])->toBe(['Sara', 'Bekele', 'Haile']);
 });
 
-it('checks the record: father\'s name, username, manager, status, zone and theme', function () {
+it('checks the record: father\'s name, username, zone and theme', function () {
     staffUser(Role::Cashier)->forceFill(['username' => 'taken'])->save();
 
     $this->actingAs($this->admin)
         ->post(route('admin.users.store'), fullRecord([
             'middle_name' => '',
             'username' => 'taken',
-            'manager_id' => 999999,
-            'employment_status' => 'retired',
             'timezone' => 'Mars/Olympus',
             'theme' => 'neon',
         ]))
-        ->assertSessionHasErrors(['middle_name', 'username', 'manager_id', 'employment_status', 'timezone', 'theme']);
+        ->assertSessionHasErrors(['middle_name', 'username', 'timezone', 'theme']);
 
     $this->actingAs($this->admin)
         ->post(route('admin.users.store'), fullRecord(['username' => '9lives']))
         ->assertSessionHasErrors('username');
 });
 
-it('never lets a person report to themself', function () {
+it('ignores employment details sent with a new account', function () {
+    $this->actingAs($this->admin)
+        ->post(route('admin.users.store'), fullRecord([
+            'institution' => 'City Roads Authority',
+            'department' => 'Permit directorate',
+            'job_title' => 'Permit officer',
+            'employee_number' => 'CRA-100',
+            'manager_id' => 999999,
+            'employment_status' => 'retired',
+        ]))
+        ->assertSessionHasNoErrors();
+
+    $user = User::query()->where('email', 'abebe.k@example.test')->firstOrFail();
+    expect([$user->institution, $user->department, $user->job_title, $user->employee_number, $user->manager_id, $user->employment_status])
+        ->toBe([null, null, null, null, null, null]);
+});
+
+it('keeps the employment details a record already holds when it is edited', function () {
+    $manager = staffUser(Role::Approver);
     $user = staffUser(Role::Reviewer);
+    $user->forceFill([
+        'institution' => 'City Roads Authority',
+        'department' => 'Permit directorate',
+        'job_title' => 'Permit officer',
+        'employee_number' => 'CRA-100',
+        'manager_id' => $manager->id,
+        'employment_status' => 'permanent',
+    ])->save();
 
     $this->actingAs($this->admin)
-        ->put(route('admin.users.update', $user), ['name' => $user->name, 'branch_id' => null, 'manager_id' => $user->id])
-        ->assertSessionHasErrors(['manager_id' => __('rbac.users.errors.manager_self')]);
+        ->put(route('admin.users.update', $user), ['name' => $user->name, 'branch_id' => null, 'locale' => 'en', 'job_title' => 'Changed', 'manager_id' => $user->id])
+        ->assertSessionHasNoErrors();
+
+    $user->refresh();
+    expect([$user->institution, $user->department, $user->job_title, $user->employee_number, $user->manager_id, $user->employment_status])
+        ->toBe(['City Roads Authority', 'Permit directorate', 'Permit officer', 'CRA-100', $manager->id, 'permanent'])
+        ->and($user->locale)->toBe('en');
 });
 
 it('signs in with the username as well as the e-mail, and notes the sign-in', function () {
@@ -188,10 +208,10 @@ it('shows the record and the form choices on the edit page', function () {
             ->where('user.record.last_login_ip', '10.0.0.7')
             ->where('user.record.two_factor', true)
             ->has('user.record.email_verified_at')
-            ->has('managers')
             ->has('timezones')
             ->has('permissions')
-            ->where('employmentStatuses', ['permanent', 'contract', 'temporary', 'intern']));
+            ->missing('managers')
+            ->missing('employmentStatuses'));
 });
 
 it('keeps the name parts in step with the name wherever it is written', function () {

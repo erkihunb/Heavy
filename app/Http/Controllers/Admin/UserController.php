@@ -130,7 +130,7 @@ class UserController extends Controller
         Gate::authorize('view', $user);
 
         $viewer = $request->user();
-        $user->load(['roles:id,name,name_am,scope_type', 'branch', 'branchScopes.branch', 'deactivatedBy:id,name', 'creator:id,name', 'manager:id,name']);
+        $user->load(['roles:id,name,name_am,scope_type', 'branch', 'branchScopes.branch', 'deactivatedBy:id,name', 'creator:id,name']);
         $zone = (string) config('localization.display_timezone');
         $date = fn (?CarbonInterface $value): ?array => EthiopianCalendar::present($value?->setTimezone($zone), app()->getLocale());
         $can = [
@@ -154,12 +154,6 @@ class UserController extends Controller
                 'phone' => $user->phone,
                 'national_id' => $user->national_id,
                 'gender' => $user->gender,
-                'institution' => $user->institution,
-                'department' => $user->department,
-                'job_title' => $user->job_title,
-                'employee_number' => $user->employee_number,
-                'manager_id' => $user->manager_id,
-                'employment_status' => $user->employment_status,
                 'locale' => $user->locale,
                 'timezone' => $user->timezone,
                 'theme' => $user->theme,
@@ -347,17 +341,7 @@ class UserController extends Controller
             'locales' => $this->localeOptions(),
             'timezones' => self::TIMEZONES,
             'defaultTimezone' => (string) config('localization.display_timezone'),
-            'employmentStatuses' => UpdateUserRequest::EMPLOYMENT_STATUSES,
             'themes' => UpdateUserRequest::THEMES,
-            // Active staff the person may report to; never themself.
-            'managers' => User::query()
-                ->whereNull('deactivated_at')
-                ->whereHas('roles', fn (Builder $query) => $query->where('name', '!=', RoleEnum::Applicant->value))
-                ->when($target, fn (Builder $query) => $query->whereKeyNot($target->id))
-                ->orderBy('name')
-                ->get(['id', 'name', 'job_title'])
-                ->map(fn (User $user): array => ['id' => $user->id, 'name' => $user->name, 'job_title' => $user->job_title])
-                ->all(),
             // Given directly, on top of roles: what the viewer holds, and what the person already has.
             'permissions' => array_values(array_filter(
                 PermissionCatalog::entries(),

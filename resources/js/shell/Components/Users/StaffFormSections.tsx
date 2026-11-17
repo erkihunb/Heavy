@@ -23,20 +23,12 @@ export type BranchOption = {
     is_active: boolean;
 };
 
-export type ManagerOption = {
-    id: number;
-    name: string;
-    job_title: string | null;
-};
-
 /** What the create and edit forms choose from (UserController::formOptions()). */
 export type StaffFormOptions = {
     locales: LocaleOption[];
     timezones: string[];
     defaultTimezone: string;
-    employmentStatuses: string[];
     themes: string[];
-    managers: ManagerOption[];
 };
 
 /** The part of a staff record both forms edit. */
@@ -48,12 +40,6 @@ export type StaffFormData = {
     national_id: string;
     gender: string;
     phone: string;
-    institution: string;
-    department: string;
-    job_title: string;
-    employee_number: string;
-    manager_id: string;
-    employment_status: string;
     branch_id: string;
     locale: string;
     timezone: string;
@@ -227,134 +213,47 @@ export function UsernameField(props: SectionProps) {
     );
 }
 
-/** Institution, department, job title, staff number, manager, employment status and branch. */
-export function EmploymentFields({
-    managers,
-    employmentStatuses,
+/**
+ * The branch the person works at: it sets the branch scope a new account
+ * starts with and the branch their walk-in applications are filed under.
+ * Empty is the head office.
+ */
+export function BranchField({
     branches,
     ...props
-}: SectionProps & {
-    managers: ManagerOption[];
-    employmentStatuses: string[];
-    branches: BranchOption[];
-}) {
+}: SectionProps & { branches: BranchOption[] }) {
     const { t } = useLocale();
     const { data, setData, errors, disabled } = props;
 
     return (
-        <div className="grid gap-4 @md:grid-cols-2">
-            <TextField
-                {...props}
-                name="institution"
-                label={t('rbac.users.fields.institution')}
-                placeholder={t('rbac.users.institutionPlaceholder')}
-                maxLength={160}
-            />
-            <TextField
-                {...props}
-                name="department"
-                label={t('rbac.users.fields.department')}
-                placeholder={t('rbac.users.departmentPlaceholder')}
-                maxLength={160}
-            />
-            <TextField
-                {...props}
-                name="job_title"
-                label={t('rbac.users.fields.jobTitle')}
-                placeholder={t('rbac.users.jobTitlePlaceholder')}
-                maxLength={120}
-            />
-            <TextField
-                {...props}
-                name="employee_number"
-                label={t('rbac.users.fields.employeeNumber')}
-                description={t('rbac.users.employeeNumberHelp')}
-                maxLength={40}
-            />
-            <FormField
-                label={t('rbac.users.fields.manager')}
-                error={errors.manager_id}
-            >
-                {({ id, describedBy, invalid }) => (
-                    <Select
-                        id={id}
-                        aria-describedby={describedBy}
-                        aria-invalid={invalid}
-                        disabled={disabled}
-                        value={data.manager_id}
-                        onChange={(event) =>
-                            setData('manager_id', event.target.value)
-                        }
-                    >
-                        <option value="">{t('rbac.users.managerNone')}</option>
-                        {managers.map((manager) => (
-                            <option key={manager.id} value={String(manager.id)}>
-                                {manager.job_title
-                                    ? `${manager.name} · ${manager.job_title}`
-                                    : manager.name}
-                            </option>
-                        ))}
-                    </Select>
-                )}
-            </FormField>
-            <FormField
-                label={t('rbac.users.fields.employmentStatus')}
-                error={errors.employment_status}
-            >
-                {({ id, describedBy, invalid }) => (
-                    <Select
-                        id={id}
-                        aria-describedby={describedBy}
-                        aria-invalid={invalid}
-                        disabled={disabled}
-                        value={data.employment_status}
-                        onChange={(event) =>
-                            setData('employment_status', event.target.value)
-                        }
-                    >
-                        <option value="">
-                            {t('rbac.users.employmentStatusPlaceholder')}
+        <FormField
+            label={t('rbac.users.worksAt')}
+            error={errors.branch_id}
+            description={t('rbac.users.worksAtHelp')}
+        >
+            {({ id, describedBy, invalid }) => (
+                <Select
+                    id={id}
+                    aria-describedby={describedBy}
+                    aria-invalid={invalid}
+                    disabled={disabled}
+                    value={data.branch_id}
+                    onChange={(event) =>
+                        setData('branch_id', event.target.value)
+                    }
+                >
+                    <option value="">{t('rbac.scopes.headOffice')}</option>
+                    {branches.map((branch) => (
+                        <option key={branch.id} value={String(branch.id)}>
+                            {branch.code} · {branch.name}
+                            {branch.is_active
+                                ? ''
+                                : ` (${t('admin.users.branch_closed')})`}
                         </option>
-                        {employmentStatuses.map((status) => (
-                            <option key={status} value={status}>
-                                {t(
-                                    `rbac.users.employmentStatuses.${status}` as TranslationKey,
-                                )}
-                            </option>
-                        ))}
-                    </Select>
-                )}
-            </FormField>
-            <FormField
-                label={t('rbac.users.worksAt')}
-                error={errors.branch_id}
-                description={t('rbac.users.worksAtHelp')}
-                className="sm:col-span-2"
-            >
-                {({ id, describedBy, invalid }) => (
-                    <Select
-                        id={id}
-                        aria-describedby={describedBy}
-                        aria-invalid={invalid}
-                        disabled={disabled}
-                        value={data.branch_id}
-                        onChange={(event) =>
-                            setData('branch_id', event.target.value)
-                        }
-                    >
-                        <option value="">{t('rbac.scopes.headOffice')}</option>
-                        {branches.map((branch) => (
-                            <option key={branch.id} value={String(branch.id)}>
-                                {branch.code} · {branch.name}
-                                {branch.is_active
-                                    ? ''
-                                    : ` (${t('admin.users.branch_closed')})`}
-                            </option>
-                        ))}
-                    </Select>
-                )}
-            </FormField>
-        </div>
+                    ))}
+                </Select>
+            )}
+        </FormField>
     );
 }
 

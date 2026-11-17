@@ -13,15 +13,15 @@ use Illuminate\Validation\Rule;
 
 /**
  * The staff record an Admin keeps besides the e-mail and roles: the name in
- * its three parts, username, national ID, gender, phone and photo; where the
- * person sits in the institution; their preferences; and permissions given
- * to them directly, on top of their roles.
+ * its three parts, username, national ID, gender, phone and photo; their
+ * preferences; and permissions given to them directly, on top of their roles.
+ * The employment columns (institution, department, job title, employee
+ * number, manager, employment status) are no longer taken from any form;
+ * what they already hold is kept.
  */
 trait ValidatesStaffProfile
 {
     public const array GENDERS = ['male', 'female'];
-
-    public const array EMPLOYMENT_STATUSES = ['permanent', 'contract', 'temporary', 'intern'];
 
     public const array THEMES = ['system', 'light', 'dark'];
 
@@ -61,16 +61,6 @@ trait ValidatesStaffProfile
                     $fail(__('organization.errors.phone_invalid'));
                 }
             }],
-            'institution' => ['nullable', 'string', 'max:160'],
-            'department' => ['nullable', 'string', 'max:160'],
-            'job_title' => ['nullable', 'string', 'max:120'],
-            'employee_number' => ['nullable', 'string', 'max:40', 'regex:/^[A-Za-z0-9\/\-\.]+$/', Rule::unique(User::class, 'employee_number')->ignore($ignore?->id)],
-            'manager_id' => ['nullable', 'integer', Rule::exists(User::class, 'id')->whereNull('deactivated_at'), function (string $attribute, mixed $value, Closure $fail) use ($ignore): void {
-                if ($ignore !== null && (int) $value === $ignore->id) {
-                    $fail(__('rbac.users.errors.manager_self'));
-                }
-            }],
-            'employment_status' => ['nullable', 'string', Rule::in(self::EMPLOYMENT_STATUSES)],
             'locale' => ['nullable', 'string', Rule::in(array_keys((array) config('localization.supported')))],
             'timezone' => ['nullable', 'string', 'timezone:all'],
             'theme' => ['nullable', 'string', Rule::in(self::THEMES)],
@@ -139,12 +129,6 @@ trait ValidatesStaffProfile
             'national_id' => self::nationalIdDigits($this->input('national_id')),
             'gender' => $text('gender'),
             'phone' => $phone === null ? null : EthiopianPhone::normalize($phone),
-            'institution' => $text('institution'),
-            'department' => $text('department'),
-            'job_title' => $text('job_title'),
-            'employee_number' => $text('employee_number'),
-            'manager_id' => $this->filled('manager_id') ? $this->integer('manager_id') : null,
-            'employment_status' => $text('employment_status'),
             'timezone' => $text('timezone'),
             'theme' => $text('theme'),
         ];
@@ -195,12 +179,6 @@ trait ValidatesStaffProfile
             'national_id' => __('rbac.users.fields.nationalId'),
             'gender' => __('rbac.users.fields.gender'),
             'phone' => __('rbac.users.fields.phone'),
-            'institution' => __('rbac.users.fields.institution'),
-            'department' => __('rbac.users.fields.department'),
-            'job_title' => __('rbac.users.fields.jobTitle'),
-            'employee_number' => __('rbac.users.fields.employeeNumber'),
-            'manager_id' => __('rbac.users.fields.manager'),
-            'employment_status' => __('rbac.users.fields.employmentStatus'),
             'locale' => __('rbac.users.fields.locale'),
             'timezone' => __('rbac.users.fields.timezone'),
             'theme' => __('rbac.users.fields.theme'),
