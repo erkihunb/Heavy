@@ -36,7 +36,7 @@ function onePageForm(array $overrides = []): array
     $today = ValidityRules::today();
     $type = VehicleType::query()->value('id');
 
-    return [
+    return withFeeRate([
         'contact_name' => 'Abebe Kebede',
         'contact_email' => 'abebe@example.test',
         'locale' => 'am',
@@ -55,11 +55,10 @@ function onePageForm(array $overrides = []): array
         ],
         'permit_type' => 'full_day',
         'valid_from' => $today->addDays(3)->toDateString(),
-        'valid_to' => $today->addDays(12)->toDateString(),
         'reason' => 'የግንባታ ዕቃ ማጓጓዝ',
         ...letterFields(),
         ...$overrides,
-    ];
+    ]);
 }
 
 it('offers the vehicle types, plate regions and limits', function () {

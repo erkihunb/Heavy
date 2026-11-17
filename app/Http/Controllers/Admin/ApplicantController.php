@@ -11,10 +11,10 @@ use App\Enums\PermitType;
 use App\Enums\PlateRegion;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\RegisterApplicantRequest;
+use App\Http\Resources\FeeRateResource;
 use App\Http\Resources\VehicleTypeResource;
 use App\Models\User;
 use App\Models\VehicleType;
-use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -105,29 +105,31 @@ class ApplicantController extends Controller
     }
 
     /**
-     * What the request on the one-page form would cost by today's schedule,
-     * from the type of its vehicle; the amount on the receipt must match it.
+     * The fee rates the request on the one-page form can be registered at,
+     * by today's schedule, for its permit type and its vehicle's type: the
+     * clerk picks one, and the permit runs for its days. With the start date
+     * on the form, each rate tells the day the permit would end.
      */
-    public function feeEstimate(Request $request, FeeCalculator $fees): JsonResponse
+    public function feeRates(Request $request, FeeCalculator $fees): JsonResponse
     {
         Gate::authorize('registerApplicant', User::class);
 
         $validated = $request->validate([
             'permit_type' => ['required', Rule::enum(PermitType::class)],
             'vehicle_type_id' => ['required', 'integer', Rule::exists(VehicleType::class, 'id')],
-            'valid_from' => ['bail', 'required', 'date_format:Y-m-d'],
-            'valid_to' => ['bail', 'required', 'date_format:Y-m-d', 'after_or_equal:valid_from'],
+            'valid_from' => ['nullable', 'date_format:Y-m-d'],
         ]);
 
-        $from = CarbonImmutable::createFromFormat('!Y-m-d', $validated['valid_from'], 'UTC');
-        $to = CarbonImmutable::createFromFormat('!Y-m-d', $validated['valid_to'], 'UTC');
-        $days = (int) $from->diffInDays($to) + 1;
-        $amount = $fees->amountFor(PermitType::from($validated['permit_type']), (int) $validated['vehicle_type_id'], $days, ValidityRules::today());
+        $rates = $fees->rates(PermitType::from($validated['permit_type']), (int) $validated['vehicle_type_id'], ValidityRules::today());
 
         return response()->json([
-            'days' => $days,
-            'fee' => $amount === null ? null : Money::present($amount),
+            'rates' => FeeRateResource::list($rates, $this->startDate($validated['valid_from'] ?? null), $request),
         ]);
+    }
+
+    private function startDate(?string $date): ?CarbonImmutable
+    {
+        return $date === null ? null : CarbonImmutable::createFromFormat('!Y-m-d', $date, 'UTC');
     }
 
     public function store(RegisterApplicantRequest $request, RegisterWalkInApplication $register): RedirectResponse

@@ -8,10 +8,11 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * What the application form sends to ask what a permit would cost today,
- * for the applicant a request at the office was filed for.
+ * What the application form sends to ask which fee rates a permit can be
+ * registered at today, for the applicant a request at the office was filed
+ * for: the permit type and the primary vehicle, one of the organization's.
  */
-class FeeEstimateForApplicantRequest extends FormRequest
+class FeeRatesForApplicantRequest extends FormRequest
 {
     use ActsForApplicant;
 
@@ -29,8 +30,7 @@ class FeeEstimateForApplicantRequest extends FormRequest
             'permit_type' => ['required', Rule::enum(PermitType::class)],
             'primary_vehicle_id' => ['bail', 'required', 'string', Rule::exists(Vehicle::class, 'id')
                 ->where('organization_id', $this->organizationId() ?? 0)],
-            'valid_from' => ['bail', 'required', 'date_format:Y-m-d'],
-            'valid_to' => ['bail', 'required', 'date_format:Y-m-d', 'after_or_equal:valid_from'],
+            'valid_from' => ['nullable', 'date_format:Y-m-d'],
         ];
     }
 }

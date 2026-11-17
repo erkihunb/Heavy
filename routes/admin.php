@@ -84,10 +84,10 @@ Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
     ->controller(ApplicantController::class)
     ->group(function () {
         Route::get('permit-register/create', 'create')->name('permits.create');
-        // The fee of the request on the form, by vehicle type, before anything is saved.
-        Route::get('permit-register/intake-fee', 'feeEstimate')
+        // The fee rates the request on the form can be registered at, by permit and vehicle type.
+        Route::get('permit-register/intake-rates', 'feeRates')
             ->middleware('throttle:60,1')
-            ->name('permits.intake-fee');
+            ->name('permits.intake-rates');
         // An organization already on record, for a new request of theirs.
         Route::get('permit-register/organizations', 'organizations')
             ->middleware('throttle:60,1')
@@ -120,9 +120,9 @@ Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
             ->name('payments.store');
         Route::get('vehicles/create', 'createVehicle')->name('vehicles.create');
         Route::post('vehicles', 'storeVehicle')->name('vehicles.store');
-        Route::get('fee-estimate', 'feeEstimate')
+        Route::get('fee-rates', 'feeRates')
             ->middleware('throttle:60,1')
-            ->name('fee-estimate');
+            ->name('fee-rates');
     });
 
 // Vehicle types (spec §11).

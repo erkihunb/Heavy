@@ -37,8 +37,9 @@ export type IntakeFormData = {
     reason: string;
     /** Where the vehicles may travel; empty when the permit does not limit it. */
     route: string;
+    /** The fee rate (schedule line) chosen; the permit runs for its days from valid_from. */
+    fee_schedule_id: string;
     valid_from: string;
-    valid_to: string;
     any_time: boolean;
     move_from: string;
     move_to: string;
@@ -71,8 +72,8 @@ export const STEP_FIELDS: Record<StepKey, (field: string) => boolean> = {
     permit: (field) =>
         [
             'permit_type',
+            'fee_schedule_id',
             'valid_from',
-            'valid_to',
             'reason',
             'route',
             'any_time',

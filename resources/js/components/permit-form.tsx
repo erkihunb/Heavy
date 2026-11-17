@@ -2,7 +2,11 @@ import { Link } from '@inertiajs/react';
 import type { InertiaFormProps } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
 import { EthiopianDateInput } from '@/components/ethiopian-date-input';
-import { FeeEstimate } from '@/components/fee-estimate';
+import {
+    FeeRateField,
+    PermitEndDate,
+    useFeeRates,
+} from '@/components/fee-rates';
 import { FormField, RequiredMark } from '@/components/form-field';
 import { FormActions } from '@/components/form-layout';
 import InputError from '@/components/input-error';
@@ -21,9 +25,10 @@ export type PermitFormData = {
     permit_type: PermitType | '';
     primary_vehicle_id: string;
     trailer_vehicle_ids: string[];
-    /** Gregorian ISO dates; the date picker converts from the Ethiopian calendar. */
+    /** The fee rate (schedule line) chosen; the permit runs for its days from valid_from. */
+    fee_schedule_id: string;
+    /** Gregorian ISO date; the date picker converts from the Ethiopian calendar. */
     valid_from: string;
-    valid_to: string;
     reason: string;
     /** Where the vehicles may travel; empty when the permit does not limit it. */
     route: string;
@@ -88,7 +93,7 @@ export function PermitForm({
     vehicles,
     limits,
     cancelHref,
-    estimateUrl,
+    ratesUrl,
     branches = [],
     letter,
     addVehicleHref,
@@ -98,8 +103,8 @@ export function PermitForm({
     vehicles: Vehicle[];
     limits: PermitLimits;
     cancelHref: string;
-    /** The fee estimate address for the applicant the form is filled for. */
-    estimateUrl: string;
+    /** Where the fee rates for the applicant the form is filled for are asked. */
+    ratesUrl: string;
     /** The branches an applicant may apply to; none hides the choice. */
     branches?: { id: number; code: string; name: string }[];
     /** Ask for the request letter (a Registrar at the office); `hasStoredScan` on an edit. */
@@ -110,6 +115,18 @@ export function PermitForm({
     const { t } = useTranslation();
     // Errors for array items arrive under keys such as "trailer_vehicle_ids.0".
     const errors = form.errors as Partial<Record<string, string>>;
+
+    // The rates offered for the permit type and the primary vehicle's type.
+    const rates = useFeeRates(
+        form.data.permit_type !== '' && form.data.primary_vehicle_id !== ''
+            ? ratesUrl
+            : null,
+        {
+            permit_type: form.data.permit_type,
+            primary_vehicle_id: form.data.primary_vehicle_id,
+        },
+        form.data.valid_from,
+    );
 
     const vehicleLabel = (vehicle: Vehicle) =>
         `${vehicle.plate} · ${vehicle.vehicle_type.name}`;
@@ -299,11 +316,15 @@ export function PermitForm({
                 id="section-dates"
                 step={3}
                 title={t('permits.form.sections.dates.title')}
-                hint={t('permits.form.sections.dates.hint', {
-                    max: limits.max_duration_days,
-                })}
+                hint={t('permits.form.sections.dates.hint')}
             >
-                <div className="grid gap-6 md:grid-cols-2">
+                <FeeRateField
+                    rates={rates}
+                    value={form.data.fee_schedule_id}
+                    error={errors.fee_schedule_id}
+                    onChange={(id) => form.setData('fee_schedule_id', id)}
+                />
+                <div className="grid items-start gap-6 md:grid-cols-2">
                     <EthiopianDateInput
                         id="valid_from"
                         required
@@ -312,22 +333,13 @@ export function PermitForm({
                         error={errors.valid_from}
                         onChange={(iso) => form.setData('valid_from', iso)}
                     />
-                    <EthiopianDateInput
-                        id="valid_to"
-                        required
+                    <PermitEndDate
                         label={t('permits.fields.valid_to')}
-                        value={form.data.valid_to}
-                        error={errors.valid_to}
-                        onChange={(iso) => form.setData('valid_to', iso)}
+                        rates={rates}
+                        value={form.data.fee_schedule_id}
+                        validFrom={form.data.valid_from}
                     />
                 </div>
-                <FeeEstimate
-                    permitType={form.data.permit_type}
-                    primaryVehicleId={form.data.primary_vehicle_id}
-                    validFrom={form.data.valid_from}
-                    validTo={form.data.valid_to}
-                    url={estimateUrl}
-                />
             </Section>
 
             <Section

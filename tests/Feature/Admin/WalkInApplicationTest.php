@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Permits\ValidityRules;
 use App\Enums\PermitStatus;
 use App\Enums\Role;
 use App\Models\Payment;
@@ -134,20 +135,33 @@ it('offers only the organization\'s own vehicles', function () {
         ->assertSessionHasErrors('primary_vehicle_id');
 });
 
-it('estimates the fee for the organization\'s vehicle', function () {
+it('lists the fee rates for the organization\'s vehicle', function () {
     $permit = officeRequest($this->applicant);
     $vehicle = Vehicle::factory()->for($this->applicant->organization)->create();
+    $from = ValidityRules::today()->addDays(2);
+    $max = ValidityRules::maxDurationDays();
 
     $this->actingAs($this->registrar)
-        ->getJson(route('admin.permits.fee-estimate', [
+        ->getJson(route('admin.permits.fee-rates', [
             'permit' => $permit->id,
             'permit_type' => 'full_day',
             'primary_vehicle_id' => $vehicle->id,
-            'valid_from' => now()->addDays(2)->toDateString(),
-            'valid_to' => now()->addDays(4)->toDateString(),
+            'valid_from' => $from->toDateString(),
         ]))
         ->assertOk()
-        ->assertJsonPath('days', 3);
+        ->assertJsonCount(1, 'rates')
+        ->assertJsonPath('rates.0.days', $max)
+        ->assertJsonPath('rates.0.valid_to.gregorian', $from->addDays($max - 1)->toDateString());
+
+    // Another organization's vehicle is not looked at.
+    $this->actingAs($this->registrar)
+        ->getJson(route('admin.permits.fee-rates', [
+            'permit' => $permit->id,
+            'permit_type' => 'full_day',
+            'primary_vehicle_id' => Vehicle::factory()->create()->id,
+        ]))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('primary_vehicle_id');
 });
 
 it('hands in the payment receipt of an approved request', function () {

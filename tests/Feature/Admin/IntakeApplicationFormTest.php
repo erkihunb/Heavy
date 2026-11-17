@@ -43,7 +43,7 @@ function intakeForm(array $overrides = []): array
     $today = ValidityRules::today();
     $letter = letterFields();
 
-    return [
+    return withFeeRate([
         'contact_email' => 'abebe@example.test',
         'contact_name' => 'Abebe Kebede',
         'phone' => '0911223344',
@@ -59,10 +59,9 @@ function intakeForm(array $overrides = []): array
         'permit_type' => 'full_day',
         'reason' => 'የግንባታ ዕቃ ማጓጓዝ',
         'valid_from' => $today->addDays(3)->toDateString(),
-        'valid_to' => $today->addDays(12)->toDateString(),
         ...$letter,
         ...$overrides,
-    ];
+    ]);
 }
 
 it('records the request without a payment, even when receipt details are sent', function () {
@@ -141,20 +140,38 @@ it('uses the applicant e-mail and no address for the organization', function () 
         ->and($organization->address)->toBe('');
 });
 
-it('tells the desk the fee by the vehicle type', function () {
-    $today = ValidityRules::today();
+it('tells the desk the fee rates by the vehicle type, with the day each would end', function () {
+    $from = ValidityRules::today()->addDays(3);
+    $max = ValidityRules::maxDurationDays();
 
     $this->actingAs($this->registrar)
-        ->getJson(route('admin.permits.intake-fee', [
+        ->getJson(route('admin.permits.intake-rates', [
             'permit_type' => 'full_day',
             'vehicle_type_id' => $this->type->id,
-            'valid_from' => $today->addDays(3)->toDateString(),
-            'valid_to' => $today->addDays(12)->toDateString(),
+            'valid_from' => $from->toDateString(),
         ]))
         ->assertOk()
-        ->assertJsonPath('days', 10)
-        ->assertJsonPath('fee.amount_cents', 150_000);
+        ->assertJsonCount(1, 'rates')
+        ->assertJsonPath('rates.0.id', feeRateId('full_day', $this->type->id))
+        // The factory's line covers 1–3650 days: a permit at it runs as long as a permit may.
+        ->assertJsonPath('rates.0.days', $max)
+        ->assertJsonPath('rates.0.min_days', 1)
+        ->assertJsonPath('rates.0.max_days', 3650)
+        ->assertJsonPath('rates.0.fee.amount_cents', 150_000)
+        ->assertJsonPath('rates.0.fee.formatted', 'ETB 1,500.00')
+        ->assertJsonPath('rates.0.valid_to.gregorian', $from->addDays($max - 1)->toDateString());
+
+    // Without a start date there is no end date yet.
+    $this->actingAs($this->registrar)
+        ->getJson(route('admin.permits.intake-rates', ['permit_type' => 'full_day', 'vehicle_type_id' => $this->type->id]))
+        ->assertOk()
+        ->assertJsonPath('rates.0.valid_to', null);
+
+    $this->actingAs($this->registrar)
+        ->getJson(route('admin.permits.intake-rates', ['permit_type' => 'full_day']))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('vehicle_type_id');
 
     assertSignedOut($this->actingAs(applicantWithOrganization())
-        ->getJson(route('admin.permits.intake-fee', ['permit_type' => 'full_day'])));
+        ->getJson(route('admin.permits.intake-rates', ['permit_type' => 'full_day'])));
 });

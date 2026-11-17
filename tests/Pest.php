@@ -2,6 +2,7 @@
 
 use App\Actions\Users\GiveDefaultBranchScope;
 use App\Data\PermitData;
+use App\Domain\Permits\FeeCalculator;
 use App\Domain\Permits\ValidityRules;
 use App\Domain\Settings\SettingsRegistry;
 use App\Domain\Settings\SystemSettings;
@@ -112,17 +113,41 @@ function permitPayload(User $applicant, array $overrides = []): array
 {
     $today = ValidityRules::today();
 
-    return [
+    $payload = [
         'permit_type' => PermitType::FullDay->value,
         'primary_vehicle_id' => array_key_exists('primary_vehicle_id', $overrides)
             ? $overrides['primary_vehicle_id']
             : Vehicle::factory()->create(['organization_id' => $applicant->organization_id])->id,
         'trailer_vehicle_ids' => [],
         'valid_from' => $today->addDays(3)->toDateString(),
-        'valid_to' => $today->addDays(12)->toDateString(),
         'reason' => 'የግንባታ ዕቃ ማጓጓዝ',
         ...$overrides,
     ];
+
+    // The shortest rate offered for the permit type and the primary vehicle, unless one is given.
+    return [
+        'fee_schedule_id' => feeRateId($payload['permit_type'], Vehicle::query()->find($payload['primary_vehicle_id'])?->vehicle_type_id),
+        ...$payload,
+    ];
+}
+
+/**
+ * A fee rate offered today for the permit type and vehicle type (the first
+ * one lasting $days, or the shortest), as the forms send it; null when the
+ * schedule offers none. With withFeeSchedule() the only rate is the longest
+ * permit allowed (permits.max_duration_days).
+ */
+function feeRateId(PermitType|string|null $type = PermitType::FullDay, ?int $vehicleTypeId = null, ?int $days = null): ?int
+{
+    $type = is_string($type) ? PermitType::tryFrom($type) : $type;
+
+    if ($type === null) {
+        return null;
+    }
+
+    $rates = collect(app(FeeCalculator::class)->rates($type, $vehicleTypeId, ValidityRules::today()));
+
+    return ($days === null ? $rates->first() : $rates->firstWhere('days', $days))['id'] ?? null;
 }
 
 /**
@@ -136,17 +161,36 @@ function requestFor(User $applicant, array $overrides = []): array
 {
     $today = ValidityRules::today();
 
-    return [
+    $form = [
         'applicant_id' => $applicant->id,
         'apply' => true,
         'submit' => false,
         'vehicles' => [['plate' => 'ኢት-03-40134', 'vehicle_type_id' => VehicleType::factory()->create()->id, 'owner_name' => 'አበበ ከበደ']],
         'permit_type' => PermitType::FullDay->value,
         'valid_from' => $today->addDays(3)->toDateString(),
-        'valid_to' => $today->addDays(12)->toDateString(),
         'reason' => 'የግንባታ ዕቃ ማጓጓዝ',
         ...letterFields(),
         ...$overrides,
+    ];
+
+    return withFeeRate($form);
+}
+
+/**
+ * The one-page form with the shortest fee rate offered for its permit type
+ * and primary vehicle's type, unless it names one.
+ *
+ * @param  array<string, mixed>  $form
+ * @return array<string, mixed>
+ */
+function withFeeRate(array $form): array
+{
+    return [
+        'fee_schedule_id' => feeRateId(
+            is_string($form['permit_type'] ?? null) ? $form['permit_type'] : null,
+            isset($form['vehicles'][0]['vehicle_type_id']) && is_numeric($form['vehicles'][0]['vehicle_type_id']) ? (int) $form['vehicles'][0]['vehicle_type_id'] : null,
+        ),
+        ...$form,
     ];
 }
 

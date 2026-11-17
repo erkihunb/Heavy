@@ -12,11 +12,13 @@ use App\Enums\PaymentMethod;
 use App\Enums\Permission;
 use App\Enums\PermitType;
 use App\Enums\PlateRegion;
+use App\Enums\VehicleRole;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Registrar\FeeEstimateForApplicantRequest;
+use App\Http\Requests\Registrar\FeeRatesForApplicantRequest;
 use App\Http\Requests\Registrar\StorePaymentForApplicantRequest;
 use App\Http\Requests\Registrar\StoreVehicleForApplicantRequest;
 use App\Http\Requests\Registrar\UpdatePermitForApplicantRequest;
+use App\Http\Resources\FeeRateResource;
 use App\Http\Resources\PermitResource;
 use App\Http\Resources\VehicleResource;
 use App\Http\Resources\VehicleTypeResource;
@@ -25,7 +27,6 @@ use App\Models\Permit;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
-use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -62,16 +63,19 @@ class WalkInController extends Controller
         ]);
     }
 
-    public function edit(Permit $permit): Response
+    public function edit(Permit $permit, FeeCalculator $fees): Response
     {
         $applicant = $this->applicant($permit);
         Gate::authorize('updateFor', [$permit, $applicant]);
 
+        $permit->load(['vehicles.vehicleType', 'organization', 'branch', 'transitions']);
+
         return Inertia::render('admin/permits/edit', [
             'applicant' => $this->summary($applicant),
-            'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'branch', 'transitions'])),
+            'permit' => PermitResource::make($permit),
             'vehicles' => $this->vehicles($this->organization($applicant)),
             'limits' => $this->limits(),
+            'feeScheduleId' => $this->currentRate($permit, $fees),
         ]);
     }
 
@@ -145,25 +149,46 @@ class WalkInController extends Controller
         return to_route('admin.permits.edit', $permit)->with('success', __('vehicles.registered_message'));
     }
 
-    public function feeEstimate(FeeEstimateForApplicantRequest $request, Permit $permit, FeeCalculator $fees): JsonResponse
+    /**
+     * The fee rates the request can be registered at by today's schedule,
+     * for the permit type and the primary vehicle on the form; with the start
+     * date, each tells the day the permit would end.
+     */
+    public function feeRates(FeeRatesForApplicantRequest $request, Permit $permit, FeeCalculator $fees): JsonResponse
     {
         $this->organization($this->applicant($permit));
 
-        /** @var array{permit_type: string, primary_vehicle_id: string, valid_from: string, valid_to: string} $validated */
+        /** @var array{permit_type: string, primary_vehicle_id: string, valid_from?: string|null} $validated */
         $validated = $request->validated();
-
-        // What the permit would cost by today's schedule; the fee owed is fixed at approval.
         $vehicle = Vehicle::query()->findOrFail($validated['primary_vehicle_id']);
-        $from = CarbonImmutable::createFromFormat('!Y-m-d', $validated['valid_from'], 'UTC');
-        $to = CarbonImmutable::createFromFormat('!Y-m-d', $validated['valid_to'], 'UTC');
-        $days = (int) $from->diffInDays($to) + 1;
 
-        $amount = $fees->amountFor(PermitType::from($validated['permit_type']), $vehicle->vehicle_type_id, $days, ValidityRules::today());
+        $rates = $fees->rates(PermitType::from($validated['permit_type']), $vehicle->vehicle_type_id, ValidityRules::today());
 
         return response()->json([
-            'days' => $days,
-            'fee' => $amount === null ? null : Money::present($amount),
+            'rates' => FeeRateResource::list(
+                $rates,
+                isset($validated['valid_from']) ? CarbonImmutable::createFromFormat('!Y-m-d', $validated['valid_from'], 'UTC') : null,
+                $request,
+            ),
         ]);
+    }
+
+    /**
+     * The rate the draft is at, chosen beforehand on the form: the one offered
+     * today whose days are the draft's own, if there is one.
+     */
+    private function currentRate(Permit $permit, FeeCalculator $fees): ?int
+    {
+        $primary = $permit->vehicles->first(fn (Vehicle $vehicle): bool => $vehicle->roleOnPermit() === VehicleRole::Primary);
+        $days = $permit->durationDays();
+
+        foreach ($fees->rates($permit->permit_type, $primary?->vehicle_type_id, ValidityRules::today()) as $rate) {
+            if ($rate['days'] === $days) {
+                return $rate['id'];
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -3,9 +3,6 @@
 return [
     'title' => 'Payment',
     'fee' => 'Fee',
-    'fee_estimate' => 'Estimated fee',
-    'fee_estimate_hint' => 'By today\'s fee schedule. The fee you owe is fixed when the application is approved.',
-    'fee_unknown' => 'No fee is set for this combination yet.',
     'fee_days' => 'for :days days',
     'methods' => [
         'bank_deposit' => 'Bank deposit',

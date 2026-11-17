@@ -46,7 +46,7 @@ function letterRequest(VehicleType $type, array $overrides = []): array
 {
     $today = ValidityRules::today();
 
-    return [
+    return withFeeRate([
         'contact_name' => 'Abebe Kebede',
         'contact_email' => 'abebe@example.test',
         'locale' => 'am',
@@ -59,11 +59,10 @@ function letterRequest(VehicleType $type, array $overrides = []): array
         'vehicles' => [['plate' => 'ኢት-03-40134', 'vehicle_type_id' => $type->id, 'owner_name' => 'አበበ ከበደ']],
         'permit_type' => 'full_day',
         'valid_from' => $today->addDays(3)->toDateString(),
-        'valid_to' => $today->addDays(12)->toDateString(),
         'reason' => 'የግንባታ ዕቃ ማጓጓዝ',
         ...letterFields(),
         ...$overrides,
-    ];
+    ]);
 }
 
 /**

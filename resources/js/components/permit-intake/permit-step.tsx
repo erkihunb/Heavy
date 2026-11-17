@@ -1,4 +1,6 @@
 import { EthiopianDateInput } from '@/components/ethiopian-date-input';
+import { FeeRateField, PermitEndDate } from '@/components/fee-rates';
+import type { FeeRates } from '@/components/fee-rates';
 import { FormField } from '@/components/form-field';
 import InputError from '@/components/input-error';
 import { LetterFields } from '@/components/letter-fields';
@@ -9,23 +11,23 @@ import { Step } from '@/components/permit-intake/step';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/lib/i18n';
-import type { Money } from '@/types';
 import { PERMIT_TYPES } from '@/types/enums';
 
 /**
- * 3. The permit asked for: its type, dates, reason, route, movement hours
- * and the letter, with what it would cost by today's schedule.
+ * 3. The permit asked for: the letter, its type, reason and route, the fee
+ * rate and the start date — the end date follows from the rate and is only
+ * shown — and the movement hours.
  */
 export function PermitStep({
     form,
     state,
     maxDurationDays,
-    estimate,
+    rates,
 }: {
     form: IntakeForm;
     state: StepState;
     maxDurationDays: number;
-    estimate: { days: number; fee: Money | null } | null;
+    rates: FeeRates;
 }) {
     const { t } = useTranslation();
     const { data } = form;
@@ -137,7 +139,14 @@ export function PermitStep({
                     )}
                 </FormField>
 
-                <div className="grid gap-5 @2xl:grid-cols-2">
+                <FeeRateField
+                    rates={rates}
+                    value={data.fee_schedule_id}
+                    error={errors.fee_schedule_id}
+                    onChange={(id) => form.setData('fee_schedule_id', id)}
+                />
+
+                <div className="grid items-start gap-5 @2xl:grid-cols-2">
                     <EthiopianDateInput
                         id="valid_from"
                         label={t('applicants.intake.fields.valid_from')}
@@ -145,12 +154,11 @@ export function PermitStep({
                         error={errors.valid_from}
                         onChange={(iso) => form.setData('valid_from', iso)}
                     />
-                    <EthiopianDateInput
-                        id="valid_to"
+                    <PermitEndDate
                         label={t('applicants.intake.fields.valid_to')}
-                        value={data.valid_to}
-                        error={errors.valid_to}
-                        onChange={(iso) => form.setData('valid_to', iso)}
+                        rates={rates}
+                        value={data.fee_schedule_id}
+                        validFrom={data.valid_from}
                     />
                 </div>
 
@@ -174,41 +182,6 @@ export function PermitStep({
                         }
                     />
                 </div>
-                {estimate && (
-                    <div
-                        aria-live="polite"
-                        className="rounded-card border border-border bg-muted px-4 py-3"
-                    >
-                        <p className="text-eyebrow text-muted-foreground">
-                            {t('applicants.intake.fee')}
-                        </p>
-                        {estimate.fee ? (
-                            <p className="flex flex-wrap items-baseline gap-x-2">
-                                <span className="text-xl font-extrabold tabular-nums">
-                                    {estimate.fee.formatted}
-                                </span>
-                                <span className="text-sm text-muted-foreground">
-                                    {t('payments.fee_days', {
-                                        days: estimate.days,
-                                    })}
-                                </span>
-                            </p>
-                        ) : (
-                            // No fee in the schedule: the request cannot be registered
-                            // (RegisterApplicantRequest refuses it), so say so before saving.
-                            <p className="font-medium text-danger-strong">
-                                {t(
-                                    'permits.errors.fee_not_set_for_registration',
-                                )}
-                            </p>
-                        )}
-                        {estimate.fee && (
-                            <p className="mt-1 text-xs text-muted-foreground">
-                                {t('applicants.intake.fee_after_approval')}
-                            </p>
-                        )}
-                    </div>
-                )}
             </div>
         </Step>
     );

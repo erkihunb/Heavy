@@ -33,26 +33,67 @@ final class FeeCalculator
      */
     public function amountFor(PermitType $permitType, ?int $vehicleTypeId, int $days, DateTimeInterface $on): ?int
     {
-        $date = $on->format('Y-m-d');
-        $best = null;
+        return $this->bestLine($permitType, $vehicleTypeId, $days, $on)['amount_cents'] ?? null;
+    }
+
+    /**
+     * The rates a permit can be registered at (the office picks one, then the
+     * start date): each schedule line in force on the day for the permit type
+     * and the primary vehicle's type. A permit at a rate runs for the upper
+     * limit of the line's band, but never longer than a permit may run
+     * (ValidityRules::maxDurationDays()); a line that starts beyond that is
+     * not offered. A line is offered only when it is the one the calculator
+     * picks for its own number of days — so the fee charged at approval is
+     * the fee of the rate chosen. Shortest first.
+     *
+     * @param  int|null  $vehicleTypeId  the type of the primary vehicle
+     * @return list<array{id: int, min_days: int, max_days: int, days: int, amount_cents: int}>
+     */
+    public function rates(PermitType $permitType, ?int $vehicleTypeId, DateTimeInterface $on): array
+    {
+        $longest = ValidityRules::maxDurationDays();
+        $rates = [];
 
         foreach ($this->lines() as $line) {
-            if ($line['permit_type'] !== $permitType->value
-                || ($line['vehicle_type_id'] !== null && $line['vehicle_type_id'] !== $vehicleTypeId)
-                || $days < $line['min_days']
-                || $days > $line['max_days']
-                || $date < $line['effective_from']
-                || ($line['effective_to'] !== null && $date > $line['effective_to'])
-            ) {
+            if (! $this->applies($line, $permitType, $vehicleTypeId, $on) || $line['min_days'] > $longest) {
                 continue;
             }
 
-            if ($best === null || $this->rank($line) > $this->rank($best)) {
-                $best = $line;
+            $days = min($line['max_days'], $longest);
+
+            if (($this->bestLine($permitType, $vehicleTypeId, $days, $on)['id'] ?? null) !== $line['id']) {
+                continue;
+            }
+
+            $rates[] = [
+                'id' => $line['id'],
+                'min_days' => $line['min_days'],
+                'max_days' => $line['max_days'],
+                'days' => $days,
+                'amount_cents' => $line['amount_cents'],
+            ];
+        }
+
+        usort($rates, fn (array $a, array $b): int => [$a['days'], $a['id']] <=> [$b['days'], $b['id']]);
+
+        return $rates;
+    }
+
+    /**
+     * One of the rates() by its schedule line, or null when that line is not
+     * offered for the permit type and vehicle type on the day.
+     *
+     * @return array{id: int, min_days: int, max_days: int, days: int, amount_cents: int}|null
+     */
+    public function rate(PermitType $permitType, ?int $vehicleTypeId, int $feeScheduleId, DateTimeInterface $on): ?array
+    {
+        foreach ($this->rates($permitType, $vehicleTypeId, $on) as $rate) {
+            if ($rate['id'] === $feeScheduleId) {
+                return $rate;
             }
         }
 
-        return $best['amount_cents'] ?? null;
+        return null;
     }
 
     /**
@@ -99,6 +140,48 @@ final class FeeCalculator
                 'effective_to' => $line->effective_to?->toDateString(),
             ])
             ->all());
+    }
+
+    /**
+     * The schedule line that prices a permit of the type, vehicle type and
+     * number of days on the day, or null when none applies.
+     *
+     * @return array{id: int, permit_type: string, vehicle_type_id: int|null, min_days: int, max_days: int, amount_cents: int, effective_from: string, effective_to: string|null}|null
+     */
+    private function bestLine(PermitType $permitType, ?int $vehicleTypeId, int $days, DateTimeInterface $on): ?array
+    {
+        $best = null;
+
+        foreach ($this->lines() as $line) {
+            if (! $this->applies($line, $permitType, $vehicleTypeId, $on)
+                || $days < $line['min_days']
+                || $days > $line['max_days']
+            ) {
+                continue;
+            }
+
+            if ($best === null || $this->rank($line) > $this->rank($best)) {
+                $best = $line;
+            }
+        }
+
+        return $best;
+    }
+
+    /**
+     * Whether a line is for the permit type and the vehicle type (or every
+     * vehicle type) and is in force on the day, whatever the number of days.
+     *
+     * @param  array{permit_type: string, vehicle_type_id: int|null, effective_from: string, effective_to: string|null}  $line
+     */
+    private function applies(array $line, PermitType $permitType, ?int $vehicleTypeId, DateTimeInterface $on): bool
+    {
+        $date = $on->format('Y-m-d');
+
+        return $line['permit_type'] === $permitType->value
+            && ($line['vehicle_type_id'] === null || $line['vehicle_type_id'] === $vehicleTypeId)
+            && $date >= $line['effective_from']
+            && ($line['effective_to'] === null || $date <= $line['effective_to']);
     }
 
     /**

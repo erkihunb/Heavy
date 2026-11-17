@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { useFeeRates } from '@/components/fee-rates';
 import type { OrganizationMatch } from '@/components/organization-lookup';
 import { ApplicantStep } from '@/components/permit-intake/applicant-step';
 import { IntakeButtons } from '@/components/permit-intake/buttons';
@@ -18,11 +19,10 @@ import type {
 } from '@/components/permit-intake/form';
 import { PermitStep } from '@/components/permit-intake/permit-step';
 import { ProgressPanel } from '@/components/permit-intake/progress-panel';
-import { useFeeEstimate } from '@/components/permit-intake/use-fee-estimate';
 import { VehicleStep } from '@/components/permit-intake/vehicle-step';
 import FormPageLayout from '@/layouts/form-page-layout';
 import { useTranslation } from '@/lib/i18n';
-import { index, store } from '@/routes/admin/permits';
+import { index, intakeRates, store } from '@/routes/admin/permits';
 import type { PlateRegionOption, VehicleType } from '@/types';
 import type { TranslationKey } from '@/types/translations';
 
@@ -73,8 +73,8 @@ export default function ApplicantsCreate({
         permit_type: '',
         reason: '',
         route: '',
+        fee_schedule_id: '',
         valid_from: '',
-        valid_to: '',
         any_time: true,
         move_from: '',
         move_to: '',
@@ -97,11 +97,16 @@ export default function ApplicantsCreate({
     )?.code;
     const trailerType = vehicleTypes.find((type) => type.code === TRAILER_TYPE);
     const canTow = limits.max_trailers > 0 && trailerType !== undefined;
-    const estimate = useFeeEstimate(
-        data.permit_type,
-        data.vehicle_type_id,
+    // The rates offered for the permit type and the vehicle's type.
+    const rates = useFeeRates(
+        filled(data.permit_type, data.vehicle_type_id)
+            ? intakeRates.url()
+            : null,
+        {
+            permit_type: data.permit_type,
+            vehicle_type_id: data.vehicle_type_id,
+        },
         data.valid_from,
-        data.valid_to,
     );
 
     const showStep = (step: StepKey) =>
@@ -229,8 +234,8 @@ export default function ApplicantsCreate({
             'permit',
             filled(
                 data.permit_type,
+                data.fee_schedule_id,
                 data.valid_from,
-                data.valid_to,
                 data.reason,
                 data.letter_number,
                 data.letter_date,
@@ -298,7 +303,7 @@ export default function ApplicantsCreate({
                                     form={form}
                                     state={states.permit}
                                     maxDurationDays={limits.max_duration_days}
-                                    estimate={estimate}
+                                    rates={rates}
                                 />
                             </>
                         )}

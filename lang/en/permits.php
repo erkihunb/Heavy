@@ -71,6 +71,15 @@ return [
             'Miazia', 'Ginbot', 'Sene', 'Hamle', 'Nehase', 'Pagume',
         ],
     ],
+    'rates' => [
+        'label' => 'Fee rate',
+        'hint' => 'The permit runs for the days of the rate chosen, counting the start date, and closes by itself after its last day.',
+        'option' => ':days days · :fee',
+        'choose_first' => 'Choose the permit type and the vehicle to see the fee rates.',
+        'loading' => 'Loading the fee rates…',
+        'end_hint' => 'Worked out from the start date and the rate.',
+        'end_pending' => 'Choose a rate and the start date.',
+    ],
     'form' => [
         'sections' => [
             'type' => [
@@ -82,8 +91,8 @@ return [
                 'hint' => 'Choose the vehicle the permit is for. Add its trailers if it pulls any (at most :max).',
             ],
             'dates' => [
-                'title' => 'Dates',
-                'hint' => 'Dates are in the Ethiopian calendar. A permit can cover at most :max days and cannot start in the past.',
+                'title' => 'Fee rate and dates',
+                'hint' => 'Choose a fee rate and the start date (Ethiopian calendar); the end date follows from the rate. A permit cannot start in the past.',
             ],
             'reason' => [
                 'title' => 'Reason',
@@ -201,6 +210,7 @@ return [
         'too_many_trailers' => 'A permit can list at most :max trailers.',
         'fee_not_configured' => 'The fee schedule has no fee for this permit. It cannot be approved until an Admin adds one.',
         'fee_not_set_for_registration' => 'The fee schedule has no fee for this permit. It cannot be registered until an Admin adds one.',
+        'rate_not_offered' => 'Choose one of the fee rates offered for this permit type and vehicle.',
         'amount_mismatch' => 'The amount paid does not match the fee of the permit.',
         'payment_not_pending' => 'This payment is no longer waiting for verification. Nothing was changed.',
         'verifier_is_approver' => 'You approved this permit, so another cashier must verify its payment.',

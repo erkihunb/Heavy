@@ -39,7 +39,7 @@ it('saves the route from the office one-page form, trimmed', function () {
             'vehicles' => [['plate' => 'ኢት-03-40134', 'vehicle_type_id' => $type->id, 'owner_name' => 'አበበ']],
             'permit_type' => 'full_day',
             'valid_from' => now()->addDays(3)->toDateString(),
-            'valid_to' => now()->addDays(5)->toDateString(),
+            'fee_schedule_id' => feeRateId('full_day', $type->id),
             'reason' => 'ጭነት',
             'route' => '  ከመገናኛ እስከ ቃሊቲ  ',
             'any_time' => true,

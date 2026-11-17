@@ -64,7 +64,7 @@ return [
             'movement' => 'Time allowed to move',
             'reason' => 'Reason for the permit',
             'valid_from' => 'Start date (day/month/year E.C.)',
-            'valid_to' => 'End date (day/month/year E.C.)',
+            'valid_to' => 'End date',
         ],
         'more' => 'More about the organization',
         'more_hint' => 'Optional; can be completed later on the organization’s profile.',

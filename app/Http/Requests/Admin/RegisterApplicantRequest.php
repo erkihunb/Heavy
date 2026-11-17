@@ -5,12 +5,11 @@ namespace App\Http\Requests\Admin;
 use App\Data\OrganizationData;
 use App\Data\VehicleData;
 use App\Data\WalkInPermitData;
-use App\Domain\Permits\FeeCalculator;
-use App\Domain\Permits\ValidityRules;
 use App\Domain\Vehicles\PlateNumber;
 use App\Enums\PermitType;
 use App\Exceptions\DuplicateVehiclePlate;
 use App\Http\Requests\Applicant\OrganizationRequest;
+use App\Http\Requests\Concerns\ChoosesFeeRate;
 use App\Http\Requests\Concerns\ValidatesMovementHours;
 use App\Http\Requests\Concerns\ValidatesRequestLetter;
 use App\Models\Organization;
@@ -18,7 +17,6 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
 use App\Support\EthiopianPhone;
-use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
@@ -32,6 +30,7 @@ use Illuminate\Validation\Validator;
  */
 class RegisterApplicantRequest extends OrganizationRequest
 {
+    use ChoosesFeeRate;
     use ValidatesMovementHours;
     use ValidatesRequestLetter;
 
@@ -104,8 +103,8 @@ class RegisterApplicantRequest extends OrganizationRequest
             'vehicles.*.vehicle_type_id' => [...$apply, 'required', 'integer', Rule::exists(VehicleType::class, 'id')->where('is_active', true)],
             'vehicles.*.owner_name' => [...$apply, 'required', 'string', 'max:255'],
             'permit_type' => [...$apply, 'required', Rule::enum(PermitType::class)],
-            'valid_from' => [...$apply, 'bail', 'required', 'date_format:Y-m-d'],
-            'valid_to' => [...$apply, 'bail', 'required', 'date_format:Y-m-d'],
+            // A fee rate and the start date; the end date follows from the rate.
+            ...$this->feeRateRules($apply),
             'reason' => [...$apply, 'required', 'string', 'max:2000'],
             // Where the vehicles may travel; left empty, the permit does not limit it.
             'route' => [...$apply, 'nullable', 'string', 'max:255'],
@@ -127,7 +126,8 @@ class RegisterApplicantRequest extends OrganizationRequest
     }
 
     /**
-     * The limits on the period (spec §4.6), as for the applicant's form.
+     * The applicant on record, the fee rate and the period it gives, and the
+     * vehicles described in words.
      *
      * @return list<callable(Validator): void>
      */
@@ -140,43 +140,18 @@ class RegisterApplicantRequest extends OrganizationRequest
                     $validator->errors()->add('apply', __('applicants.intake.existing_needs_request'));
                 }
             },
+            // The rate is one offered for the permit type and the primary vehicle's
+            // type, and the period it gives keeps to the limits (spec §4.6).
             function (Validator $validator): void {
-                if (! $this->boolean('apply') || $validator->errors()->hasAny(['valid_from', 'valid_to'])) {
+                if (! $this->boolean('apply')) {
                     return;
                 }
 
-                $violation = app(ValidityRules::class)->violation(
-                    CarbonImmutable::createFromFormat('!Y-m-d', $this->string('valid_from')->toString(), 'UTC'),
-                    CarbonImmutable::createFromFormat('!Y-m-d', $this->string('valid_to')->toString(), 'UTC'),
-                );
-
-                if ($violation !== null) {
-                    $validator->errors()->add(
-                        $violation->rule === 'valid_from_in_past' ? 'valid_from' : 'valid_to',
-                        $violation->userMessage(),
-                    );
-                }
-            },
-            // A permit the fee schedule has no fee for could never be approved,
-            // so it is not taken in: an Admin adds the fee first.
-            function (Validator $validator): void {
-                if (! $this->boolean('apply')
-                    || $validator->errors()->hasAny(['permit_type', 'valid_from', 'valid_to', 'vehicles', 'vehicles.0.vehicle_type_id'])) {
-                    return;
-                }
-
-                $from = CarbonImmutable::createFromFormat('!Y-m-d', $this->string('valid_from')->toString(), 'UTC');
-                $to = CarbonImmutable::createFromFormat('!Y-m-d', $this->string('valid_to')->toString(), 'UTC');
-                $fee = app(FeeCalculator::class)->amountFor(
-                    PermitType::from($this->string('permit_type')->toString()),
+                $this->checkFeeRate(
+                    $validator,
                     $this->integer('vehicles.0.vehicle_type_id'),
-                    (int) $from->diffInDays($to) + 1,
-                    ValidityRules::today(),
+                    ['vehicles', 'vehicles.0.vehicle_type_id'],
                 );
-
-                if ($fee === null) {
-                    $validator->errors()->add('permit_type', __('permits.errors.fee_not_set_for_registration'));
-                }
             },
             // An "other" vehicle is described in words.
             function (Validator $validator): void {
@@ -211,8 +186,7 @@ class RegisterApplicantRequest extends OrganizationRequest
             'vehicles.*.owner_name' => __('vehicles.fields.owner_name'),
             'vehicles.*.type_detail' => __('applicants.intake.type_detail'),
             'permit_type' => __('permits.fields.permit_type'),
-            'valid_from' => __('permits.fields.valid_from'),
-            'valid_to' => __('permits.fields.valid_to'),
+            ...$this->feeRateAttributes(),
             'reason' => __('permits.fields.reason'),
             'route' => __('permits.fields.route'),
             ...$this->movementHoursAttributes(),
@@ -263,8 +237,8 @@ class RegisterApplicantRequest extends OrganizationRequest
 
         return new WalkInPermitData(
             permitType: PermitType::from($this->string('permit_type')->toString()),
-            validFrom: CarbonImmutable::createFromFormat('!Y-m-d', $this->string('valid_from')->toString(), 'UTC'),
-            validTo: CarbonImmutable::createFromFormat('!Y-m-d', $this->string('valid_to')->toString(), 'UTC'),
+            validFrom: $this->validFrom(),
+            validTo: $this->validTo(),
             reason: $this->string('reason')->toString(),
             submit: $this->boolean('submit'),
             hours: $this->movementHours(),

@@ -3,14 +3,13 @@
 namespace App\Http\Requests\Registrar;
 
 use App\Data\PermitData;
-use App\Domain\Permits\ValidityRules;
 use App\Enums\PermitType;
+use App\Http\Requests\Concerns\ChoosesFeeRate;
 use App\Http\Requests\Concerns\ValidatesMovementHours;
 use App\Http\Requests\Concerns\ValidatesRequestLetter;
 use App\Models\Branch;
 use App\Models\Permit;
 use App\Models\Vehicle;
-use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\Response;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
@@ -19,13 +18,15 @@ use Illuminate\Validation\Rules\Exists;
 use Illuminate\Validation\Validator;
 
 /**
- * Correcting a request taken at the office. Dates arrive as Gregorian
- * `Y-m-d`; the Ethiopian date picker converts before sending. A new scan of
- * the letter is needed only when none is stored yet.
+ * Correcting a request taken at the office. The period is a fee rate and
+ * the start date, which arrives as Gregorian `Y-m-d` (the Ethiopian date
+ * picker converts before sending); the end date follows from the rate. A new
+ * scan of the letter is needed only when none is stored yet.
  */
 class UpdatePermitForApplicantRequest extends FormRequest
 {
     use ActsForApplicant;
+    use ChoosesFeeRate;
     use ValidatesMovementHours;
     use ValidatesRequestLetter;
 
@@ -48,8 +49,7 @@ class UpdatePermitForApplicantRequest extends FormRequest
             'primary_vehicle_id' => ['bail', 'required', 'string', $this->ownVehicle()],
             'trailer_vehicle_ids' => ['nullable', 'array', 'max:'.config('permits.max_trailers')],
             'trailer_vehicle_ids.*' => ['bail', 'required', 'string', 'distinct', 'different:primary_vehicle_id', $this->ownVehicle()],
-            'valid_from' => ['bail', 'required', 'date_format:Y-m-d'],
-            'valid_to' => ['bail', 'required', 'date_format:Y-m-d'],
+            ...$this->feeRateRules(),
             'reason' => ['required', 'string', 'max:2000'],
             // Where the vehicles may travel; left empty, the permit does not limit it.
             'route' => ['nullable', 'string', 'max:255'],
@@ -64,7 +64,8 @@ class UpdatePermitForApplicantRequest extends FormRequest
     }
 
     /**
-     * The limits on the period (spec §4.6), checked once both dates are well formed.
+     * The rate is one offered for the permit type and the primary vehicle's
+     * type, and the period it gives keeps to the limits (spec §4.6).
      *
      * @return list<callable(Validator): void>
      */
@@ -72,21 +73,11 @@ class UpdatePermitForApplicantRequest extends FormRequest
     {
         return [
             function (Validator $validator): void {
-                if ($validator->errors()->hasAny(['valid_from', 'valid_to'])) {
-                    return;
-                }
+                $vehicleTypeId = $validator->errors()->has('primary_vehicle_id')
+                    ? null
+                    : Vehicle::query()->whereKey($this->string('primary_vehicle_id')->toString())->value('vehicle_type_id');
 
-                $violation = app(ValidityRules::class)->violation(
-                    CarbonImmutable::createFromFormat('!Y-m-d', $this->string('valid_from')->toString(), 'UTC'),
-                    CarbonImmutable::createFromFormat('!Y-m-d', $this->string('valid_to')->toString(), 'UTC'),
-                );
-
-                if ($violation !== null) {
-                    $validator->errors()->add(
-                        $violation->rule === 'valid_from_in_past' ? 'valid_from' : 'valid_to',
-                        $violation->userMessage(),
-                    );
-                }
+                $this->checkFeeRate($validator, $vehicleTypeId === null ? null : (int) $vehicleTypeId, ['primary_vehicle_id']);
             },
         ];
     }
@@ -101,8 +92,7 @@ class UpdatePermitForApplicantRequest extends FormRequest
             'primary_vehicle_id' => __('permits.fields.primary_vehicle'),
             'trailer_vehicle_ids' => __('permits.fields.trailers'),
             'trailer_vehicle_ids.*' => __('permits.fields.trailer'),
-            'valid_from' => __('permits.fields.valid_from'),
-            'valid_to' => __('permits.fields.valid_to'),
+            ...$this->feeRateAttributes(),
             'reason' => __('permits.fields.reason'),
             'route' => __('permits.fields.route'),
             'branch_id' => __('permits.fields.branch'),
@@ -129,15 +119,15 @@ class UpdatePermitForApplicantRequest extends FormRequest
 
     public function toData(): PermitData
     {
-        /** @var array{permit_type: string, primary_vehicle_id: string, trailer_vehicle_ids?: array<array-key, string>|null, valid_from: string, valid_to: string, reason: string, route?: string|null, branch_id?: int|string|null} $validated */
+        /** @var array{permit_type: string, primary_vehicle_id: string, trailer_vehicle_ids?: array<array-key, string>|null, reason: string, route?: string|null, branch_id?: int|string|null} $validated */
         $validated = $this->validated();
 
         return $this->withLetter(new PermitData(
             permitType: PermitType::from($validated['permit_type']),
             primaryVehicleId: $validated['primary_vehicle_id'],
             trailerVehicleIds: array_values($validated['trailer_vehicle_ids'] ?? []),
-            validFrom: CarbonImmutable::createFromFormat('!Y-m-d', $validated['valid_from'], 'UTC'),
-            validTo: CarbonImmutable::createFromFormat('!Y-m-d', $validated['valid_to'], 'UTC'),
+            validFrom: $this->validFrom(),
+            validTo: $this->validTo(),
             reason: trim($validated['reason']),
             branchId: isset($validated['branch_id']) && $validated['branch_id'] !== '' ? (int) $validated['branch_id'] : null,
             hours: $this->movementHours(),

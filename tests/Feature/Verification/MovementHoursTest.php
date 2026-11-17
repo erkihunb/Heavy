@@ -192,7 +192,7 @@ describe('entering the hours on an application', function () {
                 'vehicles' => [['plate' => 'ኢት-03-40134', 'vehicle_type_id' => $type->id, 'owner_name' => 'አበበ']],
                 'permit_type' => 'pass',
                 'valid_from' => now()->addDays(3)->toDateString(),
-                'valid_to' => now()->addDays(5)->toDateString(),
+                'fee_schedule_id' => feeRateId('pass', $type->id),
                 'reason' => 'ጭነት',
                 'any_time' => false,
                 'move_from' => '20:00',

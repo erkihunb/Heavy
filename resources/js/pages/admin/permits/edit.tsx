@@ -4,7 +4,7 @@ import { PermitForm } from '@/components/permit-form';
 import type { PermitFormData, PermitLimits } from '@/components/permit-form';
 import FormPageLayout from '@/layouts/form-page-layout';
 import { useTranslation } from '@/lib/i18n';
-import { feeEstimate, index, show, update } from '@/routes/admin/permits';
+import { feeRates, index, show, update } from '@/routes/admin/permits';
 import { create as createVehicle } from '@/routes/admin/permits/vehicles';
 import type { Permit, Vehicle } from '@/types';
 import type { WalkInApplicant } from '@/types/admin';
@@ -14,6 +14,8 @@ type Props = {
     permit: Permit;
     vehicles: Vehicle[];
     limits: PermitLimits;
+    /** The rate offered today whose days are the draft's own, if there is one. */
+    feeScheduleId: number | null;
 };
 
 /** The Registrar corrects a request taken at the office: a draft, or one sent back for changes. */
@@ -22,6 +24,7 @@ export default function PermitEdit({
     permit,
     vehicles,
     limits,
+    feeScheduleId,
 }: Props) {
     const { t } = useTranslation();
     const permitVehicles = permit.vehicles ?? [];
@@ -35,8 +38,8 @@ export default function PermitEdit({
         trailer_vehicle_ids: permitVehicles
             .filter((vehicle) => vehicle.role === 'trailer')
             .map((vehicle) => vehicle.id),
+        fee_schedule_id: feeScheduleId === null ? '' : String(feeScheduleId),
         valid_from: permit.valid_from.gregorian,
-        valid_to: permit.valid_to.gregorian,
         reason: permit.reason,
         route: permit.route ?? '',
         any_time: permit.hours === null,
@@ -78,7 +81,7 @@ export default function PermitEdit({
                 vehicles={vehicles}
                 limits={limits}
                 cancelHref={show.url(route)}
-                estimateUrl={feeEstimate.url(route)}
+                ratesUrl={feeRates.url(route)}
                 letter={{ hasStoredScan: Boolean(permit.letter?.url) }}
                 addVehicleHref={createVehicle.url(route)}
             />
