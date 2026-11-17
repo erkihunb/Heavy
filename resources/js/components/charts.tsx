@@ -40,11 +40,11 @@ export function ChartCard({
         <section
             aria-labelledby={id}
             className={cn(
-                'flex flex-col overflow-hidden rounded-panel border border-border bg-card',
+                'flex flex-col overflow-hidden rounded-card border border-border bg-card shadow-md',
                 className,
             )}
         >
-            <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
+            <div className="flex items-start justify-between gap-3 px-5 pt-5">
                 <div className="min-w-0">
                     <h2 id={id} className="text-base font-semibold">
                         {title}
@@ -57,7 +57,7 @@ export function ChartCard({
                 </div>
                 {aside && <div className="shrink-0 text-end">{aside}</div>}
             </div>
-            <div className="flex-1 p-4">{children}</div>
+            <div className="flex-1 p-5 pt-4">{children}</div>
         </section>
     );
 }
@@ -86,6 +86,68 @@ export function compactNumber(value: number, locale: string): string {
         notation: value >= 10_000 ? 'compact' : 'standard',
         maximumFractionDigits: 1,
     }).format(value);
+}
+
+/**
+ * A curve through every point that never overshoots them (monotone cubic,
+ * Fritsch-Carlson): a flat run stays flat and every peak is a real value, so
+ * the line cannot dip under zero between two points.
+ */
+export function smoothLine(points: { x: number; y: number }[]): string {
+    const count = points.length;
+
+    if (count < 3) {
+        return points
+            .map((p, index) => `${index === 0 ? 'M' : 'L'}${p.x},${p.y}`)
+            .join(' ');
+    }
+
+    const width: number[] = [];
+    const slope: number[] = [];
+
+    for (let i = 0; i < count - 1; i++) {
+        width[i] = points[i + 1].x - points[i].x;
+        slope[i] = (points[i + 1].y - points[i].y) / width[i];
+    }
+
+    const tangent: number[] = [slope[0]];
+
+    for (let i = 1; i < count - 1; i++) {
+        tangent[i] =
+            slope[i - 1] * slope[i] <= 0 ? 0 : (slope[i - 1] + slope[i]) / 2;
+    }
+
+    tangent[count - 1] = slope[count - 2];
+
+    for (let i = 0; i < count - 1; i++) {
+        if (slope[i] === 0) {
+            tangent[i] = 0;
+            tangent[i + 1] = 0;
+            continue;
+        }
+
+        const a = tangent[i] / slope[i];
+        const b = tangent[i + 1] / slope[i];
+        const length = Math.hypot(a, b);
+
+        if (length > 3) {
+            tangent[i] = (3 / length) * a * slope[i];
+            tangent[i + 1] = (3 / length) * b * slope[i];
+        }
+    }
+
+    const round = (value: number) => Math.round(value * 100) / 100;
+    let path = `M${round(points[0].x)},${round(points[0].y)}`;
+
+    for (let i = 0; i < count - 1; i++) {
+        const third = width[i] / 3;
+        const from = points[i];
+        const to = points[i + 1];
+
+        path += ` C${round(from.x + third)},${round(from.y + tangent[i] * third)} ${round(to.x - third)},${round(to.y - tangent[i + 1] * third)} ${round(to.x)},${round(to.y)}`;
+    }
+
+    return path;
 }
 
 function Plot({
@@ -118,13 +180,16 @@ function Plot({
                     </span>
                 ))}
             </div>
-            <div className="relative h-44 flex-1">
+            <div className="relative h-52 flex-1">
                 {ticks.map((tick) => (
                     <span
                         key={tick}
                         className={cn(
-                            'absolute inset-x-0 h-px',
-                            tick === 0 ? 'bg-border-strong' : 'bg-border',
+                            // Dashed guides stay behind the data; only the baseline is a solid rule.
+                            'absolute inset-x-0 border-t',
+                            tick === 0
+                                ? 'border-border-strong'
+                                : 'border-dashed border-border',
                         )}
                         style={{ bottom: `${(tick / top) * 100}%` }}
                     />
@@ -245,7 +310,7 @@ export function ColumnChart({
                                 )}
                                 <span
                                     className={cn(
-                                        'block w-full max-w-6 rounded-t-[4px] bg-chart-1 transition-opacity',
+                                        'chart-grow block w-full max-w-9 rounded-t-md bg-chart-1 transition-opacity',
                                         hover !== null &&
                                             hover !== index &&
                                             'opacity-50',
@@ -288,7 +353,7 @@ export function ColumnChart({
     );
 }
 
-/** A line with a light wash under it, a crosshair and the last value at its end. */
+/** A smooth line over a wash that fades out, with a crosshair and the last value at its end. */
 export function AreaChart({
     data,
     caption,
@@ -302,12 +367,10 @@ export function AreaChart({
     const x = (index: number) =>
         count === 1 ? 50 : (index / (count - 1)) * 100;
     const y = (value: number) => (value / top) * 100;
-    const line = data
-        .map(
-            (p, index) =>
-                `${index === 0 ? 'M' : 'L'}${x(index)},${100 - y(p.value)}`,
-        )
-        .join(' ');
+    const gradient = useId();
+    const line = smoothLine(
+        data.map((p, index) => ({ x: x(index), y: 100 - y(p.value) })),
+    );
     const area = `${line} L${x(count - 1)},100 L${x(0)},100 Z`;
     const labelEvery = Math.max(1, Math.ceil(count / 4));
     const last = data[count - 1];
@@ -330,11 +393,35 @@ export function AreaChart({
                     preserveAspectRatio="none"
                     className="absolute inset-0 size-full overflow-visible"
                 >
-                    <path d={area} className="fill-chart-1 opacity-10" />
+                    <defs>
+                        <linearGradient
+                            id={gradient}
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                        >
+                            <stop
+                                offset="0%"
+                                stopColor="var(--chart-1)"
+                                stopOpacity={0.28}
+                            />
+                            <stop
+                                offset="100%"
+                                stopColor="var(--chart-1)"
+                                stopOpacity={0}
+                            />
+                        </linearGradient>
+                    </defs>
+                    <path
+                        d={area}
+                        fill={`url(#${gradient})`}
+                        className="chart-fade"
+                    />
                     <path
                         d={line}
                         fill="none"
-                        className="stroke-chart-1"
+                        className="chart-fade stroke-chart-1"
                         strokeWidth={2}
                         strokeLinejoin="round"
                         strokeLinecap="round"
@@ -411,8 +498,10 @@ export function AreaChart({
     );
 }
 
-/** A 12-point trend under a KPI: history quiet, the latest point in the accent. */
+/** A 12-point trend under a KPI: a smooth line over a fading wash, the latest point marked. */
 export function Sparkline({ values }: { values: number[] }) {
+    const gradient = useId();
+
     if (values.length < 2) {
         return null;
     }
@@ -420,9 +509,9 @@ export function Sparkline({ values }: { values: number[] }) {
     const max = Math.max(1, ...values);
     const x = (index: number) => (index / (values.length - 1)) * 100;
     const y = (value: number) => 22 - (value / max) * 20;
-    const path = values
-        .map((v, index) => `${index === 0 ? 'M' : 'L'}${x(index)},${y(v)}`)
-        .join(' ');
+    const path = smoothLine(
+        values.map((v, index) => ({ x: x(index), y: y(v) })),
+    );
     const lastIndex = values.length - 1;
 
     return (
@@ -432,10 +521,25 @@ export function Sparkline({ values }: { values: number[] }) {
             preserveAspectRatio="none"
             className="h-6 w-20 shrink-0 overflow-visible"
         >
+            <defs>
+                <linearGradient id={gradient} x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                        offset="0%"
+                        stopColor="var(--chart-1)"
+                        stopOpacity={0.25}
+                    />
+                    <stop
+                        offset="100%"
+                        stopColor="var(--chart-1)"
+                        stopOpacity={0}
+                    />
+                </linearGradient>
+            </defs>
+            <path d={`${path} L100,24 L0,24 Z`} fill={`url(#${gradient})`} />
             <path
                 d={path}
                 fill="none"
-                className="stroke-muted-foreground/60"
+                className="stroke-chart-1"
                 strokeWidth={1.5}
                 strokeLinejoin="round"
                 vectorEffect="non-scaling-stroke"
@@ -495,34 +599,137 @@ export function SegmentedBar({
                     />
                 ))}
             </div>
-            <ul className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
-                {parts.map((part) => (
-                    <li
-                        key={part.key}
-                        className="flex items-center justify-between gap-3 text-sm"
-                    >
-                        <span className="flex min-w-0 items-center gap-2">
-                            <span
-                                aria-hidden="true"
-                                className={cn(
-                                    'size-2.5 shrink-0 rounded-xs',
-                                    part.color,
-                                )}
-                            />
-                            <span className="truncate">{part.label}</span>
+            <Legend
+                parts={parts}
+                total={total}
+                shareLabel={shareLabel}
+                className="sm:grid-cols-2"
+            />
+        </div>
+    );
+}
+
+/** Every part's name, number and share, keyed by the colour it is drawn in. */
+function Legend({
+    parts,
+    total,
+    shareLabel,
+    className,
+}: {
+    parts: Segment[];
+    total: number;
+    shareLabel: string;
+    className?: string;
+}) {
+    const share = (value: number) =>
+        total === 0 ? 0 : Math.round((value / total) * 100);
+
+    return (
+        <ul className={cn('grid gap-x-6 gap-y-1.5', className)}>
+            {parts.map((part) => (
+                <li
+                    key={part.key}
+                    className="flex items-center justify-between gap-3 text-sm"
+                >
+                    <span className="flex min-w-0 items-center gap-2">
+                        <span
+                            aria-hidden="true"
+                            className={cn(
+                                'size-2.5 shrink-0 rounded-full',
+                                part.color,
+                            )}
+                        />
+                        <span className="truncate">{part.label}</span>
+                    </span>
+                    <span className="font-semibold tabular-nums">
+                        {part.value}
+                        <span
+                            className="ms-1.5 text-xs font-normal text-muted-foreground"
+                            aria-label={shareLabel}
+                        >
+                            {share(part.value)}%
                         </span>
-                        <span className="font-semibold tabular-nums">
-                            {part.value}
-                            <span
-                                className="ms-1.5 text-xs font-normal text-muted-foreground"
-                                aria-label={shareLabel}
-                            >
-                                {share(part.value)}%
-                            </span>
-                        </span>
-                    </li>
-                ))}
-            </ul>
+                    </span>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+/**
+ * One whole split into parts as a ring, with the total in its centre and the
+ * same legend as the bar. Each part is a disc in its own colour masked to its
+ * slice, and the hole is one more mask, so a part's colour stays a class.
+ */
+export function DonutChart({
+    parts,
+    shareLabel,
+    totalLabel,
+}: {
+    parts: Segment[];
+    shareLabel: string;
+    /** What the number in the centre counts, e.g. "Permits". */
+    totalLabel: string;
+}) {
+    const total = parts.reduce((sum, part) => sum + part.value, 0);
+    const shown = parts.filter((part) => part.value > 0);
+    const share = (value: number) =>
+        total === 0 ? 0 : Math.round((value / total) * 100);
+    const hole =
+        'radial-gradient(farthest-side, transparent calc(100% - 16px), #000 calc(100% - 15px))';
+    // A hairline gap shows between two slices, never around a lone one.
+    const gap = shown.length > 1 ? 1.5 : 0;
+    const angle = (part: Segment) => (part.value / total) * 360;
+    const slices = shown.map((part, index) => {
+        const start = shown
+            .slice(0, index)
+            .reduce((sum, earlier) => sum + angle(earlier), 0);
+        const mask = `conic-gradient(from ${start}deg, #000 ${Math.max(angle(part) - gap, 0.5)}deg, transparent 0)`;
+
+        return { part, mask };
+    });
+
+    return (
+        <div className="flex flex-col items-center gap-5 sm:flex-row">
+            <div className="relative size-36 shrink-0">
+                <div
+                    role="img"
+                    aria-label={shown
+                        .map(
+                            (part) =>
+                                `${part.label}: ${part.value} (${share(part.value)}%)`,
+                        )
+                        .join(', ')}
+                    className="chart-fade absolute inset-0 rounded-full bg-muted"
+                    style={{ maskImage: hole, WebkitMaskImage: hole }}
+                >
+                    {slices.map(({ part, mask }) => (
+                        <span
+                            key={part.key}
+                            title={`${part.label}: ${part.value} (${share(part.value)}%)`}
+                            className={cn(
+                                'absolute inset-0 rounded-full',
+                                part.color,
+                            )}
+                            style={{ maskImage: mask, WebkitMaskImage: mask }}
+                        />
+                    ))}
+                </div>
+                <div className="absolute inset-0 grid place-content-center text-center">
+                    <p className="text-2xl leading-tight font-bold tabular-nums">
+                        {total}
+                    </p>
+                    <p className="max-w-24 text-xs text-muted-foreground">
+                        {totalLabel}
+                    </p>
+                </div>
+            </div>
+            <Legend
+                parts={parts}
+                total={total}
+                shareLabel={shareLabel}
+                className="w-full min-w-0 flex-1"
+            />
         </div>
     );
 }
@@ -586,7 +793,7 @@ export function Meter({
             >
                 <span
                     className={cn(
-                        'block h-full rounded-full',
+                        'chart-fill block h-full rounded-full',
                         METER_TONE[tone].fill,
                     )}
                     style={{ width: `${clamped}%` }}

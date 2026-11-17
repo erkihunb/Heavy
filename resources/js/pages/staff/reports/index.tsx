@@ -1,5 +1,24 @@
 import { Head, Link } from '@inertiajs/react';
-import { Download } from 'lucide-react';
+import {
+    Banknote,
+    CalendarRange,
+    Download,
+    FileCheck,
+    Hourglass,
+    Receipt,
+    ScanLine,
+    Timer,
+    Wallet,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import {
+    AreaChart,
+    ChartCard,
+    ColumnChart,
+    compactNumber,
+    DonutChart,
+} from '@/components/charts';
+import type { ChartPoint } from '@/components/charts';
 import {
     EmptyRow,
     Table,
@@ -13,8 +32,8 @@ import {
 import { DualDate } from '@/components/dual-date';
 import { PageHeader } from '@/components/page-header';
 import { PaymentStatusBadge } from '@/components/payment-status-badge';
+import { PERMIT_STATUS_COLOR } from '@/components/permit-status-colors';
 import { PlateChip } from '@/components/plate-chip';
-import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
@@ -98,30 +117,59 @@ function Bar({ value, max }: { value: number; max: number }) {
             className="block h-2 min-w-24 rounded-xs bg-muted"
         >
             <span
-                className="block h-full rounded-xs bg-primary"
+                className="chart-fill block h-full rounded-xs bg-primary"
                 style={{ width: `${width}%` }}
             />
         </span>
     );
 }
 
+type Tone = 'primary' | 'success' | 'warning' | 'neutral';
+
+/* The tone lives in the icon chip only (soft fill, strong glyph); the tile stays neutral, as on the dashboard. */
+const TONE_ICON: Record<Tone, string> = {
+    primary: 'bg-brand-soft text-brand-strong',
+    success: 'bg-success-soft text-success-strong',
+    warning: 'bg-warning-soft text-warning-strong',
+    neutral: 'bg-neutral-soft text-neutral-strong',
+};
+
 function Tile({
     label,
     value,
     hint,
+    icon: Icon,
+    tone = 'neutral',
 }: {
     label: string;
     value: string | number;
     hint?: string;
+    icon: LucideIcon;
+    tone?: Tone;
 }) {
     return (
-        <div className="rounded-card border border-border bg-card p-5">
-            <p className="text-sm font-medium text-muted-foreground">{label}</p>
-            <p className="mt-2 text-2xl leading-tight font-bold tabular-nums sm:text-3xl">
+        <div className="flex h-full flex-col rounded-card border border-border bg-card p-4 shadow-md sm:p-5">
+            <div className="flex items-start justify-between gap-4">
+                <p className="min-w-0 text-sm leading-relaxed font-medium text-muted-foreground">
+                    {label}
+                </p>
+                <span
+                    aria-hidden="true"
+                    className={[
+                        'hidden size-10 shrink-0 place-items-center rounded-control sm:grid',
+                        TONE_ICON[tone],
+                    ].join(' ')}
+                >
+                    <Icon className="size-5" />
+                </span>
+            </div>
+            <p className="pt-2 text-2xl leading-tight font-bold tracking-tight tabular-nums sm:text-3xl">
                 {value}
             </p>
             {hint && (
-                <p className="mt-1 text-sm text-muted-foreground">{hint}</p>
+                <p className="mt-auto pt-2 text-xs leading-relaxed text-muted-foreground">
+                    {hint}
+                </p>
             )}
         </div>
     );
@@ -140,16 +188,33 @@ export default function Reports({
     byBranch,
     expiring,
 }: Props) {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
+
+    // The month without its year under each bar; the full label is in the tooltip and the table.
+    const shortMonth = (label: string) => {
+        const split = label.lastIndexOf(' ');
+        return split > 0 ? label.slice(0, split) : label;
+    };
+    const issuedPoints: ChartPoint[] = monthly.map((row) => ({
+        key: row.key,
+        label: row.label,
+        short: shortMonth(row.label),
+        value: row.issued,
+        display: String(row.issued),
+    }));
+    const revenuePoints: ChartPoint[] = monthly.map((row) => ({
+        key: row.key,
+        label: row.label,
+        short: shortMonth(row.label),
+        value: row.revenue.amount_cents / 100,
+        display: row.revenue.formatted,
+    }));
+    const tick = (value: number) => compactNumber(value, locale);
 
     const maxIssued = Math.max(0, ...monthly.map((row) => row.issued));
     const maxRevenue = Math.max(
         0,
         ...monthly.map((row) => row.revenue.amount_cents),
-    );
-    const maxStatus = Math.max(
-        0,
-        ...STATUSES.map((status) => byStatus[status]),
     );
     const maxType = Math.max(0, ...byVehicleType.map((row) => row.permits));
     const maxOrganization = Math.max(
@@ -188,33 +253,42 @@ export default function Reports({
                     }
                 />
 
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <Tile
                         label={t('reports.summary.issued_this_month', {
                             month: summary.month,
                         })}
                         value={summary.issued_this_month}
+                        icon={FileCheck}
+                        tone="primary"
                     />
                     <Tile
                         label={t('reports.summary.revenue_this_month', {
                             month: summary.month,
                         })}
                         value={summary.revenue_this_month.formatted}
+                        icon={Banknote}
+                        tone="success"
                     />
                     <Tile
                         label={t('reports.summary.issued_period')}
                         value={summary.issued_period}
+                        icon={CalendarRange}
+                        tone="primary"
                     />
                     <Tile
                         label={t('reports.summary.revenue_period')}
                         value={summary.revenue_period.formatted}
+                        icon={Wallet}
+                        tone="success"
                     />
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <Tile
                         label={t('reports.processing.average_days')}
                         value={processing.average_days ?? '—'}
+                        icon={Timer}
                         hint={t('reports.processing.average_hint', {
                             count: processing.measured,
                         })}
@@ -222,6 +296,8 @@ export default function Reports({
                     <Tile
                         label={t('reports.processing.in_progress')}
                         value={processing.in_progress}
+                        icon={Hourglass}
+                        tone="warning"
                         hint={
                             processing.oldest_days === null
                                 ? t('reports.processing.in_progress_hint')
@@ -236,16 +312,46 @@ export default function Reports({
                     <Tile
                         label={t('reports.processing.payments_waiting')}
                         value={payments.statuses.submitted.count}
+                        icon={Receipt}
+                        tone="warning"
                         hint={payments.statuses.submitted.amount.formatted}
                     />
                     <Tile
                         label={t('reports.processing.checks')}
                         value={scans.total}
+                        icon={ScanLine}
                         hint={t('reports.processing.checks_hint', {
                             officers: scans.by_officers,
                             public: scans.by_public,
                         })}
                     />
+                </div>
+
+                <div className="grid gap-4 xl:grid-cols-2">
+                    <ChartCard
+                        title={t('reports.issued')}
+                        description={t('reports.monthly')}
+                    >
+                        <ColumnChart
+                            data={issuedPoints}
+                            caption={t('reports.issued')}
+                            periodLabel={t('reports.month')}
+                            valueLabel={t('reports.issued')}
+                            formatTick={tick}
+                        />
+                    </ChartCard>
+                    <ChartCard
+                        title={t('reports.revenue')}
+                        description={t('reports.monthly')}
+                    >
+                        <AreaChart
+                            data={revenuePoints}
+                            caption={t('reports.revenue')}
+                            periodLabel={t('reports.month')}
+                            valueLabel={t('reports.revenue')}
+                            formatTick={tick}
+                        />
+                    </ChartCard>
                 </div>
 
                 <TableCard title={t('reports.monthly')} titleId="monthly-title">
@@ -301,44 +407,18 @@ export default function Reports({
                 </TableCard>
 
                 <div className="grid gap-6 xl:grid-cols-2">
-                    <TableCard
-                        title={t('reports.by_status')}
-                        titleId="status-title"
-                    >
-                        <Table aria-labelledby="status-title">
-                            <THead>
-                                <tr>
-                                    <Th>{t('common.status')}</Th>
-                                    <Th align="right">
-                                        {t('reports.permits')}
-                                    </Th>
-                                    <Th className="w-2/5">
-                                        <span className="sr-only">
-                                            {t('reports.permits')}
-                                        </span>
-                                    </Th>
-                                </tr>
-                            </THead>
-                            <TBody>
-                                {STATUSES.map((status) => (
-                                    <Tr key={status}>
-                                        <Td>
-                                            <StatusBadge status={status} />
-                                        </Td>
-                                        <Td numeric className="font-semibold">
-                                            {byStatus[status]}
-                                        </Td>
-                                        <Td>
-                                            <Bar
-                                                value={byStatus[status]}
-                                                max={maxStatus}
-                                            />
-                                        </Td>
-                                    </Tr>
-                                ))}
-                            </TBody>
-                        </Table>
-                    </TableCard>
+                    <ChartCard title={t('reports.by_status')}>
+                        <DonutChart
+                            shareLabel={t('dashboard.charts.share')}
+                            totalLabel={t('reports.permits')}
+                            parts={STATUSES.map((status) => ({
+                                key: status,
+                                label: t(`permits.status.${status}`),
+                                value: byStatus[status],
+                                color: PERMIT_STATUS_COLOR[status],
+                            }))}
+                        />
+                    </ChartCard>
 
                     <TableCard
                         title={t('reports.by_vehicle_type')}

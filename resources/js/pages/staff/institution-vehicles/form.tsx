@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
+import { FormSection } from '@/components/form-layout';
 import PageHeader from '@/shell/Components/PageHeader';
 import {
     Button,
@@ -66,38 +67,41 @@ export default function InstitutionVehicleForm({
             <Head title={title} />
 
             <form onSubmit={submit} noValidate className="space-y-5">
-                <section className="space-y-4 rounded-panel border border-(--app-border) bg-(--app-surface) p-6">
-                    <FormField
-                        label={t('institution.fields.plate')}
-                        required
-                        error={form.errors.plate}
-                        description={
-                            vehicle?.plate_locked
-                                ? t('institution.plate_locked_help')
-                                : undefined
-                        }
-                    >
-                        {({ id, describedBy, invalid }) => (
-                            <Input
-                                id={id}
-                                aria-describedby={describedBy}
-                                aria-invalid={invalid}
-                                autoComplete="off"
-                                autoFocus={!vehicle}
-                                readOnly={vehicle?.plate_locked}
-                                disabled={vehicle?.plate_locked}
-                                className="font-mono"
-                                placeholder={t(
-                                    'institution.fields.plate_placeholder',
-                                )}
-                                value={form.data.plate}
-                                onChange={(event) =>
-                                    form.setData('plate', event.target.value)
-                                }
-                            />
-                        )}
-                    </FormField>
-                    <div className="grid gap-4 sm:grid-cols-2">
+                <FormSection title={t('institution.columns.vehicle')}>
+                    <div className="grid items-start gap-5 md:grid-cols-2 xl:grid-cols-3">
+                        <FormField
+                            label={t('institution.fields.plate')}
+                            required
+                            error={form.errors.plate}
+                            description={
+                                vehicle?.plate_locked
+                                    ? t('institution.plate_locked_help')
+                                    : undefined
+                            }
+                        >
+                            {({ id, describedBy, invalid }) => (
+                                <Input
+                                    id={id}
+                                    aria-describedby={describedBy}
+                                    aria-invalid={invalid}
+                                    autoComplete="off"
+                                    autoFocus={!vehicle}
+                                    readOnly={vehicle?.plate_locked}
+                                    disabled={vehicle?.plate_locked}
+                                    className="font-mono"
+                                    placeholder={t(
+                                        'institution.fields.plate_placeholder',
+                                    )}
+                                    value={form.data.plate}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'plate',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            )}
+                        </FormField>
                         <FormField
                             label={t('institution.fields.vehicle_type')}
                             required
@@ -151,7 +155,7 @@ export default function InstitutionVehicleForm({
                             )}
                         </FormField>
                     </div>
-                </section>
+                </FormSection>
 
                 <div className="flex justify-end gap-2">
                     <Link

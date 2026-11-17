@@ -14,6 +14,7 @@ import {
     ChartCard,
     ColumnChart,
     compactNumber,
+    DonutChart,
     Meter,
     SegmentedBar,
     Sparkline,
@@ -30,6 +31,7 @@ import {
     Tr,
 } from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
+import { PERMIT_STATUS_COLOR } from '@/components/permit-status-colors';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n';
@@ -169,23 +171,6 @@ const TONE_ICON: Record<Tone, string> = {
     warning: 'bg-warning-soft text-warning-strong',
     critical: 'bg-danger-soft text-danger-strong',
     neutral: 'bg-neutral-soft text-neutral-strong',
-};
-
-/* Colour of each status in the distribution bar. */
-const STATUS_COLOR: Record<PermitStatus, string> = {
-    draft: 'bg-muted-foreground/30',
-    submitted: 'bg-primary/55',
-    under_review: 'bg-primary',
-    changes_requested: 'bg-warning/60',
-    rejected: 'bg-destructive/70',
-    awaiting_payment: 'bg-warning',
-    payment_submitted: 'bg-info/60',
-    payment_confirmed: 'bg-info',
-    issued: 'bg-success/60',
-    active: 'bg-success',
-    expired: 'bg-muted-foreground/55',
-    revoked: 'bg-destructive',
-    withdrawn: 'bg-muted-foreground/20',
 };
 
 type Kpi = {
@@ -942,84 +927,24 @@ export default function Dashboard({
                     </section>
 
                     {distribution && (
-                        <section
-                            aria-labelledby="distribution-title"
-                            className="overflow-hidden rounded-panel border border-border bg-card"
-                        >
-                            <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-                                <h2
-                                    id="distribution-title"
-                                    className="text-base font-semibold"
-                                >
-                                    {t('dashboard.distribution.title')}
-                                </h2>
-                                <span className="text-xs text-muted-foreground tabular-nums">
-                                    {t('dashboard.distribution.total', {
-                                        count: total,
-                                    })}
-                                </span>
-                            </div>
+                        <ChartCard title={t('dashboard.distribution.title')}>
                             {total === 0 ? (
-                                <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+                                <p className="py-6 text-center text-sm text-muted-foreground">
                                     {t('dashboard.distribution.empty')}
                                 </p>
                             ) : (
-                                <div className="space-y-4 p-4">
-                                    <div
-                                        aria-hidden="true"
-                                        className="flex h-3 overflow-hidden rounded-xs bg-muted"
-                                    >
-                                        {shownStatuses.map((status) => (
-                                            <span
-                                                key={status}
-                                                className={STATUS_COLOR[status]}
-                                                style={{
-                                                    width: `${(distribution[status] / total) * 100}%`,
-                                                }}
-                                            />
-                                        ))}
-                                    </div>
-                                    <ul className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
-                                        {shownStatuses.map((status) => (
-                                            <li
-                                                key={status}
-                                                className="flex items-center justify-between gap-3 text-sm"
-                                            >
-                                                <span className="flex min-w-0 items-center gap-2">
-                                                    <span
-                                                        aria-hidden="true"
-                                                        className={cn(
-                                                            'size-2.5 shrink-0 rounded-xs',
-                                                            STATUS_COLOR[
-                                                                status
-                                                            ],
-                                                        )}
-                                                    />
-                                                    <span className="truncate">
-                                                        {t(
-                                                            `permits.status.${status}`,
-                                                        )}
-                                                    </span>
-                                                </span>
-                                                <span className="font-semibold tabular-nums">
-                                                    {distribution[status]}
-                                                    <span className="ms-1.5 text-xs font-normal text-muted-foreground">
-                                                        {Math.round(
-                                                            (distribution[
-                                                                status
-                                                            ] /
-                                                                total) *
-                                                                100,
-                                                        )}
-                                                        %
-                                                    </span>
-                                                </span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
+                                <DonutChart
+                                    shareLabel={t('dashboard.charts.share')}
+                                    totalLabel={t('reports.permits')}
+                                    parts={shownStatuses.map((status) => ({
+                                        key: status,
+                                        label: t(`permits.status.${status}`),
+                                        value: distribution[status],
+                                        color: PERMIT_STATUS_COLOR[status],
+                                    }))}
+                                />
                             )}
-                        </section>
+                        </ChartCard>
                     )}
                 </div>
 

@@ -1,6 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { EthiopianDateInput } from '@/components/ethiopian-date-input';
+import { FormSection } from '@/components/form-layout';
 import PageHeader from '@/shell/Components/PageHeader';
 import {
     Alert,
@@ -140,18 +142,12 @@ export default function GiveInstitutionPermits({
             <Head title={t('institution.issue_title')} />
 
             <form onSubmit={submit} noValidate className="space-y-5">
-                <section className="space-y-4 rounded-panel border border-(--app-border) bg-(--app-surface) p-6">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                        <h2 className="text-sm font-semibold text-(--app-foreground)">
-                            {t('institution.fields.vehicles')}
-                            <span
-                                aria-hidden="true"
-                                className="ml-0.5 text-danger-strong"
-                            >
-                                *
-                            </span>
-                        </h2>
-                        <div className="flex items-center gap-3">
+                <FormSection
+                    step={1}
+                    required
+                    title={t('institution.fields.vehicles')}
+                    aside={
+                        <>
                             <span
                                 aria-live="polite"
                                 className={cx(
@@ -184,9 +180,9 @@ export default function GiveInstitutionPermits({
                                         : t('institution.select_all')}
                                 </Button>
                             )}
-                        </div>
-                    </div>
-
+                        </>
+                    }
+                >
                     {vehicles.length === 0 ? (
                         <Alert tone="info">
                             {t('institution.no_vehicles_for_permit')}{' '}
@@ -224,7 +220,7 @@ export default function GiveInstitutionPermits({
                                     {t('institution.no_vehicle_matches')}
                                 </p>
                             ) : (
-                                <ul className="grid max-h-96 gap-2 overflow-y-auto sm:grid-cols-2">
+                                <ul className="grid max-h-96 gap-2 overflow-y-auto sm:grid-cols-2 xl:grid-cols-3">
                                     {shown.map((vehicle) => {
                                         const checked =
                                             form.data.vehicles.includes(
@@ -302,17 +298,17 @@ export default function GiveInstitutionPermits({
                         </>
                     )}
                     <FieldError>{vehicleError}</FieldError>
-                </section>
+                </FormSection>
 
-                <section className="space-y-4 rounded-panel border border-(--app-border) bg-(--app-surface) p-6">
-                    <div className="flex items-center justify-between gap-3">
-                        <h2 className="text-sm font-semibold text-(--app-foreground)">
-                            {t('institution.columns.period')}
-                        </h2>
+                <FormSection
+                    step={2}
+                    title={t('institution.columns.period')}
+                    aside={
                         <span className={badgeClassName('success')}>
                             {t('institution.free')}
                         </span>
-                    </div>
+                    }
+                >
                     <div
                         role="group"
                         aria-label={t('institution.presets')}
@@ -350,55 +346,32 @@ export default function GiveInstitutionPermits({
                             );
                         })}
                     </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <FormField
+                    {/* Chosen on the Ethiopian calendar like every date in the system; the value is still a Gregorian ISO date. */}
+                    <div className="grid items-start gap-4 sm:grid-cols-2">
+                        <EthiopianDateInput
+                            id="valid_from"
                             label={t('institution.fields.valid_from')}
                             required
                             error={form.errors.valid_from}
-                        >
-                            {({ id, describedBy, invalid }) => (
-                                <Input
-                                    id={id}
-                                    type="date"
-                                    aria-describedby={describedBy}
-                                    aria-invalid={invalid}
-                                    min={today}
-                                    value={form.data.valid_from}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'valid_from',
-                                            event.target.value,
-                                        )
-                                    }
-                                />
-                            )}
-                        </FormField>
-                        <FormField
+                            min={today}
+                            yearsAfter={2}
+                            value={form.data.valid_from}
+                            onChange={(iso) => form.setData('valid_from', iso)}
+                        />
+                        <EthiopianDateInput
+                            id="valid_to"
                             label={t('institution.fields.valid_to')}
                             required
                             error={form.errors.valid_to}
-                        >
-                            {({ id, describedBy, invalid }) => (
-                                <Input
-                                    id={id}
-                                    type="date"
-                                    aria-describedby={describedBy}
-                                    aria-invalid={invalid}
-                                    min={form.data.valid_from}
-                                    max={addDays(
-                                        form.data.valid_from || today,
-                                        maxDays - 1,
-                                    )}
-                                    value={form.data.valid_to}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'valid_to',
-                                            event.target.value,
-                                        )
-                                    }
-                                />
+                            min={form.data.valid_from || today}
+                            max={addDays(
+                                form.data.valid_from || today,
+                                maxDays - 1,
                             )}
-                        </FormField>
+                            yearsAfter={2}
+                            value={form.data.valid_to}
+                            onChange={(iso) => form.setData('valid_to', iso)}
+                        />
                     </div>
                     <p className="text-xs text-(--app-muted-foreground)">
                         {days > 0 && (
@@ -415,49 +388,57 @@ export default function GiveInstitutionPermits({
                             String(maxDays),
                         )}
                     </p>
-                    <FormField
-                        label={t('institution.fields.reason')}
-                        required
-                        error={form.errors.reason}
-                    >
-                        {({ id, describedBy, invalid }) => (
-                            <Input
-                                id={id}
-                                aria-describedby={describedBy}
-                                aria-invalid={invalid}
-                                maxLength={500}
-                                placeholder={t(
-                                    'institution.fields.reason_placeholder',
-                                )}
-                                value={form.data.reason}
-                                onChange={(event) =>
-                                    form.setData('reason', event.target.value)
-                                }
-                            />
-                        )}
-                    </FormField>
-                    <FormField
-                        label={t('institution.fields.route')}
-                        error={form.errors.route}
-                        description={t('institution.fields.route_help')}
-                    >
-                        {({ id, describedBy, invalid }) => (
-                            <Input
-                                id={id}
-                                aria-describedby={describedBy}
-                                aria-invalid={invalid}
-                                maxLength={255}
-                                placeholder={t(
-                                    'institution.fields.route_placeholder',
-                                )}
-                                value={form.data.route}
-                                onChange={(event) =>
-                                    form.setData('route', event.target.value)
-                                }
-                            />
-                        )}
-                    </FormField>
-                </section>
+                    <div className="grid items-start gap-5 md:grid-cols-2">
+                        <FormField
+                            label={t('institution.fields.reason')}
+                            required
+                            error={form.errors.reason}
+                        >
+                            {({ id, describedBy, invalid }) => (
+                                <Input
+                                    id={id}
+                                    aria-describedby={describedBy}
+                                    aria-invalid={invalid}
+                                    maxLength={500}
+                                    placeholder={t(
+                                        'institution.fields.reason_placeholder',
+                                    )}
+                                    value={form.data.reason}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'reason',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            )}
+                        </FormField>
+                        <FormField
+                            label={t('institution.fields.route')}
+                            error={form.errors.route}
+                            description={t('institution.fields.route_help')}
+                        >
+                            {({ id, describedBy, invalid }) => (
+                                <Input
+                                    id={id}
+                                    aria-describedby={describedBy}
+                                    aria-invalid={invalid}
+                                    maxLength={255}
+                                    placeholder={t(
+                                        'institution.fields.route_placeholder',
+                                    )}
+                                    value={form.data.route}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'route',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            )}
+                        </FormField>
+                    </div>
+                </FormSection>
 
                 <div className="flex justify-end gap-2">
                     <Link

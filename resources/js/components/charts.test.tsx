@@ -1,6 +1,12 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { Meter, niceScale, SegmentedBar } from '@/components/charts';
+import {
+    DonutChart,
+    Meter,
+    niceScale,
+    SegmentedBar,
+    smoothLine,
+} from '@/components/charts';
 
 afterEach(cleanup);
 
@@ -37,6 +43,44 @@ describe('SegmentedBar', () => {
             }),
         ).toBeTruthy();
         expect(screen.getByText('Returned')).toBeTruthy();
+    });
+});
+
+describe('DonutChart', () => {
+    it('names every part with its share and shows the total in the centre', () => {
+        render(
+            <DonutChart
+                shareLabel="Share"
+                totalLabel="Permits"
+                parts={[
+                    { key: 'a', label: 'Active', value: 6, color: 'bg-x' },
+                    { key: 'b', label: 'Expired', value: 2, color: 'bg-y' },
+                    { key: 'c', label: 'Revoked', value: 0, color: 'bg-z' },
+                ]}
+            />,
+        );
+
+        expect(
+            screen.getByRole('img', {
+                name: 'Active: 6 (75%), Expired: 2 (25%)',
+            }),
+        ).toBeTruthy();
+        expect(screen.getByText('8')).toBeTruthy();
+        expect(screen.getByText('Revoked')).toBeTruthy();
+    });
+});
+
+describe('smoothLine', () => {
+    it('keeps a flat run flat instead of bulging between equal points', () => {
+        const path = smoothLine([
+            { x: 0, y: 50 },
+            { x: 50, y: 50 },
+            { x: 100, y: 50 },
+        ]);
+
+        expect(path).toBe(
+            'M0,50 C16.67,50 33.33,50 50,50 C66.67,50 83.33,50 100,50',
+        );
     });
 });
 

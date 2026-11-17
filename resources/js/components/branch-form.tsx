@@ -35,68 +35,70 @@ export function BranchForm({
     return (
         <form onSubmit={onSubmit} noValidate className="space-y-5">
             <FormSection>
-                <FormField
-                    id="code"
-                    required={!codeLocked}
-                    label={t('admin.branches.fields.code')}
-                    hint={t('admin.branches.fields.code_hint')}
-                    error={form.errors.code}
-                >
-                    {(control) => (
-                        <Input
-                            {...control}
-                            translate="no"
-                            autoComplete="off"
-                            maxLength={6}
-                            className="w-40 font-mono uppercase"
-                            value={form.data.code}
-                            readOnly={codeLocked}
-                            aria-readonly={codeLocked || undefined}
-                            onChange={(event) =>
-                                form.setData(
-                                    'code',
-                                    event.target.value.toUpperCase(),
-                                )
-                            }
-                        />
-                    )}
-                </FormField>
+                <div className="grid items-start gap-5 md:grid-cols-2 xl:grid-cols-3">
+                    <FormField
+                        id="code"
+                        required={!codeLocked}
+                        label={t('admin.branches.fields.code')}
+                        hint={t('admin.branches.fields.code_hint')}
+                        error={form.errors.code}
+                    >
+                        {(control) => (
+                            <Input
+                                {...control}
+                                translate="no"
+                                autoComplete="off"
+                                maxLength={6}
+                                className="w-40 font-mono uppercase"
+                                value={form.data.code}
+                                readOnly={codeLocked}
+                                aria-readonly={codeLocked || undefined}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'code',
+                                        event.target.value.toUpperCase(),
+                                    )
+                                }
+                            />
+                        )}
+                    </FormField>
 
-                <FormField
-                    id="name_am"
-                    required
-                    label={t('admin.branches.fields.name_am')}
-                    error={form.errors.name_am}
-                >
-                    {(control) => (
-                        <Input
-                            {...control}
-                            lang="am"
-                            value={form.data.name_am}
-                            onChange={(event) =>
-                                form.setData('name_am', event.target.value)
-                            }
-                        />
-                    )}
-                </FormField>
+                    <FormField
+                        id="name_am"
+                        required
+                        label={t('admin.branches.fields.name_am')}
+                        error={form.errors.name_am}
+                    >
+                        {(control) => (
+                            <Input
+                                {...control}
+                                lang="am"
+                                value={form.data.name_am}
+                                onChange={(event) =>
+                                    form.setData('name_am', event.target.value)
+                                }
+                            />
+                        )}
+                    </FormField>
 
-                <FormField
-                    id="name_en"
-                    required
-                    label={t('admin.branches.fields.name_en')}
-                    error={form.errors.name_en}
-                >
-                    {(control) => (
-                        <Input
-                            {...control}
-                            lang="en"
-                            value={form.data.name_en}
-                            onChange={(event) =>
-                                form.setData('name_en', event.target.value)
-                            }
-                        />
-                    )}
-                </FormField>
+                    <FormField
+                        id="name_en"
+                        required
+                        label={t('admin.branches.fields.name_en')}
+                        error={form.errors.name_en}
+                    >
+                        {(control) => (
+                            <Input
+                                {...control}
+                                lang="en"
+                                value={form.data.name_en}
+                                onChange={(event) =>
+                                    form.setData('name_en', event.target.value)
+                                }
+                            />
+                        )}
+                    </FormField>
+                </div>
 
                 <div className="flex items-start gap-3">
                     <Checkbox

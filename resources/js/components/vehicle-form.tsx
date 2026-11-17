@@ -35,63 +35,68 @@ export function VehicleForm({
 
     return (
         <form onSubmit={onSubmit} noValidate className="space-y-5">
-            <FormSection className="space-y-7">
-                <PlateInput
-                    id="plate"
-                    required
-                    value={form.data.plate}
-                    regions={plateRegions}
-                    error={form.errors.plate}
-                    onChange={(plate) => form.setData('plate', plate)}
-                />
+            <FormSection>
+                <div className="grid items-start gap-5 md:grid-cols-2 xl:grid-cols-3">
+                    <PlateInput
+                        id="plate"
+                        required
+                        value={form.data.plate}
+                        regions={plateRegions}
+                        error={form.errors.plate}
+                        onChange={(plate) => form.setData('plate', plate)}
+                    />
 
-                <FormField
-                    id="vehicle_type_id"
-                    required
-                    label={t('vehicles.fields.vehicle_type')}
-                    error={form.errors.vehicle_type_id}
-                >
-                    {(control) => (
-                        <NativeSelect
-                            {...control}
-                            value={form.data.vehicle_type_id}
-                            onChange={(event) =>
-                                form.setData(
-                                    'vehicle_type_id',
-                                    event.target.value,
-                                )
-                            }
-                        >
-                            <option value="">
-                                {t('vehicles.choose_type')}
-                            </option>
-                            {vehicleTypes.map((type) => (
-                                <option key={type.id} value={type.id}>
-                                    {type.name}
+                    <FormField
+                        id="vehicle_type_id"
+                        required
+                        label={t('vehicles.fields.vehicle_type')}
+                        error={form.errors.vehicle_type_id}
+                    >
+                        {(control) => (
+                            <NativeSelect
+                                {...control}
+                                value={form.data.vehicle_type_id}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'vehicle_type_id',
+                                        event.target.value,
+                                    )
+                                }
+                            >
+                                <option value="">
+                                    {t('vehicles.choose_type')}
                                 </option>
-                            ))}
-                        </NativeSelect>
-                    )}
-                </FormField>
+                                {vehicleTypes.map((type) => (
+                                    <option key={type.id} value={type.id}>
+                                        {type.name}
+                                    </option>
+                                ))}
+                            </NativeSelect>
+                        )}
+                    </FormField>
 
-                <FormField
-                    id="owner_name"
-                    required
-                    label={t('vehicles.fields.owner_name')}
-                    error={form.errors.owner_name}
-                >
-                    {(control) => (
-                        <Input
-                            {...control}
-                            value={form.data.owner_name}
-                            autoComplete="off"
-                            maxLength={255}
-                            onChange={(event) =>
-                                form.setData('owner_name', event.target.value)
-                            }
-                        />
-                    )}
-                </FormField>
+                    <FormField
+                        id="owner_name"
+                        required
+                        label={t('vehicles.fields.owner_name')}
+                        error={form.errors.owner_name}
+                    >
+                        {(control) => (
+                            <Input
+                                {...control}
+                                value={form.data.owner_name}
+                                autoComplete="off"
+                                maxLength={255}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'owner_name',
+                                        event.target.value,
+                                    )
+                                }
+                            />
+                        )}
+                    </FormField>
+                </div>
             </FormSection>
 
             <FormActions

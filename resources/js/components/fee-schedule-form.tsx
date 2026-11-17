@@ -49,7 +49,7 @@ export function FeeScheduleForm({
                         {t('fees.fields.permit_type')}
                         <RequiredMark />
                     </legend>
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         {PERMIT_TYPES.map((type) => (
                             <label
                                 key={type}
@@ -75,37 +75,37 @@ export function FeeScheduleForm({
                     />
                 </fieldset>
 
-                <FormField
-                    id="vehicle_type_id"
-                    label={t('fees.fields.vehicle_type')}
-                    hint={t('fees.all_types_hint')}
-                    error={form.errors.vehicle_type_id}
-                >
-                    {(control) => (
-                        <NativeSelect
-                            {...control}
-                            value={form.data.vehicle_type_id}
-                            onChange={(event) =>
-                                form.setData(
-                                    'vehicle_type_id',
-                                    event.target.value,
-                                )
-                            }
-                        >
-                            <option value="">
-                                {t('fees.all_vehicle_types')}
-                            </option>
-                            {vehicleTypes.map((type) => (
-                                <option key={type.id} value={type.id}>
-                                    {type.name}
-                                </option>
-                            ))}
-                        </NativeSelect>
-                    )}
-                </FormField>
-
                 <div className="space-y-2">
-                    <div className="grid gap-6 sm:grid-cols-2">
+                    <div className="grid items-start gap-5 md:grid-cols-2 xl:grid-cols-4">
+                        <FormField
+                            id="vehicle_type_id"
+                            label={t('fees.fields.vehicle_type')}
+                            hint={t('fees.all_types_hint')}
+                            error={form.errors.vehicle_type_id}
+                        >
+                            {(control) => (
+                                <NativeSelect
+                                    {...control}
+                                    value={form.data.vehicle_type_id}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'vehicle_type_id',
+                                            event.target.value,
+                                        )
+                                    }
+                                >
+                                    <option value="">
+                                        {t('fees.all_vehicle_types')}
+                                    </option>
+                                    {vehicleTypes.map((type) => (
+                                        <option key={type.id} value={type.id}>
+                                            {type.name}
+                                        </option>
+                                    ))}
+                                </NativeSelect>
+                            )}
+                        </FormField>
+
                         <FormField
                             id="min_days"
                             required
@@ -148,30 +148,33 @@ export function FeeScheduleForm({
                                 />
                             )}
                         </FormField>
+
+                        <FormField
+                            id="amount"
+                            required
+                            label={t('fees.fields.amount')}
+                            error={form.errors.amount}
+                        >
+                            {(control) => (
+                                <Input
+                                    {...control}
+                                    value={form.data.amount}
+                                    inputMode="decimal"
+                                    className="tabular-nums"
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'amount',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            )}
+                        </FormField>
                     </div>
                     <p className="text-sm text-muted-foreground">
                         {t('fees.form.days_hint')}
                     </p>
                 </div>
-
-                <FormField
-                    id="amount"
-                    required
-                    label={t('fees.fields.amount')}
-                    error={form.errors.amount}
-                >
-                    {(control) => (
-                        <Input
-                            {...control}
-                            value={form.data.amount}
-                            inputMode="decimal"
-                            className="tabular-nums"
-                            onChange={(event) =>
-                                form.setData('amount', event.target.value)
-                            }
-                        />
-                    )}
-                </FormField>
 
                 <div className="grid gap-6 md:grid-cols-2">
                     <EthiopianDateInput

@@ -199,82 +199,85 @@ export function PermitForm({
                     max: limits.max_trailers,
                 })}
             >
-                <FormField
-                    id="primary_vehicle_id"
-                    required
-                    label={t('permits.fields.primary_vehicle')}
-                    error={errors.primary_vehicle_id}
-                >
-                    {(control) => (
-                        <NativeSelect
-                            {...control}
-                            value={form.data.primary_vehicle_id}
-                            onChange={(event) =>
-                                form.setData(
-                                    'primary_vehicle_id',
-                                    event.target.value,
-                                )
-                            }
-                        >
-                            <option value="">
-                                {t('permits.form.choose_vehicle')}
-                            </option>
-                            {vehicles.map((vehicle) => (
-                                <option key={vehicle.id} value={vehicle.id}>
-                                    {vehicleLabel(vehicle)}
-                                </option>
-                            ))}
-                        </NativeSelect>
-                    )}
-                </FormField>
-
-                {trailerSlots.map((selected, slot) => (
+                <div className="grid items-start gap-5 md:grid-cols-2 xl:grid-cols-3">
                     <FormField
-                        key={slot}
-                        id={`trailer_vehicle_ids_${slot}`}
-                        label={t('permits.form.trailer_number', {
-                            number: slot + 1,
-                        })}
-                        error={
-                            errors[`trailer_vehicle_ids.${slot}`] ??
-                            (slot === 0
-                                ? errors.trailer_vehicle_ids
-                                : undefined)
-                        }
+                        id="primary_vehicle_id"
+                        required
+                        label={t('permits.fields.primary_vehicle')}
+                        error={errors.primary_vehicle_id}
                     >
                         {(control) => (
                             <NativeSelect
                                 {...control}
-                                value={selected}
+                                value={form.data.primary_vehicle_id}
                                 onChange={(event) =>
-                                    setTrailer(slot, event.target.value)
+                                    form.setData(
+                                        'primary_vehicle_id',
+                                        event.target.value,
+                                    )
                                 }
                             >
                                 <option value="">
-                                    {t('permits.form.no_trailer')}
+                                    {t('permits.form.choose_vehicle')}
                                 </option>
-                                {vehicles
-                                    .filter(
-                                        (vehicle) =>
-                                            vehicle.id === selected ||
-                                            (vehicle.id !==
-                                                form.data.primary_vehicle_id &&
-                                                !trailerSlots.includes(
-                                                    vehicle.id,
-                                                )),
-                                    )
-                                    .map((vehicle) => (
-                                        <option
-                                            key={vehicle.id}
-                                            value={vehicle.id}
-                                        >
-                                            {vehicleLabel(vehicle)}
-                                        </option>
-                                    ))}
+                                {vehicles.map((vehicle) => (
+                                    <option key={vehicle.id} value={vehicle.id}>
+                                        {vehicleLabel(vehicle)}
+                                    </option>
+                                ))}
                             </NativeSelect>
                         )}
                     </FormField>
-                ))}
+
+                    {trailerSlots.map((selected, slot) => (
+                        <FormField
+                            key={slot}
+                            id={`trailer_vehicle_ids_${slot}`}
+                            label={t('permits.form.trailer_number', {
+                                number: slot + 1,
+                            })}
+                            error={
+                                errors[`trailer_vehicle_ids.${slot}`] ??
+                                (slot === 0
+                                    ? errors.trailer_vehicle_ids
+                                    : undefined)
+                            }
+                        >
+                            {(control) => (
+                                <NativeSelect
+                                    {...control}
+                                    value={selected}
+                                    onChange={(event) =>
+                                        setTrailer(slot, event.target.value)
+                                    }
+                                >
+                                    <option value="">
+                                        {t('permits.form.no_trailer')}
+                                    </option>
+                                    {vehicles
+                                        .filter(
+                                            (vehicle) =>
+                                                vehicle.id === selected ||
+                                                (vehicle.id !==
+                                                    form.data
+                                                        .primary_vehicle_id &&
+                                                    !trailerSlots.includes(
+                                                        vehicle.id,
+                                                    )),
+                                        )
+                                        .map((vehicle) => (
+                                            <option
+                                                key={vehicle.id}
+                                                value={vehicle.id}
+                                            >
+                                                {vehicleLabel(vehicle)}
+                                            </option>
+                                        ))}
+                                </NativeSelect>
+                            )}
+                        </FormField>
+                    ))}
+                </div>
 
                 {addVehicleHref && (
                     <p className="text-sm text-muted-foreground">
@@ -349,55 +352,60 @@ export function PermitForm({
                 title={t('permits.form.sections.reason.title')}
                 hint={t('permits.form.sections.reason.hint')}
             >
-                <FormField
-                    id="reason"
-                    required
-                    label={t('permits.fields.reason')}
-                    error={errors.reason}
-                >
-                    {(control) => (
-                        <Textarea
-                            {...control}
-                            value={form.data.reason}
-                            maxLength={2000}
-                            required
-                            onChange={(event) =>
-                                form.setData('reason', event.target.value)
-                            }
-                        />
-                    )}
-                </FormField>
-
-                {branches.length > 0 && (
+                <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
                     <FormField
-                        id="branch_id"
-                        label={t('permits.fields.branch')}
-                        hint={t('permits.fields.branch_hint')}
-                        error={errors.branch_id}
+                        id="reason"
+                        required
+                        label={t('permits.fields.reason')}
+                        error={errors.reason}
                     >
                         {(control) => (
-                            <NativeSelect
+                            <Textarea
                                 {...control}
-                                value={form.data.branch_id ?? ''}
+                                value={form.data.reason}
+                                maxLength={2000}
+                                required
                                 onChange={(event) =>
-                                    form.setData(
-                                        'branch_id',
-                                        event.target.value,
-                                    )
+                                    form.setData('reason', event.target.value)
                                 }
-                            >
-                                <option value="">
-                                    {t('permits.fields.head_office')}
-                                </option>
-                                {branches.map((branch) => (
-                                    <option key={branch.id} value={branch.id}>
-                                        {branch.name}
-                                    </option>
-                                ))}
-                            </NativeSelect>
+                            />
                         )}
                     </FormField>
-                )}
+
+                    {branches.length > 0 && (
+                        <FormField
+                            id="branch_id"
+                            label={t('permits.fields.branch')}
+                            hint={t('permits.fields.branch_hint')}
+                            error={errors.branch_id}
+                        >
+                            {(control) => (
+                                <NativeSelect
+                                    {...control}
+                                    value={form.data.branch_id ?? ''}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'branch_id',
+                                            event.target.value,
+                                        )
+                                    }
+                                >
+                                    <option value="">
+                                        {t('permits.fields.head_office')}
+                                    </option>
+                                    {branches.map((branch) => (
+                                        <option
+                                            key={branch.id}
+                                            value={branch.id}
+                                        >
+                                            {branch.name}
+                                        </option>
+                                    ))}
+                                </NativeSelect>
+                            )}
+                        </FormField>
+                    )}
+                </div>
             </Section>
 
             <div className="space-y-4">

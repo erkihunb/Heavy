@@ -36,86 +36,91 @@ export function VehicleTypeForm({
     return (
         <form onSubmit={onSubmit} noValidate className="space-y-5">
             <FormSection>
-                <FormField
-                    id="code"
-                    required={!codeLocked}
-                    label={t('admin.vehicle_types.fields.code')}
-                    hint={t('admin.vehicle_types.fields.code_hint')}
-                    error={form.errors.code}
-                >
-                    {(control) => (
-                        <Input
-                            {...control}
-                            translate="no"
-                            autoComplete="off"
-                            className="font-mono"
-                            value={form.data.code}
-                            readOnly={codeLocked}
-                            aria-readonly={codeLocked || undefined}
-                            onChange={(event) =>
-                                form.setData('code', event.target.value)
-                            }
-                        />
-                    )}
-                </FormField>
+                <div className="grid items-start gap-5 md:grid-cols-2 xl:grid-cols-4">
+                    <FormField
+                        id="code"
+                        required={!codeLocked}
+                        label={t('admin.vehicle_types.fields.code')}
+                        hint={t('admin.vehicle_types.fields.code_hint')}
+                        error={form.errors.code}
+                    >
+                        {(control) => (
+                            <Input
+                                {...control}
+                                translate="no"
+                                autoComplete="off"
+                                className="font-mono"
+                                value={form.data.code}
+                                readOnly={codeLocked}
+                                aria-readonly={codeLocked || undefined}
+                                onChange={(event) =>
+                                    form.setData('code', event.target.value)
+                                }
+                            />
+                        )}
+                    </FormField>
 
-                <FormField
-                    id="name_am"
-                    required
-                    label={t('admin.vehicle_types.fields.name_am')}
-                    error={form.errors.name_am}
-                >
-                    {(control) => (
-                        <Input
-                            {...control}
-                            lang="am"
-                            value={form.data.name_am}
-                            onChange={(event) =>
-                                form.setData('name_am', event.target.value)
-                            }
-                        />
-                    )}
-                </FormField>
+                    <FormField
+                        id="name_am"
+                        required
+                        label={t('admin.vehicle_types.fields.name_am')}
+                        error={form.errors.name_am}
+                    >
+                        {(control) => (
+                            <Input
+                                {...control}
+                                lang="am"
+                                value={form.data.name_am}
+                                onChange={(event) =>
+                                    form.setData('name_am', event.target.value)
+                                }
+                            />
+                        )}
+                    </FormField>
 
-                <FormField
-                    id="name_en"
-                    required
-                    label={t('admin.vehicle_types.fields.name_en')}
-                    error={form.errors.name_en}
-                >
-                    {(control) => (
-                        <Input
-                            {...control}
-                            lang="en"
-                            value={form.data.name_en}
-                            onChange={(event) =>
-                                form.setData('name_en', event.target.value)
-                            }
-                        />
-                    )}
-                </FormField>
+                    <FormField
+                        id="name_en"
+                        required
+                        label={t('admin.vehicle_types.fields.name_en')}
+                        error={form.errors.name_en}
+                    >
+                        {(control) => (
+                            <Input
+                                {...control}
+                                lang="en"
+                                value={form.data.name_en}
+                                onChange={(event) =>
+                                    form.setData('name_en', event.target.value)
+                                }
+                            />
+                        )}
+                    </FormField>
 
-                <FormField
-                    id="sort_order"
-                    required
-                    label={t('admin.vehicle_types.fields.sort_order')}
-                    error={form.errors.sort_order}
-                >
-                    {(control) => (
-                        <Input
-                            {...control}
-                            type="number"
-                            inputMode="numeric"
-                            min={0}
-                            max={1000}
-                            className="w-32 tabular-nums"
-                            value={form.data.sort_order}
-                            onChange={(event) =>
-                                form.setData('sort_order', event.target.value)
-                            }
-                        />
-                    )}
-                </FormField>
+                    <FormField
+                        id="sort_order"
+                        required
+                        label={t('admin.vehicle_types.fields.sort_order')}
+                        error={form.errors.sort_order}
+                    >
+                        {(control) => (
+                            <Input
+                                {...control}
+                                type="number"
+                                inputMode="numeric"
+                                min={0}
+                                max={1000}
+                                className="w-32 tabular-nums"
+                                value={form.data.sort_order}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'sort_order',
+                                        event.target.value,
+                                    )
+                                }
+                            />
+                        )}
+                    </FormField>
+                </div>
 
                 <div className="flex items-start gap-3">
                     <Checkbox

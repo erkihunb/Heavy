@@ -86,7 +86,7 @@ return [
         'route' => 'Route',
         'route_placeholder' => 'e.g. Megenagna to Kality depot',
         'route_help' => 'Optional. Left empty, the paper says the vehicle may use any route in the city.',
-        'period_help' => 'At most :max days. The dates are Gregorian; the paper prints them in the Ethiopian calendar too.',
+        'period_help' => 'At most :max days. The dates are chosen in the Ethiopian calendar; the paper prints them in both calendars.',
         'plate' => 'Plate number',
         'plate_placeholder' => 'e.g. AA-3-B12345',
         'vehicle_type' => 'Vehicle type',
