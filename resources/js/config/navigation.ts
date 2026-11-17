@@ -9,6 +9,8 @@ import { overview as systemSettings } from '@/routes/admin/settings';
 import { index as users } from '@/routes/admin/users';
 import { index as vehicleTypes } from '@/routes/admin/vehicle-types';
 import { verify as officerVerify } from '@/routes/officer';
+import { index as institutionPermits } from '@/routes/staff/institution-permits';
+import { index as institutionVehicles } from '@/routes/staff/institution-vehicles';
 import { index as paymentQueue } from '@/routes/staff/payments';
 import { index as reviewQueue } from '@/routes/staff/permits';
 import { index as reports } from '@/routes/staff/reports';
@@ -120,6 +122,19 @@ export const navigation: Navigation = {
                                 'permits.view-queue',
                                 'applicants.register',
                             ],
+                        },
+                        // The Authority's own vehicles, and the permits given to them directly, free of charge.
+                        {
+                            href: institutionVehicles().url,
+                            labelKey: 'institution.nav_vehicles',
+                            icon: Buildings3Icon,
+                            permission: 'institution-permits.issue',
+                        },
+                        {
+                            href: institutionPermits().url,
+                            labelKey: 'institution.nav',
+                            icon: ClipboardListIcon,
+                            permission: 'institution-permits.issue',
                         },
                     ],
                 },

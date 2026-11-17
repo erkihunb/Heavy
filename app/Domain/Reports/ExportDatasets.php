@@ -84,7 +84,7 @@ final class ExportDatasets
         $now = CarbonImmutable::now();
         $timezone = (string) config('localization.display_timezone');
 
-        $query = Permit::query()
+        $query = Permit::query()->ordinary()
             ->with(['organization:id,name_am,name_en', 'vehicles.vehicleType'])
             // Drafts and withdrawn applications are the applicant's business only.
             ->whereNotIn('status', PermitStatus::hiddenFromStaff())

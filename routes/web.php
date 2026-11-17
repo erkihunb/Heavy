@@ -7,6 +7,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PermitDocumentController;
 use App\Http\Controllers\PublicVerificationController;
+use App\Http\Controllers\UserAvatarController;
 use App\Http\Middleware\VerificationHeaders;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,9 @@ Route::put('locale', [LocaleController::class, 'update'])
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+
+    // A person's photo, for colleagues' lists and the header.
+    Route::get('users/{user}/avatar', UserAvatarController::class)->whereNumber('user')->name('users.avatar');
 
     // The permit PDF, Amharic or English: a temporary signed link, and the policy is checked again (spec §8).
     Route::get('permits/{permit}/document/{language?}', PermitDocumentController::class)

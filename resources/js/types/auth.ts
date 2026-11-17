@@ -14,6 +14,7 @@ export type User = {
     name: string;
     email: string;
     avatar?: string;
+    theme?: string | null;
     email_verified_at: string | null;
     locale: string;
     roles: Role[];

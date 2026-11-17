@@ -6,6 +6,7 @@
  */
 
 return [
+    'email_or_username' => 'ኢሜይል ወይም የተጠቃሚ ስም',
     'email' => 'የኢሜይል አድራሻ',
     'password' => 'የይለፍ ቃል',
     /*

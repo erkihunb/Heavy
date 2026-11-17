@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Enums\Permission;
 use App\Models\User;
+use App\Support\Rbac\PermissionCatalog;
 use Illuminate\Auth\Access\Response;
 
 /**
@@ -87,6 +88,30 @@ class UserPolicy
     public function restore(User $user, User $target): bool
     {
         return $user->can(Permission::DeactivateUsers->value);
+    }
+
+    /**
+     * Helping someone who cannot sign in: a temporary password, a reset
+     * link, or turning off a lost two-factor device. Not for your own
+     * account (that is under Settings), and an administrator's sign-in only
+     * by someone who may change the administrator role, so nobody takes
+     * over an account that can do more than they can.
+     */
+    public function resetPassword(User $user, User $target): Response
+    {
+        if (! $user->can(Permission::ResetPasswords->value)) {
+            return Response::deny();
+        }
+
+        if ($user->is($target)) {
+            return Response::deny(__('rbac.users.errors.reset_self'));
+        }
+
+        if ($target->hasRole(PermissionCatalog::PROTECTED_ROLE) && ! $user->can(Permission::ManageGlobalRoles->value)) {
+            return Response::deny(__('rbac.users.errors.reset_admin'));
+        }
+
+        return Response::allow();
     }
 
     /**

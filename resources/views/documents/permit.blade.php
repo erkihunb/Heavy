@@ -155,6 +155,13 @@
         /* An expired permit: the same stamp in grey. */
         .revoked-stamp.is-expired { color: #4b4b4b; border-color: #4b4b4b; }
         .revoked-line.is-expired { background: #4b4b4b; }
+
+        /* The institution paper: a navy band under the title and navy bars, so it is told apart at a glance. */
+        .institution-line {
+            margin: 1.5mm auto 0; padding: 1mm 5mm; display: inline-block;
+            background: #0b1b3f; color: #fff; font-size: 10.5pt; font-weight: 700; letter-spacing: 0.2pt;
+        }
+        .is-institution .band { background: #0b1b3f; }
         .qr-revoked.is-expired { color: #4b4b4b; border-color: #4b4b4b; }
 
         /* Long values: one size smaller ("compact") or two ("tight"), so the page still fits one sheet. */
@@ -236,6 +243,26 @@
         ],
     ][$language];
 
+    // The Authority's own vehicles: a paper of its own, given directly and free of charge.
+    if ($institution) {
+        $text = array_replace_recursive($text, [
+            'am' => [
+                'title' => 'የተቋም ተሽከርካሪ መንቀሳቀሻ ፈቃድ',
+                'ribbon' => 'የባለሥልጣኑ የራሱ ተሽከርካሪ · ከክፍያ ነፃ',
+                'entries' => ['organisation' => 'የተሽከርካሪው ባለቤት ተቋም', 'receipt' => 'ክፍያ', 'route' => 'የሚንቀሳቀስበት መስመር'],
+                'exempt' => 'ከክፍያ ነፃ (የተቋሙ የራሱ ተሽከርካሪ)',
+                'anywhere' => 'በከተማው ውስጥ በማንኛውም መስመር',
+            ],
+            'en' => [
+                'title' => 'Movement permit for an institution vehicle',
+                'ribbon' => "THE AUTHORITY'S OWN VEHICLE · FREE OF CHARGE",
+                'entries' => ['organisation' => 'Institution owning the vehicle', 'receipt' => 'Fee', 'route' => 'Route'],
+                'exempt' => "Exempt (the institution's own vehicle)",
+                'anywhere' => 'Any route in the city',
+            ],
+        ][$language]);
+    }
+
     $owners = collect($vehicles)->pluck('owner')->filter()->unique()->implode(', ');
     $types = collect($vehicles)->pluck('type')->filter()->unique()->implode(', ');
     $plates = collect($vehicles)->map(fn (array $vehicle): string => count($vehicles) > 1
@@ -258,7 +285,7 @@
     }
     $microtext = str_repeat($authority_am.' · '.mb_strtoupper($authority_en).' · '.$permit->permit_number.' · ', 8);
 @endphp
-<body class="lang-{{ $language }} density-{{ $density }}">
+<body class="lang-{{ $language }} density-{{ $density }}{{ $institution ? ' is-institution' : '' }}">
 <div class="sheet">
     <div class="border"></div>
     <div class="band top"></div>
@@ -307,6 +334,9 @@
             </div>
             <div class="title">
                 <h1>{{ $text['title'] }}</h1>
+                @if ($institution)
+                    <div><span class="institution-line">{{ $text['ribbon'] }}</span></div>
+                @endif
                 @if ($stamp)
                     <div><span class="revoked-line{{ $stamp === 'expired' ? ' is-expired' : '' }}">{{ str_replace(':date', $stamp_date ? trim($stamp_date['main'].' '.$text['era']) : '', $text[$stamp.'_on']) }}</span></div>
                 @endif
@@ -343,7 +373,12 @@
                 <li class="entry">
                     <span class="n">6.</span>
                     <span class="what">{{ $text['entries']['reason'] }}{{ $text['colon'] }}</span>
-                    <span class="value">{{ $reason }}</span>
+                    <span class="value">
+                        {{ $reason }}
+                        @if ($institution)
+                            <span class="hours"><strong>{{ $text['entries']['route'] }}{{ $text['colon'] }}</strong> {{ $route ?: $text['anywhere'] }}</span>
+                        @endif
+                    </span>
                 </li>
                 <li class="entry">
                     <span class="n">7.</span>
@@ -361,7 +396,7 @@
                 <li class="entry">
                     <span class="n">8.</span>
                     <span class="what">{{ $text['entries']['receipt'] }}{{ $text['colon'] }}</span>
-                    <span class="value">{{ $receipt_number }}</span>
+                    <span class="value">{{ $institution ? $text['exempt'] : $receipt_number }}</span>
                 </li>
                 <li class="entry">
                     <span class="n">9.</span>

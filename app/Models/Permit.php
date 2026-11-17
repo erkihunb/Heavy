@@ -51,6 +51,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $letter_date
  * @property string|null $letter_file_path scanned letter, on the private disk
  * @property int|null $issued_by the Issuer who issued and printed the permit
+ * @property bool $is_institutional given directly to one of the Authority's own vehicles: free, with a paper of its own
+ * @property string|null $route where an institution vehicle goes, when the issuer said
  * @property CarbonImmutable|null $created_at
  */
 class Permit extends Model
@@ -121,6 +123,7 @@ class Permit extends Model
             'valid_from' => 'date',
             'valid_to' => 'date',
             'fee_cents' => 'integer',
+            'is_institutional' => 'boolean',
             'recommended_at' => 'datetime',
             'approved_at' => 'datetime',
             'letter_date' => 'date',
@@ -128,6 +131,17 @@ class Permit extends Model
             'revoked_at' => 'datetime',
             'submitted_at' => 'datetime',
         ];
+    }
+
+    /**
+     * The permits people apply and pay for: every list, queue, count and
+     * export of the office's ordinary work leaves the institution permits out.
+     *
+     * @param  Builder<Permit>  $query
+     */
+    public function scopeOrdinary(Builder $query): void
+    {
+        $query->where($query->qualifyColumn('is_institutional'), false);
     }
 
     /**

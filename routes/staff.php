@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Officer\VerificationController as OfficerVerificationController;
 use App\Http\Controllers\Staff\ExportController;
+use App\Http\Controllers\Staff\InstitutionPermitController;
+use App\Http\Controllers\Staff\InstitutionVehicleController;
 use App\Http\Controllers\Staff\PaymentController;
 use App\Http\Controllers\Staff\PermitDeskController;
 use App\Http\Controllers\Staff\PermitReviewController;
@@ -67,6 +69,35 @@ Route::middleware(['auth', 'verified', 'can:scan,'.Permit::class])
         Route::post('permits/{permit}/reports', 'report')
             ->middleware('throttle:20,1')
             ->name('permits.reports.store');
+    });
+
+/*
+ * The Authority's own vehicles and their permits, given directly by whoever
+ * holds institution-permits.issue (PermitPolicy::issueInstitutional).
+ */
+Route::middleware(['auth', 'verified', 'can:issueInstitutional,'.Permit::class])
+    ->name('staff.institution-permits.')
+    ->controller(InstitutionPermitController::class)
+    ->group(function () {
+        Route::get('institution-permits', 'index')->name('index');
+        Route::get('institution-permits/create', 'create')->name('create');
+        Route::post('institution-permits', 'store')->middleware('throttle:30,1')->name('store');
+        Route::post('institution-permits/{permit}/revoke', 'revoke')->name('revoke');
+    });
+
+/*
+ * The register of the Authority's own vehicles: list, register, change, remove.
+ */
+Route::middleware(['auth', 'verified', 'can:issueInstitutional,'.Permit::class])
+    ->name('staff.institution-vehicles.')
+    ->controller(InstitutionVehicleController::class)
+    ->group(function () {
+        Route::get('institution-vehicles', 'index')->name('index');
+        Route::get('institution-vehicles/create', 'create')->name('create');
+        Route::post('institution-vehicles', 'store')->middleware('throttle:60,1')->name('store');
+        Route::get('institution-vehicles/{vehicle}/edit', 'edit')->name('edit');
+        Route::put('institution-vehicles/{vehicle}', 'update')->name('update');
+        Route::delete('institution-vehicles/{vehicle}', 'destroy')->name('destroy');
     });
 
 /*

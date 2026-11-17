@@ -29,6 +29,8 @@ class RemindExpiringPermits
         $sent = 0;
 
         Permit::query()
+            // Nobody applied for an institution permit, so there is nobody to remind.
+            ->ordinary()
             ->where('status', PermitStatus::Issued)
             ->whereNull('expiry_reminded_at')
             ->whereBetween('valid_to', [$today->toDateString(), $until->toDateString()])

@@ -98,6 +98,15 @@ class PermitPolicy
         return $this->staffAt($user, $permit, Permission::CommentOnPermits);
     }
 
+    /**
+     * The Authority's own vehicles: registering them, giving each its permit
+     * directly, printing the paper and withdrawing it.
+     */
+    public function issueInstitutional(User $user): bool
+    {
+        return $user->can(Permission::IssueInstitutionPermits->value);
+    }
+
     public function revoke(User $user, Permit $permit): Response
     {
         return $this->staffWith($user, $permit, Permission::RevokePermits);
@@ -118,6 +127,11 @@ class PermitPolicy
      */
     public function download(User $user, Permit $permit): Response
     {
+        // An institution permit's paper is opened by whoever may give such permits.
+        if ($permit->is_institutional && $user->can(Permission::IssueInstitutionPermits->value)) {
+            return Response::allow();
+        }
+
         // A Registrar prints the issued permit for an applicant who came to the office.
         if ($user->can(Permission::RegisterApplicants->value)
             && $permit->isInBranchOf($user)

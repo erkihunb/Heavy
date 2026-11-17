@@ -72,7 +72,7 @@ class PermitRegisterController extends Controller
 
         $like = fn (string $term): string => '%'.addcslashes($term, '%_\\').'%';
 
-        $base = fn (): Builder => Permit::query()
+        $base = fn (): Builder => Permit::query()->ordinary()
             ->inBranchOf($viewer)
             ->when(! $registrar, fn (Builder $query) => $query->whereNotIn('status', PermitStatus::hiddenFromStaff()))
             ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $query) => $query

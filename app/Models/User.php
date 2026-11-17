@@ -6,6 +6,7 @@ use App\Enums\Permission;
 use App\Models\Role as RoleModel;
 use App\Support\Rbac\BranchScope;
 use App\Support\Rbac\PermissionCatalog;
+use Carbon\CarbonInterface;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Translation\HasLocalePreference;
@@ -24,6 +25,27 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int|null $registered_by
  * @property int|null $branch_id
  * @property bool $must_change_password
+ * @property string|null $avatar_path
+ * @property string|null $job_title
+ * @property string|null $employee_number
+ * @property string|null $national_id
+ * @property string|null $gender
+ * @property string|null $phone
+ * @property string|null $first_name
+ * @property string|null $middle_name
+ * @property string|null $last_name
+ * @property string|null $username
+ * @property string|null $institution
+ * @property string|null $department
+ * @property int|null $manager_id
+ * @property string|null $employment_status
+ * @property string|null $timezone
+ * @property string|null $theme
+ * @property array<string, bool>|null $notification_preferences
+ * @property Carbon|null $last_login_at
+ * @property string|null $last_login_ip
+ * @property int|null $created_by
+ * @property CarbonInterface|null $email_verified_at
  * @property Carbon|null $deactivated_at
  * @property int|null $deactivated_by
  */
@@ -69,6 +91,8 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'must_change_password' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
             'deactivated_at' => 'datetime',
+            'last_login_at' => 'datetime',
+            'notification_preferences' => 'array',
         ];
     }
 
@@ -78,6 +102,19 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
      */
     protected static function booted(): void
     {
+        // The name parts follow the whole name wherever it is written without them:
+        // the person's own profile page, applicant registration, seeders.
+        static::saving(function (User $user): void {
+            $partsGiven = $user->isDirty(['first_name', 'middle_name', 'last_name']);
+
+            if (($user->isDirty('name') && ! $partsGiven) || ($user->first_name === null && ! $partsGiven)) {
+                $parts = preg_split('/\s+/u', trim((string) $user->name), 3, PREG_SPLIT_NO_EMPTY) ?: [];
+                $user->first_name = $parts[0] ?? null;
+                $user->middle_name = $parts[1] ?? null;
+                $user->last_name = $parts[2] ?? null;
+            }
+        });
+
         static::updating(function (User $user): void {
             if ($user->isDirty('password') && ! $user->isDirty('must_change_password')) {
                 $user->must_change_password = false;
@@ -137,6 +174,35 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             $rows->contains(fn (UserBranchScope $row): bool => $row->is_head_office),
             $rows->whereNotNull('branch_id')->pluck('branch_id')->map(fn ($id): int => (int) $id)->values()->all(),
         );
+    }
+
+    /**
+     * The person this member of staff reports to.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function manager(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'manager_id');
+    }
+
+    /**
+     * The administrator who opened this account.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Whether the person wants e-mails about applications. Account and
+     * security messages (password links) are always sent.
+     */
+    public function wantsEmailNotifications(): bool
+    {
+        return ($this->notification_preferences['email'] ?? true) !== false;
     }
 
     /**

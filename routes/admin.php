@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserBranchScopeController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\UserSignInController;
 use App\Http\Controllers\Admin\VehicleTypeController;
 use App\Http\Controllers\Admin\WalkInController;
 use App\Models\Branch;
@@ -31,8 +32,10 @@ Route::middleware(['auth', 'verified', 'can:viewAny,'.FeeSchedule::class])
             ->only(['index', 'create', 'store', 'edit', 'update']);
     });
 
-// Users: accounts, roles, branch scopes, deactivation (EUISIS RBAC; each action checked by UserPolicy).
-Route::middleware(['auth', 'verified', 'can:viewAny,'.User::class])
+// Users: accounts, roles, branch scopes, sign-in resets, deactivation (EUISIS RBAC).
+// Each action is checked by its own permission in UserPolicy, so someone who may
+// only open accounts or only reset passwords is not stopped at the door.
+Route::middleware(['auth', 'verified'])
     ->name('admin.')
     ->whereNumber('user')
     ->group(function () {
@@ -44,8 +47,14 @@ Route::middleware(['auth', 'verified', 'can:viewAny,'.User::class])
         Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::put('users/{user}/roles', [UserController::class, 'updateRoles'])->name('users.roles');
+        Route::put('users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('users.permissions');
         Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
         Route::post('users/{user}/restore', [UserController::class, 'restore'])->name('users.restore');
+        Route::middleware('throttle:10,1')->group(function () {
+            Route::put('users/{user}/password', [UserSignInController::class, 'password'])->name('users.password');
+            Route::post('users/{user}/reset-link', [UserSignInController::class, 'resetLink'])->name('users.reset-link');
+            Route::delete('users/{user}/two-factor', [UserSignInController::class, 'twoFactor'])->name('users.two-factor');
+        });
         Route::post('users/{user}/branch-scopes', [UserBranchScopeController::class, 'store'])->name('users.branch-scopes.store');
         Route::delete('users/{user}/branch-scopes/{scope}', [UserBranchScopeController::class, 'destroy'])
             ->whereNumber('scope')

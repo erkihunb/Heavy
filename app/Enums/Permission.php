@@ -34,6 +34,9 @@ enum Permission: string
     // Traffic Officer
     case ScanPermits = 'verification.scan';
 
+    // Give the Authority's own vehicles their permits directly: no review, approval or payment
+    case IssueInstitutionPermits = 'institution-permits.issue';
+
     // Registrar: register applicants who come to the office in person
     case RegisterApplicants = 'applicants.register';
 
@@ -45,6 +48,8 @@ enum Permission: string
     case CreateUsers = 'users.create';
     case UpdateUsers = 'users.update';
     case DeactivateUsers = 'users.deactivate';
+    // Set a temporary password, send a reset link, or turn off a lost two-factor device.
+    case ResetPasswords = 'users.reset-passwords';
     case AssignRoles = 'users.assign-roles';
     case ViewRoles = 'roles.view';
     case CreateRoles = 'roles.create';

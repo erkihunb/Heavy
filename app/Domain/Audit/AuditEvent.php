@@ -36,6 +36,12 @@ enum AuditEvent: string
     case UserDeactivated = 'user.deactivated';
     case UserRestored = 'user.restored';
     case UserScopesChanged = 'user.scopes_changed';
+    case UserPermissionsChanged = 'user.permissions_changed';
+    case UserPasswordReset = 'user.password_reset';
+    case UserTwoFactorReset = 'user.two_factor_reset';
+    // The Authority's own vehicles (the register; their permits are permit transitions).
+    case InstitutionVehicleUpdated = 'institution_vehicle.updated';
+    case InstitutionVehicleDeleted = 'institution_vehicle.deleted';
     case RoleCreated = 'role.created';
     case RoleUpdated = 'role.updated';
     case RoleDeleted = 'role.deleted';

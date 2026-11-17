@@ -6,6 +6,7 @@ use App\Domain\Settings\Branding;
 use App\Domain\Settings\ShellSettings;
 use App\Support\EthiopianCalendar;
 use App\Support\FrontendTranslations;
+use App\Support\UserAvatar;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Middleware;
@@ -57,6 +58,9 @@ class HandleInertiaRequests extends Middleware
                     'email' => $user->email,
                     'email_verified_at' => $user->email_verified_at,
                     'locale' => $user->locale,
+                    'avatar' => UserAvatar::url($user),
+                    // The theme an Admin chose for the account; the person's own choice in the browser wins.
+                    'theme' => $user->theme,
                     // For navigation and display only; authorization is enforced by Policies.
                     'roles' => $user->getRoleNames()->values()->all(),
                 ],

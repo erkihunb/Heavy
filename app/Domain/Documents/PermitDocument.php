@@ -92,7 +92,9 @@ final class PermitDocument
             ], extraLines: ($hours !== null ? 1 : 0)
                 + (count($vehicles) > 1 ? 1 : 0)
                 // The "revoked on" / "expired on" line under the title takes about two lines.
-                + ($stamp !== null ? 2 : 0)),
+                + ($stamp !== null ? 2 : 0)
+                // The institution band under the title, and its route line.
+                + ($permit->is_institutional ? 1 + (filled($permit->route) ? 1 : 0) : 0)),
             'reason' => $reason,
             // The check code printed under the number and date; null when switched off.
             'certificate_code' => CertificateCode::for($permit),
@@ -109,6 +111,9 @@ final class PermitDocument
             'hours' => $hours,
             'issued_at' => self::date($issuedAt, $language),
             'receipt_number' => $payment?->receipt_number,
+            // An institution permit prints as a paper of its own: its title, a band saying so, no receipt.
+            'institution' => (bool) $permit->is_institutional,
+            'route' => $permit->route,
             'issuer' => $permit->approver?->name,
             'notes' => self::notes($language),
             // "revoked" or "expired", and since when; null for a permit in force.

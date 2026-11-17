@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Http\Requests\Admin\Concerns\ValidatesStaffProfile;
 use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -9,11 +10,13 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * A member of staff's name and the branch they work at. Where they may see
+ * A member of staff's name, profile, photo and the branch they work at. Where they may see
  * applications is their branch scope, changed on its own card.
  */
 class UpdateUserRequest extends FormRequest
 {
+    use ValidatesStaffProfile;
+
     public function authorize(): bool
     {
         $target = $this->route('user');
@@ -30,11 +33,12 @@ class UpdateUserRequest extends FormRequest
         $current = $target instanceof User ? $target->branch_id : null;
 
         return [
-            'name' => ['required', 'string', 'max:255'],
             // Empty means the head office. A closed branch takes no new staff, but someone already there may stay.
             'branch_id' => ['present', 'nullable', 'integer', Rule::exists(Branch::class, 'id')->where(
                 fn ($query) => $query->where('is_active', true)->when($current !== null, fn ($query) => $query->orWhere('id', $current)),
             )],
+            ...$this->profileRules($target instanceof User ? $target : null),
+            'remove_avatar' => ['boolean'],
         ];
     }
 
@@ -51,6 +55,7 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => __('admin.users.fields.name'),
             'branch_id' => __('admin.users.fields.branch'),
+            ...$this->profileAttributes(),
         ];
     }
 }

@@ -95,6 +95,23 @@ export function initializeTheme(): void {
     mediaQuery()?.addEventListener('change', handleSystemThemeChange);
 }
 
+/**
+ * The theme an Admin chose on the person's account record. It applies until
+ * the person picks one themself in this browser, and never when an Admin has
+ * turned people's own choice off.
+ */
+export function adoptAccountTheme(theme: unknown): void {
+    if (typeof window === 'undefined' || !isAppearance(theme)) return;
+    if (document.documentElement.dataset.userMode === 'off') return;
+    if (isAppearance(localStorage.getItem(STORAGE_KEY))) return;
+    if (currentAppearance === theme) return;
+
+    currentAppearance = theme;
+    setCookie(COOKIE, theme);
+    applyTheme(theme);
+    notify();
+}
+
 export function useAppearance(): UseAppearanceReturn {
     const appearance: Appearance = useSyncExternalStore(
         subscribe,

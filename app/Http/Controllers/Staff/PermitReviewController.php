@@ -66,7 +66,7 @@ class PermitReviewController extends Controller
 
         $like = fn (string $term): string => '%'.addcslashes($term, '%_\\').'%';
 
-        $permits = Permit::query()
+        $permits = Permit::query()->ordinary()
             ->with(['vehicles.vehicleType', 'organization', 'branch', 'applicant', 'recommender'])
             ->whereNotIn('status', PermitStatus::hiddenFromStaff())
             // Staff placed at a branch work on that branch's applications only.
@@ -313,7 +313,7 @@ class PermitReviewController extends Controller
             ->map(fn (object $row): string => "{$row->vehicle_id}|{$row->permit_id}")
             ->flip();
 
-        $others = Permit::query()
+        $others = Permit::query()->ordinary()
             ->whereKeyNot($permit->id)
             ->whereNotIn('status', PermitStatus::hiddenFromStaff())
             ->whereHas('vehicles', fn (Builder $query) => $query->whereKey($permit->vehicles->modelKeys()))

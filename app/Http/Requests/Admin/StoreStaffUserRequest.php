@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Concerns\PasswordValidationRules;
 use App\Http\Requests\Admin\Concerns\ValidatesRoleChoice;
+use App\Http\Requests\Admin\Concerns\ValidatesStaffProfile;
 use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -12,7 +14,9 @@ use Illuminate\Validation\Validator;
 
 class StoreStaffUserRequest extends FormRequest
 {
+    use PasswordValidationRules;
     use ValidatesRoleChoice;
+    use ValidatesStaffProfile;
 
     public function authorize(): bool
     {
@@ -32,11 +36,14 @@ class StoreStaffUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email:rfc', 'max:255', Rule::unique(User::class, 'email')],
             ...$this->roleRules(),
             // Where the person works. Empty means the head office. A closed branch takes no new staff.
             'branch_id' => ['nullable', 'integer', Rule::exists(Branch::class, 'id')->where('is_active', true)],
+            'password' => $this->filled('password') ? $this->passwordRules() : ['nullable'],
+            ...$this->profileRules(),
+            'active' => ['sometimes', 'boolean'],
+            ...$this->directPermissionRules(),
         ];
     }
 
@@ -46,6 +53,22 @@ class StoreStaffUserRequest extends FormRequest
     public function after(): array
     {
         return [fn (Validator $validator) => $this->checkRoleChoice($validator)];
+    }
+
+    /**
+     * The starting password the Admin typed, when they chose one.
+     */
+    public function startingPassword(): ?string
+    {
+        return $this->filled('password') ? $this->string('password')->toString() : null;
+    }
+
+    /**
+     * Whether the account may sign in from the start; it is active unless the Admin said otherwise.
+     */
+    public function active(): bool
+    {
+        return ! $this->has('active') || $this->boolean('active');
     }
 
     public function branch(): ?Branch
@@ -64,6 +87,8 @@ class StoreStaffUserRequest extends FormRequest
             'roles' => __('rbac.users.fields.roles'),
             'roles.*' => __('rbac.users.fields.roles'),
             'branch_id' => __('admin.users.fields.branch'),
+            'password' => __('rbac.users.startingPassword'),
+            ...$this->profileAttributes(),
         ];
     }
 }

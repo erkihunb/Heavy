@@ -73,7 +73,7 @@ class DashboardController extends Controller
         $expiringUntil = $today->addDays(self::EXPIRING_DAYS)->toDateString();
 
         // Permits this person may count: those of the branches they work at.
-        $permits = fn (): Builder => $scope->apply(Permit::query(), 'branch_id');
+        $permits = fn (): Builder => $scope->apply(Permit::query()->ordinary(), 'branch_id');
 
         $counts = [
             'in_force' => $seesPermits

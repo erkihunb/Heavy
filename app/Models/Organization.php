@@ -24,6 +24,17 @@ class Organization extends Model
     use HasFactory;
 
     /**
+     * `is_institution` marks the Authority's own organization, whose
+     * vehicles are given permits directly (App\Domain\Institution\InstitutionFleet).
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return ['is_institution' => 'boolean'];
+    }
+
+    /**
      * `created_by` is deliberately not fillable: ownership is set by the
      * RegisterApplicant action, never from request input.
      *

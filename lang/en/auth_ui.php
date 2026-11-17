@@ -6,6 +6,7 @@
  */
 
 return [
+    'email_or_username' => 'E-mail or username',
     'email' => 'Email address',
     'password' => 'Password',
     /*

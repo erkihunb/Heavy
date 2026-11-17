@@ -23,6 +23,7 @@ import {
     tableRowClassName,
 } from '@/shell/Components/ui';
 import type { LaravelPageMeta } from '@/shell/Components/ui';
+import UserAvatar from '@/shell/Components/UserAvatar';
 import { useLocale } from '@/shell/hooks/useLocale';
 import AuthenticatedLayout from '@/shell/Layouts/AuthenticatedLayout';
 
@@ -30,6 +31,8 @@ export type UserRow = {
     id: number;
     name: string;
     email: string;
+    avatar: string | null;
+    job_title: string | null;
     roles: { name: string; label: string }[];
     branch: { code: string; name: string } | null;
     is_staff: boolean;
@@ -212,15 +215,29 @@ export default function UsersIndex({
                                                         tableCellClassName
                                                     }
                                                 >
-                                                    <Link
-                                                        href={user.editUrl}
-                                                        className="font-medium text-(--app-foreground) hover:text-primary hover:underline"
-                                                    >
-                                                        {user.name}
-                                                    </Link>
-                                                    <span className="block text-xs text-(--app-muted-foreground)">
-                                                        {user.email}
-                                                    </span>
+                                                    <div className="flex items-center gap-3">
+                                                        <UserAvatar
+                                                            src={user.avatar}
+                                                            name={user.name}
+                                                            size={36}
+                                                            className="shrink-0"
+                                                        />
+                                                        <div className="min-w-0">
+                                                            <Link
+                                                                href={
+                                                                    user.editUrl
+                                                                }
+                                                                className="font-medium text-(--app-foreground) hover:text-primary hover:underline"
+                                                            >
+                                                                {user.name}
+                                                            </Link>
+                                                            <span className="block truncate text-xs text-(--app-muted-foreground)">
+                                                                {user.job_title
+                                                                    ? `${user.job_title} · ${user.email}`
+                                                                    : user.email}
+                                                            </span>
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td
                                                     className={

@@ -100,15 +100,15 @@ function LoginFields({
             )}
 
             <div className="grid gap-2" style={step(0)}>
-                <Label htmlFor="email">{t('auth_ui.email')}</Label>
+                <Label htmlFor="email">{t('auth_ui.email_or_username')}</Label>
                 <Input
                     id="email"
-                    type="email"
+                    type="text"
                     name="email"
                     required
                     autoFocus
                     tabIndex={1}
-                    autoComplete="email"
+                    autoComplete="username"
                     placeholder="email@example.com"
                     aria-describedby={errors.email ? 'email-error' : undefined}
                     aria-invalid={errors.email ? true : undefined}

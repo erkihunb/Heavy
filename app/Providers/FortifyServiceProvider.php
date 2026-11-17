@@ -46,7 +46,9 @@ class FortifyServiceProvider extends ServiceProvider
 
         // A deactivated account keeps its history but cannot sign in (EUISIS RBAC).
         Fortify::authenticateUsing(function (Request $request): ?User {
-            $user = User::query()->where(Fortify::username(), mb_strtolower(trim((string) $request->input(Fortify::username()))))->first();
+            // The sign-in name is the e-mail, or the username an Admin gave the account.
+            $name = mb_strtolower(trim((string) $request->input(Fortify::username())));
+            $user = $name === '' ? null : User::query()->where(Fortify::username(), $name)->orWhere('username', $name)->first();
 
             if ($user === null || ! Hash::check((string) $request->input('password'), $user->password)) {
                 return null;

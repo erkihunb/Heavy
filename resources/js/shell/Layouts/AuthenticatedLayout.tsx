@@ -8,6 +8,7 @@ import { usePage } from '@inertiajs/react';
 import { useLayoutEffect, useState } from 'react';
 import type { PropsWithChildren, ReactNode } from 'react';
 import { SupportContacts } from '@/components/support-contacts';
+import { adoptAccountTheme } from '@/hooks/use-appearance';
 import AppHeader from '@/shell/Components/AppHeader';
 import AppSidebar from '@/shell/Components/AppSidebar';
 import Breadcrumbs from '@/shell/Components/Breadcrumbs';
@@ -114,7 +115,13 @@ function Shell({
 }: Props) {
     const { locale, t } = useLocale();
     const { getBoolean, getString } = useSystemSettings();
-    const { url: pageUrl } = usePage();
+    const { url: pageUrl, props: pageProps } = usePage();
+    const accountTheme = (
+        pageProps.auth as { user?: { theme?: string | null } }
+    )?.user?.theme;
+
+    // The theme on the account record, until the person chooses their own here.
+    useLayoutEffect(() => adoptAccountTheme(accountTheme), [accountTheme]);
 
     /* Defaults mirror the brand tokens in app.css. */
     const primary = getString('appearance.primary_color', '#1e3a8a');

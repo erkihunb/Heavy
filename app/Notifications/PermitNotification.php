@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Permit;
+use App\Models\User;
 use App\Notifications\Channels\SmsChannel;
 use App\Support\EthiopianCalendar;
 use App\Support\Money;
@@ -47,7 +48,12 @@ abstract class PermitNotification extends Notification implements ShouldQueue
     public function via(object $notifiable): array
     {
         // Users are reached by e-mail; the organization's phone is an on-demand route.
-        return $notifiable instanceof AnonymousNotifiable ? [SmsChannel::class] : ['mail'];
+        if ($notifiable instanceof AnonymousNotifiable) {
+            return [SmsChannel::class];
+        }
+
+        // A person may turn the application e-mails off (their account record).
+        return $notifiable instanceof User && ! $notifiable->wantsEmailNotifications() ? [] : ['mail'];
     }
 
     public function toMail(object $notifiable): MailMessage

@@ -52,6 +52,7 @@ return [
         'shell',
         // Users, roles and permissions (EUISIS RBAC).
         'rbac',
+        'institution',
     ],
 
     /*

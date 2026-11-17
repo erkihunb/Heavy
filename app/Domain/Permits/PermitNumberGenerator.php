@@ -31,6 +31,30 @@ final class PermitNumberGenerator
     /** The counter row used when the counter never restarts. */
     public const int NEVER_RESETS = 0;
 
+    /** Added to the year for the institution permits' counter row, so the two series never share one. */
+    public const int INSTITUTION_ROW_OFFSET = 1_000_000;
+
+    /** What an institution permit's number starts with. */
+    public const string INSTITUTION_CODE = 'INS';
+
+    /**
+     * The next number of the institution permits' own series, e.g.
+     * INS-2019-0007: counted apart from the paid permits, so issuing one
+     * never leaves a gap in theirs, and restarting every Ethiopian year.
+     */
+    public function nextInstitutional(CarbonImmutable $at): string
+    {
+        $year = self::year($at);
+
+        DB::statement(
+            'INSERT INTO permit_number_sequences (year, last_number) VALUES (?, LAST_INSERT_ID(1)) '.
+            'ON DUPLICATE KEY UPDATE last_number = LAST_INSERT_ID(last_number + 1)',
+            [self::INSTITUTION_ROW_OFFSET + $year],
+        );
+
+        return sprintf('%s-%d-%s', self::INSTITUTION_CODE, $year, str_pad((string) DB::scalar('SELECT LAST_INSERT_ID()'), 4, '0', STR_PAD_LEFT));
+    }
+
     /**
      * The next number for the moment given (its calendar date in the display
      * timezone decides the Ethiopian year).

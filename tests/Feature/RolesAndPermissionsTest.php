@@ -44,8 +44,8 @@ it('matches the role table in the specification', function (Role $role, array $e
     'issuer' => [Role::Issuer, ['dashboard.view', 'permits.view-queue', 'permits.issue']],
     'supervisor' => [Role::Supervisor, ['dashboard.view', 'permits.view-queue', 'permits.comment', 'reports.view']],
     'admin' => [Role::Admin, [
-        'dashboard.view',
-        'users.view', 'users.create', 'users.update', 'users.deactivate', 'users.assign-roles',
+        'dashboard.view', 'institution-permits.issue',
+        'users.view', 'users.create', 'users.update', 'users.deactivate', 'users.reset-passwords', 'users.assign-roles',
         'roles.view', 'roles.create', 'roles.update', 'roles.delete', 'roles.manage-global', 'permissions.view',
         'vehicle-types.manage', 'fee-schedules.manage', 'settings.manage', 'audit-log.view',
         'permits.view-queue', 'permits.review', 'permits.approve', 'permits.revoke', 'payments.verify', 'permits.issue',
