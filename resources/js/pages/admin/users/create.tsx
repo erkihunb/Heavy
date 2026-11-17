@@ -572,7 +572,7 @@ export default function CreateUser({
                     </p>
 
                     <FormSection {...meta('personal')}>
-                        <div className="grid gap-6 md:grid-cols-[11rem_minmax(0,1fr)]">
+                        <div className="grid gap-6 @xl:grid-cols-[11rem_minmax(0,1fr)]">
                             <AvatarPicker
                                 stacked
                                 name={name}
@@ -582,12 +582,14 @@ export default function CreateUser({
                                     form.setData('avatar', file)
                                 }
                             />
-                            <IdentityFields {...section} />
+                            <div className="@container min-w-0">
+                                <IdentityFields {...section} />
+                            </div>
                         </div>
                     </FormSection>
 
                     <FormSection {...meta('account')}>
-                        <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-4 @md:grid-cols-2">
                             <FormField
                                 label={t('admin.users.fields.email')}
                                 required

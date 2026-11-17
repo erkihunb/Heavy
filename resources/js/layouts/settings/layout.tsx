@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/page-header';
 import { PageTabs } from '@/components/page-tabs';
 import { ProfileSummary } from '@/components/profile-summary';
 import { useTranslation } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import { edit } from '@/routes/profile';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
@@ -13,7 +14,13 @@ import { edit as editPassword } from '@/routes/user-password';
  * the section cards of the open tab. Light or dark is chosen in the top bar; the
  * look of the system is the Admin's (System settings → Appearance).
  */
-export default function SettingsLayout({ children }: PropsWithChildren) {
+export default function SettingsLayout({
+    children,
+    wide = false,
+}: PropsWithChildren<{
+    /** The open tab uses the whole page width (a long form) instead of a reading column. */
+    wide?: boolean;
+}>) {
     const { t } = useTranslation();
 
     return (
@@ -31,7 +38,14 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                     { label: t('settings.nav.two_factor'), href: show() },
                 ]}
             />
-            <div className="flex max-w-3xl flex-col gap-6">{children}</div>
+            <div
+                className={cn(
+                    'flex flex-col gap-6',
+                    wide ? 'w-full' : 'max-w-3xl',
+                )}
+            >
+                {children}
+            </div>
         </div>
     );
 }

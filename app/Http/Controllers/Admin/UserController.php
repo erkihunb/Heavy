@@ -46,7 +46,7 @@ class UserController extends Controller
     private const int PER_PAGE = 25;
 
     /** The time zones offered; any valid one is accepted. */
-    private const array TIMEZONES = ['Africa/Addis_Ababa', 'Africa/Nairobi', 'Africa/Cairo', 'Asia/Dubai', 'Europe/London', 'UTC'];
+    public const array TIMEZONES = ['Africa/Addis_Ababa', 'Africa/Nairobi', 'Africa/Cairo', 'Asia/Dubai', 'Europe/London', 'UTC'];
 
     public function index(Request $request): Response
     {

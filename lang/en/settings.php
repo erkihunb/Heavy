@@ -13,7 +13,7 @@ return [
     'profile' => [
         'title' => 'Profile settings',
         'heading' => 'Profile information',
-        'description' => 'Update your name and e-mail address.',
+        'description' => 'Update your photo, name, contact details and preferences. Your job details, branch and roles are set by an administrator.',
         'name' => 'Name',
         'name_placeholder' => 'Full name',
         'email' => 'E-mail address',

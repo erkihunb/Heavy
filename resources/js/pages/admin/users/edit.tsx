@@ -320,7 +320,7 @@ function EditUserPage({
                         <form
                             onSubmit={saveDetails}
                             noValidate
-                            className="space-y-6 rounded-panel border border-(--app-border) bg-(--app-surface) p-6"
+                            className="@container space-y-6 rounded-panel border border-(--app-border) bg-(--app-surface) p-6"
                         >
                             <Step
                                 number={1}
@@ -346,7 +346,7 @@ function EditUserPage({
                                 number={2}
                                 title={t('rbac.users.accountSection')}
                             >
-                                <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-4 @md:grid-cols-2">
                                     <FormField
                                         label={t('admin.users.fields.email')}
                                         description={t(
@@ -524,7 +524,7 @@ function EditUserPage({
                             </form>
                         )}
 
-                    <section className="space-y-4 rounded-panel border border-(--app-border) bg-(--app-surface) p-6">
+                    <section className="@container space-y-4 rounded-panel border border-(--app-border) bg-(--app-surface) p-6">
                         <div>
                             <h2 className="text-sm font-semibold text-(--app-foreground)">
                                 {t('rbac.users.recordSection')}

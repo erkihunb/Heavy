@@ -94,7 +94,7 @@ describe('the sign-in page', () => {
         render(<Login canResetPassword />);
 
         // The form is what people came for.
-        expect(screen.getByLabelText('auth_ui.email')).toBeTruthy();
+        expect(screen.getByLabelText('auth_ui.email_or_username')).toBeTruthy();
         expect(screen.getByLabelText('auth_ui.password')).toBeTruthy();
         expect(
             screen.getByRole('button', { name: /auth_ui.login.submit/ }),
@@ -116,7 +116,7 @@ describe('the sign-in page', () => {
 
         const { container } = render(<Login canResetPassword />);
 
-        const email = screen.getByLabelText('auth_ui.email');
+        const email = screen.getByLabelText('auth_ui.email_or_username');
         expect(email.getAttribute('aria-invalid')).toBe('true');
         expect(email.getAttribute('aria-describedby')).toBe('email-error');
 

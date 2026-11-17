@@ -169,7 +169,7 @@ export function IdentityFields(props: SectionProps) {
     const { data, setData, errors, disabled } = props;
 
     return (
-        <div className="grid content-start gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+        <div className="grid content-start gap-4 @sm:grid-cols-2 @2xl:grid-cols-3">
             <TextField
                 {...props}
                 name="first_name"
@@ -242,7 +242,7 @@ export function EmploymentFields({
     const { data, setData, errors, disabled } = props;
 
     return (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 @md:grid-cols-2">
             <TextField
                 {...props}
                 name="institution"
@@ -378,7 +378,7 @@ export function PreferenceFields({
             : [data.timezone, ...timezones];
 
     return (
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 @xl:grid-cols-3">
             <FormField
                 label={t('rbac.users.fields.locale')}
                 error={errors.locale}
@@ -486,7 +486,7 @@ export function RecordList({
     items: { label: string; value: ReactNode }[];
 }) {
     return (
-        <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
+        <dl className="grid gap-x-6 gap-y-3 @sm:grid-cols-2 @3xl:grid-cols-4">
             {items.map((item) => (
                 <div key={item.label} className="min-w-0">
                     <dt className="text-xs text-(--app-muted-foreground)">
@@ -567,7 +567,9 @@ export function FormSection({
                 </div>
                 <SectionBadge state={state} errorCount={errorCount} t={t} />
             </header>
-            <div className="space-y-5 px-5 py-5 sm:px-6">{children}</div>
+            <div className="@container space-y-5 px-5 py-5 sm:px-6">
+                {children}
+            </div>
         </section>
     );
 }
