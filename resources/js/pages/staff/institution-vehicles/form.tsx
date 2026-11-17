@@ -26,7 +26,6 @@ export default function InstitutionVehicleForm({
         id: string;
         plate: string;
         vehicle_type_id: number;
-        type_detail: string | null;
         plate_locked: boolean;
     } | null;
     vehicleTypes: { id: number; name: string }[];
@@ -37,7 +36,6 @@ export default function InstitutionVehicleForm({
         plate: vehicle?.plate ?? '',
         // A new vehicle has no type until one is chosen: nothing is preselected.
         vehicle_type_id: vehicle ? String(vehicle.vehicle_type_id) : '',
-        type_detail: vehicle?.type_detail ?? '',
     });
     const title = vehicle
         ? t('institution.vehicle_edit_title').replace(':plate', vehicle.plate)
@@ -68,7 +66,7 @@ export default function InstitutionVehicleForm({
 
             <form onSubmit={submit} noValidate className="space-y-5">
                 <FormSection title={t('institution.columns.vehicle')}>
-                    <div className="grid items-start gap-5 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid items-start gap-5 md:grid-cols-2">
                         <FormField
                             label={t('institution.fields.plate')}
                             required
@@ -132,26 +130,6 @@ export default function InstitutionVehicleForm({
                                         </option>
                                     ))}
                                 </Select>
-                            )}
-                        </FormField>
-                        <FormField
-                            label={t('institution.fields.type_detail')}
-                            error={form.errors.type_detail}
-                        >
-                            {({ id, describedBy, invalid }) => (
-                                <Input
-                                    id={id}
-                                    aria-describedby={describedBy}
-                                    aria-invalid={invalid}
-                                    maxLength={100}
-                                    value={form.data.type_detail}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'type_detail',
-                                            event.target.value,
-                                        )
-                                    }
-                                />
                             )}
                         </FormField>
                     </div>

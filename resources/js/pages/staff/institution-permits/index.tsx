@@ -35,7 +35,6 @@ export type InstitutionVehicle = {
     id: string;
     plate: string;
     type: string;
-    type_detail: string | null;
     permit: { number: string; valid_to: DateLabel } | null;
 };
 

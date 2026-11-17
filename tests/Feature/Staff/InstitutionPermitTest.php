@@ -31,7 +31,7 @@ beforeEach(function () {
 function registerInstitutionVehicle(User $by, string $plate): Vehicle
 {
     test()->actingAs($by)
-        ->post(route('staff.institution-vehicles.store'), ['plate' => $plate, 'vehicle_type_id' => test()->type->id, 'type_detail' => 'Grader'])
+        ->post(route('staff.institution-vehicles.store'), ['plate' => $plate, 'vehicle_type_id' => test()->type->id])
         ->assertSessionHasNoErrors();
 
     return InstitutionFleet::vehicles()->latest('created_at')->firstOrFail();
@@ -188,20 +188,26 @@ it('lists, changes and removes the institution\'s vehicles on their own page', f
             ->has('vehicles.data', 1)
             ->where('vehicles.data.0.plate', $vehicle->plate_normalized)
             ->where('vehicles.data.0.permit', null)
-            ->where('vehicles.data.0.deletable', true));
+            ->where('vehicles.data.0.deletable', true)
+            ->missing('vehicles.data.0.type_detail'));
 
     $this->actingAs($this->admin)->get(route('staff.institution-vehicles.create'))->assertOk();
     $this->actingAs($this->admin)
         ->get(route('staff.institution-vehicles.edit', $vehicle))
-        ->assertInertia(fn (Assert $page) => $page->component('staff/institution-vehicles/form')->where('vehicle.plate_locked', false));
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('staff/institution-vehicles/form')
+            ->where('vehicle.plate_locked', false)
+            ->missing('vehicle.type_detail'));
 
-    // Change the plate and the model.
+    // The form no longer asks for a make or model: one sent anyway is ignored,
+    // and one recorded before is left as it was.
+    $vehicle->forceFill(['type_detail' => 'Grader'])->save();
     $this->actingAs($this->admin)
         ->put(route('staff.institution-vehicles.update', $vehicle), ['plate' => 'AA-3-B99999', 'vehicle_type_id' => $this->type->id, 'type_detail' => 'Loader'])
         ->assertRedirect(route('staff.institution-vehicles.index'))
         ->assertSessionHasNoErrors();
 
-    expect($vehicle->refresh()->type_detail)->toBe('Loader')
+    expect($vehicle->refresh()->type_detail)->toBe('Grader')
         ->and($vehicle->plate_normalized)->not->toBe('')
         ->and($vehicle->plate_raw)->toBe('AA-3-B99999');
 
@@ -218,16 +224,17 @@ it('keeps a vehicle that has held a permit, and its plate while the permit is in
         ->put(route('staff.institution-vehicles.update', $vehicle), ['plate' => 'AA-3-B99999', 'vehicle_type_id' => $this->type->id])
         ->assertSessionHasErrors(['plate' => __('institution.errors.plate_locked')]);
 
-    // The model can still be corrected.
+    // Its type can still be corrected.
+    $crane = VehicleType::factory()->create();
     $this->actingAs($this->admin)
-        ->put(route('staff.institution-vehicles.update', $vehicle), ['plate' => $vehicle->plate_raw, 'vehicle_type_id' => $this->type->id, 'type_detail' => 'Grader 140'])
+        ->put(route('staff.institution-vehicles.update', $vehicle), ['plate' => $vehicle->plate_raw, 'vehicle_type_id' => $crane->id])
         ->assertSessionHasNoErrors();
 
     $this->actingAs($this->admin)
         ->delete(route('staff.institution-vehicles.destroy', $vehicle))
         ->assertSessionHasErrors('vehicle');
 
-    expect($vehicle->refresh()->type_detail)->toBe('Grader 140');
+    expect($vehicle->refresh()->vehicle_type_id)->toBe($crane->id);
 
     $this->actingAs($this->admin)
         ->get(route('staff.institution-vehicles.index'))

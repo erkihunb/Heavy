@@ -10,7 +10,7 @@ return [
     'vehicle_form_intro' => 'The vehicle is recorded as the Authority\'s own and can then be given permits free of charge.',
     'vehicle_edit' => 'Edit',
     'vehicle_save' => 'Save changes',
-    'vehicle_search_placeholder' => 'Plate or model',
+    'vehicle_search_placeholder' => 'Plate number',
     'vehicle_delete' => 'Remove',
     'vehicle_delete_title' => 'Remove vehicle :plate?',
     'vehicle_delete_body' => 'It is taken off the register. This cannot be undone.',
@@ -27,7 +27,7 @@ return [
     'paper_pending' => 'Being prepared',
     'purpose' => 'Use and route',
     'choose_type' => 'Choose a vehicle type',
-    'search_vehicles' => 'Find a vehicle by plate, type or model',
+    'search_vehicles' => 'Find a vehicle by plate or type',
     'no_vehicle_matches' => 'No vehicle matches.',
     'presets' => 'Quick period',
     'preset_days' => ':count days',
@@ -64,7 +64,6 @@ return [
     'route_any' => 'Any route',
     'free' => 'Free of charge',
     'columns' => [
-        'model' => 'Model',
         'registered' => 'Registered',
         'actions' => 'Actions',
         'number' => 'Permit number',
@@ -90,7 +89,6 @@ return [
         'plate' => 'Plate number',
         'plate_placeholder' => 'e.g. AA-3-B12345',
         'vehicle_type' => 'Vehicle type',
-        'type_detail' => 'Make or model',
         'revoke_reason' => 'Reason for revoking',
     ],
     'statuses' => [

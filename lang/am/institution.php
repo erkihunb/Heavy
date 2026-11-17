@@ -10,7 +10,7 @@ return [
     'vehicle_form_intro' => 'ተሽከርካሪው የባለሥልጣኑ ይፋዊ ንብረት ተብሎ ይመዘገባል፤ ከዚያም ያለ ክፍያ ፈቃድ ይሰጠዋል።',
     'vehicle_edit' => 'አስተካክል',
     'vehicle_save' => 'ለውጡን አስቀምጥ',
-    'vehicle_search_placeholder' => 'ሰሌዳ ወይም ሞዴል',
+    'vehicle_search_placeholder' => 'የሰሌዳ ቁጥር',
     'vehicle_delete' => 'አስወግድ',
     'vehicle_delete_title' => 'ተሽከርካሪ :plate ከመዝገብ ይወገድ?',
     'vehicle_delete_body' => 'ተሽከርካሪው ከመዝገብ የሚወጣ ሲሆን፤ ይህ እርምጃ ሊመለስ አይችልም።',
@@ -27,7 +27,7 @@ return [
     'paper_pending' => 'በዝግጅት ላይ',
     'purpose' => 'የሥራ መስክና መስመር',
     'choose_type' => 'የተሽከርካሪ ዓይነት ይምረጡ',
-    'search_vehicles' => 'በሰሌዳ፣ በዓይነት ወይም በሞዴል ይፈልጉ',
+    'search_vehicles' => 'በሰሌዳ ወይም በዓይነት ይፈልጉ',
     'no_vehicle_matches' => 'የሚዛመድ ተሽከርካሪ አልተገኘም።',
     'presets' => 'የተለመደ የጊዜ ገደብ',
     'preset_days' => ':count ቀን',
@@ -64,7 +64,6 @@ return [
     'route_any' => 'ማንኛውም መስመር',
     'free' => 'ከክፍያ ነፃ',
     'columns' => [
-        'model' => 'ሞዴል',
         'registered' => 'የተመዘገበበት ቀን',
         'actions' => 'ተግባራት',
         'number' => 'የፈቃድ ቁጥር',
@@ -90,7 +89,6 @@ return [
         'plate' => 'የሰሌዳ ቁጥር',
         'plate_placeholder' => 'ለምሳሌ AA-3-B12345',
         'vehicle_type' => 'የተሽከርካሪ ዓይነት',
-        'type_detail' => 'ሥሪት ወይም ሞዴል',
         'revoke_reason' => 'የሚሰረዝበት ሕጋዊ ምክንያት',
     ],
     'statuses' => [

@@ -174,7 +174,6 @@ class InstitutionPermitController extends Controller
                     'id' => $vehicle->id,
                     'plate' => $vehicle->plate_normalized,
                     'type' => $vehicle->typeName($locale),
-                    'type_detail' => $vehicle->type_detail,
                     'permit' => $permit === null ? null : [
                         'number' => $permit->permit_number,
                         'valid_to' => EthiopianCalendar::present($permit->valid_to, $locale),

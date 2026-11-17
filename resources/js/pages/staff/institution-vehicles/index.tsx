@@ -34,7 +34,6 @@ type VehicleRow = {
     id: string;
     plate: string;
     type: string;
-    type_detail: string | null;
     registered_at: DateLabel;
     permit: { number: string; valid_to: DateLabel } | null;
     deletable: boolean;
@@ -174,7 +173,6 @@ function InstitutionVehiclesPage({
                                             {[
                                                 t('institution.columns.plate'),
                                                 t('institution.columns.type'),
-                                                t('institution.columns.model'),
                                                 t('institution.columns.permit'),
                                                 t(
                                                     'institution.columns.registered',
@@ -229,14 +227,6 @@ function InstitutionVehiclesPage({
                                                     }
                                                 >
                                                     {vehicle.type}
-                                                </td>
-                                                <td
-                                                    className={cx(
-                                                        tableCellClassName,
-                                                        'text-(--app-muted-foreground)',
-                                                    )}
-                                                >
-                                                    {vehicle.type_detail ?? '—'}
                                                 </td>
                                                 <td
                                                     className={cx(

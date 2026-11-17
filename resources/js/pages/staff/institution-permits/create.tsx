@@ -83,7 +83,7 @@ export default function GiveInstitutionPermits({
         needle === ''
             ? vehicles
             : vehicles.filter((vehicle) =>
-                  [vehicle.plate, vehicle.type, vehicle.type_detail ?? '']
+                  [vehicle.plate, vehicle.type]
                       .join(' ')
                       .toLowerCase()
                       .includes(needle),
@@ -277,16 +277,7 @@ export default function GiveInstitutionPermits({
                                                                               ?.ethiopian_label ??
                                                                               '',
                                                                       )
-                                                                : [
-                                                                      vehicle.type,
-                                                                      vehicle.type_detail,
-                                                                  ]
-                                                                      .filter(
-                                                                          Boolean,
-                                                                      )
-                                                                      .join(
-                                                                          ' · ',
-                                                                      )}
+                                                                : vehicle.type}
                                                         </span>
                                                     </span>
                                                 </label>

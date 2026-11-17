@@ -55,8 +55,7 @@ class InstitutionVehicleController extends Controller
             ->withCount('permits')
             ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $query) => $query
                 ->whereLike('plate_normalized', "%{$term}%")
-                ->orWhereLike('plate_raw', "%{$search}%")
-                ->orWhereLike('type_detail', "%{$search}%")))
+                ->orWhereLike('plate_raw', "%{$search}%")))
             ->orderBy('plate_normalized')
             ->paginate(self::PER_PAGE)
             ->withQueryString()
@@ -67,7 +66,6 @@ class InstitutionVehicleController extends Controller
                     'id' => $vehicle->id,
                     'plate' => $vehicle->plate_normalized,
                     'type' => $vehicle->typeName($locale),
-                    'type_detail' => $vehicle->type_detail,
                     'registered_at' => EthiopianCalendar::present($vehicle->created_at?->setTimezone((string) config('localization.display_timezone')), $locale),
                     'permit' => $permit === null ? null : [
                         'number' => $permit->permit_number,
@@ -121,7 +119,6 @@ class InstitutionVehicleController extends Controller
                 PlateNumber::parse($validated['plate']),
                 (int) $validated['vehicle_type_id'],
                 $organization->name_am,
-                $validated['type_detail'] ?? null,
             ));
         } catch (InvalidPlateNumber) {
             throw ValidationException::withMessages(['plate' => __('institution.errors.plate_invalid')]);
@@ -142,7 +139,6 @@ class InstitutionVehicleController extends Controller
                 'id' => $vehicle->id,
                 'plate' => $vehicle->plate_raw,
                 'vehicle_type_id' => $vehicle->vehicle_type_id,
-                'type_detail' => $vehicle->type_detail,
                 // Its plate is on a paper in force: it stays as printed.
                 'plate_locked' => $this->holdsPermitInForce($vehicle),
             ],
@@ -180,14 +176,13 @@ class InstitutionVehicleController extends Controller
         }
 
         DB::transaction(function () use ($vehicle, $plate, $validated, $request, $audit): void {
-            $old = $vehicle->only(['plate_normalized', 'vehicle_type_id', 'type_detail']);
+            $old = $vehicle->only(['plate_normalized', 'vehicle_type_id']);
 
             $vehicle->fill([
                 'plate_raw' => trim($plate->raw),
                 'plate_normalized' => $plate->normalized,
                 'region_code' => $plate->region->value,
                 'vehicle_type_id' => (int) $validated['vehicle_type_id'],
-                'type_detail' => filled($validated['type_detail'] ?? null) ? trim((string) $validated['type_detail']) : null,
             ]);
 
             if ($vehicle->isDirty()) {
@@ -217,7 +212,7 @@ class InstitutionVehicleController extends Controller
     }
 
     /**
-     * @return array{plate: string, vehicle_type_id: int|string, type_detail?: string|null}
+     * @return array{plate: string, vehicle_type_id: int|string}
      */
     private function validated(Request $request, ?int $currentTypeId = null): array
     {
@@ -227,11 +222,9 @@ class InstitutionVehicleController extends Controller
             'vehicle_type_id' => ['required', 'integer', Rule::exists(VehicleType::class, 'id')->where(
                 fn ($query) => $query->where('is_active', true)->when($currentTypeId !== null, fn ($query) => $query->orWhere('id', $currentTypeId)),
             )],
-            'type_detail' => ['nullable', 'string', 'max:100'],
         ], attributes: [
             'plate' => __('institution.fields.plate'),
             'vehicle_type_id' => __('institution.fields.vehicle_type'),
-            'type_detail' => __('institution.fields.type_detail'),
         ]);
     }
 
