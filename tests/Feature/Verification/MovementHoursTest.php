@@ -97,7 +97,7 @@ describe('a check outside the hours', function () {
             ->get(route('verification.token', $this->token))
             ->assertOk()
             ->assertSee('data-result="outside_hours"', false)
-            ->assertSee('አሁን አይፈቀድም')
+            ->assertSee('ከተፈቀደው የሰዓት ክልል ውጭ')
             ->assertSee('ከቀኑ 5:00 – ከቀኑ 8:00 (11:00–14:00)')
             ->assertSee('ከቀኑ 3:30 (09:30)');
 

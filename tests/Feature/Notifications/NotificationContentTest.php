@@ -68,9 +68,9 @@ it('writes the e-mail in Amharic for an Amharic-speaking member', function () {
     $html = mailFor(new PermitApproved($this->permit), $user);
     $subject = inLocale('am', fn () => (new PermitApproved($this->permit))->toMail($user)->subject);
 
-    expect($subject)->toStartWith('ፍቃድ AACRA-2018-000123 ጸድቋል')
+    expect($subject)->toStartWith('ፈቃድ ቁጥር AACRA-2018-000123 ጸድቋል')
         ->and($html)
-        ->toContain('በፍቃድ ቁጥር AACRA-2018-000123 ጸድቋል')
+        ->toContain('በፈቃድ ቁጥር AACRA-2018-000123 ጸድቋል')
         ->toContain('መስከረም 28, 2018');
 });
 
