@@ -257,6 +257,12 @@ return [
             'submit' => 'የውሳኔ ሐሳቡን መዝግብ',
             'current' => 'አሁን የቀረበው የውሳኔ ሐሳብ',
         ],
+        // A review already saved, as its badge shows it.
+        'recommended' => [
+            'approve' => 'እንዲጸድቅ የቀረበ የውሳኔ ሐሳብ',
+            'changes' => 'ማስተካከያ እንዲደረግበት የቀረበ የውሳኔ ሐሳብ',
+            'reject' => 'ውድቅ እንዲደረግ የቀረበ የውሳኔ ሐሳብ',
+        ],
         // Every Reviewer's assessment in this round, for the Approver.
         'reviews' => [
             'title' => 'ግምገማዎች',

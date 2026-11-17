@@ -257,6 +257,12 @@ return [
             'submit' => 'Save review',
             'current' => 'Current recommendation',
         ],
+        // A review already saved, as its badge shows it.
+        'recommended' => [
+            'approve' => 'Recommended approval',
+            'changes' => 'Recommended changes',
+            'reject' => 'Recommended rejection',
+        ],
         // Every Reviewer's assessment in this round, for the Approver.
         'reviews' => [
             'title' => 'Reviews',

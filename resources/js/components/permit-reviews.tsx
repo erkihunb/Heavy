@@ -48,7 +48,7 @@ export function RecommendationBadge({
             )}
         >
             <Icon aria-hidden="true" className="size-3.5" />
-            {t(`permits.staff.recommend.${recommendation}`)}
+            {t(`permits.staff.recommended.${recommendation}`)}
         </span>
     );
 }
