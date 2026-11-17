@@ -246,7 +246,7 @@ describe('PublicPermitVerificationResource', function () {
 
         expect(array_keys($data))->toBe(['result', 'checked_at', 'checked_time', 'checked_time_ethiopian', 'permit'])
             ->and(array_keys($data['permit']))->toBe([
-                'permit_number', 'permit_type', 'vehicles', 'reason', 'issued_at', 'issued_time', 'branch', 'issuer',
+                'permit_number', 'permit_type', 'vehicles', 'reason', 'route', 'issued_at', 'issued_time', 'branch', 'issuer',
                 'receipt_number', 'certificate_code', 'organization', 'valid_from', 'valid_to', 'time_window_rules', 'hours',
             ])
             ->and(array_keys($data['permit']['vehicles'][0]))->toBe(['plate', 'role', 'vehicle_type', 'owner']);

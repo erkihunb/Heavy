@@ -23,6 +23,7 @@ const PERMIT_FIELDS = [
     'effective_status',
     'permit_type',
     'reason',
+    'route',
     'valid_from',
     'valid_to',
     'duration_days',
