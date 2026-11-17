@@ -67,6 +67,8 @@ describe('rate limits on the account forms', function () {
 
 describe('vehicle lock', function () {
     it('locks the vehicle rows when an application is submitted', function () {
+        // Submitting needs a fee in the schedule.
+        withFeeSchedule();
         $applicant = applicantWithOrganization();
         $vehicle = Vehicle::factory()->create(['organization_id' => $applicant->organization_id]);
         $permit = Permit::factory()->forVehicles($vehicle)->draft()->create([

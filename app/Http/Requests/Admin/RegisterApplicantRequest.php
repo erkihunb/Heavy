@@ -5,6 +5,7 @@ namespace App\Http\Requests\Admin;
 use App\Data\OrganizationData;
 use App\Data\VehicleData;
 use App\Data\WalkInPermitData;
+use App\Domain\Permits\FeeCalculator;
 use App\Domain\Permits\ValidityRules;
 use App\Domain\Vehicles\PlateNumber;
 use App\Enums\PermitType;
@@ -154,6 +155,27 @@ class RegisterApplicantRequest extends OrganizationRequest
                         $violation->rule === 'valid_from_in_past' ? 'valid_from' : 'valid_to',
                         $violation->userMessage(),
                     );
+                }
+            },
+            // A permit the fee schedule has no fee for could never be approved,
+            // so it is not taken in: an Admin adds the fee first.
+            function (Validator $validator): void {
+                if (! $this->boolean('apply')
+                    || $validator->errors()->hasAny(['permit_type', 'valid_from', 'valid_to', 'vehicles', 'vehicles.0.vehicle_type_id'])) {
+                    return;
+                }
+
+                $from = CarbonImmutable::createFromFormat('!Y-m-d', $this->string('valid_from')->toString(), 'UTC');
+                $to = CarbonImmutable::createFromFormat('!Y-m-d', $this->string('valid_to')->toString(), 'UTC');
+                $fee = app(FeeCalculator::class)->amountFor(
+                    PermitType::from($this->string('permit_type')->toString()),
+                    $this->integer('vehicles.0.vehicle_type_id'),
+                    (int) $from->diffInDays($to) + 1,
+                    ValidityRules::today(),
+                );
+
+                if ($fee === null) {
+                    $validator->errors()->add('permit_type', __('permits.errors.fee_not_set_for_registration'));
                 }
             },
             // An "other" vehicle is described in words.

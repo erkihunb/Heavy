@@ -21,6 +21,8 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     Storage::fake('documents');
+    // Registering or submitting a permit needs a fee in the schedule.
+    withFeeSchedule();
     $this->registrar = staffUser(Role::Registrar);
     $this->applicant = applicantWithOrganization();
 });
@@ -133,7 +135,6 @@ it('offers only the organization\'s own vehicles', function () {
 });
 
 it('estimates the fee for the organization\'s vehicle', function () {
-    withFeeSchedule();
     $permit = officeRequest($this->applicant);
     $vehicle = Vehicle::factory()->for($this->applicant->organization)->create();
 

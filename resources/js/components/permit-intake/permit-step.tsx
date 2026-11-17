@@ -194,13 +194,19 @@ export function PermitStep({
                                 </span>
                             </p>
                         ) : (
-                            <p className="font-medium">
-                                {t('payments.fee_unknown')}
+                            // No fee in the schedule: the request cannot be registered
+                            // (RegisterApplicantRequest refuses it), so say so before saving.
+                            <p className="font-medium text-danger-strong">
+                                {t(
+                                    'permits.errors.fee_not_set_for_registration',
+                                )}
                             </p>
                         )}
-                        <p className="mt-1 text-xs text-muted-foreground">
-                            {t('applicants.intake.fee_after_approval')}
-                        </p>
+                        {estimate.fee && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                {t('applicants.intake.fee_after_approval')}
+                            </p>
+                        )}
                     </div>
                 )}
             </div>

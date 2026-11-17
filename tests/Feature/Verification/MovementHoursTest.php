@@ -141,6 +141,8 @@ describe('a check outside the hours', function () {
 
 describe('entering the hours on an application', function () {
     beforeEach(function () {
+        // Registering a permit needs a fee in the schedule.
+        withFeeSchedule();
         // The Registrar enters the hours from the letter, for the applicant.
         $this->registrar = staffUser(Role::Registrar);
         $this->applicant = applicantWithOrganization();

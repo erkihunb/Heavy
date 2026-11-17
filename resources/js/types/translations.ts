@@ -1030,6 +1030,7 @@ export type TranslationKey =
     | 'permits.errors.assessment_required'
     | 'permits.errors.duration_too_long'
     | 'permits.errors.fee_not_configured'
+    | 'permits.errors.fee_not_set_for_registration'
     | 'permits.errors.invalid_transition'
     | 'permits.errors.letter_not_stored'
     | 'permits.errors.not_editable'

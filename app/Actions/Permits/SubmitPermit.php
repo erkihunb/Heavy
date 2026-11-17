@@ -2,6 +2,7 @@
 
 namespace App\Actions\Permits;
 
+use App\Domain\Permits\FeeCalculator;
 use App\Domain\Permits\OverlapGuard;
 use App\Domain\Permits\PermitTransitions;
 use App\Domain\Permits\PermitVehicles;
@@ -23,6 +24,7 @@ class SubmitPermit
         private readonly PermitVehicles $vehicles,
         private readonly ValidityRules $validity,
         private readonly OverlapGuard $overlap,
+        private readonly FeeCalculator $fees,
     ) {}
 
     /**
@@ -46,6 +48,12 @@ class SubmitPermit
 
             $this->validity->ensureValid($permit->valid_from, $permit->valid_to);
             $this->vehicles->ensureComplete($permit);
+
+            // A permit the fee schedule has no fee for could never be approved:
+            // it is not sent for review until an Admin adds the fee.
+            if ($this->fees->amountForPermit($permit, ValidityRules::today()) === null) {
+                throw new PermitRuleViolation('fee_not_set_for_registration');
+            }
 
             // Early feedback only; the check that counts is made at approval.
             $this->overlap->ensureNoOverlap($permit);

@@ -16,6 +16,8 @@ use Inertia\Testing\AssertableInertia as Assert;
  */
 
 beforeEach(function () {
+    // Registering or submitting a permit needs a fee in the schedule.
+    withFeeSchedule();
     $this->registrar = staffUser(Role::Registrar);
     $this->applicant = applicantWithOrganization();
 });

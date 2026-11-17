@@ -1,8 +1,10 @@
 <?php
 
+use App\Domain\Permits\FeeCalculator;
 use App\Domain\Permits\ValidityRules;
 use App\Enums\PermitStatus;
 use App\Enums\Role;
+use App\Models\FeeSchedule;
 use App\Models\Organization;
 use App\Models\Permit;
 use App\Models\PermitStatusTransition;
@@ -19,6 +21,8 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     Notification::fake();
+    // Registering or submitting a permit needs a fee in the schedule.
+    withFeeSchedule();
     $this->registrar = staffUser(Role::Registrar);
     $this->type = VehicleType::factory()->create();
 });
@@ -95,6 +99,34 @@ it('can keep the application as a draft', function () {
         ->assertSessionHasNoErrors();
 
     expect(Permit::query()->sole()->status)->toBe(PermitStatus::Draft);
+});
+
+it('refuses a permit the fee schedule has no fee for, saving nothing', function (bool $submit) {
+    FeeSchedule::query()->delete();
+    FeeCalculator::forgetCache();
+
+    $this->actingAs($this->registrar)
+        ->post(route('admin.permits.store'), onePageForm(['submit' => $submit]))
+        ->assertSessionHasErrors(['permit_type' => __('permits.errors.fee_not_set_for_registration')]);
+
+    expect(Permit::query()->count())->toBe(0)
+        ->and(User::query()->where('email', 'abebe@example.test')->exists())->toBeFalse();
+})->with(['submitted' => [true], 'kept as a draft' => [false]]);
+
+it('does not send a draft for review while its fee is missing', function () {
+    $this->actingAs($this->registrar)
+        ->post(route('admin.permits.store'), onePageForm(['submit' => false]))
+        ->assertSessionHasNoErrors();
+    $permit = Permit::query()->sole();
+
+    FeeSchedule::query()->delete();
+    FeeCalculator::forgetCache();
+
+    $this->actingAs($this->registrar)
+        ->post(route('admin.permits.submit', $permit))
+        ->assertSessionHas('warning', __('permits.errors.fee_not_set_for_registration'));
+
+    expect($permit->fresh()->status)->toBe(PermitStatus::Draft);
 });
 
 it('registers only the person when the permit part is off', function () {

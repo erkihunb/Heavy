@@ -321,6 +321,7 @@ it('sends a Telegram test through the Bot API', function () {
 
 it('alerts the staff chat when an application is submitted, with no personal data', function () {
     Queue::fake();
+    withFeeSchedule();
     config(['services.telegram.enabled' => true, 'services.telegram.bot_token' => '123:abc', 'services.telegram.chat_id' => '-100123']);
 
     $applicant = applicantWithOrganization();
@@ -338,6 +339,7 @@ it('alerts the staff chat when an application is submitted, with no personal dat
 
 it('sends no alert when Telegram is off or the alert is switched off', function () {
     Queue::fake();
+    withFeeSchedule();
     $applicant = applicantWithOrganization();
     $permit = fn () => Permit::factory()->forVehicles(Vehicle::factory()->create(['organization_id' => $applicant->organization_id]))
         ->draft()->create(['organization_id' => $applicant->organization_id, 'applicant_id' => $applicant->id]);
