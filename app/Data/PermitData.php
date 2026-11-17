@@ -27,10 +27,12 @@ final readonly class PermitData
         public ?MovementHours $hours = null,
         /** The letter the request came in with; set for requests taken at the office. */
         public ?LetterData $letter = null,
+        /** Where the vehicles may travel, in words; null when the permit does not limit it. */
+        public ?string $route = null,
     ) {}
 
     /**
-     * @return array{permit_type: PermitType, reason: string, valid_from: string, valid_to: string, move_from: string|null, move_to: string|null}
+     * @return array{permit_type: PermitType, reason: string, valid_from: string, valid_to: string, move_from: string|null, move_to: string|null, route: string|null}
      */
     public function toAttributes(): array
     {
@@ -41,6 +43,7 @@ final readonly class PermitData
             'valid_to' => $this->validTo->toDateString(),
             'move_from' => $this->hours?->from,
             'move_to' => $this->hours?->to,
+            'route' => $this->route,
         ];
     }
 }

@@ -44,6 +44,8 @@ class PermitResource extends JsonResource
             'effective_status' => $this->effectiveStatus($now)->value,
             'permit_type' => $this->permit_type->value,
             'reason' => $this->reason,
+            // Where the vehicles may travel; null when the permit does not limit it.
+            'route' => $this->route,
             'valid_from' => EthiopianCalendar::present($this->valid_from, $locale),
             'valid_to' => EthiopianCalendar::present($this->valid_to, $locale),
             'duration_days' => $this->durationDays(),

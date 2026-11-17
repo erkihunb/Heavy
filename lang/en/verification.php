@@ -52,6 +52,7 @@ return [
         'vehicle_type' => 'Vehicle type',
         'vehicle_role' => 'Role on the permit',
         'reason' => 'Reason',
+        'route' => 'Permitted route or area',
         'issued' => 'Issued',
         'branch' => 'Branch',
         'issuer' => 'Issued by',

@@ -169,6 +169,8 @@ export type Permit = {
     effective_status: PermitStatus;
     permit_type: PermitType;
     reason: string;
+    /** Where the vehicles may travel; null when the permit does not limit it. */
+    route?: string | null;
     valid_from: DualDate;
     valid_to: DualDate;
     duration_days: number;

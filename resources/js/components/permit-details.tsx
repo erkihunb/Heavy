@@ -129,6 +129,12 @@ export function PermitDetails({ permit }: { permit: Permit }) {
                 </p>
             </Row>
 
+            {permit.route && (
+                <Row label={t('permits.fields.route')}>
+                    <p className="leading-relaxed">{permit.route}</p>
+                </Row>
+            )}
+
             {permit.submitted_at && (
                 <Row label={t('permits.fields.submitted')}>
                     <DualDate date={permit.submitted_at} />

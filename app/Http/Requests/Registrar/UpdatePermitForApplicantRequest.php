@@ -51,6 +51,8 @@ class UpdatePermitForApplicantRequest extends FormRequest
             'valid_from' => ['bail', 'required', 'date_format:Y-m-d'],
             'valid_to' => ['bail', 'required', 'date_format:Y-m-d'],
             'reason' => ['required', 'string', 'max:2000'],
+            // Where the vehicles may travel; left empty, the permit does not limit it.
+            'route' => ['nullable', 'string', 'max:255'],
             // Empty means the head office. A closed branch takes no new applications,
             // but an application already made there may stay.
             'branch_id' => ['nullable', 'integer', Rule::exists(Branch::class, 'id')->where(fn ($query) => $query
@@ -102,6 +104,7 @@ class UpdatePermitForApplicantRequest extends FormRequest
             'valid_from' => __('permits.fields.valid_from'),
             'valid_to' => __('permits.fields.valid_to'),
             'reason' => __('permits.fields.reason'),
+            'route' => __('permits.fields.route'),
             'branch_id' => __('permits.fields.branch'),
             ...$this->movementHoursAttributes(),
             ...$this->letterAttributes(),
@@ -126,7 +129,7 @@ class UpdatePermitForApplicantRequest extends FormRequest
 
     public function toData(): PermitData
     {
-        /** @var array{permit_type: string, primary_vehicle_id: string, trailer_vehicle_ids?: array<array-key, string>|null, valid_from: string, valid_to: string, reason: string, branch_id?: int|string|null} $validated */
+        /** @var array{permit_type: string, primary_vehicle_id: string, trailer_vehicle_ids?: array<array-key, string>|null, valid_from: string, valid_to: string, reason: string, route?: string|null, branch_id?: int|string|null} $validated */
         $validated = $this->validated();
 
         return $this->withLetter(new PermitData(
@@ -138,6 +141,7 @@ class UpdatePermitForApplicantRequest extends FormRequest
             reason: trim($validated['reason']),
             branchId: isset($validated['branch_id']) && $validated['branch_id'] !== '' ? (int) $validated['branch_id'] : null,
             hours: $this->movementHours(),
+            route: filled($validated['route'] ?? null) ? trim((string) $validated['route']) : null,
         ));
     }
 

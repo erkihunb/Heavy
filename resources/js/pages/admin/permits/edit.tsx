@@ -38,6 +38,7 @@ export default function PermitEdit({
         valid_from: permit.valid_from.gregorian,
         valid_to: permit.valid_to.gregorian,
         reason: permit.reason,
+        route: permit.route ?? '',
         any_time: permit.hours === null,
         move_from: permit.hours?.from ?? '',
         move_to: permit.hours?.to ?? '',

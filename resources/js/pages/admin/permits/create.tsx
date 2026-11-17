@@ -72,6 +72,7 @@ export default function ApplicantsCreate({
         trailer_plate: '',
         permit_type: '',
         reason: '',
+        route: '',
         valid_from: '',
         valid_to: '',
         any_time: true,

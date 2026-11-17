@@ -148,6 +148,7 @@
             $details = array_filter([
                 'organization' => $permit['organization'],
                 'reason' => $permit['reason'],
+                'route' => $permit['route'],
                 'issued' => $permit['issued_at']
                     ? trim($permit['issued_at']['ethiopian_label'].' '.$permit['issued_time'])
                     : null,

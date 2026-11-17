@@ -74,6 +74,7 @@ trait ValidatesRequestLetter
             branchId: $data->branchId,
             hours: $data->hours,
             letter: $this->letter(),
+            route: $data->route,
         );
     }
 

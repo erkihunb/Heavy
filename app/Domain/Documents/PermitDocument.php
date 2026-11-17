@@ -93,8 +93,8 @@ final class PermitDocument
                 + (count($vehicles) > 1 ? 1 : 0)
                 // The "revoked on" / "expired on" line under the title takes about two lines.
                 + ($stamp !== null ? 2 : 0)
-                // The institution band under the title, and its route line.
-                + ($permit->is_institutional ? 1 + (filled($permit->route) ? 1 : 0) : 0)),
+                // The institution band under the title, and the route line under the reason.
+                + ($permit->is_institutional ? 1 : 0) + (filled($permit->route) ? 1 : 0)),
             'reason' => $reason,
             // The check code printed under the number and date; null when switched off.
             'certificate_code' => CertificateCode::for($permit),

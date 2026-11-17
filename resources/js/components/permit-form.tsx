@@ -9,6 +9,7 @@ import InputError from '@/components/input-error';
 import { LetterFields } from '@/components/letter-fields';
 import { MovementHoursField } from '@/components/movement-hours-field';
 import type { MovementHoursValue } from '@/components/movement-hours-field';
+import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/lib/i18n';
@@ -24,6 +25,8 @@ export type PermitFormData = {
     valid_from: string;
     valid_to: string;
     reason: string;
+    /** Where the vehicles may travel; empty when the permit does not limit it. */
+    route: string;
     /** The branch applied to; empty for the head office. Only applicants choose it. */
     branch_id?: string;
     /** The request letter: only when a Registrar records a request taken at the office. */
@@ -406,6 +409,25 @@ export function PermitForm({
                         </FormField>
                     )}
                 </div>
+
+                <FormField
+                    id="route"
+                    label={t('permits.fields.route')}
+                    hint={t('permits.fields.route_hint')}
+                    error={errors.route}
+                >
+                    {(control) => (
+                        <Input
+                            {...control}
+                            maxLength={255}
+                            placeholder={t('permits.fields.route_placeholder')}
+                            value={form.data.route}
+                            onChange={(event) =>
+                                form.setData('route', event.target.value)
+                            }
+                        />
+                    )}
+                </FormField>
             </Section>
 
             <div className="space-y-4">

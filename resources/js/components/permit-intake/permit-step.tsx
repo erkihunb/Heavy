@@ -6,14 +6,15 @@ import { MovementHoursField } from '@/components/movement-hours-field';
 import { errorsOf } from '@/components/permit-intake/form';
 import type { IntakeForm, StepState } from '@/components/permit-intake/form';
 import { Step } from '@/components/permit-intake/step';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/lib/i18n';
 import type { Money } from '@/types';
 import { PERMIT_TYPES } from '@/types/enums';
 
 /**
- * 3. The permit asked for: its type, dates, reason, movement hours and the
- * letter, with what it would cost by today's schedule.
+ * 3. The permit asked for: its type, dates, reason, route, movement hours
+ * and the letter, with what it would cost by today's schedule.
  */
 export function PermitStep({
     form,
@@ -112,6 +113,25 @@ export function PermitStep({
                             value={data.reason}
                             onChange={(event) =>
                                 form.setData('reason', event.target.value)
+                            }
+                        />
+                    )}
+                </FormField>
+
+                <FormField
+                    id="route"
+                    label={t('permits.fields.route')}
+                    hint={t('permits.fields.route_hint')}
+                    error={errors.route}
+                >
+                    {(control) => (
+                        <Input
+                            {...control}
+                            maxLength={255}
+                            placeholder={t('permits.fields.route_placeholder')}
+                            value={data.route}
+                            onChange={(event) =>
+                                form.setData('route', event.target.value)
                             }
                         />
                     )}

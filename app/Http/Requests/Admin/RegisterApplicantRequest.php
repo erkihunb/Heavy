@@ -106,6 +106,8 @@ class RegisterApplicantRequest extends OrganizationRequest
             'valid_from' => [...$apply, 'bail', 'required', 'date_format:Y-m-d'],
             'valid_to' => [...$apply, 'bail', 'required', 'date_format:Y-m-d'],
             'reason' => [...$apply, 'required', 'string', 'max:2000'],
+            // Where the vehicles may travel; left empty, the permit does not limit it.
+            'route' => [...$apply, 'nullable', 'string', 'max:255'],
             ...$this->movementHoursRules($apply),
             // Requests come in by letter: its number, date and a scanned copy.
             ...$this->letterRules(scanRequired: true, condition: $apply),
@@ -190,6 +192,7 @@ class RegisterApplicantRequest extends OrganizationRequest
             'valid_from' => __('permits.fields.valid_from'),
             'valid_to' => __('permits.fields.valid_to'),
             'reason' => __('permits.fields.reason'),
+            'route' => __('permits.fields.route'),
             ...$this->movementHoursAttributes(),
             ...$this->letterAttributes(),
         ];
@@ -244,6 +247,7 @@ class RegisterApplicantRequest extends OrganizationRequest
             submit: $this->boolean('submit'),
             hours: $this->movementHours(),
             letter: $this->letter(),
+            route: $this->filled('route') ? $this->string('route')->trim()->toString() : null,
         );
     }
 

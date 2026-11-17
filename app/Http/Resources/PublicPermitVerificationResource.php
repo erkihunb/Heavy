@@ -13,7 +13,7 @@ use Carbon\CarbonImmutable;
 /**
  * What anyone who checks a permit may see (spec §7): an explicit whitelist.
  * The details printed on the permit itself are shown too (owner's request,
- * 2026-11-12): vehicle owners, the reason, the receipt number, the issuer,
+ * 2026-11-12): vehicle owners, the reason, the route, the receipt number, the issuer,
  * the branch and the issue date. Never e-mail addresses, phone numbers, fees,
  * notes, internal ids or the token. Built as a plain array because the public
  * page is server-rendered Blade, not an API.
@@ -60,6 +60,7 @@ final class PublicPermitVerificationResource
                 'owner' => $vehicle->owner_name,
             ])->values()->all(),
             'reason' => $permit->reason,
+            'route' => $permit->route,
             'issued_at' => EthiopianCalendar::present($issuedAt, $locale),
             'issued_time' => $issuedAt?->format('H:i'),
             'branch' => $permit->branch?->localizedName($locale),

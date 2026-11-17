@@ -193,6 +193,7 @@
                 'type' => 'የተሽከርካሪ ዓይነት',
                 'plate' => 'የተሽከርካሪ ሰሌዳ ቁጥር',
                 'reason' => 'ፈቃዱ የተሰጠበት ምክንያት',
+                'route' => 'የተፈቀደለት የእንቅስቃሴ መስመር ወይም አካባቢ',
                 'valid' => 'ፈቃዱ የሚያገለግልበት ጊዜ',
                 'receipt' => 'ክፍያ የተፈጸመበት ደረሰኝ ቁጥር',
                 'issuer' => 'ፈቃድ ሰጪ ስምና ፊርማ',
@@ -223,6 +224,7 @@
                 'type' => 'Vehicle type',
                 'plate' => 'Plate number',
                 'reason' => 'Reason for the permit',
+                'route' => 'Permitted route or area',
                 'valid' => 'Valid',
                 'receipt' => 'Payment receipt number',
                 'issuer' => 'Issued by (name and signature)',
@@ -375,7 +377,7 @@
                     <span class="what">{{ $text['entries']['reason'] }}{{ $text['colon'] }}</span>
                     <span class="value">
                         {{ $reason }}
-                        @if ($institution)
+                        @if ($institution || filled($route))
                             <span class="hours"><strong>{{ $text['entries']['route'] }}{{ $text['colon'] }}</strong> {{ $route ?: $text['anywhere'] }}</span>
                         @endif
                     </span>

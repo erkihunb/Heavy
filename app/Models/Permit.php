@@ -52,7 +52,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $letter_file_path scanned letter, on the private disk
  * @property int|null $issued_by the Issuer who issued and printed the permit
  * @property bool $is_institutional given directly to one of the Authority's own vehicles: free, with a paper of its own
- * @property string|null $route where an institution vehicle goes, when the issuer said
+ * @property string|null $route where the vehicles may travel, when the office or issuer said
  * @property CarbonImmutable|null $created_at
  */
 class Permit extends Model
@@ -101,6 +101,7 @@ class Permit extends Model
         'valid_to',
         'move_from',
         'move_to',
+        'route',
     ];
 
     /**

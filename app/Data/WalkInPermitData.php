@@ -23,6 +23,8 @@ final readonly class WalkInPermitData
         public ?MovementHours $hours = null,
         /** The letter the request came in with. */
         public ?LetterData $letter = null,
+        /** Where the vehicles may travel, in words; null when the permit does not limit it. */
+        public ?string $route = null,
     ) {}
 
     /**
@@ -30,6 +32,6 @@ final readonly class WalkInPermitData
      */
     public function withVehicles(string $primaryVehicleId, array $trailerVehicleIds): PermitData
     {
-        return new PermitData($this->permitType, $primaryVehicleId, $trailerVehicleIds, $this->validFrom, $this->validTo, $this->reason, hours: $this->hours, letter: $this->letter);
+        return new PermitData($this->permitType, $primaryVehicleId, $trailerVehicleIds, $this->validFrom, $this->validTo, $this->reason, hours: $this->hours, letter: $this->letter, route: $this->route);
     }
 }
