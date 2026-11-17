@@ -9,13 +9,13 @@
 return [
     'common' => [
         'back' => 'ተመለስ',
-        'cancel' => 'ይቅር',
+        'cancel' => 'ይሰረዝ',
         'clear' => 'አጽዳ',
         'confirm' => 'አረጋግጥ',
         'filter' => 'አጣራ',
         'filters' => 'ማጣሪያዎች',
-        'loading' => 'በመጫን ላይ',
-        'no_results' => 'ምንም ውጤት አልተገኘም',
+        'loading' => 'በመጫን ላይ…',
+        'no_results' => 'ምንም የተገኘ መረጃ የለም',
         'next' => 'ቀጣይ',
         'page' => 'ገጽ',
         'pagination' => 'ገጾች',
@@ -23,7 +23,7 @@ return [
         'pagination_range' => ':from–:to ከ:total',
         'remove' => 'አስወግድ',
         'replace' => 'ተካ',
-        'required' => 'የግድ ነው',
+        'required' => 'አስገዳጅ',
         'reset' => 'ዳግም አስጀምር',
         'results' => 'ውጤቶች',
         'search' => 'ፈልግ',
@@ -44,7 +44,7 @@ return [
         'sorted_on_page' => 'በዚህ ገጽ ብቻ የተደረደረ',
         'sort_by' => 'በ:column ደርድር',
         'table_tools' => 'የሰንጠረዥ መሣሪያዎች',
-        'file_max_size' => 'ከፍተኛው መጠን :size ሜባ',
+        'file_max_size' => 'ከፍተኛው የፋይል መጠን :size ሜባ',
     ],
 
     // Button labels that get the matching icon in the kit's Button (shell/Components/ui/actionIcons.tsx).
@@ -53,19 +53,19 @@ return [
         'add' => 'አክል',
         'save' => 'አስቀምጥ',
         'update' => 'አዘምን',
-        'submit' => 'አስገባ',
+        'submit' => 'አቅርብ',
         'apply' => 'ተግብር',
         'approve' => 'አጽድቅ',
         'close' => 'ዝጋ',
         'reject' => 'ውድቅ አድርግ',
-        'edit' => 'አርትዕ',
+        'edit' => 'አስተካክል',
         'delete' => 'ሰርዝ',
-        'retry' => 'እንደገና ሞክር',
+        'retry' => 'በድጋሚ ሞክር',
         'view' => 'ተመልከት',
-        'details' => 'ዝርዝር',
-        'export' => 'ላክ',
+        'details' => 'ዝርዝር መረጃ',
+        'export' => 'ላክ (Export)',
         'download' => 'አውርድ',
-        'upload' => 'ስቀል',
+        'upload' => 'ጫን (Upload)',
         'print' => 'አትም',
         'continue' => 'ቀጥል',
         'copy' => 'ቅዳ',
@@ -90,27 +90,27 @@ return [
 
     // Groups of the sidebar menu (resources/js/config/navigation.ts).
     'menu' => [
-        'permit_processing' => 'የፍቃድ ሂደት',
+        'permit_processing' => 'የፈቃድ አገልግሎት ሂደት',
         'payments_reports' => 'ክፍያዎችና ሪፖርቶች',
-        'front_desk' => 'የፊት ዴስክ',
-        'access' => 'ተጠቃሚዎችና ኦዲት',
-        'configuration' => 'ውቅር',
+        'front_desk' => 'የደንበኞች መስተንግዶ',
+        'access' => 'የተጠቃሚዎች አስተዳደርና ኦዲት',
+        'configuration' => 'የሥርዓት ውቅር',
     ],
 
     'account' => [
-        'menu' => 'የመለያ ምናሌ',
-        'signed_in_as' => 'የገቡት በ',
-        'profile_settings' => 'የመገለጫ ቅንብሮች',
-        'sign_out' => 'ይውጡ',
+        'menu' => 'የተጠቃሚ መለያ ምናሌ',
+        'signed_in_as' => 'የገቡበት መለያ',
+        'profile_settings' => 'የግል መረጃ ማስተካከያ',
+        'sign_out' => 'ከሥርዓቱ ውጣ',
     ],
 
     'appearance' => [
         'title' => 'ገጽታ',
-        'mode' => 'ገጽታ',
-        'system' => 'እንደ መሣሪያው',
+        'mode' => 'የገጽታ ቀለም',
+        'system' => 'እንደ መሣሪያው ምርጫ',
         'light' => 'ብሩህ',
         'dark' => 'ጨለማ',
-        'interface_style' => 'የገጽ ዘይቤ',
+        'interface_style' => 'የገጽታ ዘይቤ',
         'organization_default' => 'የተቋሙ ነባሪ',
         'styles' => [
             'authority' => 'ባለሥልጣን',
@@ -127,14 +127,14 @@ return [
 
     'notifications' => [
         'title' => 'ማሳወቂያዎች',
-        'empty' => 'ምንም ማሳወቂያ የለም',
-        'empty_hint' => 'ስለ ፍቃዶችዎ መረጃ በኢሜይልና በኤስኤምኤስ ይላካል።',
+        'empty' => 'ምንም አዲስ ማሳወቂያ የለም',
+        'empty_hint' => 'ስለ ፈቃዶችዎ መረጃ በኢሜይልና በአጭር የጽሑፍ መልዕክት (SMS) ይላካል።',
     ],
 
     'breadcrumbs' => [
-        'label' => 'የገጽ መንገድ',
+        'label' => 'የገጽ አቅጣጫ',
         'create' => 'ፍጠር',
-        'edit' => 'አርትዕ',
+        'edit' => 'አስተካክል',
         'details' => 'ዝርዝር',
     ],
 ];
