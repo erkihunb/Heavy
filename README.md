@@ -89,7 +89,8 @@ uses, regenerate its TypeScript type: `php artisan enums:types`.
 ## Deploying
 
 The production stack is Docker (spec §16): `Dockerfile` builds the `app` image (PHP-FPM,
-also used by the queue worker and the scheduler) and the `web` image (nginx);
+also used by the queue worker and the scheduler), the `web` image (nginx) and the `ssr`
+image (Node, server rendering);
 `compose.production.yaml` runs them with MariaDB, Redis, Gotenberg and a backup service.
 TLS ends at the reverse proxy or load balancer in front of `web`.
 
@@ -119,6 +120,11 @@ and SMS providers, error tracking). Further staff accounts are opened in **Admin
 - **Migrations without downtime:** add columns as nullable or with a default, backfill in a
   job, and only then make them required; never rename or drop a column in the same deploy
   that stops using it; build indexes on large tables in a separate deploy.
+- **Server rendering:** with `INERTIA_SSR_ENABLED=true` and `INERTIA_SSR_URL=http://ssr:13714`
+  in `.env.production`, the `ssr` container (Node) draws each first page on the server, so
+  it shows as soon as the HTML and the stylesheet arrive instead of after the scripts. If
+  that container is down or slow the page is sent as before and the browser draws it.
+  Set the first to `false` and restart `app` to switch it off; no rebuild is needed.
 - **Private files** (permit PDFs, receipts, exports) live on the `documents` disk in the
   `storage` volume. It is never web-served.
 - **Health:** `GET /up` checks the database, the cache and the queue connection and answers

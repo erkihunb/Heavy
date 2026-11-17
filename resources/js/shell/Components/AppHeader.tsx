@@ -1,6 +1,7 @@
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { useHydrated } from '@/hooks/use-hydrated';
 import { logout } from '@/routes';
 import { edit as profileEdit } from '@/routes/profile';
 import LanguageSwitcher from '@/shell/Components/LanguageSwitcher';
@@ -42,6 +43,8 @@ export default function AppHeader({ onMenuClick }: Props) {
             ? '⌘ K'
             : 'Ctrl K',
     );
+    // The server does not know the keyboard; it draws the common hint.
+    const hydrated = useHydrated();
     const displayName = user?.name ?? t('shell.common.user');
 
     useEffect(() => {
@@ -113,7 +116,7 @@ export default function AppHeader({ onMenuClick }: Props) {
                             aria-hidden="true"
                             className="hidden shrink-0 rounded-sm border border-(--app-border) bg-(--app-surface) px-1.5 py-0.5 font-sans text-[10px] font-medium text-(--app-muted-foreground) lg:inline"
                         >
-                            {shortcut}
+                            {hydrated ? shortcut : 'Ctrl K'}
                         </kbd>
                     </button>
                 </div>

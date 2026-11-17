@@ -3,8 +3,9 @@
 #   docker compose -f compose.production.yaml --env-file .env.production up -d --build
 #   docker compose -f compose.production.yaml --env-file .env.production run --rm app php artisan migrate --force
 #
-# Services: app (PHP-FPM), web (nginx), worker (queue), scheduler, mariadb,
-# redis, gotenberg (PDF) and backup (daily dump + files, 30 days).
+# Services: app (PHP-FPM), web (nginx), ssr (Node, draws first pages on the
+# server), worker (queue), scheduler, mariadb, redis, gotenberg (PDF) and
+# backup (daily dump + files, 30 days).
 # TLS ends at a reverse proxy in front of "web" (set TRUSTED_PROXIES).
 # See README.md → Deploying.
 
@@ -58,6 +59,16 @@ services:
             interval: 30s
             timeout: 5s
             retries: 3
+
+    # Draws each first page on the server so that it shows before the scripts
+    # arrive. Used only when .env.production has INERTIA_SSR_ENABLED=true and
+    # INERTIA_SSR_URL=http://ssr:13714; "app" does without it when it is down.
+    ssr:
+        image: heavy-ssr:${APP_VERSION:-latest}
+        build:
+            context: .
+            target: ssr
+        restart: unless-stopped
 
     mariadb:
         image: mariadb:10.11

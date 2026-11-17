@@ -13,11 +13,18 @@ return [
     |
     | See: https://inertiajs.com/server-side-rendering
     |
+    | Off unless INERTIA_SSR_ENABLED=true: the pages are then drawn by the
+    | browser alone, as before. Turned on, each first request is sent to the
+    | Node process that runs bootstrap/ssr/ssr.mjs (`npm run build:ssr`, then
+    | `php artisan inertia:start-ssr`; the "ssr" service in
+    | compose.production.yaml). If that process does not answer, the page
+    | is sent without the pre-drawn HTML and still works.
+    |
     */
 
     'ssr' => [
-        'enabled' => true,
-        'url' => 'http://127.0.0.1:13714',
+        'enabled' => (bool) env('INERTIA_SSR_ENABLED', false),
+        'url' => env('INERTIA_SSR_URL', 'http://127.0.0.1:13714'),
         // 'bundle' => base_path('bootstrap/ssr/ssr.mjs'),
 
     ],

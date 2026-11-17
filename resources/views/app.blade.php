@@ -47,8 +47,6 @@
             <style nonce="{{ Vite::cspNonce() }}">{!! $themeCss !!}</style>
         @endif
 
-        <title inertia>{{ config('app.name') }}</title>
-
         {!! \App\Domain\Settings\Branding::faviconTag() !!}
         <meta name="theme-color" content="#122170">
 
@@ -66,6 +64,12 @@
         @viteReactRefresh
         @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         @inertiaHead
+        {{--
+            After the head a page drawn on the server brings with it (its own
+            title): the browser shows the first title it meets, so this one is
+            only the name until the scripts set the page's.
+        --}}
+        <title inertia>{{ config('app.name') }}</title>
     </head>
     <body class="font-sans antialiased">
         @inertia

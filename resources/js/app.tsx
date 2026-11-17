@@ -1,7 +1,7 @@
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, hydrateRoot } from 'react-dom/client';
 import '../css/app.css';
 import { initializeTheme } from '@/hooks/use-appearance';
 
@@ -15,13 +15,21 @@ createInertiaApp({
             import.meta.glob('./pages/**/*.tsx'),
         ),
     setup({ el, App, props }) {
-        const root = createRoot(el);
-
-        root.render(
+        const app = (
             <StrictMode>
                 <App {...props} />
-            </StrictMode>,
+            </StrictMode>
         );
+
+        // Already drawn by the server (INERTIA_SSR_ENABLED, resources/js/ssr.tsx):
+        // take over that HTML instead of throwing it away and drawing it again.
+        if (el.hasChildNodes()) {
+            hydrateRoot(el, app);
+
+            return;
+        }
+
+        createRoot(el).render(app);
     },
     progress: {
         color: '#1F7A4D',

@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1.7
 #
-# Production image (spec §16). Three targets:
+# Production image (spec §16). Four targets:
 #   app  — PHP-FPM with the application; also runs the queue worker and the scheduler
 #   web  — nginx serving public/ and passing PHP requests to "app"
+#   ssr  — Node drawing each first page on the server (used when INERTIA_SSR_ENABLED=true)
 #   build — internal: Composer packages and the front-end build
 #
 # See compose.production.yaml and the "Deploying" section of README.md.
@@ -37,7 +38,7 @@ COPY . .
 # (no database is needed: settings fall back to their defaults).
 RUN composer dump-autoload --no-dev --optimize --classmap-authoritative \
     && php artisan package:discover --ansi \
-    && npm run build \
+    && npm run build:ssr \
     && rm -rf node_modules tests
 
 # ---- app: PHP-FPM ----
@@ -63,3 +64,24 @@ FROM nginx:1.27-alpine AS web
 
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /var/www/html/public /var/www/html/public
+
+# ---- ssr: Node with the server-rendering bundle ----
+# The bundle carries its packages (vite.config.ts, ssr.noExternal), so nothing
+# is installed here. "app" sends each first page to http://ssr:13714/render and
+# sends the page without the pre-drawn HTML when this container does not answer.
+FROM node:22-alpine AS ssr
+
+ENV NODE_ENV=production
+WORKDIR /app
+
+# package.json only says that the bundle is an ES module.
+COPY --from=build /var/www/html/package.json ./package.json
+COPY --from=build /var/www/html/bootstrap/ssr ./bootstrap/ssr
+
+USER node
+EXPOSE 13714
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD wget -qO- http://127.0.0.1:13714/health || exit 1
+
+CMD ["node", "bootstrap/ssr/ssr.js"]

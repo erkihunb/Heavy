@@ -81,7 +81,7 @@ export function paginationRange(
     const values: Record<string, number> = { from, to, total: meta.total };
     // One pass, whole names: ':to' must not eat the start of ':total'.
     return template.replace(/:(from|total|to)\b/g, (_, name: string) =>
-        values[name].toLocaleString(),
+        values[name].toLocaleString('en-US'),
     );
 }
 
@@ -180,7 +180,7 @@ export function Pagination({
                                             : undefined
                                     }
                                 >
-                                    {page.toLocaleString()}
+                                    {page.toLocaleString('en-US')}
                                 </button>
                             ),
                     )}

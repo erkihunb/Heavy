@@ -12,6 +12,7 @@ docs
 .env.*
 !.env.example
 public/build
+bootstrap/ssr
 public/hot
 public/storage
 storage/app/*

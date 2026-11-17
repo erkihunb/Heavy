@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { useHydrated } from '@/hooks/use-hydrated';
 
 export type ResolvedAppearance = 'light' | 'dark';
 export type Appearance = ResolvedAppearance | 'system';
@@ -119,9 +120,13 @@ export function useAppearance(): UseAppearanceReturn {
         () => 'system',
     );
 
-    const resolvedAppearance: ResolvedAppearance = isDarkMode(appearance)
-        ? 'dark'
-        : 'light';
+    // A page drawn on the server does not know whether the device prefers a
+    // dark screen; it draws the light answer, and so does the browser until it
+    // has taken that HTML over (the page's colours themselves are set on
+    // <html> before the first paint and do not wait for this).
+    const hydrated = useHydrated();
+    const resolvedAppearance: ResolvedAppearance =
+        hydrated && isDarkMode(appearance) ? 'dark' : 'light';
 
     const updateAppearance = (mode: Appearance): void => {
         currentAppearance = mode;

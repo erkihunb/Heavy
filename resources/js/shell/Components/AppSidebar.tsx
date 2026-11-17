@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { navigation } from '@/config/navigation';
 import type { NavGroup, NavItem, NavSection } from '@/config/navigation';
+import { useHydrated } from '@/hooks/use-hydrated';
 import { logout } from '@/routes';
 import { edit as profileEdit } from '@/routes/profile';
 import ApplicationLogo from '@/shell/Components/ApplicationLogo';
@@ -122,6 +123,12 @@ export default function AppSidebar({
         },
     );
 
+    // The groups a person opened are kept in localStorage, which a page drawn on
+    // the server cannot read: until the browser has taken over, only the current
+    // page's group is open, as the server drew it.
+    const hydrated = useHydrated();
+    const shownGroups = hydrated ? openGroups : withActiveOpen({});
+
     // After each visit the current page's group opens and the filter clears. Keyed on the
     // address and a stable signature, so a manually collapsed group is not reopened on every render.
     const visitKey = pageUrl + '|' + activeGroupSignature;
@@ -141,7 +148,7 @@ export default function AppSidebar({
 
     // Deep items in long groups can sit below the fold; keep the current page visible after each visit.
     const activeGroupOpen = activeGroupKeys.every(
-        (key) => openGroups[key] ?? false,
+        (key) => shownGroups[key] ?? false,
     );
     useEffect(() => {
         if (activeGroupOpen)
@@ -338,7 +345,7 @@ export default function AppSidebar({
         const Icon = group.icon;
         const selected = activeGroupKeys.includes(group.key);
         const isOpen = Boolean(
-            normalizedQuery || (openGroups[group.key] ?? false),
+            normalizedQuery || (shownGroups[group.key] ?? false),
         );
         const panelId = instanceId + '-group-' + group.key;
         const label = t(group.labelKey);

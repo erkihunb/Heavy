@@ -5,10 +5,11 @@ import {
     DialogTitle,
 } from '@headlessui/react';
 import { usePage } from '@inertiajs/react';
-import { useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import type { PropsWithChildren, ReactNode } from 'react';
 import { SupportContacts } from '@/components/support-contacts';
 import { adoptAccountTheme } from '@/hooks/use-appearance';
+import { useHydrated } from '@/hooks/use-hydrated';
 import AppHeader from '@/shell/Components/AppHeader';
 import AppSidebar from '@/shell/Components/AppSidebar';
 import Breadcrumbs from '@/shell/Components/Breadcrumbs';
@@ -168,7 +169,14 @@ function Shell({
         }
         return sidebarCompactDefault;
     });
-    const collapsed = sidebarCollapsed;
+    // A page drawn on the server cannot read localStorage: there, and while the
+    // browser takes over that HTML, the cookie below says how the sidebar was left.
+    const hydrated = useHydrated();
+    const collapsed = hydrated ? sidebarCollapsed : !pageProps.sidebarOpen;
+
+    useEffect(() => {
+        document.cookie = `sidebar_state=${String(!sidebarCollapsed)};path=/;max-age=31536000;SameSite=Lax`;
+    }, [sidebarCollapsed]);
 
     const toggleSidebarCollapse = () => {
         setSidebarCollapsed((prev) => {

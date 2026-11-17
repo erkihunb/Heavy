@@ -116,8 +116,8 @@ jobs:
             - name: Unit tests (Vitest)
               run: npm test
 
-            - name: Build
-              run: npm run build
+            - name: Build (browser and server-rendering bundles)
+              run: npm run build:ssr
 
             - name: Dependency audit
               run: npm audit --audit-level=high

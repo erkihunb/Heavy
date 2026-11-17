@@ -11,6 +11,7 @@ use App\Domain\Sms\LogSmsGateway;
 use App\Domain\Sms\SmsGateway;
 use App\Enums\Permission;
 use App\Models\User;
+use App\Support\InertiaSsrGateway;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +24,7 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Inertia\Ssr\Gateway as InertiaSsr;
 use InvalidArgumentException;
 
 class AppServiceProvider extends ServiceProvider
@@ -32,6 +34,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Server rendering that gives up quickly when its process does not answer.
+        $this->app->bind(InertiaSsr::class, InertiaSsrGateway::class);
+
         $this->app->bind(SmsGateway::class, fn (): SmsGateway => match (config('services.sms.driver')) {
             'log' => new LogSmsGateway,
             'http' => new HttpSmsGateway(

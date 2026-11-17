@@ -36,6 +36,8 @@
         <!-- Permit PDFs are rendered by a fake; the Chrome smoke test runs where Chrome is installed. -->
         <env name="PERMITS_PDF_RENDERER" value="fake" force="true"/>
         <env name="PERMITS_VERIFY_URL" value="https://verify.example.test" force="true"/>
+        <!-- Tests never ask a server-rendering process to draw a page, whatever the local .env says. -->
+        <env name="INERTIA_SSR_ENABLED" value="false" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
