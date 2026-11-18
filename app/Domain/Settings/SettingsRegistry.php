@@ -10,7 +10,8 @@ namespace App\Domain\Settings;
  * Types: text (one line), longtext, int (min/max), bool, choice (options),
  * email, url, time (HH:MM), timezone, secret (stored encrypted, never sent
  * back to the browser), color (#rrggbb), image (an uploaded file, `kind`
- * logo or favicon; see Branding).
+ * logo or favicon; see Branding), roles (a list of role ids, picked from a
+ * checklist).
  */
 final class SettingsRegistry
 {
@@ -120,11 +121,22 @@ final class SettingsRegistry
             'services.telegram.alerts.revoked' => ['section' => 'telegram', 'group' => 'alerts', 'type' => 'bool'],
 
             // Security
-            'permits.security.password_min_length' => ['section' => 'security', 'group' => 'accounts', 'type' => 'int', 'min' => 8, 'max' => 64],
-            'permits.security.login_per_minute' => ['section' => 'security', 'group' => 'accounts', 'type' => 'int', 'min' => 3, 'max' => 20],
-            'session.lifetime' => ['section' => 'security', 'group' => 'accounts', 'type' => 'int', 'min' => 15, 'max' => 1440],
-            'permits.security.default_password' => ['section' => 'security', 'group' => 'accounts', 'type' => 'secret', 'min' => 8],
-            'permits.staff_two_factor_required' => ['section' => 'security', 'group' => 'accounts', 'type' => 'bool'],
+            'permits.security.password_min_length' => ['section' => 'security', 'group' => 'passwords', 'type' => 'int', 'min' => 8, 'max' => 64],
+            'permits.security.password_max_length' => ['section' => 'security', 'group' => 'passwords', 'type' => 'int', 'min' => 64, 'max' => 128],
+            'permits.security.password_history_count' => ['section' => 'security', 'group' => 'passwords', 'type' => 'int', 'min' => 0, 'max' => 24],
+            'permits.security.password_block_personal_info' => ['section' => 'security', 'group' => 'passwords', 'type' => 'bool'],
+            'permits.security.password_block_common' => ['section' => 'security', 'group' => 'passwords', 'type' => 'bool'],
+            'permits.security.password_breach_check' => ['section' => 'security', 'group' => 'passwords', 'type' => 'bool'],
+            'session.lifetime' => ['section' => 'security', 'group' => 'sign_in', 'type' => 'int', 'min' => 5, 'max' => 1440],
+            'permits.security.max_login_attempts' => ['section' => 'security', 'group' => 'sign_in', 'type' => 'int', 'min' => 1, 'max' => 20],
+            'permits.security.lockout_minutes' => ['section' => 'security', 'group' => 'sign_in', 'type' => 'int', 'min' => 1, 'max' => 1440],
+            'permits.security.force_https' => ['section' => 'security', 'group' => 'sign_in', 'type' => 'bool'],
+            'permits.security.mfa_enabled' => ['section' => 'security', 'group' => 'two_factor', 'type' => 'bool'],
+            'permits.security.mfa_required_for_all' => ['section' => 'security', 'group' => 'two_factor', 'type' => 'bool'],
+            'permits.security.mfa_required_roles' => ['section' => 'security', 'group' => 'two_factor', 'type' => 'roles'],
+            'permits.maintenance_banner.enabled' => ['section' => 'security', 'group' => 'maintenance', 'type' => 'bool'],
+            'permits.maintenance_banner.message_am' => ['section' => 'security', 'group' => 'maintenance', 'type' => 'text', 'max' => 500],
+            'permits.maintenance_banner.message_en' => ['section' => 'security', 'group' => 'maintenance', 'type' => 'text', 'max' => 500],
             'permits.verification_per_minute' => ['section' => 'security', 'group' => 'verification', 'type' => 'int', 'min' => 5, 'max' => 300],
             'permits.public_shows_organization' => ['section' => 'security', 'group' => 'verification', 'type' => 'bool'],
 
@@ -171,6 +183,7 @@ final class SettingsRegistry
             'time' => ['required', 'date_format:H:i'],
             'timezone' => ['required', 'timezone:all'],
             'secret' => ['nullable', 'string', 'min:'.($setting['min'] ?? 1), 'max:500'],
+            'roles' => ['nullable', 'array'],
             'color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             // SVG is refused: a drawing can carry script. Raster files are re-encoded on upload.
             'image' => ($setting['kind'] ?? 'logo') === 'favicon'

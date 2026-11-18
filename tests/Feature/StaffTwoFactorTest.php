@@ -1,7 +1,11 @@
 <?php
 
+use App\Domain\Audit\AuditEvent;
 use App\Enums\Role;
+use App\Models\Role as RoleModel;
+use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Activitylog\Models\Activity;
 
 function passwordConfirmed(): array
 {
@@ -112,16 +116,10 @@ it('lets staff without two-factor authentication switch language', function () {
     expect($user->refresh()->locale)->toBe('en');
 });
 
-it('can be switched off by configuration for local development', function () {
-    config(['permits.staff_two_factor_required' => false]);
-
-    $this->actingAs(userWithRole(Role::Admin))
-        ->get(route('dashboard'))
-        ->assertOk();
-});
-
-it('is required by default', function () {
-    expect(config('permits.staff_two_factor_required'))->toBeTrue();
+it('is required of all staff by default', function () {
+    expect(config('permits.security.mfa_enabled'))->toBeTrue()
+        ->and(config('permits.security.mfa_required_for_all'))->toBeTrue()
+        ->and(userWithRole(Role::Approver)->requiresTwoFactor())->toBeTrue();
 });
 
 it('does not affect guests', function () {
@@ -129,27 +127,101 @@ it('does not affect guests', function () {
     $this->get(route('login'))->assertOk();
 });
 
-it('lets an admin switch the requirement off and on in the system settings', function () {
+it('is required of nobody when two-factor is switched off', function () {
+    config(['permits.security.mfa_enabled' => false]);
+    $user = userWithRole(Role::Admin);
+    $user->forceFill(['two_factor_requirement' => User::TWO_FACTOR_REQUIRED])->save();
+
+    $this->actingAs($user)->get(route('dashboard'))->assertOk();
+});
+
+it('is required only of the chosen roles when not required of all staff', function () {
+    $approver = userWithRole(Role::Approver);
+    $cashier = userWithRole(Role::Cashier);
+    config([
+        'permits.security.mfa_required_for_all' => false,
+        'permits.security.mfa_required_roles' => [RoleModel::findByName(Role::Approver->value)->id],
+    ]);
+
+    $this->actingAs($approver)->get(route('dashboard'))->assertRedirect(route('two-factor.show'));
+    $this->actingAs($cashier)->get(route('dashboard'))->assertOk();
+});
+
+it('follows an admin\'s choice for one person over the policy', function () {
+    $exempt = userWithRole(Role::Admin);
+    $exempt->forceFill(['two_factor_requirement' => User::TWO_FACTOR_EXEMPT])->save();
+
+    $this->actingAs($exempt)->get(route('dashboard'))->assertOk();
+
+    config(['permits.security.mfa_required_for_all' => false]);
+    $required = userWithRole(Role::Cashier);
+    $required->forceFill(['two_factor_requirement' => User::TWO_FACTOR_REQUIRED])->save();
+
+    $this->actingAs($required)->get(route('dashboard'))->assertRedirect(route('two-factor.show'));
+});
+
+it('lets an admin choose for one person, audited', function () {
     $admin = userWithRole(Role::Admin);
-    $admin->forceFill([
-        'two_factor_secret' => encrypt('secret'),
-        'two_factor_recovery_codes' => encrypt('[]'),
-        'two_factor_confirmed_at' => now(),
-    ])->save();
+    $admin->forceFill(['two_factor_requirement' => User::TWO_FACTOR_EXEMPT])->save();
     $other = userWithRole(Role::Approver);
 
     $this->actingAs($other)->get(route('dashboard'))->assertRedirect(route('two-factor.show'));
 
     $this->actingAs($admin)
-        ->put(route('admin.settings.update', 'security'), settingsForm('security', ['permits.staff_two_factor_required' => false]))
-        ->assertSessionHasNoErrors();
+        ->put(route('admin.users.two-factor-requirement', $other), ['requirement' => 'exempt'])
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('success', __('rbac.users.messages.two_factor_requirement_saved'));
 
-    expect(config('permits.staff_two_factor_required'))->toBeFalse();
+    expect($other->refresh()->two_factor_requirement)->toBe(User::TWO_FACTOR_EXEMPT);
     $this->actingAs($other)->get(route('dashboard'))->assertOk();
+    expect(Activity::query()->where('event', AuditEvent::UserTwoFactorRequirementChanged->value)->sole()->properties['attributes'])
+        ->toBe(['two_factor_requirement' => 'exempt']);
 
     $this->actingAs($admin)
-        ->put(route('admin.settings.update', 'security'), settingsForm('security', ['permits.staff_two_factor_required' => true]))
+        ->put(route('admin.users.two-factor-requirement', $other), ['requirement' => 'policy'])
         ->assertSessionHasNoErrors();
 
+    expect($other->refresh()->two_factor_requirement)->toBeNull();
     $this->actingAs($other)->get(route('dashboard'))->assertRedirect(route('two-factor.show'));
+});
+
+it('refuses an unknown choice', function () {
+    $admin = userWithRole(Role::Admin);
+    $admin->forceFill(['two_factor_requirement' => User::TWO_FACTOR_EXEMPT])->save();
+
+    $this->actingAs($admin)
+        ->put(route('admin.users.two-factor-requirement', userWithRole(Role::Approver)), ['requirement' => 'sometimes'])
+        ->assertSessionHasErrors('requirement');
+});
+
+it('does not let someone without users.reset-passwords choose', function () {
+    $approver = userWithRole(Role::Approver);
+    $approver->forceFill(['two_factor_requirement' => User::TWO_FACTOR_EXEMPT])->save();
+    $other = userWithRole(Role::Approver);
+
+    $this->actingAs($approver)
+        ->put(route('admin.users.two-factor-requirement', $other), ['requirement' => 'exempt'])
+        ->assertForbidden();
+
+    expect($other->refresh()->two_factor_requirement)->toBeNull();
+});
+
+it('lets an admin set the two-factor policy, with roles, in the security settings', function () {
+    $admin = userWithRole(Role::Admin);
+    $admin->forceFill(['two_factor_requirement' => User::TWO_FACTOR_EXEMPT])->save();
+    $approverRole = RoleModel::findByName(Role::Approver->value);
+
+    $this->actingAs($admin)
+        ->put(route('admin.settings.update', 'security'), settingsForm('security', [
+            'permits.security.mfa_required_for_all' => false,
+            'permits.security.mfa_required_roles' => [(string) $approverRole->id],
+        ]))
+        ->assertSessionHasNoErrors();
+
+    expect(config('permits.security.mfa_required_for_all'))->toBeFalse()
+        ->and(config('permits.security.mfa_required_roles'))->toBe([$approverRole->id]);
+
+    $this->actingAs($admin)
+        ->put(route('admin.settings.update', 'security'), settingsForm('security', ['permits.security.mfa_required_roles' => ['999999']]))
+        ->assertSessionHasErrors('permits__security__mfa_required_roles.0');
 });

@@ -10,12 +10,19 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * A member of staff's name, profile, photo and the branch they work at. Where they may see
+ * A member of staff's name, e-mail (their sign-in name), profile, photo and the branch they work at. Where they may see
  * applications is their branch scope, changed on its own card.
  */
 class UpdateUserRequest extends FormRequest
 {
     use ValidatesStaffProfile;
+
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('email'))) {
+            $this->merge(['email' => mb_strtolower(trim($this->input('email')))]);
+        }
+    }
 
     public function authorize(): bool
     {
@@ -33,6 +40,8 @@ class UpdateUserRequest extends FormRequest
         $current = $target instanceof User ? $target->branch_id : null;
 
         return [
+            // Sent by the form; left out, the address stays as it is.
+            'email' => ['sometimes', 'required', 'string', 'email:rfc', 'max:255', Rule::unique(User::class, 'email')->ignore($target instanceof User ? $target->id : null)],
             // Empty means the head office. A closed branch takes no new staff, but someone already there may stay.
             'branch_id' => ['present', 'nullable', 'integer', Rule::exists(Branch::class, 'id')->where(
                 fn ($query) => $query->where('is_active', true)->when($current !== null, fn ($query) => $query->orWhere('id', $current)),
@@ -54,6 +63,7 @@ class UpdateUserRequest extends FormRequest
     {
         return [
             'name' => __('admin.users.fields.name'),
+            'email' => __('admin.users.fields.email'),
             'branch_id' => __('admin.users.fields.branch'),
             ...$this->profileAttributes(),
         ];

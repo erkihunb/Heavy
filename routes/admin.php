@@ -54,6 +54,7 @@ Route::middleware(['auth', 'verified'])
             Route::put('users/{user}/password', [UserSignInController::class, 'password'])->name('users.password');
             Route::post('users/{user}/reset-link', [UserSignInController::class, 'resetLink'])->name('users.reset-link');
             Route::delete('users/{user}/two-factor', [UserSignInController::class, 'twoFactor'])->name('users.two-factor');
+            Route::put('users/{user}/two-factor-requirement', [UserSignInController::class, 'twoFactorRequirement'])->name('users.two-factor-requirement');
         });
         Route::post('users/{user}/branch-scopes', [UserBranchScopeController::class, 'store'])->name('users.branch-scopes.store');
         Route::delete('users/{user}/branch-scopes/{scope}', [UserBranchScopeController::class, 'destroy'])

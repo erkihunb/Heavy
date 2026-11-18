@@ -70,6 +70,33 @@ final class ResetUserSignIn
         });
     }
 
+    /**
+     * An Admin's choice of two-factor for one person, over the policy in
+     * System settings › Security: null follows the policy, 'required' always
+     * asks for it (RequireTwoFactorForStaff), 'exempt' never does. Two-factor
+     * the person already set up stays on; "Turn off two-factor" removes it.
+     */
+    public function setTwoFactorRequirement(User $user, ?string $requirement, User $actor): void
+    {
+        if ($user->two_factor_requirement === $requirement) {
+            return;
+        }
+
+        $old = $user->two_factor_requirement ?? 'policy';
+
+        DB::transaction(function () use ($user, $requirement, $actor, $old): void {
+            $user->forceFill(['two_factor_requirement' => $requirement])->save();
+
+            $this->audit->record(
+                AuditEvent::UserTwoFactorRequirementChanged,
+                $user,
+                $actor,
+                old: ['two_factor_requirement' => $old],
+                new: ['two_factor_requirement' => $requirement ?? 'policy'],
+            );
+        });
+    }
+
     private function endSessions(User $user): void
     {
         // Other session drivers are covered by "remember me" being cleared and the session expiring.

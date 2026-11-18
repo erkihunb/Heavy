@@ -9,17 +9,12 @@ use Illuminate\Support\Facades\Password;
 use Inertia\Testing\AssertableInertia as Assert;
 
 /*
- * The default password: when one is set in System settings › Security, a new
- * staff account starts with it instead of an e-mailed link, and the person
- * must choose their own password at first sign-in before anything else.
+ * A starting password an Admin hands over (on the create form, or as a
+ * temporary password later): the person must choose their own at first
+ * sign-in before anything else. Without one, a new person is e-mailed a link.
  */
 
 const DEFAULT_PASSWORD = 'Welcome@2019';
-
-function withDefaultPassword(): void
-{
-    config(['permits.security.default_password' => DEFAULT_PASSWORD]);
-}
 
 function userOnDefaultPassword(Role $role = Role::Reviewer, bool $twoFactor = true): User
 {
@@ -29,27 +24,7 @@ function userOnDefaultPassword(Role $role = Role::Reviewer, bool $twoFactor = tr
     return $user;
 }
 
-it('has no default password until one is set', function () {
-    expect(config('permits.security.default_password'))->toBeNull();
-});
-
-it('opens a staff account with the default password and sends no link', function () {
-    Notification::fake();
-    withDefaultPassword();
-
-    $this->actingAs(staffUser(Role::Admin))
-        ->post(route('admin.users.store'), ['name' => 'Demo Cashier', 'email' => 'demo.cashier@example.test', 'roles' => ['cashier'], 'branch_id' => null])
-        ->assertSessionHas('success', __('admin.users.messages.created_default_password'));
-
-    $user = User::query()->where('email', 'demo.cashier@example.test')->sole();
-
-    expect(Hash::check(DEFAULT_PASSWORD, $user->password))->toBeTrue()
-        ->and($user->must_change_password)->toBeTrue();
-
-    Notification::assertNothingSent();
-});
-
-it('keeps the e-mailed link when no default password is set', function () {
+it('e-mails a new person a link to choose their password', function () {
     Notification::fake();
 
     $this->actingAs(staffUser(Role::Admin))
@@ -115,19 +90,6 @@ it('saves the chosen password and sends the person to sign in with it', function
     $this->assertAuthenticatedAs($user);
 });
 
-it('refuses the default password as the new password', function () {
-    withDefaultPassword();
-    $user = userOnDefaultPassword();
-
-    $this->post(route('login.store'), ['email' => $user->email, 'password' => DEFAULT_PASSWORD]);
-
-    $this->from(route('first-password.show'))
-        ->post(route('first-password.store'), ['password' => DEFAULT_PASSWORD, 'password_confirmation' => DEFAULT_PASSWORD])
-        ->assertSessionHasErrors('password');
-
-    expect($user->refresh()->must_change_password)->toBeTrue();
-});
-
 it('needs the new password typed twice', function () {
     $user = userOnDefaultPassword();
 
@@ -183,25 +145,4 @@ it('counts a password chosen through a reset link as the change', function () {
     ])->assertSessionHasNoErrors();
 
     expect($user->refresh()->must_change_password)->toBeFalse();
-});
-
-it('lets an administrator set the default password, kept as a secret', function () {
-    $admin = staffUser(Role::Admin);
-
-    $this->actingAs($admin)
-        ->put(route('admin.settings.update', 'security'), settingsForm('security', ['permits.security.default_password' => DEFAULT_PASSWORD]))
-        ->assertSessionHasNoErrors();
-
-    expect(config('permits.security.default_password'))->toBe(DEFAULT_PASSWORD);
-
-    $this->actingAs($admin)
-        ->get(route('admin.settings.show', 'security'))
-        ->assertOk()
-        ->assertDontSee(DEFAULT_PASSWORD);
-});
-
-it('refuses a default password that is too short', function () {
-    $this->actingAs(staffUser(Role::Admin))
-        ->put(route('admin.settings.update', 'security'), settingsForm('security', ['permits.security.default_password' => 'abc']))
-        ->assertSessionHasErrors('permits__security__default_password');
 });

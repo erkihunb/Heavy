@@ -40,7 +40,9 @@ class StoreStaffUserRequest extends FormRequest
             ...$this->roleRules(),
             // Where the person works. Empty means the head office. A closed branch takes no new staff.
             'branch_id' => ['nullable', 'integer', Rule::exists(Branch::class, 'id')->where('is_active', true)],
-            'password' => $this->filled('password') ? $this->passwordRules() : ['nullable'],
+            'password' => $this->filled('password')
+                ? $this->passwordRules(personal: array_map(fn (mixed $value): ?string => is_string($value) ? $value : null, $this->only(['name', 'email', 'username', 'phone', 'first_name', 'middle_name', 'last_name'])))
+                : ['nullable'],
             ...$this->profileRules(),
             'active' => ['sometimes', 'boolean'],
             ...$this->directPermissionRules(),

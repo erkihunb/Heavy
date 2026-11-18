@@ -23,7 +23,9 @@ class SetTemporaryPasswordRequest extends FormRequest
      */
     public function rules(): array
     {
-        return ['password' => $this->passwordRules()];
+        $target = $this->route('user');
+
+        return ['password' => $this->passwordRules($target instanceof User ? $target : null)];
     }
 
     /**

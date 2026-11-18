@@ -2,8 +2,10 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { visitWithFilters } from '@/lib/filters';
+import ConfirmProvider from '@/shell/Components/ConfirmProvider';
 import PageHeader from '@/shell/Components/PageHeader';
 import {
+    AppActionMenu,
     EmptyState,
     FilterField,
     FilterPanel,
@@ -24,6 +26,7 @@ import {
 } from '@/shell/Components/ui';
 import type { LaravelPageMeta } from '@/shell/Components/ui';
 import UserAvatar from '@/shell/Components/UserAvatar';
+import { useConfirm } from '@/shell/hooks/useConfirm';
 import { useLocale } from '@/shell/hooks/useLocale';
 import AuthenticatedLayout from '@/shell/Layouts/AuthenticatedLayout';
 
@@ -46,23 +49,32 @@ export type UserRow = {
     editUrl: string;
 };
 
+type ListRow = UserRow & {
+    last_login: { ethiopian_label: string; gregorian: string } | null;
+    last_login_time: string | null;
+    can: { update: boolean; deactivate: boolean; restore: boolean };
+    deactivateUrl: string;
+    restoreUrl: string;
+};
+
 type Filters = { search: string; role: string; status: string };
 
 /** Everyone with an account, filtered by role and status (EUISIS Users/Index). */
-export default function UsersIndex({
+function UsersIndexPage({
     users,
     filters,
     roleOptions,
     can,
     urls,
 }: {
-    users: { data: UserRow[]; meta: LaravelPageMeta };
+    users: { data: ListRow[]; meta: LaravelPageMeta };
     filters: Filters;
     roleOptions: { value: string; label: string }[];
     can: { create: boolean };
     urls: { index: string; create: string };
 }) {
     const { t } = useLocale();
+    const { confirm } = useConfirm();
     const [search, setSearch] = useState(filters.search ?? '');
     const [role, setRole] = useState(filters.role ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
@@ -70,6 +82,22 @@ export default function UsersIndex({
 
     function apply(next: Partial<Filters> = {}) {
         visitWithFilters(urls.index, { search, role, status, ...next });
+    }
+
+    async function deactivate(user: ListRow) {
+        const { confirmed } = await confirm({
+            title: t('admin.users.row_actions.confirm_deactivate').replace(
+                ':name',
+                user.name,
+            ),
+            description: t('admin.users.row_actions.confirm_deactivate_body'),
+            confirmLabel: t('admin.users.row_actions.deactivate'),
+            variant: 'danger',
+        });
+
+        if (confirmed) {
+            router.post(user.deactivateUrl, {}, { preserveScroll: true });
+        }
     }
 
     function reset() {
@@ -189,6 +217,7 @@ export default function UsersIndex({
                                                 t('rbac.users.fields.roles'),
                                                 t('rbac.users.worksAt'),
                                                 t('rbac.users.status'),
+                                                t('admin.users.last_login'),
                                                 t('admin.users.joined'),
                                             ].map((heading) => (
                                                 <th
@@ -202,6 +231,13 @@ export default function UsersIndex({
                                                     {heading}
                                                 </th>
                                             ))}
+                                            <th scope="col">
+                                                <span className="sr-only">
+                                                    {t(
+                                                        'admin.users.row_actions.label',
+                                                    )}
+                                                </span>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className={tableBodyClassName}>
@@ -259,10 +295,7 @@ export default function UsersIndex({
                                                                             item.name
                                                                         }
                                                                         className={badgeClassName(
-                                                                            item.name ===
-                                                                                'admin'
-                                                                                ? 'info'
-                                                                                : 'neutral',
+                                                                            'neutral',
                                                                         )}
                                                                     >
                                                                         {
@@ -345,6 +378,37 @@ export default function UsersIndex({
                                                         'whitespace-nowrap text-(--app-muted-foreground)',
                                                     )}
                                                 >
+                                                    {user.last_login ? (
+                                                        <>
+                                                            {
+                                                                user.last_login
+                                                                    .ethiopian_label
+                                                            }
+                                                            <span className="block text-xs">
+                                                                {[
+                                                                    user
+                                                                        .last_login
+                                                                        .gregorian,
+                                                                    user.last_login_time,
+                                                                ]
+                                                                    .filter(
+                                                                        Boolean,
+                                                                    )
+                                                                    .join(' ')}
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        t(
+                                                            'admin.users.never_signed_in',
+                                                        )
+                                                    )}
+                                                </td>
+                                                <td
+                                                    className={cx(
+                                                        tableCellClassName,
+                                                        'whitespace-nowrap text-(--app-muted-foreground)',
+                                                    )}
+                                                >
                                                     {user.created_at ? (
                                                         <>
                                                             {
@@ -363,6 +427,50 @@ export default function UsersIndex({
                                                         '—'
                                                     )}
                                                 </td>
+                                                <td
+                                                    className={cx(
+                                                        tableCellClassName,
+                                                        'w-px text-right',
+                                                    )}
+                                                >
+                                                    <AppActionMenu
+                                                        label={t(
+                                                            'admin.users.row_actions.label',
+                                                        )}
+                                                        items={[
+                                                            {
+                                                                label: t(
+                                                                    'admin.users.row_actions.edit',
+                                                                ),
+                                                                href: user.editUrl,
+                                                                show: user.can
+                                                                    .update,
+                                                            },
+                                                            {
+                                                                label: t(
+                                                                    'admin.users.row_actions.deactivate',
+                                                                ),
+                                                                onClick: () =>
+                                                                    void deactivate(
+                                                                        user,
+                                                                    ),
+                                                                variant:
+                                                                    'danger',
+                                                                show: user.can
+                                                                    .deactivate,
+                                                            },
+                                                            {
+                                                                label: t(
+                                                                    'admin.users.row_actions.restore',
+                                                                ),
+                                                                href: user.restoreUrl,
+                                                                method: 'post',
+                                                                show: user.can
+                                                                    .restore,
+                                                            },
+                                                        ]}
+                                                    />
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -373,5 +481,16 @@ export default function UsersIndex({
                 </TableCard>
             </div>
         </AuthenticatedLayout>
+    );
+}
+
+/** useConfirm() runs in the page, above the layout's own provider, so the page brings one. */
+export default function UsersIndex(
+    props: Parameters<typeof UsersIndexPage>[0],
+) {
+    return (
+        <ConfirmProvider>
+            <UsersIndexPage {...props} />
+        </ConfirmProvider>
     );
 }

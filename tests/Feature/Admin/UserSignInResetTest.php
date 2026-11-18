@@ -128,14 +128,14 @@ it('opens an account with a starting password and sends no e-mail', function () 
             'name' => 'Starting Cashier',
             'email' => 'starting.cashier@example.test',
             'roles' => ['cashier'],
-            'password' => 'Starting-Pass-42',
-            'password_confirmation' => 'Starting-Pass-42',
+            'password' => 'Blue-Harbor-42',
+            'password_confirmation' => 'Blue-Harbor-42',
         ])
         ->assertRedirect()
         ->assertSessionHas('success', __('rbac.users.messages.created_with_password'));
 
     $user = User::query()->where('email', 'starting.cashier@example.test')->firstOrFail();
-    expect(Hash::check('Starting-Pass-42', $user->password))->toBeTrue()
+    expect(Hash::check('Blue-Harbor-42', $user->password))->toBeTrue()
         ->and($user->must_change_password)->toBeTrue();
     Notification::assertNothingSentTo($user);
 });

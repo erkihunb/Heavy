@@ -101,8 +101,23 @@ native implementation (integer arithmetic over the Julian Day Number).
   _confirmed_ 2FA to the two-factor settings screen; JSON requests get 403. Only the
   2FA setup endpoints, password confirmation, e-mail verification, language switch and
   logout stay reachable.
-- Behind `permits.staff_two_factor_required` (`PERMITS_STAFF_TWO_FACTOR_REQUIRED`,
-  default **true**). It exists for local development and must stay on in production.
+- A policy in System settings › Security, as in EUISIS: `permits.security.mfa_enabled`
+  (off: nobody is made to use it), `mfa_required_for_all` (default **true**) and
+  `mfa_required_roles` (role ids, when not required for all).
+- Whoever may reset a user's sign-in (`users.reset-passwords`) can override the policy
+  for one person on their page: `users.two_factor_requirement` null (follow the
+  policy), `required` or `exempt` (`PUT users/{user}/two-factor-requirement`, audited).
+- There is no default password for new staff: they always get a link to choose one.
+
+### Password policy and sign-in (System settings › Security)
+
+- `App\Security\PasswordPolicy` adds to `Password::defaults()`: a maximum length, no
+  common password, nothing from the person's own name, username, e-mail name or phone,
+  and none of their last N passwords (`password_histories`, hashed, 24 kept per person).
+  The breach check (Have I Been Pwned) and character classes stay production only.
+- Sign-in: `max_login_attempts` failed attempts per sign-in name and IP, then locked
+  for `lockout_minutes`. `force_https` forces https URLs outside local and testing.
+- The maintenance banner (`permits.maintenance_banner.*`) shows on every signed-in page.
 
 ### Localisation
 

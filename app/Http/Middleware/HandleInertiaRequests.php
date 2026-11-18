@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Domain\Settings\Branding;
 use App\Domain\Settings\ShellSettings;
+use App\Security\PasswordPolicy;
 use App\Support\EthiopianCalendar;
 use App\Support\FrontendTranslations;
 use App\Support\UserAvatar;
@@ -64,7 +65,8 @@ class HandleInertiaRequests extends Middleware
                     // For navigation and display only; authorization is enforced by Policies.
                     'roles' => $user->getRoleNames()->values()->all(),
                 ],
-                'mustEnableTwoFactor' => (bool) $user?->mustEnableTwoFactor(),                // For showing or hiding navigation only (resources/js/config/navigation.ts).
+                'mustEnableTwoFactor' => (bool) $user?->mustEnableTwoFactor(),
+                // For showing or hiding navigation only (resources/js/config/navigation.ts).
                 'permissions' => $user === null ? [] : $user->getAllPermissions()->pluck('name')->values()->all(),
             ],
             'locale' => app()->getLocale(),
@@ -89,6 +91,8 @@ class HandleInertiaRequests extends Middleware
             'branding' => fn (): array => Branding::shared(),
             // What the signed-in shell (resources/js/shell) reads, keyed as in the source kit.
             'settings' => fn (): array => ShellSettings::shared(),
+            // What a new password must be, for the checklist under password fields.
+            'passwordPolicy' => fn (): array => PasswordPolicy::summary(),
         ];
     }
 

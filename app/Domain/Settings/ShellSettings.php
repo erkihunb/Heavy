@@ -56,6 +56,10 @@ final class ShellSettings
             'appearance.show_breadcrumbs' => (bool) ($appearance['show_breadcrumbs'] ?? true),
             'appearance.show_language_switcher' => (bool) ($appearance['show_language_switcher'] ?? true),
             'appearance.enable_ui_animations' => (bool) ($appearance['animations'] ?? true),
+            // System settings › Security: when one language is empty, the other is shown.
+            'security.maintenance_banner_enabled' => (bool) config('permits.maintenance_banner.enabled'),
+            'security.maintenance_banner_message_am' => self::bannerMessage('am', 'en'),
+            'security.maintenance_banner_message_en' => self::bannerMessage('en', 'am'),
             // Shown in the sidebar outside production, so test data is never mistaken for live.
             'general.system_environment_label' => $environment === 'production' ? '' : $environment,
         ];
@@ -64,5 +68,18 @@ final class ShellSettings
     private static function color(mixed $value): ?string
     {
         return is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1 ? strtolower($value) : null;
+    }
+
+    private static function bannerMessage(string $locale, string $fallback): string
+    {
+        foreach ([$locale, $fallback] as $language) {
+            $message = config("permits.maintenance_banner.message_{$language}");
+
+            if (is_string($message) && trim($message) !== '') {
+                return trim($message);
+            }
+        }
+
+        return '';
     }
 }

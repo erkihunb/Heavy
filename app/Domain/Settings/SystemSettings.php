@@ -96,6 +96,7 @@ final class SystemSettings
                 'secret' => filled($value),
                 'bool' => (bool) $value,
                 'int' => (int) $value,
+                'roles' => self::roleIds($value),
                 'choice' => in_array($value, $setting['options'] ?? [], true) ? $value : ($setting['options'][0] ?? null),
                 // A list in config (the notes printed on permits) is edited one item per line.
                 default => is_array($value) ? implode('
@@ -263,11 +264,23 @@ final class SystemSettings
         return array_keys($writes);
     }
 
+    /**
+     * @return list<int>
+     */
+    private static function roleIds(mixed $value): array
+    {
+        $ids = array_values(array_unique(array_map('intval', array_filter((array) $value, 'is_numeric'))));
+        sort($ids);
+
+        return $ids;
+    }
+
     private function normalize(string $type, mixed $value): mixed
     {
         return match ($type) {
             'bool' => (bool) $value,
             'int' => (int) $value,
+            'roles' => self::roleIds($value),
             'text', 'longtext', 'email', 'url', 'color' => is_string($value) && trim($value) !== '' ? trim($value) : null,
             default => is_string($value) ? trim($value) : $value,
         };

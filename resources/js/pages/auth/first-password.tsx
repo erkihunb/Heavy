@@ -1,5 +1,7 @@
 import { Form, Head } from '@inertiajs/react';
+import { useState } from 'react';
 import InputError from '@/components/input-error';
+import { PasswordChecklist } from '@/components/password-checklist';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -21,6 +23,7 @@ type Props = {
  */
 export default function FirstPassword({ email }: Props) {
     const { t } = useTranslation();
+    const [newPassword, setNewPassword] = useState('');
 
     return (
         <AuthLayout
@@ -55,6 +58,9 @@ export default function FirstPassword({ email }: Props) {
                             <PasswordInput
                                 id="password"
                                 name="password"
+                                onChange={(event) =>
+                                    setNewPassword(event.target.value)
+                                }
                                 required
                                 autoFocus
                                 autoComplete="new-password"
@@ -72,6 +78,7 @@ export default function FirstPassword({ email }: Props) {
                                 id="password-error"
                                 message={errors.password}
                             />
+                            <PasswordChecklist value={newPassword} />
                         </div>
 
                         <div className="grid gap-2">

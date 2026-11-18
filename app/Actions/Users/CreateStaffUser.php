@@ -26,10 +26,10 @@ class CreateStaffUser
 
     /**
      * An Admin opens an account for a member of staff, with one or more
-     * roles (default or created on the Roles screen). The new user starts on
-     * the default password and must change it at first sign-in; when none is
-     * set they get an e-mail with a link to choose one instead. Either way
-     * they must then turn on two-factor authentication. Their
+     * roles (default or created on the Roles screen). The new user gets an
+     * e-mail with a link to choose a password (or starts on one the Admin
+     * hands over, and must change it at first sign-in). When the Admin
+     * requires it, they must then turn on two-factor authentication. Their
      * branch scope starts from where they work (GiveDefaultBranchScope).
      *
      * @param  Role|list<string>  $roles  a default role, or role names
@@ -49,9 +49,8 @@ class CreateStaffUser
             throw new InvalidArgumentException('Staff accounts get staff roles.');
         }
 
-        // With a default password in System settings › Security the person starts
-        // on it and must choose their own at first sign-in; no link is sent.
-        $default = $password ?? ($notify ? self::defaultPassword() : null);
+        // A starting password the Admin hands over must be replaced at first sign-in; no link is sent.
+        $default = $password;
 
         // Opened from the command line or with the whole name only: the parts are its words.
         if (! isset($profile['first_name'])) {
@@ -97,15 +96,5 @@ class CreateStaffUser
         }
 
         return $user;
-    }
-
-    /**
-     * The password new staff accounts start with, when one is set.
-     */
-    public static function defaultPassword(): ?string
-    {
-        $default = config('permits.security.default_password');
-
-        return is_string($default) && $default !== '' ? $default : null;
     }
 }

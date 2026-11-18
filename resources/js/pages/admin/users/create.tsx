@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
+import { PasswordChecklist } from '@/components/password-checklist';
 import PageHeader from '@/shell/Components/PageHeader';
 import PermissionPicker from '@/shell/Components/Roles/PermissionPicker';
 import type { PermissionEntry } from '@/shell/Components/Roles/PermissionPicker';
@@ -607,6 +608,9 @@ export default function CreateUser({
                                         : t('rbac.users.passwordHelp')
                                 }
                             />
+                            {data.password !== '' && (
+                                <PasswordChecklist value={data.password} />
+                            )}
                             <PasswordField
                                 label={t('rbac.users.confirmPassword')}
                                 required={data.password !== ''}

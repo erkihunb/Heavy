@@ -51,7 +51,6 @@ it('shows an overview of the system with what needs attention', function () {
             ->component('admin/settings/overview')
             ->where('system.name', config('app.name'))
             ->where('services.database', 'mysql')
-            ->where('services.two_factor', true)
             ->where('counts.staff', 1)
             ->where('warnings', fn ($warnings) => collect($warnings)->contains('placeholder_time_windows'))
             ->where('sections', SettingsRegistry::SECTIONS));

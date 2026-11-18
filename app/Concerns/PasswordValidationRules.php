@@ -2,9 +2,10 @@
 
 namespace App\Concerns;
 
-use App\Actions\Users\CreateStaffUser;
-use Closure;
+use App\Models\User;
+use App\Security\PasswordPolicy;
 use Illuminate\Contracts\Validation\Rule;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rules\Password;
 
 trait PasswordValidationRules
@@ -12,18 +13,13 @@ trait PasswordValidationRules
     /**
      * Get the validation rules used to validate passwords.
      *
-     * @return array<int, Rule|Closure|array<mixed>|string>
+     * @param  User|null  $user  whose password it becomes, when known
+     * @param  list<string|null>  $personal  the details of an account not saved yet
+     * @return array<int, Rule|ValidationRule|array<mixed>|string>
      */
-    protected function passwordRules(): array
+    protected function passwordRules(?User $user = null, array $personal = []): array
     {
-        return ['required', 'string', Password::default(), 'confirmed', function (string $attribute, mixed $value, Closure $fail): void {
-            // The default password new accounts start with is known to the whole office.
-            $default = CreateStaffUser::defaultPassword();
-
-            if ($default !== null && is_string($value) && hash_equals($default, $value)) {
-                $fail(__('auth.default_password_refused'));
-            }
-        }];
+        return ['required', 'string', Password::default(), 'confirmed', new PasswordPolicy($user, $personal)];
     }
 
     /**

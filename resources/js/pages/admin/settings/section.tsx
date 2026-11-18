@@ -7,6 +7,8 @@ import { ImageSettingField } from '@/components/image-setting-field';
 import InputError from '@/components/input-error';
 import { CodeRulesPreview } from '@/components/settings/code-rules-preview';
 import type { CodePreview } from '@/components/settings/code-rules-preview';
+import { RoleChecklist } from '@/components/settings/role-checklist';
+import type { ChecklistRole } from '@/components/settings/role-checklist';
 import {
     BrandingPreview,
     MailInUsePanel,
@@ -47,14 +49,15 @@ type Field = {
         | 'timezone'
         | 'secret'
         | 'color'
-        | 'image';
+        | 'image'
+        | 'roles';
     kind?: 'logo' | 'favicon';
     url?: string;
     required: boolean;
     min?: number;
     max?: number;
     options?: string[];
-    value?: string | number | boolean;
+    value?: string | number | boolean | number[];
     has_value?: boolean;
 };
 
@@ -71,6 +74,8 @@ type Props = {
     inUse: MailInUse[] | null;
     /** General: the saved logo and favicon, for the branding preview. */
     branding: { logo: string | null; favicon: string | null } | null;
+    /** Security: the roles two-factor can be required for. */
+    roles: ChecklistRole[] | null;
 };
 
 type FormValue = string | boolean | File | null | string[];
@@ -78,6 +83,22 @@ type FormValue = string | boolean | File | null | string[];
 const ACCEPT = { logo: '.png,.jpg,.jpeg,.webp', favicon: '.png,.ico' };
 
 const TESTABLE = ['email', 'sms', 'telegram'];
+
+const MFA_ENABLED = 'permits__security__mfa_enabled';
+const MFA_FOR_ALL = 'permits__security__mfa_required_for_all';
+const MFA_ROLES = 'permits__security__mfa_required_roles';
+const BANNER_ENABLED = 'permits__maintenance_banner__enabled';
+
+/**
+ * Fields shown only while the switch above them is on (Security), as in
+ * EUISIS: who must use two-factor, and the banner's text.
+ */
+const shownWith: Record<string, string> = {
+    [MFA_FOR_ALL]: MFA_ENABLED,
+    [MFA_ROLES]: MFA_ENABLED,
+    permits__maintenance_banner__message_am: BANNER_ENABLED,
+    permits__maintenance_banner__message_en: BANNER_ENABLED,
+};
 
 const THEME_SWATCH: Record<string, string> = {
     navy: '#122170',
@@ -100,6 +121,7 @@ export default function SettingsSection({
     preview,
     inUse,
     branding,
+    roles,
 }: Props) {
     const { t } = useTranslation();
     const optional = (key: string): string | undefined => {
@@ -119,6 +141,10 @@ export default function SettingsSection({
         } else if (field.type === 'image') {
             initial[field.field] = null;
             initial.remove_assets = [];
+        } else if (field.type === 'roles') {
+            initial[field.field] = Array.isArray(field.value)
+                ? field.value.map(String)
+                : [];
         } else {
             initial[field.field] = String(field.value ?? '');
         }
@@ -248,6 +274,26 @@ export default function SettingsSection({
                                   ),
                         )
                     }
+                />
+            );
+        }
+
+        if (field.type === 'roles') {
+            return (
+                <RoleChecklist
+                    id={field.field}
+                    label={label}
+                    hint={hint}
+                    roles={roles ?? []}
+                    value={Array.isArray(value) ? (value as string[]) : []}
+                    allRequired={form.data[MFA_FOR_ALL] === true}
+                    error={
+                        error ??
+                        Object.entries(form.errors).find(([key]) =>
+                            key.startsWith(`${field.field}.`),
+                        )?.[1]
+                    }
+                    onChange={(next) => form.setData(field.field, next)}
                 />
             );
         }
@@ -634,6 +680,26 @@ export default function SettingsSection({
                         <ThemePreview values={form.data} />
                     )}
 
+                    {section === 'security' && (
+                        <div
+                            role="note"
+                            className="flex gap-3 rounded-card border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200"
+                        >
+                            <TriangleAlert
+                                aria-hidden
+                                className="mt-0.5 size-4 shrink-0"
+                            />
+                            <div className="space-y-1">
+                                <p className="font-medium">
+                                    {t('admin.settings.security_warning.title')}
+                                </p>
+                                <p>
+                                    {t('admin.settings.security_warning.body')}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {groups.map((group) => (
                         <section
                             key={group}
@@ -648,8 +714,23 @@ export default function SettingsSection({
                                     `admin.settings.groups.${group}` as TranslationKey,
                                 )}
                             </h2>
+                            {optional(
+                                `admin.settings.group_hints.${group}`,
+                            ) && (
+                                <p className="-mt-3 text-sm text-muted-foreground">
+                                    {optional(
+                                        `admin.settings.group_hints.${group}`,
+                                    )}
+                                </p>
+                            )}
                             {fields
                                 .filter((field) => field.group === group)
+                                .filter(
+                                    (field) =>
+                                        !(field.field in shownWith) ||
+                                        form.data[shownWith[field.field]] ===
+                                            true,
+                                )
                                 .map((field) => (
                                     <div key={field.key}>{control(field)}</div>
                                 ))}

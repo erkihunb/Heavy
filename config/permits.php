@@ -4,21 +4,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Mandatory Two-Factor Authentication For Staff
-    |--------------------------------------------------------------------------
-    |
-    | When enabled, any member of staff (User::isStaff(), decided by their
-    | permissions) is confined to the two-factor setup screens until
-    | they have confirmed two-factor authentication. An Admin can change it in
-    | System settings → Security; when off, two-factor authentication is
-    | each person's own choice (spec §2, §15).
-    |
-    */
-
-    'staff_two_factor_required' => (bool) env('PERMITS_STAFF_TWO_FACTOR_REQUIRED', true),
-
-    /*
-    |--------------------------------------------------------------------------
     | Two-Step Approval
     |--------------------------------------------------------------------------
     |
@@ -301,12 +286,41 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Maintenance Banner
+    |--------------------------------------------------------------------------
+    |
+    | A notice across the top of every signed-in page, such as planned
+    | downtime. Set in System settings › Security.
+    |
+    */
+
+    'maintenance_banner' => [
+        'enabled' => false,
+        'message_am' => null,
+        'message_en' => null,
+    ],
+
     'security' => [
         'password_min_length' => (int) env('PERMITS_PASSWORD_MIN_LENGTH', 12),
-        'login_per_minute' => (int) env('PERMITS_LOGIN_PER_MINUTE', 5),
-        // The password new staff accounts start with; they must change it at first sign-in.
-        // Empty: the new person is e-mailed a link to choose a password instead.
-        'default_password' => env('PERMITS_DEFAULT_PASSWORD'),
+        'password_max_length' => (int) env('PERMITS_PASSWORD_MAX_LENGTH', 128),
+        // The last passwords a person may not use again; 0 allows any.
+        'password_history_count' => (int) env('PERMITS_PASSWORD_HISTORY_COUNT', 5),
+        'password_block_personal_info' => (bool) env('PERMITS_PASSWORD_BLOCK_PERSONAL_INFO', true),
+        'password_block_common' => (bool) env('PERMITS_PASSWORD_BLOCK_COMMON', true),
+        // Production only: asks the Have I Been Pwned range API (k-anonymity) whether the password leaked.
+        'password_breach_check' => (bool) env('PERMITS_PASSWORD_BREACH_CHECK', true),
+        // Failed sign-ins allowed for one sign-in name and IP before it is locked for lockout_minutes.
+        'max_login_attempts' => (int) env('PERMITS_MAX_LOGIN_ATTEMPTS', 5),
+        'lockout_minutes' => (int) env('PERMITS_LOCKOUT_MINUTES', 15),
+        // Links and redirects always use https (never in local development or tests).
+        'force_https' => (bool) env('PERMITS_FORCE_HTTPS', false),
+        // Two-factor authentication: off means nobody is made to use it.
+        'mfa_enabled' => (bool) env('PERMITS_MFA_ENABLED', true),
+        'mfa_required_for_all' => (bool) env('PERMITS_MFA_REQUIRED_FOR_ALL', true),
+        // Role ids whose holders must use it when it is not required for everyone.
+        'mfa_required_roles' => [],
     ],
 
 ];

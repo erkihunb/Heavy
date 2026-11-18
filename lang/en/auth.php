@@ -20,6 +20,11 @@ return [
     'no_sign_in' => 'This account is not for signing in. Requests are recorded and handled at the office.',
     'two_factor_required' => 'You must enable two-factor authentication before you can continue.',
     'password_change_required' => 'You must choose your own password before you can continue.',
-    'default_password_refused' => 'Choose a password other than the default password.',
 
+    'password_policy' => [
+        'too_long' => 'The password may be at most :max characters.',
+        'common' => 'This password is too common. Choose a less predictable one.',
+        'personal' => 'The password must not contain your name, username, e-mail name or phone number.',
+        'reused' => 'Choose a password you have not used for your last :count passwords.',
+    ],
 ];

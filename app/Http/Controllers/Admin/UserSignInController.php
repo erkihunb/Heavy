@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 /**
  * A user's sign-in, for whoever holds users.reset-passwords (UserPolicy::resetPassword).
@@ -38,5 +39,18 @@ class UserSignInController extends Controller
         $reset->resetTwoFactor($user, $request->user());
 
         return back()->with('success', __('rbac.users.messages.two_factor_reset'));
+    }
+
+    public function twoFactorRequirement(Request $request, User $user, ResetUserSignIn $reset): RedirectResponse
+    {
+        Gate::authorize('resetPassword', $user);
+
+        $choice = $request->validate([
+            'requirement' => ['required', 'string', Rule::in(['policy', User::TWO_FACTOR_REQUIRED, User::TWO_FACTOR_EXEMPT])],
+        ])['requirement'];
+
+        $reset->setTwoFactorRequirement($user, $choice === 'policy' ? null : $choice, $request->user());
+
+        return back()->with('success', __('rbac.users.messages.two_factor_requirement_saved'));
     }
 }

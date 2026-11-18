@@ -29,7 +29,6 @@ type Props = {
         telegram: boolean;
         pdf: string;
         error_tracking: boolean;
-        two_factor: boolean;
     };
     counts: Record<string, number>;
     warnings: string[];
@@ -234,7 +233,6 @@ export default function SettingsOverview({
                             ['telegram', onOff(services.telegram)],
                             ['pdf', services.pdf],
                             ['error_tracking', onOff(services.error_tracking)],
-                            ['two_factor', onOff(services.two_factor)],
                         ])}
                     </Panel>
                 </div>

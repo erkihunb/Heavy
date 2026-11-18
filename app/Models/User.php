@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use SensitiveParameter;
 use Spatie\Permission\Traits\HasRoles;
@@ -25,6 +26,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int|null $registered_by
  * @property int|null $branch_id
  * @property bool $must_change_password
+ * @property string|null $two_factor_requirement
  * @property string|null $avatar_path
  * @property string|null $job_title
  * @property string|null $employee_number
@@ -53,6 +55,14 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
+
+    /** An Admin's choice for one person, over the two-factor policy (users.two_factor_requirement). */
+    public const string TWO_FACTOR_REQUIRED = 'required';
+
+    public const string TWO_FACTOR_EXEMPT = 'exempt';
+
+    /** Old passwords kept per person; the policy compares with at most this many. */
+    public const int PASSWORD_HISTORY_KEPT = 24;
 
     /**
      * The attributes that are mass assignable.
@@ -118,6 +128,23 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
         static::updating(function (User $user): void {
             if ($user->isDirty('password') && ! $user->isDirty('must_change_password')) {
                 $user->must_change_password = false;
+            }
+        });
+
+        // The password being replaced joins the history, so it cannot come back (PasswordPolicy).
+        static::updated(function (User $user): void {
+            $old = $user->getRawOriginal('password');
+
+            if (! $user->wasChanged('password') || ! is_string($old) || $old === '') {
+                return;
+            }
+
+            DB::table('password_histories')->insert(['user_id' => $user->id, 'password' => $old, 'created_at' => now()]);
+
+            $keep = DB::table('password_histories')->where('user_id', $user->id)->latest('id')->skip(self::PASSWORD_HISTORY_KEPT)->take(PHP_INT_MAX)->pluck('id');
+
+            if ($keep->isNotEmpty()) {
+                DB::table('password_histories')->whereIn('id', $keep)->delete();
             }
         });
     }
@@ -309,12 +336,42 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     }
 
     /**
-     * Staff must confirm two-factor authentication before using the system.
+     * Whether this person must use two-factor authentication: the policy in
+     * System settings › Security (on, for everyone or for chosen roles),
+     * unless an Admin chose otherwise for them. Only staff sign in.
+     */
+    public function requiresTwoFactor(): bool
+    {
+        if (! config('permits.security.mfa_enabled') || ! $this->isStaff()) {
+            return false;
+        }
+
+        return match ($this->two_factor_requirement) {
+            self::TWO_FACTOR_REQUIRED => true,
+            self::TWO_FACTOR_EXEMPT => false,
+            default => $this->twoFactorPolicyApplies(),
+        };
+    }
+
+    /**
+     * What the policy alone says for this person, before an Admin's choice.
+     */
+    public function twoFactorPolicyApplies(): bool
+    {
+        if (config('permits.security.mfa_required_for_all')) {
+            return true;
+        }
+
+        $roles = array_map('intval', (array) config('permits.security.mfa_required_roles', []));
+
+        return $roles !== [] && array_intersect($this->roles->modelKeys(), $roles) !== [];
+    }
+
+    /**
+     * Staff who must use two-factor authentication confirm it before using the system.
      */
     public function mustEnableTwoFactor(): bool
     {
-        return config('permits.staff_two_factor_required')
-            && ! $this->hasEnabledTwoFactorAuthentication()
-            && $this->isStaff();
+        return ! $this->hasEnabledTwoFactorAuthentication() && $this->requiresTwoFactor();
     }
 }

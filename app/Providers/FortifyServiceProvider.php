@@ -114,7 +114,11 @@ class FortifyServiceProvider extends ServiceProvider
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
 
-            return Limit::perMinute((int) config('permits.security.login_per_minute'))->by($throttleKey);
+            // Failed attempts only (Fortify clears the count on success): then locked for the lockout time.
+            return Limit::perMinutes(
+                max(1, (int) config('permits.security.lockout_minutes')),
+                max(1, (int) config('permits.security.max_login_attempts')),
+            )->by($throttleKey);
         });
 
         // Registration and password forms (App\Http\Middleware\ThrottleAuthForms):

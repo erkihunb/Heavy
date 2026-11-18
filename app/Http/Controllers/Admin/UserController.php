@@ -75,7 +75,19 @@ class UserController extends Controller
             ->orderBy('id')
             ->paginate(self::PER_PAGE)
             ->withQueryString()
-            ->through(fn (User $user): array => $this->presentRow($user));
+            ->through(fn (User $user): array => [
+                ...$this->presentRow($user),
+                'last_login' => EthiopianCalendar::present($user->last_login_at?->setTimezone((string) config('localization.display_timezone')), app()->getLocale()),
+                'last_login_time' => $user->last_login_at?->setTimezone((string) config('localization.display_timezone'))->format('H:i'),
+                // The row's ⋮ menu (EUISIS Users/Index).
+                'can' => [
+                    'update' => Gate::inspect('update', $user)->allowed(),
+                    'deactivate' => $user->isActive() && Gate::inspect('deactivate', $user)->allowed(),
+                    'restore' => ! $user->isActive() && ($request->user()?->can('restore', $user) ?? false),
+                ],
+                'deactivateUrl' => route('admin.users.deactivate', $user),
+                'restoreUrl' => route('admin.users.restore', $user),
+            ]);
 
         return Inertia::render('admin/users/index', [
             'users' => Paginated::present($users),
@@ -115,7 +127,6 @@ class UserController extends Controller
 
         $message = match (true) {
             $request->startingPassword() !== null => __('rbac.users.messages.created_with_password'),
-            $user->must_change_password => __('admin.users.messages.created_default_password'),
             default => __('admin.users.messages.created'),
         };
 
@@ -162,6 +173,10 @@ class UserController extends Controller
                 'record' => [
                     'email_verified_at' => $date($user->email_verified_at),
                     'two_factor' => $user->two_factor_confirmed_at !== null,
+                    'two_factor_requirement' => $user->two_factor_requirement ?? 'policy',
+                    // What the policy alone gives, and whether two-factor is in use at all.
+                    'two_factor_policy' => (bool) config('permits.security.mfa_enabled') && $user->twoFactorPolicyApplies(),
+                    'two_factor_enabled' => (bool) config('permits.security.mfa_enabled'),
                     'last_login_at' => $date($user->last_login_at),
                     'last_login_time' => $user->last_login_at?->setTimezone($zone)->format('H:i'),
                     'last_login_ip' => $user->last_login_ip,
@@ -201,6 +216,7 @@ class UserController extends Controller
                 'password' => route('admin.users.password', $user),
                 'resetLink' => route('admin.users.reset-link', $user),
                 'twoFactor' => route('admin.users.two-factor', $user),
+                'twoFactorRequirement' => route('admin.users.two-factor-requirement', $user),
                 'permissions' => route('admin.users.permissions', $user),
             ],
         ]);
@@ -209,7 +225,8 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, User $user, AssignUserBranch $assignUserBranch, AuditLog $audit): RedirectResponse
     {
         DB::transaction(function () use ($request, $user, $assignUserBranch, $audit): void {
-            $fields = ['name' => $request->fullName(), ...$request->profile()];
+            // The Admin vouches for a new address, as when the account was opened.
+            $fields = ['name' => $request->fullName(), 'email' => $request->string('email', $user->email)->toString(), ...$request->profile()];
             $old = [];
             $new = [];
 

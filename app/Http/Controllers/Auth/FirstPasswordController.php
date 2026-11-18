@@ -38,7 +38,7 @@ class FirstPasswordController extends Controller
             return to_route('login');
         }
 
-        $validated = $request->validate(['password' => $this->passwordRules()]);
+        $validated = $request->validate(['password' => $this->passwordRules($user)]);
 
         // Saving a new password takes the account off the default one (User::booted).
         $user->forceFill(['password' => $validated['password']])->save();

@@ -1,5 +1,6 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
+import { PasswordChecklist } from '@/components/password-checklist';
 import ConfirmProvider from '@/shell/Components/ConfirmProvider';
 import PageHeader from '@/shell/Components/PageHeader';
 import PermissionPicker from '@/shell/Components/Roles/PermissionPicker';
@@ -10,6 +11,7 @@ import {
     FieldError,
     FormField,
     Input,
+    Select,
     badgeClassName,
 } from '@/shell/Components/ui';
 import type { PickableBranch } from '@/shell/Components/Users/BranchPicker';
@@ -60,6 +62,9 @@ type EditableUser = UserRow & {
     record: {
         email_verified_at: RecordDate;
         two_factor: boolean;
+        two_factor_requirement: 'policy' | 'required' | 'exempt';
+        two_factor_policy: boolean;
+        two_factor_enabled: boolean;
         last_login_at: RecordDate;
         last_login_time: string | null;
         last_login_ip: string | null;
@@ -115,6 +120,7 @@ function EditUserPage({
         password: string;
         resetLink: string;
         twoFactor: string;
+        twoFactorRequirement: string;
         permissions: string;
     };
 }) {
@@ -124,11 +130,13 @@ function EditUserPage({
     const details = useForm<
         StaffFormData & {
             _method: 'put';
+            email: string;
             avatar: File | null;
             remove_avatar: boolean;
         }
     >({
         _method: 'put',
+        email: user.email,
         first_name: user.first_name ?? '',
         middle_name: user.middle_name ?? '',
         last_name: user.last_name ?? '',
@@ -251,6 +259,14 @@ function EditUserPage({
         if (confirmed) router.delete(urls.twoFactor, { preserveScroll: true });
     }
 
+    function setTwoFactorRequirement(requirement: string) {
+        router.put(
+            urls.twoFactorRequirement,
+            { requirement },
+            { preserveScroll: true },
+        );
+    }
+
     return (
         <AuthenticatedLayout
             header={
@@ -337,17 +353,25 @@ function EditUserPage({
                                 <div className="grid gap-4 @md:grid-cols-2">
                                     <FormField
                                         label={t('admin.users.fields.email')}
-                                        description={t(
-                                            'rbac.users.emailLocked',
-                                        )}
+                                        required
+                                        error={details.errors.email}
+                                        description={t('rbac.users.emailHelp')}
                                     >
-                                        {({ id, describedBy }) => (
+                                        {({ id, describedBy, invalid }) => (
                                             <Input
                                                 id={id}
+                                                type="email"
+                                                autoComplete="off"
                                                 aria-describedby={describedBy}
-                                                disabled
-                                                value={user.email}
-                                                readOnly
+                                                aria-invalid={invalid}
+                                                disabled={!can.update}
+                                                value={details.data.email}
+                                                onChange={(event) =>
+                                                    details.setData(
+                                                        'email',
+                                                        event.target.value,
+                                                    )
+                                                }
                                             />
                                         )}
                                     </FormField>
@@ -633,6 +657,11 @@ function EditUserPage({
                                         />
                                     )}
                                 </FormField>
+                                {passwordForm.data.password !== '' && (
+                                    <PasswordChecklist
+                                        value={passwordForm.data.password}
+                                    />
+                                )}
                                 <FormField
                                     label={t('rbac.users.confirmPassword')}
                                     required
@@ -682,6 +711,64 @@ function EditUserPage({
                                 >
                                     {t('rbac.users.sendResetLink')}
                                 </Button>
+                            </div>
+
+                            <div className="border-t border-(--app-border) pt-4">
+                                <FormField
+                                    label={t('rbac.users.twoFactorRequirement')}
+                                    description={
+                                        user.record.two_factor_enabled
+                                            ? t(
+                                                  'rbac.users.twoFactorRequirementHelp',
+                                              )
+                                            : t('rbac.users.twoFactorDisabled')
+                                    }
+                                >
+                                    {({ id, describedBy }) => (
+                                        <Select
+                                            id={id}
+                                            aria-describedby={describedBy}
+                                            disabled={
+                                                !user.record.two_factor_enabled
+                                            }
+                                            value={
+                                                user.record
+                                                    .two_factor_requirement
+                                            }
+                                            onChange={(event) =>
+                                                setTwoFactorRequirement(
+                                                    event.target.value,
+                                                )
+                                            }
+                                        >
+                                            <option value="policy">
+                                                {t(
+                                                    'rbac.users.twoFactorRequirementPolicy',
+                                                ).replace(
+                                                    ':state',
+                                                    user.record
+                                                        .two_factor_policy
+                                                        ? t(
+                                                              'rbac.users.twoFactorPolicyRequired',
+                                                          )
+                                                        : t(
+                                                              'rbac.users.twoFactorPolicyNotRequired',
+                                                          ),
+                                                )}
+                                            </option>
+                                            <option value="required">
+                                                {t(
+                                                    'rbac.users.twoFactorRequirementRequired',
+                                                )}
+                                            </option>
+                                            <option value="exempt">
+                                                {t(
+                                                    'rbac.users.twoFactorRequirementExempt',
+                                                )}
+                                            </option>
+                                        </Select>
+                                    )}
+                                </FormField>
                             </div>
 
                             {user.two_factor && (

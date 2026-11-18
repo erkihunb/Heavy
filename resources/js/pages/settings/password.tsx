@@ -1,9 +1,10 @@
 import { Transition } from '@headlessui/react';
 import { Form, Head } from '@inertiajs/react';
 import { LockKeyhole } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import PasswordController from '@/actions/App/Http/Controllers/Settings/PasswordController';
 import InputError from '@/components/input-error';
+import { PasswordChecklist } from '@/components/password-checklist';
 import PasswordInput from '@/components/password-input';
 import { SectionCard } from '@/components/section-card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ export default function Password() {
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
     const { t } = useTranslation();
+    const [newPassword, setNewPassword] = useState('');
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: t('settings.password.title'), href: edit() },
@@ -46,6 +48,7 @@ export default function Password() {
                                 'current_password',
                             ]}
                             resetOnSuccess
+                            onSuccess={() => setNewPassword('')}
                             onError={(errors) => {
                                 if (errors.password) {
                                     passwordInput.current?.focus();
@@ -89,6 +92,11 @@ export default function Password() {
                                             id="password"
                                             ref={passwordInput}
                                             name="password"
+                                            onChange={(event) =>
+                                                setNewPassword(
+                                                    event.target.value,
+                                                )
+                                            }
                                             className="mt-1 block w-full"
                                             autoComplete="new-password"
                                             placeholder={t(
@@ -97,6 +105,10 @@ export default function Password() {
                                         />
 
                                         <InputError message={errors.password} />
+
+                                        <PasswordChecklist
+                                            value={newPassword}
+                                        />
                                     </div>
 
                                     <div className="grid gap-2">

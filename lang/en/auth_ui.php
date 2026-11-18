@@ -65,4 +65,17 @@ return [
         'or' => 'Or you can',
         'submit' => 'Continue',
     ],
+    'password_checklist' => [
+        'min' => 'At least :min characters',
+        'max' => 'At most :max characters',
+        'mixed_case' => 'Upper and lower case letters',
+        'numbers' => 'At least one digit',
+        'symbols' => 'At least one symbol',
+        'common' => 'Not a common password',
+        'personal' => 'No name, username, e-mail name or phone number',
+        'history' => 'Not one of the last :count passwords',
+        'breached' => 'Not found in known data breaches',
+        'met' => '(met)',
+        'not_met' => '(not met yet)',
+    ],
 ];

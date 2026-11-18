@@ -327,10 +327,11 @@ describe('access', function () {
             ->and(PermitStatusTransition::count())->toBe(0);
     })->with([Role::Reviewer, Role::Approver]);
 
-    it('lets them in again when two-factor authentication is not required', function () {
-        config(['permits.staff_two_factor_required' => false]);
+    it('lets them in again when two-factor authentication is not required of them', function () {
+        $reviewer = userWithRole(Role::Reviewer);
+        $reviewer->forceFill(['two_factor_requirement' => User::TWO_FACTOR_EXEMPT])->save();
 
-        $this->actingAs(userWithRole(Role::Reviewer))->get(route('staff.permits.index'))->assertOk();
+        $this->actingAs($reviewer)->get(route('staff.permits.index'))->assertOk();
     });
 });
 

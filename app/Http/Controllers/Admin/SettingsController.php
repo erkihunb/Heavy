@@ -10,11 +10,13 @@ use App\Domain\Sms\SmsGateway;
 use App\Domain\Telegram\TelegramGateway;
 use App\Enums\PaymentStatus;
 use App\Enums\PermitStatus;
+use App\Enums\Role as RoleEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\Permit;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Support\EthiopianCalendar;
@@ -30,6 +32,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -71,7 +74,6 @@ class SettingsController extends Controller
                 'telegram' => (bool) config('services.telegram.enabled') && app(TelegramGateway::class)->configured(),
                 'pdf' => (string) config('permits.pdf_renderer'),
                 'error_tracking' => filled(config('sentry.dsn')),
-                'two_factor' => (bool) config('permits.staff_two_factor_required'),
             ],
             'counts' => [
                 'users' => User::query()->count(),
@@ -129,6 +131,13 @@ class SettingsController extends Controller
             'preview' => $section === 'codes' ? $this->codePreview() : null,
             'inUse' => $section === 'email' ? $this->mailInUse($settings) : null,
             'branding' => $section === 'general' ? ['logo' => Branding::url('logo'), 'favicon' => Branding::url('favicon')] : null,
+            // The roles two-factor can be required for (Security).
+            'roles' => $section === 'security'
+                // Applicants do not sign in, so two-factor is never asked of them.
+                ? Role::query()->where('name', '!=', RoleEnum::Applicant->value)->withCount('users')->orderBy('name')->get()
+                    ->map(fn (Role $role): array => ['id' => $role->id, 'label' => $role->label(), 'users' => (int) $role->users_count])
+                    ->values()->all()
+                : null,
         ]);
     }
 
@@ -190,9 +199,14 @@ class SettingsController extends Controller
             $input[$field] = match ($setting['type']) {
                 'bool' => $request->boolean($field),
                 'image' => $request->file($field),
+                'roles' => (array) $request->input($field, []),
                 default => $request->input($field),
             };
             $rules[$field] = SettingsRegistry::rules($setting);
+
+            if ($setting['type'] === 'roles') {
+                $rules[$field.'.*'] = ['integer', Rule::exists('roles', 'id')];
+            }
             $attributes[$field] = __("admin.settings.fields.{$field}");
         }
 
@@ -319,10 +333,6 @@ class SettingsController extends Controller
                     break 2;
                 }
             }
-        }
-
-        if (! config('permits.staff_two_factor_required')) {
-            $warnings[] = 'two_factor_off';
         }
 
         if ($production) {
