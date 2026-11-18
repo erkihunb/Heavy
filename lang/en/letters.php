@@ -81,7 +81,7 @@ return [
         'en' => 'Download all (English)',
     ],
     'link' => 'Part of letter :number (:count vehicles)',
-    'open' => 'Open the letter',
+    'open' => 'View vehicles',
     'messages' => [
         'registered' => 'The letter was registered with :count vehicles, each with its own request.',
         'recommended' => 'Recommendation recorded for :count vehicles.',

@@ -162,7 +162,7 @@ return [
         'file' => 'Scanned letter',
         'file_hint' => 'PDF, JPG or PNG.',
         'file_keep' => 'Leave empty to keep the scan already attached.',
-        'open' => 'Open the letter',
+        'open' => 'View letter',
         'file_type' => 'The letter must be a PDF, JPG or PNG file.',
         'file_size' => 'The letter file can be at most :max MB.',
         'date_future' => 'The letter date cannot be in the future.',
