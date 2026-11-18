@@ -344,6 +344,34 @@ describe('paying and issuing', function () {
         expect(Payment::query()->whereNotNull('request_letter_id')->count())->toBe(0);
     });
 
+    it('issues no vehicle of the letter on its own', function () {
+        $this->actingAs($this->cashier)
+            ->post(route('letters.payment', $this->letter), letterPayment());
+
+        $permit = Permit::query()->findOrFail($this->ids[0]);
+
+        $this->actingAs(staffUser(Role::Issuer))
+            ->post(route('staff.permits.issue', $permit))
+            ->assertForbidden();
+
+        expect($permit->refresh()->status)->toBe(PermitStatus::PaymentConfirmed);
+    });
+
+    it('lists the paid letter once for the Issuer', function () {
+        $this->actingAs($this->cashier)
+            ->post(route('letters.payment', $this->letter), letterPayment());
+
+        $first = Permit::query()->whereIn('id', array_slice($this->ids, 0, 2))->orderBy('id')->firstOrFail();
+
+        $this->actingAs(staffUser(Role::Issuer))
+            ->get(route('staff.permits.index', ['status' => 'payment_confirmed']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('permits.data', 1)
+                ->where("letterPayments.{$first->id}.vehicles", 2)
+                ->where("letterPayments.{$first->id}.stage", 'payment_confirmed'));
+    });
+
     it('issues every paid vehicle with its own certificate, and hands them out together', function () {
         $this->actingAs($this->cashier)
             ->post(route('letters.payment', $this->letter), letterPayment());

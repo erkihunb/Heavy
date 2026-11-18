@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { PaymentForm } from '@/components/payment-form';
 import { PaymentList } from '@/components/payment-list';
+import type { LetterVehicle } from '@/components/permit-details';
 import {
     PermitDetailsCard,
     StaffPermitFrame,
@@ -14,6 +15,8 @@ import { PAYMENT_METHODS } from '@/types/enums';
 type Props = {
     permit: Permit;
     vehicleHistory: VehicleHistory[];
+    /** Every vehicle of the request letter, when it asked for several. */
+    letterVehicles: LetterVehicle[];
     /** Opened on the application's own address, because it waits for this person. */
     direct: boolean;
     receiptMaxKilobytes: number;
@@ -29,6 +32,7 @@ type Props = {
 export default function StaffPermitPayment({
     permit,
     vehicleHistory,
+    letterVehicles,
     direct,
     receiptMaxKilobytes,
 }: Props) {
@@ -46,7 +50,10 @@ export default function StaffPermitPayment({
         >
             <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
                 <div className="space-y-6">
-                    <PermitDetailsCard permit={permit} />
+                    <PermitDetailsCard
+                        permit={permit}
+                        letterVehicles={letterVehicles}
+                    />
                     {payments.length > 0 && (
                         <section
                             aria-labelledby="payments-title"

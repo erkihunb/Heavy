@@ -39,9 +39,9 @@ final class IssueLetter
         }
 
         $issued = $this->letters->each($permits, function (Permit $permit) use ($issuer, $note): Permit {
-            Gate::forUser($issuer)->authorize('issue', $permit);
+            Gate::forUser($issuer)->authorize('issueWithLetter', $permit);
 
-            return $this->issuePaidPermit->handle($permit, $issuer, $note, notify: false);
+            return $this->issuePaidPermit->handle($permit, $issuer, $note, notify: false, withLetter: true);
         });
 
         $this->notifier->sendToOrganization($letter->organization_id, new LetterNotification($letter, 'issued', count($issued)));

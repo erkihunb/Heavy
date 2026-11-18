@@ -85,6 +85,19 @@ class PermitPolicy
      */
     public function issue(User $user, Permit $permit): Response
     {
+        // One vehicle of a letter is issued with the others, on the letter's page.
+        if ($permit->isPaidWithLetter()) {
+            return Response::deny(__('letters.errors.issue_with_letter'));
+        }
+
+        return $this->staffAt($user, $permit, Permission::IssuePermits);
+    }
+
+    /**
+     * An Issuer issuing this vehicle with the other paid vehicles of its request letter.
+     */
+    public function issueWithLetter(User $user, Permit $permit): Response
+    {
         return $this->staffAt($user, $permit, Permission::IssuePermits);
     }
 

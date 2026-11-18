@@ -236,11 +236,11 @@ it('covers every ability of the policy', function () {
 
     // download, reissue, scan and report are covered in VerificationPolicyTest;
     // the Registrar's *For abilities in Admin/WalkInApplicationTest.
-    // issueInstitutional in Staff/InstitutionPermitTest; recordLetterPayment in Letters/RequestLetterTest.
+    // issueInstitutional in Staff/InstitutionPermitTest; recordLetterPayment and issueWithLetter in Letters/RequestLetterTest.
     $tested = [
         'view', 'viewQueue', 'download', 'reissue', 'scan', 'report',
         'viewFor', 'updateFor', 'submitFor', 'submitPaymentFor', 'viewLetter',
-        'issueInstitutional', 'recordLetterPayment',
+        'issueInstitutional', 'recordLetterPayment', 'issueWithLetter',
         ...REVIEWER_ABILITIES, ...APPROVER_ABILITIES, ...DESK_ABILITIES,
     ];
     sort($tested);

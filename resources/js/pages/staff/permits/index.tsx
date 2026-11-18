@@ -33,6 +33,8 @@ type LetterPayment = {
     vehicles: number;
     total: string;
     url: string;
+    /** awaiting_payment: take its one payment; payment_confirmed: issue it. */
+    stage: string;
 };
 
 type Props = {
@@ -357,7 +359,16 @@ export default function StaffPermitsIndex({
                                                     }
                                                 >
                                                     {letterPayments[permit.id]
-                                                        ? t('letters.go_pay')
+                                                        ? letterPayments[
+                                                              permit.id
+                                                          ].stage ===
+                                                          'payment_confirmed'
+                                                            ? t(
+                                                                  'letters.go_issue',
+                                                              )
+                                                            : t(
+                                                                  'letters.go_pay',
+                                                              )
                                                         : t(
                                                               'permits.actions.view',
                                                           )}

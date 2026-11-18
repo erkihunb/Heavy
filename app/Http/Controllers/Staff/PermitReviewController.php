@@ -46,6 +46,14 @@ use Inertia\Response;
  */
 class PermitReviewController extends Controller
 {
+    /**
+     * The stages at which a request letter's vehicles are handled together
+     * (one payment, one issuing), so the queue shows the letter once.
+     *
+     * @var list<string>
+     */
+    private const array LETTER_STAGES = ['awaiting_payment', 'payment_confirmed'];
+
     private const int PER_PAGE = 20;
 
     /** How many other permits are listed per vehicle on the detail page. */
@@ -86,15 +94,16 @@ class PermitReviewController extends Controller
                     ->orWhereLike('name_en', $like($organization)))))
             ->when($submittedFrom !== null, fn (Builder $query) => $query->where('submitted_at', '>=', $submittedFrom->startOfDay()->utc()))
             ->when($submittedTo !== null, fn (Builder $query) => $query->where('submitted_at', '<=', $submittedTo->endOfDay()->utc()))
-            // A letter's vehicles waiting for payment are one payment: one row, its first vehicle.
+            // A letter's vehicles are paid for, and issued, together: while waiting for
+            // either, they are one row — the first vehicle at that stage.
             ->where(fn (Builder $query) => $query
                 ->whereNull('request_letter_id')
-                ->orWhere('status', '!=', PermitStatus::AwaitingPayment->value)
+                ->orWhereNotIn('status', self::LETTER_STAGES)
                 ->orWhereNotExists(fn ($sibling) => $sibling
                     ->selectRaw('1')
                     ->from('permits as sibling')
                     ->whereColumn('sibling.request_letter_id', 'permits.request_letter_id')
-                    ->where('sibling.status', PermitStatus::AwaitingPayment->value)
+                    ->whereColumn('sibling.status', 'permits.status')
                     ->whereColumn('sibling.id', '<', 'permits.id')))
             // Oldest first: the application that has waited longest is on top.
             ->orderBy('submitted_at')
@@ -245,11 +254,11 @@ class PermitReviewController extends Controller
      * the letter's page where it is taken.
      *
      * @param  Collection<int, Permit>  $permits
-     * @return array<string, array{letter: string|null, vehicles: int, total: string, url: string}>
+     * @return array<string, array{letter: string|null, vehicles: int, total: string, url: string, stage: string}>
      */
     private function letterPayments(Collection $permits): array
     {
-        $rows = $permits->filter(fn (Permit $permit): bool => $permit->request_letter_id !== null && $permit->status === PermitStatus::AwaitingPayment);
+        $rows = $permits->filter(fn (Permit $permit): bool => $permit->request_letter_id !== null && in_array($permit->status->value, self::LETTER_STAGES, true));
 
         if ($rows->isEmpty()) {
             return [];
@@ -257,16 +266,16 @@ class PermitReviewController extends Controller
 
         $totals = Permit::query()
             ->whereIn('request_letter_id', $rows->pluck('request_letter_id')->unique()->all())
-            ->where('status', PermitStatus::AwaitingPayment->value)
-            ->groupBy('request_letter_id')
-            ->selectRaw('request_letter_id, count(*) as vehicles, sum(fee_cents) as total')
+            ->whereIn('status', self::LETTER_STAGES)
+            ->groupBy('request_letter_id', 'status')
+            ->selectRaw('request_letter_id, status, count(*) as vehicles, sum(fee_cents) as total')
             ->get()
-            ->keyBy('request_letter_id');
+            ->keyBy(fn (Permit $row): string => $row->request_letter_id.'|'.$row->status->value);
 
         $groups = [];
 
         foreach ($rows as $permit) {
-            $total = $totals->get($permit->request_letter_id);
+            $total = $totals->get($permit->request_letter_id.'|'.$permit->status->value);
 
             if ($total === null || (int) $total->getAttribute('vehicles') < 2) {
                 continue;
@@ -277,6 +286,7 @@ class PermitReviewController extends Controller
                 'vehicles' => (int) $total->getAttribute('vehicles'),
                 'total' => Money::format((int) $total->getAttribute('total'), $permit->currency),
                 'url' => route('letters.show', $permit->request_letter_id),
+                'stage' => $permit->status->value,
             ];
         }
 

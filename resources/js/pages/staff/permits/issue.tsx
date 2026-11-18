@@ -1,9 +1,12 @@
+import { Link } from '@inertiajs/react';
+import type { LetterVehicle } from '@/components/permit-details';
 import { PermitDocumentLinks } from '@/components/permit-document-links';
 import { StaffAction } from '@/components/staff-action';
 import {
     PermitDetailsCard,
     StaffPermitFrame,
 } from '@/components/staff-permit-frame';
+import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n';
 import { issue } from '@/routes/staff/permits';
 import type { Permit, VehicleHistory } from '@/types';
@@ -11,6 +14,8 @@ import type { Permit, VehicleHistory } from '@/types';
 type Props = {
     permit: Permit;
     vehicleHistory: VehicleHistory[];
+    /** Every vehicle of the request letter, when it asked for several. */
+    letterVehicles: LetterVehicle[];
     /** Opened on the application's own address, because it waits for this person. */
     direct: boolean;
 };
@@ -23,6 +28,7 @@ type Props = {
 export default function StaffPermitIssue({
     permit,
     vehicleHistory,
+    letterVehicles,
     direct,
 }: Props) {
     const { t } = useTranslation();
@@ -40,10 +46,13 @@ export default function StaffPermitIssue({
             rolePage={!direct}
         >
             <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-                <PermitDetailsCard permit={permit} />
+                <PermitDetailsCard
+                    permit={permit}
+                    letterVehicles={letterVehicles}
+                />
 
                 <div className="h-fit space-y-4 lg:sticky lg:top-6">
-                    {verifiedPayment && (
+                    {verifiedPayment && !permit.letter?.group_url && (
                         <p className="flex items-baseline justify-between gap-3 rounded-card border border-border bg-card px-5 py-4">
                             <span className="text-sm text-muted-foreground">
                                 {t('permits.staff.issue.paid')} ·{' '}
@@ -66,6 +75,18 @@ export default function StaffPermitIssue({
                             submitLabel={t('permits.staff.issue.submit')}
                             note="optional"
                         />
+                    ) : permit.letter?.group_url &&
+                      permit.effective_status === 'payment_confirmed' ? (
+                        <div className="space-y-3 rounded-card border border-border bg-card p-5">
+                            <p className="text-sm">
+                                {t('letters.errors.issue_with_letter')}
+                            </p>
+                            <Button asChild>
+                                <Link href={permit.letter.group_url}>
+                                    {t('letters.go_issue')}
+                                </Link>
+                            </Button>
+                        </div>
                     ) : (
                         !permit.document_urls && (
                             <p className="rounded-card border border-border bg-card p-5 text-sm text-muted-foreground">

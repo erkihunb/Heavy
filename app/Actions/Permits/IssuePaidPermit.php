@@ -7,6 +7,7 @@ use App\Domain\Permits\PermitTransitions;
 use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Exceptions\InvalidPermitTransition;
+use App\Exceptions\PermitRuleViolation;
 use App\Models\Permit;
 use App\Models\User;
 use App\Notifications\PermitIssued;
@@ -28,9 +29,14 @@ class IssuePaidPermit
      *
      * @throws InvalidPermitTransition when the payment has not been confirmed
      */
-    public function handle(Permit $permit, User $issuer, ?string $note = null, bool $notify = true): Permit
+    public function handle(Permit $permit, User $issuer, ?string $note = null, bool $notify = true, bool $withLetter = false): Permit
     {
         Gate::forUser($issuer)->authorize(Permission::IssuePermits->value);
+
+        // One vehicle of a letter is issued with the others (IssueLetter).
+        if (! $withLetter && $permit->isPaidWithLetter()) {
+            throw new PermitRuleViolation('issue_with_letter');
+        }
 
         $issued = $this->transitions->apply($permit, PermitStatus::Issued, $issuer, $note, function (Permit $permit) use ($issuer): void {
             $permit->issued_at = CarbonImmutable::now();

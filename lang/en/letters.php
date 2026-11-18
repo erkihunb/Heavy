@@ -86,6 +86,7 @@ return [
     'open' => 'View vehicles',
     'payment_line' => 'Payment for the letter: :count vehicles · :total',
     'go_pay' => 'Take the letter\'s payment',
+    'go_issue' => 'Issue the letter\'s permits',
     'queue_row' => 'Letter :letter · :count vehicles · :total',
     'messages' => [
         'registered' => 'The letter was registered with :count vehicles, each with its own request.',
@@ -96,6 +97,7 @@ return [
         'issued' => ':count permits issued. Their certificates are being prepared.',
     ],
     'errors' => [
+        'issue_with_letter' => 'This vehicle is issued with the other vehicles of its letter, together on the letter\'s page.',
         'pay_with_letter' => 'This vehicle is paid for with the other vehicles of its letter, as one payment on the letter\'s page.',
         'none_chosen' => 'Choose at least one vehicle of this letter.',
         'vehicle_refused' => 'Vehicle :plate: :reason Nothing was saved.',
