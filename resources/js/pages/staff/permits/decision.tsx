@@ -1,7 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import { DecisionActions } from '@/components/decision-actions';
-import { LetterVehiclesCard } from '@/components/letter-vehicles-card';
-import type { LetterVehicle } from '@/components/letter-vehicles-card';
+import type { LetterVehicle } from '@/components/permit-details';
 import { PermitDocumentLinks } from '@/components/permit-document-links';
 import { PermitLetter } from '@/components/permit-letter';
 import { ReviewForm, ReviewList } from '@/components/permit-reviews';
@@ -79,10 +78,9 @@ export default function StaffPermitDecision({
         >
             <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
                 <div className="space-y-6">
-                    <PermitDetailsCard permit={permit} />
-                    <LetterVehiclesCard
-                        vehicles={letterVehicles}
-                        letterUrl={permit.letter?.group_url}
+                    <PermitDetailsCard
+                        permit={permit}
+                        letterVehicles={letterVehicles}
                     />
                     <VehicleHistoryCard vehicleHistory={vehicleHistory} />
                 </div>

@@ -1,7 +1,6 @@
 import { DualDate } from '@/components/dual-date';
-import { LetterVehiclesCard } from '@/components/letter-vehicles-card';
-import type { LetterVehicle } from '@/components/letter-vehicles-card';
 import { PermitComments } from '@/components/permit-comments';
+import type { LetterVehicle } from '@/components/permit-details';
 import { PermitDocumentLinks } from '@/components/permit-document-links';
 import { PermitLetter } from '@/components/permit-letter';
 import { ReviewList } from '@/components/permit-reviews';
@@ -127,10 +126,9 @@ export default function StaffPermitsShow({
         >
             <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
                 <div className="space-y-6">
-                    <PermitDetailsCard permit={permit} />
-                    <LetterVehiclesCard
-                        vehicles={letterVehicles}
-                        letterUrl={permit.letter?.group_url}
+                    <PermitDetailsCard
+                        permit={permit}
+                        letterVehicles={letterVehicles}
                     />
                     <VehicleHistoryCard vehicleHistory={vehicleHistory} />
 

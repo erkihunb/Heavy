@@ -5,6 +5,7 @@ import { Table, TBody, Td, Th, THead, Tr } from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
 import { PageHeader } from '@/components/page-header';
 import { PermitDetails } from '@/components/permit-details';
+import type { LetterVehicle } from '@/components/permit-details';
 import { PlateChip } from '@/components/plate-chip';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
@@ -103,7 +104,13 @@ export function StaffPermitFrame({
 }
 
 /** The registered application, read only. */
-export function PermitDetailsCard({ permit }: { permit: Permit }) {
+export function PermitDetailsCard({
+    permit,
+    letterVehicles,
+}: {
+    permit: Permit;
+    letterVehicles?: LetterVehicle[];
+}) {
     const { t } = useTranslation();
 
     return (
@@ -114,7 +121,7 @@ export function PermitDetailsCard({ permit }: { permit: Permit }) {
             <h2 id="details-title" className="mb-2 text-section-title">
                 {t('permits.review.details')}
             </h2>
-            <PermitDetails permit={permit} />
+            <PermitDetails permit={permit} letterVehicles={letterVehicles} />
         </section>
     );
 }
