@@ -77,22 +77,7 @@ export function MoreVehicles({
     }
 
     return (
-        <section
-            aria-labelledby="more-vehicles-title"
-            className="space-y-4 border-t border-border pt-5"
-        >
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h3
-                    id="more-vehicles-title"
-                    className="text-sm font-semibold text-foreground"
-                >
-                    {t('letters.intake.title')}
-                </h3>
-                <span className="text-sm text-muted-foreground tabular-nums">
-                    {t('letters.intake.count', { count: rows.length + 1 })}
-                </span>
-            </div>
-
+        <section aria-label={t('letters.intake.title')} className="space-y-4">
             {rows.map((row, index) => {
                 const prefix = `more.${index}.vehicles`;
                 const number = index + 2;
