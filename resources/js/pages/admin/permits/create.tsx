@@ -410,6 +410,7 @@ export default function ApplicantsCreate({
                                     form={smartForm}
                                     state={states.permit}
                                     rates={rates}
+                                    letter={{ ...fee, typeName }}
                                 />
                             </>
                         )}

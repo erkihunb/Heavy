@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DualDate } from '@/components/dual-date';
 import InputError from '@/components/input-error';
+import { formatBirr } from '@/components/permit-intake/smart';
 import { useTranslation } from '@/lib/i18n';
 import type { DualDate as DualDateValue, Money } from '@/types';
 
@@ -192,12 +193,23 @@ export function PermitEndDate({
     rates,
     value,
     validFrom,
+    letter,
 }: {
     label: string;
     rates: FeeRates;
     /** The id of the chosen schedule line, or "" for none. */
     value: string;
     validFrom: string;
+    /**
+     * A letter for several vehicles: the fee for all of them, each at its
+     * own type's fee for the rate's days (null while it is worked out).
+     */
+    letter?: {
+        vehicles: number;
+        totalCents: number | null;
+        missing: string[];
+        typeName: (id: string) => string;
+    };
 }) {
     const { t } = useTranslation();
     const rate =
@@ -233,24 +245,58 @@ export function PermitEndDate({
                     </p>
                 )}
             </div>
-            {rate !== null && (
+            {rate !== null && letter !== undefined && letter.vehicles > 1 && (
                 <div className="space-y-1">
                     <p className="text-eyebrow text-muted-foreground">
-                        {t('applicants.intake.fee')}
+                        {t('applicants.intake.fee_total')}
                     </p>
-                    <p className="flex flex-wrap items-baseline gap-x-2">
-                        <span className="text-xl font-extrabold tabular-nums">
-                            {rate.fee.formatted}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                            {t('payments.fee_days', { days: rate.days })}
-                        </span>
-                    </p>
+                    {letter.missing.length > 0 ? (
+                        <p className="text-sm text-destructive">
+                            {t('applicants.intake.fee_missing', {
+                                types: letter.missing
+                                    .map(letter.typeName)
+                                    .join(', '),
+                            })}
+                        </p>
+                    ) : (
+                        <p className="flex flex-wrap items-baseline gap-x-2">
+                            <span className="text-xl font-extrabold tabular-nums">
+                                {letter.totalCents === null
+                                    ? '…'
+                                    : formatBirr(letter.totalCents)}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                                {t('applicants.intake.fee_vehicles', {
+                                    count: letter.vehicles,
+                                })}{' '}
+                                · {t('payments.fee_days', { days: rate.days })}
+                            </span>
+                        </p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                         {t('applicants.intake.fee_after_approval')}
                     </p>
                 </div>
             )}
+            {rate !== null &&
+                (letter === undefined || letter.vehicles <= 1) && (
+                    <div className="space-y-1">
+                        <p className="text-eyebrow text-muted-foreground">
+                            {t('applicants.intake.fee')}
+                        </p>
+                        <p className="flex flex-wrap items-baseline gap-x-2">
+                            <span className="text-xl font-extrabold tabular-nums">
+                                {rate.fee.formatted}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                                {t('payments.fee_days', { days: rate.days })}
+                            </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            {t('applicants.intake.fee_after_approval')}
+                        </p>
+                    </div>
+                )}
         </div>
     );
 }

@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react';
 import { EthiopianDateInput } from '@/components/ethiopian-date-input';
 import { FeeRateField, PermitEndDate } from '@/components/fee-rates';
 import type { FeeRates } from '@/components/fee-rates';
@@ -22,10 +23,13 @@ export function PermitStep({
     form,
     state,
     rates,
+    letter,
 }: {
     form: IntakeForm;
     state: StepState;
     rates: FeeRates;
+    /** The letter's fee, when it asks for several vehicles. */
+    letter?: ComponentProps<typeof PermitEndDate>['letter'];
 }) {
     const { t } = useTranslation();
     const { data } = form;
@@ -118,6 +122,7 @@ export function PermitStep({
                         rates={rates}
                         value={data.fee_schedule_id}
                         validFrom={data.valid_from}
+                        letter={letter}
                     />
                 </div>
 
