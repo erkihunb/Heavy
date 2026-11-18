@@ -27,8 +27,17 @@ import type { BreadcrumbItem, Paginated, Permit } from '@/types';
 import { PERMIT_STATUSES, PERMIT_TYPES } from '@/types/enums';
 import type { PermitStatus, PermitType } from '@/types/enums';
 
+/** A row standing for a request letter's one payment (PermitReviewController::letterPayments). */
+type LetterPayment = {
+    letter: string | null;
+    vehicles: number;
+    total: string;
+    url: string;
+};
+
 type Props = {
     permits: Paginated<Permit>;
+    letterPayments: Record<string, LetterPayment>;
     filters: {
         /** null = waiting for review (the default), "all" = every status. */
         status: PermitStatus | 'all' | null;
@@ -45,7 +54,11 @@ const STAFF_STATUSES = PERMIT_STATUSES.filter(
     (status) => status !== 'draft' && status !== 'withdrawn',
 );
 
-export default function StaffPermitsIndex({ permits, filters }: Props) {
+export default function StaffPermitsIndex({
+    permits,
+    letterPayments,
+    filters,
+}: Props) {
     const { t } = useTranslation();
     const [status, setStatus] = useState<string>(filters.status ?? '');
     const [permitType, setPermitType] = useState<string>(
@@ -261,18 +274,35 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                                             )}
                                         </Td>
                                         <Td>
-                                            <span className="flex flex-wrap gap-1.5">
-                                                {(permit.vehicles ?? []).map(
-                                                    (vehicle) => (
+                                            {letterPayments[permit.id] ? (
+                                                <span className="text-sm font-medium">
+                                                    {t('letters.queue_row', {
+                                                        letter:
+                                                            letterPayments[
+                                                                permit.id
+                                                            ].letter ?? '',
+                                                        count: letterPayments[
+                                                            permit.id
+                                                        ].vehicles,
+                                                        total: letterPayments[
+                                                            permit.id
+                                                        ].total,
+                                                    })}
+                                                </span>
+                                            ) : (
+                                                <span className="flex flex-wrap gap-1.5">
+                                                    {(
+                                                        permit.vehicles ?? []
+                                                    ).map((vehicle) => (
                                                         <PlateChip
                                                             key={vehicle.id}
                                                             plate={
                                                                 vehicle.plate
                                                             }
                                                         />
-                                                    ),
-                                                )}
-                                            </span>
+                                                    ))}
+                                                </span>
+                                            )}
                                         </Td>
                                         <Td className="whitespace-nowrap">
                                             <span className="flex items-start gap-x-2">
@@ -317,11 +347,20 @@ export default function StaffPermitsIndex({ permits, filters }: Props) {
                                                 size="sm"
                                             >
                                                 <Link
-                                                    href={show({
-                                                        permit: permit.id,
-                                                    })}
+                                                    href={
+                                                        letterPayments[
+                                                            permit.id
+                                                        ]?.url ??
+                                                        show({
+                                                            permit: permit.id,
+                                                        })
+                                                    }
                                                 >
-                                                    {t('permits.actions.view')}
+                                                    {letterPayments[permit.id]
+                                                        ? t('letters.go_pay')
+                                                        : t(
+                                                              'permits.actions.view',
+                                                          )}
                                                 </Link>
                                             </Button>
                                         </Td>

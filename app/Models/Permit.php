@@ -155,6 +155,17 @@ class Permit extends Model
     }
 
     /**
+     * Whether its fee is paid for with the other vehicles of its request
+     * letter, as one payment on the letter's page (RecordLetterPayment),
+     * never on its own.
+     */
+    public function isPaidWithLetter(): bool
+    {
+        return $this->request_letter_id !== null
+            && self::query()->where('request_letter_id', $this->request_letter_id)->whereKeyNot($this->getKey())->exists();
+    }
+
+    /**
      * The request letter it was asked for in, when the letter asked for several vehicles' permits.
      *
      * @return BelongsTo<RequestLetter, $this>

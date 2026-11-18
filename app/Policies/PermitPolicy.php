@@ -64,6 +64,19 @@ class PermitPolicy
      */
     public function recordPayment(User $user, Permit $permit): Response
     {
+        // One vehicle of a letter is paid for with the others, on the letter's page.
+        if ($permit->isPaidWithLetter()) {
+            return Response::deny(__('letters.errors.pay_with_letter'));
+        }
+
+        return $this->staffAt($user, $permit, Permission::VerifyPayments);
+    }
+
+    /**
+     * A cashier taking the one payment of a request letter for this vehicle with the others.
+     */
+    public function recordLetterPayment(User $user, Permit $permit): Response
+    {
         return $this->staffAt($user, $permit, Permission::VerifyPayments);
     }
 
@@ -185,6 +198,10 @@ class PermitPolicy
 
     public function submitPaymentFor(User $user, Permit $permit, User $applicant): Response
     {
+        if ($permit->isPaidWithLetter()) {
+            return Response::deny(__('letters.errors.pay_with_letter'));
+        }
+
         return $this->forApplicant($user, $permit, $applicant, [PermitStatus::AwaitingPayment]);
     }
 

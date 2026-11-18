@@ -26,6 +26,7 @@ return [
         'issued' => 'Issued',
     ],
     'table' => [
+        'approved' => 'Approved',
         'title' => 'Vehicles in the letter',
         'select_all' => 'Choose all vehicles waiting for a decision',
         'select' => 'Choose :plate',
@@ -83,6 +84,9 @@ return [
     ],
     'link' => 'Part of letter :number (:count vehicles)',
     'open' => 'View vehicles',
+    'payment_line' => 'Payment for the letter: :count vehicles · :total',
+    'go_pay' => 'Take the letter\'s payment',
+    'queue_row' => 'Letter :letter · :count vehicles · :total',
     'messages' => [
         'registered' => 'The letter was registered with :count vehicles, each with its own request.',
         'recommended' => 'Recommendation recorded for :count vehicles.',
@@ -92,6 +96,7 @@ return [
         'issued' => ':count permits issued. Their certificates are being prepared.',
     ],
     'errors' => [
+        'pay_with_letter' => 'This vehicle is paid for with the other vehicles of its letter, as one payment on the letter\'s page.',
         'none_chosen' => 'Choose at least one vehicle of this letter.',
         'vehicle_refused' => 'Vehicle :plate: :reason Nothing was saved.',
     ],

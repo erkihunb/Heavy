@@ -190,6 +190,7 @@ return [
         'commented' => 'Comment added.',
     ],
     'errors' => [
+        'pay_with_letter' => 'This vehicle is paid for with the other vehicles of its letter, as one payment on the letter\'s page.',
         'fee_not_set_for_letter_vehicle' => 'The fee schedule has no fee for this vehicle type for :days days. Add the fee first, or leave this vehicle out of the letter.',
         'letter_nothing_to_pay' => 'No vehicle of this letter is waiting for payment.',
         'letter_nothing_to_issue' => 'No vehicle of this letter is paid and waiting to be issued.',

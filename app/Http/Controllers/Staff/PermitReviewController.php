@@ -30,10 +30,12 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VerificationScan;
 use App\Support\EthiopianCalendar;
+use App\Support\Money;
 use App\Support\QueryFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -84,14 +86,29 @@ class PermitReviewController extends Controller
                     ->orWhereLike('name_en', $like($organization)))))
             ->when($submittedFrom !== null, fn (Builder $query) => $query->where('submitted_at', '>=', $submittedFrom->startOfDay()->utc()))
             ->when($submittedTo !== null, fn (Builder $query) => $query->where('submitted_at', '<=', $submittedTo->endOfDay()->utc()))
+            // A letter's vehicles waiting for payment are one payment: one row, its first vehicle.
+            ->where(fn (Builder $query) => $query
+                ->whereNull('request_letter_id')
+                ->orWhere('status', '!=', PermitStatus::AwaitingPayment->value)
+                ->orWhereNotExists(fn ($sibling) => $sibling
+                    ->selectRaw('1')
+                    ->from('permits as sibling')
+                    ->whereColumn('sibling.request_letter_id', 'permits.request_letter_id')
+                    ->where('sibling.status', PermitStatus::AwaitingPayment->value)
+                    ->whereColumn('sibling.id', '<', 'permits.id')))
             // Oldest first: the application that has waited longest is on top.
             ->orderBy('submitted_at')
             ->orderBy('id')
             ->paginate(self::PER_PAGE)
             ->withQueryString();
 
+        // Worked out before the rows become resources (that replaces them in the paginator).
+        $letterPayments = $this->letterPayments($permits->getCollection());
+
         return Inertia::render('staff/permits/index', [
             'permits' => PermitResource::collection($permits),
+            // The letters behind the rows that stand for a letter's one payment.
+            'letterPayments' => $letterPayments,
             'filters' => [
                 'status' => $all ? self::ALL_STATUSES : $status?->value,
                 'permit_type' => $permitType?->value,
@@ -220,6 +237,50 @@ class PermitReviewController extends Controller
                 array_keys(array_filter($desks)),
             ),
         ]);
+    }
+
+    /**
+     * For each row that stands for a request letter's one payment (keyed by
+     * the permit's id): how many vehicles the payment covers, its total and
+     * the letter's page where it is taken.
+     *
+     * @param  Collection<int, Permit>  $permits
+     * @return array<string, array{letter: string|null, vehicles: int, total: string, url: string}>
+     */
+    private function letterPayments(Collection $permits): array
+    {
+        $rows = $permits->filter(fn (Permit $permit): bool => $permit->request_letter_id !== null && $permit->status === PermitStatus::AwaitingPayment);
+
+        if ($rows->isEmpty()) {
+            return [];
+        }
+
+        $totals = Permit::query()
+            ->whereIn('request_letter_id', $rows->pluck('request_letter_id')->unique()->all())
+            ->where('status', PermitStatus::AwaitingPayment->value)
+            ->groupBy('request_letter_id')
+            ->selectRaw('request_letter_id, count(*) as vehicles, sum(fee_cents) as total')
+            ->get()
+            ->keyBy('request_letter_id');
+
+        $groups = [];
+
+        foreach ($rows as $permit) {
+            $total = $totals->get($permit->request_letter_id);
+
+            if ($total === null || (int) $total->getAttribute('vehicles') < 2) {
+                continue;
+            }
+
+            $groups[$permit->id] = [
+                'letter' => $permit->letter_number,
+                'vehicles' => (int) $total->getAttribute('vehicles'),
+                'total' => Money::format((int) $total->getAttribute('total'), $permit->currency),
+                'url' => route('letters.show', $permit->request_letter_id),
+            ];
+        }
+
+        return $groups;
     }
 
     /**

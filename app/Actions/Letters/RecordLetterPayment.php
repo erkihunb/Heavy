@@ -82,7 +82,7 @@ final class RecordLetterPayment
             }
 
             $payments = $this->letters->each($permits, function (Permit $permit) use ($letter, $cashier, $data, $path, $note): Payment {
-                Gate::forUser($cashier)->authorize('recordPayment', $permit);
+                Gate::forUser($cashier)->authorize('recordLetterPayment', $permit);
                 $payment = null;
 
                 $this->transitions->apply($permit, PermitStatus::PaymentConfirmed, $cashier, $note, function (Permit $permit) use ($letter, $cashier, $data, $path, $note, &$payment): void {

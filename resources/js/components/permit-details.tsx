@@ -2,8 +2,9 @@ import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
+import { LetterStatusBadge } from '@/components/letter-status-badge';
+import { formatBirr } from '@/components/permit-intake/smart';
 import { PlateChip } from '@/components/plate-chip';
-import { StatusBadge } from '@/components/status-badge';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { Permit } from '@/types';
@@ -19,76 +20,95 @@ export type LetterVehicle = {
     trailers: string[];
     url: string | null;
     current: boolean;
+    /** Santim; null until the permit is approved. */
+    fee_cents?: number | null;
 };
 
 /**
  * The vehicles of a request letter, each with where its own permit stands;
- * this application's row is marked, the others link to theirs.
+ * this application's row is marked.
  */
-function LetterVehiclesTable({ vehicles }: { vehicles: LetterVehicle[] }) {
+function LetterVehiclesTable({
+    vehicles,
+    letterUrl,
+}: {
+    vehicles: LetterVehicle[];
+    letterUrl?: string | null;
+}) {
     const { t } = useTranslation();
+    // The letter is paid for once: its vehicles waiting for that payment, added up.
+    const unpaid = vehicles.filter(
+        (vehicle) => vehicle.status === 'awaiting_payment',
+    );
+    const unpaidTotal = unpaid.reduce(
+        (sum, vehicle) => sum + (vehicle.fee_cents ?? 0),
+        0,
+    );
 
     return (
-        <div className="overflow-hidden rounded-card border border-border">
-            <Table>
-                <THead>
-                    <tr>
-                        <Th>{t('vehicles.fields.plate')}</Th>
-                        <Th>{t('vehicles.fields.vehicle_type')}</Th>
-                        <Th>{t('letters.table.status')}</Th>
-                        <Th>{t('letters.table.number')}</Th>
-                        <Th>
-                            <span className="sr-only">
-                                {t('letters.table.open')}
-                            </span>
-                        </Th>
-                    </tr>
-                </THead>
-                <TBody>
-                    {vehicles.map((vehicle) => (
-                        <Tr
-                            key={vehicle.id}
-                            aria-current={vehicle.current || undefined}
-                            className={cn(vehicle.current && 'bg-primary/5')}
+        <div className="space-y-2">
+            <div className="overflow-hidden rounded-card border border-border">
+                <Table>
+                    <THead>
+                        <tr>
+                            <Th>{t('vehicles.fields.plate')}</Th>
+                            <Th>{t('vehicles.fields.vehicle_type')}</Th>
+                            <Th>{t('letters.table.status')}</Th>
+                            <Th>{t('letters.table.number')}</Th>
+                        </tr>
+                    </THead>
+                    <TBody>
+                        {vehicles.map((vehicle) => (
+                            <Tr
+                                key={vehicle.id}
+                                aria-current={vehicle.current || undefined}
+                                className={cn(
+                                    vehicle.current && 'bg-primary/5',
+                                )}
+                            >
+                                <Td>
+                                    <PlateChip
+                                        plate={vehicle.plate}
+                                        className="px-2 py-0.5 text-sm"
+                                    />
+                                    {vehicle.trailers.length > 0 && (
+                                        <span className="mt-1 block text-xs text-muted-foreground">
+                                            + {vehicle.trailers.join(', ')}
+                                        </span>
+                                    )}
+                                </Td>
+                                <Td muted>{vehicle.type ?? '—'}</Td>
+                                <Td>
+                                    <LetterStatusBadge
+                                        status={vehicle.status}
+                                    />
+                                </Td>
+                                <Td className="font-mono text-xs">
+                                    {vehicle.number ?? '—'}
+                                </Td>
+                            </Tr>
+                        ))}
+                    </TBody>
+                </Table>
+            </div>
+            {unpaid.length > 0 && (
+                <p className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm">
+                    <span className="font-medium">
+                        {t('letters.payment_line', {
+                            count: unpaid.length,
+                            total: formatBirr(unpaidTotal),
+                        })}
+                    </span>
+                    {letterUrl && (
+                        <Link
+                            href={letterUrl}
+                            className="font-medium text-primary hover:underline"
                         >
-                            <Td>
-                                <PlateChip
-                                    plate={vehicle.plate}
-                                    className="px-2 py-0.5 text-sm"
-                                />
-                                {vehicle.trailers.length > 0 && (
-                                    <span className="mt-1 block text-xs text-muted-foreground">
-                                        + {vehicle.trailers.join(', ')}
-                                    </span>
-                                )}
-                            </Td>
-                            <Td muted>{vehicle.type ?? '—'}</Td>
-                            <Td>
-                                <StatusBadge status={vehicle.status} />
-                            </Td>
-                            <Td className="font-mono text-xs">
-                                {vehicle.number ?? '—'}
-                            </Td>
-                            <Td className="text-right whitespace-nowrap">
-                                {vehicle.current ? (
-                                    <span className="text-xs font-semibold text-primary">
-                                        {t('letters.table.current')}
-                                    </span>
-                                ) : (
-                                    vehicle.url && (
-                                        <Link
-                                            href={vehicle.url}
-                                            className="text-sm font-medium text-primary hover:underline"
-                                        >
-                                            {t('letters.table.open')}
-                                        </Link>
-                                    )
-                                )}
-                            </Td>
-                        </Tr>
-                    ))}
-                </TBody>
-            </Table>
+                            {t('letters.go_pay')}
+                        </Link>
+                    )}
+                </p>
+            )}
         </div>
     );
 }
@@ -165,7 +185,10 @@ export function PermitDetails({
                 }
             >
                 {inLetter ? (
-                    <LetterVehiclesTable vehicles={letterVehicles} />
+                    <LetterVehiclesTable
+                        vehicles={letterVehicles}
+                        letterUrl={permit.letter?.group_url}
+                    />
                 ) : (
                     <div className="overflow-hidden rounded-card border border-border">
                         <Table>

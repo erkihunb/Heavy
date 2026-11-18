@@ -1,9 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Download, FileText } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { LetterStatusBadge } from '@/components/letter-status-badge';
 import { PaymentForm } from '@/components/payment-form';
 import { PlateChip } from '@/components/plate-chip';
-import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -450,7 +450,7 @@ function LetterPage({
                                                 {row.type ?? '—'}
                                             </td>
                                             <td className={tableCellClassName}>
-                                                <StatusBadge
+                                                <LetterStatusBadge
                                                     status={row.status}
                                                 />
                                             </td>

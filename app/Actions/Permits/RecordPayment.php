@@ -42,6 +42,11 @@ class RecordPayment
     {
         Gate::forUser($cashier)->authorize(Permission::VerifyPayments->value);
 
+        // One vehicle of a letter is paid for with the others (RecordLetterPayment).
+        if ($permit->isPaidWithLetter()) {
+            throw new PermitRuleViolation('pay_with_letter');
+        }
+
         $disk = Storage::disk(config('permits.documents_disk'));
         $path = null;
 

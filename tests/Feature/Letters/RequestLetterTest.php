@@ -288,6 +288,30 @@ describe('paying and issuing', function () {
         $this->cashier = staffUser(Role::Cashier);
     });
 
+    it('takes no payment for one vehicle of the letter on its own', function () {
+        $permit = Permit::query()->findOrFail($this->ids[0]);
+
+        $this->actingAs($this->cashier)
+            ->post(route('staff.permits.record-payment', $permit), letterPayment(['amount' => '1000.00']))
+            ->assertForbidden();
+
+        expect(Payment::query()->count())->toBe(0)
+            ->and($permit->refresh()->status)->toBe(PermitStatus::AwaitingPayment);
+    });
+
+    it('lists the letter once among the payments to collect, with its total', function () {
+        $first = Permit::query()->whereIn('id', array_slice($this->ids, 0, 2))->orderBy('id')->firstOrFail();
+
+        $this->actingAs($this->cashier)
+            ->get(route('staff.permits.index', ['status' => 'awaiting_payment']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('permits.data', 1)
+                ->where('permits.data.0.id', $first->id)
+                ->where("letterPayments.{$first->id}.vehicles", 2)
+                ->where("letterPayments.{$first->id}.url", route('letters.show', $this->letter)));
+    });
+
     it('takes one receipt for the total of the approved vehicles', function () {
         $this->actingAs($this->cashier)
             ->post(route('letters.payment', $this->letter), letterPayment())

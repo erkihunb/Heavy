@@ -1,9 +1,11 @@
+import { Link } from '@inertiajs/react';
 import { PaymentForm } from '@/components/payment-form';
 import { PaymentList } from '@/components/payment-list';
 import {
     PermitDetailsCard,
     StaffPermitFrame,
 } from '@/components/staff-permit-frame';
+import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n';
 import { recordPayment } from '@/routes/staff/permits';
 import type { Permit, VehicleHistory } from '@/types';
@@ -62,7 +64,7 @@ export default function StaffPermitPayment({
                 </div>
 
                 <div className="h-fit space-y-4 lg:sticky lg:top-6">
-                    {permit.fee && (
+                    {permit.fee && !permit.letter?.group_url && (
                         <p className="flex items-baseline justify-between gap-3 rounded-card border border-border bg-muted px-4 py-3">
                             <span className="text-sm text-muted-foreground">
                                 {t('permits.staff.record_payment.fee')}
@@ -99,6 +101,18 @@ export default function StaffPermitPayment({
                                 forCashier
                             />
                         </section>
+                    ) : permit.letter?.group_url &&
+                      permit.effective_status === 'awaiting_payment' ? (
+                        <div className="space-y-3 rounded-card border border-border bg-card p-5">
+                            <p className="text-sm">
+                                {t('letters.errors.pay_with_letter')}
+                            </p>
+                            <Button asChild>
+                                <Link href={permit.letter.group_url}>
+                                    {t('letters.go_pay')}
+                                </Link>
+                            </Button>
+                        </div>
                     ) : (
                         <p className="rounded-card border border-border bg-card p-5 text-sm text-muted-foreground">
                             {t('permits.staff.desks.no_payment')}

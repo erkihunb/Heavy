@@ -26,6 +26,7 @@ return [
         'issued' => 'የተሰጡ',
     ],
     'table' => [
+        'approved' => 'ፀድቋል',
         'title' => 'በደብዳቤው ያሉ ተሽከርካሪዎች',
         'select_all' => 'ውሳኔ የሚጠብቁትን ሁሉ ምረጥ',
         'select' => ':plate ምረጥ',
@@ -83,6 +84,9 @@ return [
     ],
     'link' => 'የደብዳቤ :number አካል (:count ተሽከርካሪዎች)',
     'open' => 'ተሽከርካሪዎችን ይመልከቱ',
+    'payment_line' => 'የደብዳቤው ክፍያ፦ :count ተሽከርካሪዎች · :total',
+    'go_pay' => 'የደብዳቤውን ክፍያ ተቀበል',
+    'queue_row' => 'ደብዳቤ :letter · :count ተሽከርካሪዎች · :total',
     'messages' => [
         'registered' => 'ደብዳቤው ከ:count ተሽከርካሪዎች ጋር ተመዝግቧል፤ እያንዳንዱ የራሱ ጥያቄ አለው።',
         'recommended' => 'ለ:count ተሽከርካሪዎች የውሳኔ ሀሳብ ተመዝግቧል።',
@@ -92,6 +96,7 @@ return [
         'issued' => ':count ፈቃዶች ተሰጥተዋል። ሰርቲፊኬቶቹ እየተዘጋጁ ነው።',
     ],
     'errors' => [
+        'pay_with_letter' => 'ይህ ተሽከርካሪ ከደብዳቤው ሌሎች ተሽከርካሪዎች ጋር በአንድ ክፍያ ነው የሚከፈለው፤ ክፍያው በደብዳቤው ገጽ ይመዘገባል።',
         'none_chosen' => 'ከዚህ ደብዳቤ ቢያንስ አንድ ተሽከርካሪ ይምረጡ።',
         'vehicle_refused' => 'ተሽከርካሪ :plate፦ :reason ምንም አልተቀመጠም።',
     ],

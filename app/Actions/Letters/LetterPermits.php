@@ -88,7 +88,7 @@ final class LetterPermits
      * and trailers, where its permit stands, and a link to the permit's page
      * that the viewer may open.
      *
-     * @return array{id: string, status: string, number: string|null, plate: string, type: string|null, trailers: list<string>, fee: string|null, recommendation: string|null, undecided: bool, url: string|null}
+     * @return array{id: string, status: string, number: string|null, plate: string, type: string|null, trailers: list<string>, fee: string|null, fee_cents: int|null, recommendation: string|null, undecided: bool, url: string|null}
      */
     public static function row(Permit $permit): array
     {
@@ -105,6 +105,7 @@ final class LetterPermits
             'type' => $primary?->typeName($locale),
             'trailers' => $vehicles->slice(1)->map(fn (Vehicle $vehicle): string => $vehicle->plate_normalized)->values()->all(),
             'fee' => $permit->fee_cents === null ? null : Money::format($permit->fee_cents, $permit->currency),
+            'fee_cents' => $permit->fee_cents,
             'recommendation' => $permit->recommendation?->value,
             'undecided' => $permit->status->isAwaitingReview(),
             // The permit's own page: the review desk for those who review, else the Registrar's.

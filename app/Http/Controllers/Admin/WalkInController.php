@@ -99,9 +99,17 @@ class WalkInController extends Controller
      * The receipt for an approved request, on a page of its own: the request
      * is not opened for editing to pay for it.
      */
-    public function payment(Permit $permit): Response
+    public function payment(Permit $permit): Response|RedirectResponse
     {
         $applicant = $this->applicant($permit);
+
+        // One vehicle of a letter is paid for with the others, on the letter's page.
+        if ($permit->isPaidWithLetter()) {
+            Gate::authorize('viewFor', [$permit, $applicant]);
+
+            return to_route('letters.show', $permit->request_letter_id)->with('warning', __('letters.errors.pay_with_letter'));
+        }
+
         Gate::authorize('submitPaymentFor', [$permit, $applicant]);
 
         return Inertia::render('admin/permits/payment', [
