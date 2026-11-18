@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Staff;
 
+use App\Actions\Letters\LetterPermits;
 use App\Actions\Permits\ApprovePermit;
 use App\Actions\Permits\RecommendPermit;
 use App\Actions\Permits\ReissuePermit;
@@ -209,6 +210,8 @@ class PermitReviewController extends Controller
         return Inertia::render($page, [
             'permit' => $resource,
             'vehicleHistory' => $this->vehicleHistory($permit, $overlap),
+            // The other vehicles of the same request letter, when it asked for several.
+            'letterVehicles' => $this->letterVehicles($permit),
             'scans' => $this->scans($permit),
             'receiptMaxKilobytes' => (int) config('permits.receipt_max_kilobytes'),
             'direct' => $direct,
@@ -217,6 +220,35 @@ class PermitReviewController extends Controller
                 array_keys(array_filter($desks)),
             ),
         ]);
+    }
+
+    /**
+     * Every vehicle of the permit's request letter, this one included, when
+     * the letter asked for more than one; empty otherwise.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function letterVehicles(Permit $permit): array
+    {
+        if ($permit->request_letter_id === null) {
+            return [];
+        }
+
+        $permits = Permit::query()
+            ->where('request_letter_id', $permit->request_letter_id)
+            ->with('vehicles.vehicleType')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        if ($permits->count() < 2) {
+            return [];
+        }
+
+        return $permits->map(fn (Permit $each): array => [
+            ...LetterPermits::row($each),
+            'current' => $each->is($permit),
+        ])->values()->all();
     }
 
     /**

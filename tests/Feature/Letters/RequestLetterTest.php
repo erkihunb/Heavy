@@ -179,6 +179,28 @@ describe('deciding', function () {
                 ->where('can.recordPayment', false));
     });
 
+    it('lists every vehicle of the letter on each permit page', function () {
+        $permit = $this->permits[1];
+
+        foreach (['staff.permits.decision', 'staff.permits.show'] as $route) {
+            $this->actingAs($this->approver)
+                ->get(route($route, $permit))
+                ->assertOk()
+                ->assertInertia(fn (Assert $page) => $page
+                    ->has('letterVehicles', 3)
+                    ->where('letterVehicles.1.id', $permit->id)
+                    ->where('letterVehicles.1.current', true)
+                    ->where('letterVehicles.0.current', false));
+        }
+
+        // A permit asked for alone lists nothing.
+        $alone = Permit::factory()->submitted()->create();
+
+        $this->actingAs($this->approver)
+            ->get(route('staff.permits.decision', $alone))
+            ->assertInertia(fn (Assert $page) => $page->where('letterVehicles', []));
+    });
+
     it('lets the approver approve some vehicles and refuse the rest, telling the organization once each', function () {
         $ids = $this->permits->pluck('id')->all();
 

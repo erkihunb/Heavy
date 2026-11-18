@@ -38,6 +38,7 @@ return [
         'recommendation' => 'Recommendation',
         'open' => 'Open',
         'none' => '—',
+        'current' => 'This application',
     ],
     'choose' => [
         'selected' => ':count of :total chosen',

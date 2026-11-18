@@ -1002,6 +1002,7 @@ export type TranslationKey =
     | 'letters.summary.to_issue'
     | 'letters.summary.to_pay'
     | 'letters.summary.vehicles'
+    | 'letters.table.current'
     | 'letters.table.fee'
     | 'letters.table.none'
     | 'letters.table.number'

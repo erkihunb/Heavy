@@ -38,6 +38,7 @@ return [
         'recommendation' => 'የውሳኔ ሀሳብ',
         'open' => 'ክፈት',
         'none' => '—',
+        'current' => 'ይህ ማመልከቻ',
     ],
     'choose' => [
         'selected' => 'ከ:total :count ተመርጠዋል',

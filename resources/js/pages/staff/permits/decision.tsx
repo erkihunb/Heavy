@@ -1,5 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { DecisionActions } from '@/components/decision-actions';
+import { LetterVehiclesCard } from '@/components/letter-vehicles-card';
+import type { LetterVehicle } from '@/components/letter-vehicles-card';
 import { PermitDocumentLinks } from '@/components/permit-document-links';
 import { PermitLetter } from '@/components/permit-letter';
 import { ReviewForm, ReviewList } from '@/components/permit-reviews';
@@ -24,6 +26,8 @@ import type { Permit, VehicleHistory } from '@/types';
 type Props = {
     permit: Permit;
     vehicleHistory: VehicleHistory[];
+    /** Every vehicle of the request letter, when it asked for several. */
+    letterVehicles: LetterVehicle[];
     /** Opened on the application's own address, because it waits for this person. */
     direct: boolean;
 };
@@ -39,6 +43,7 @@ type Props = {
 export default function StaffPermitDecision({
     permit,
     vehicleHistory,
+    letterVehicles,
     direct,
 }: Props) {
     const { t } = useTranslation();
@@ -75,6 +80,10 @@ export default function StaffPermitDecision({
             <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
                 <div className="space-y-6">
                     <PermitDetailsCard permit={permit} />
+                    <LetterVehiclesCard
+                        vehicles={letterVehicles}
+                        letterUrl={permit.letter?.group_url}
+                    />
                     <VehicleHistoryCard vehicleHistory={vehicleHistory} />
                 </div>
 

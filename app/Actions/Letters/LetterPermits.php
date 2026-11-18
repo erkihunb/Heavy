@@ -8,8 +8,10 @@ use App\Exceptions\PermitException;
 use App\Models\Permit;
 use App\Models\RequestLetter;
 use App\Models\Vehicle;
+use App\Support\Money;
 use Closure;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -79,5 +81,36 @@ final class LetterPermits
             ?? $permit->vehicles->first();
 
         return $primary === null ? (string) $permit->permit_number : $primary->plate_normalized;
+    }
+
+    /**
+     * One vehicle of a letter as the office's pages list it: its plate, type
+     * and trailers, where its permit stands, and a link to the permit's page
+     * that the viewer may open.
+     *
+     * @return array{id: string, status: string, number: string|null, plate: string, type: string|null, trailers: list<string>, fee: string|null, recommendation: string|null, undecided: bool, url: string|null}
+     */
+    public static function row(Permit $permit): array
+    {
+        $locale = app()->getLocale();
+        $vehicles = $permit->vehicles->sortBy(fn (Vehicle $vehicle): int => $vehicle->roleOnPermit() === VehicleRole::Primary ? 0 : 1)->values();
+        /** @var Vehicle|null $primary */
+        $primary = $vehicles->first();
+
+        return [
+            'id' => $permit->id,
+            'status' => $permit->status->value,
+            'number' => $permit->permit_number,
+            'plate' => self::plate($permit),
+            'type' => $primary?->typeName($locale),
+            'trailers' => $vehicles->slice(1)->map(fn (Vehicle $vehicle): string => $vehicle->plate_normalized)->values()->all(),
+            'fee' => $permit->fee_cents === null ? null : Money::format($permit->fee_cents, $permit->currency),
+            'recommendation' => $permit->recommendation?->value,
+            'undecided' => $permit->status->isAwaitingReview(),
+            // The permit's own page: the review desk for those who review, else the Registrar's.
+            'url' => Gate::inspect('view', $permit)->allowed()
+                ? route('staff.permits.show', $permit)
+                : (Gate::inspect('viewLetter', $permit)->allowed() ? route('admin.permits.show', $permit) : null),
+        ];
     }
 }

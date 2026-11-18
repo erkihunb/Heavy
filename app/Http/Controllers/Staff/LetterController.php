@@ -13,13 +13,11 @@ use App\Domain\Documents\StoredDocument;
 use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Enums\Recommendation;
-use App\Enums\VehicleRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\RecordLetterPaymentRequest;
 use App\Models\Permit;
 use App\Models\RequestLetter;
 use App\Models\User;
-use App\Models\Vehicle;
 use App\Support\EthiopianCalendar;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
@@ -72,7 +70,7 @@ class LetterController extends Controller
                 'route' => $first->route,
                 'reason' => $first->reason,
             ],
-            'permits' => $permits->map(fn (Permit $permit): array => $this->row($permit))->values()->all(),
+            'permits' => $permits->map(fn (Permit $permit): array => LetterPermits::row($permit))->values()->all(),
             'summary' => [
                 'total' => $permits->count(),
                 'statuses' => $letter->statusCounts(),
@@ -224,33 +222,6 @@ class LetterController extends Controller
         return [
             'permits' => ['required', 'array', 'min:1'],
             'permits.*' => ['required', 'string', 'ulid'],
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function row(Permit $permit): array
-    {
-        $locale = app()->getLocale();
-        $vehicles = $permit->vehicles->sortBy(fn (Vehicle $vehicle): int => $vehicle->roleOnPermit() === VehicleRole::Primary ? 0 : 1)->values();
-        /** @var Vehicle|null $primary */
-        $primary = $vehicles->first();
-
-        return [
-            'id' => $permit->id,
-            'status' => $permit->status->value,
-            'number' => $permit->permit_number,
-            'plate' => LetterPermits::plate($permit),
-            'type' => $primary?->typeName($locale),
-            'trailers' => $vehicles->slice(1)->map(fn (Vehicle $vehicle): string => $vehicle->plate_normalized)->values()->all(),
-            'fee' => $permit->fee_cents === null ? null : Money::format($permit->fee_cents, $permit->currency),
-            'recommendation' => $permit->recommendation?->value,
-            'undecided' => $permit->status->isAwaitingReview(),
-            // The permit's own page: the review desk for those who review, else the Registrar's.
-            'url' => Gate::inspect('view', $permit)->allowed()
-                ? route('staff.permits.show', $permit)
-                : (Gate::inspect('viewLetter', $permit)->allowed() ? route('admin.permits.show', $permit) : null),
         ];
     }
 }

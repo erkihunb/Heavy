@@ -1,4 +1,6 @@
 import { DualDate } from '@/components/dual-date';
+import { LetterVehiclesCard } from '@/components/letter-vehicles-card';
+import type { LetterVehicle } from '@/components/letter-vehicles-card';
 import { PermitComments } from '@/components/permit-comments';
 import { PermitDocumentLinks } from '@/components/permit-document-links';
 import { PermitLetter } from '@/components/permit-letter';
@@ -22,6 +24,8 @@ import type {
 type Props = {
     permit: Permit;
     vehicleHistory: VehicleHistory[];
+    /** Every vehicle of the request letter, when it asked for several. */
+    letterVehicles: LetterVehicle[];
     /** Every QR scan and number-and-plate lookup of this permit. */
     scans: {
         total: number;
@@ -108,6 +112,7 @@ function ScansCard({ scans }: { scans: Props['scans'] }) {
 export default function StaffPermitsShow({
     permit,
     vehicleHistory,
+    letterVehicles,
     scans,
     desks,
 }: Props) {
@@ -123,6 +128,10 @@ export default function StaffPermitsShow({
             <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
                 <div className="space-y-6">
                     <PermitDetailsCard permit={permit} />
+                    <LetterVehiclesCard
+                        vehicles={letterVehicles}
+                        letterUrl={permit.letter?.group_url}
+                    />
                     <VehicleHistoryCard vehicleHistory={vehicleHistory} />
 
                     {(permit.comments !== undefined || can.comment) && (
