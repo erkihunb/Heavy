@@ -1,4 +1,5 @@
-import { FileText } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { FileText, Layers } from 'lucide-react';
 import { DualDate } from '@/components/dual-date';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n';
@@ -35,14 +36,24 @@ export function PermitLetter({
                 </dt>
                 <dd>{letter.date ? <DualDate date={letter.date} /> : '—'}</dd>
             </dl>
-            {letter.url && (
-                <Button asChild variant="outline" size="sm">
-                    <a href={letter.url} target="_blank" rel="noopener">
-                        <FileText aria-hidden="true" />
-                        {t('permits.letter.open')}
-                    </a>
-                </Button>
-            )}
+            <div className="flex flex-wrap gap-2">
+                {letter.url && (
+                    <Button asChild variant="outline" size="sm">
+                        <a href={letter.url} target="_blank" rel="noopener">
+                            <FileText aria-hidden="true" />
+                            {t('permits.letter.open')}
+                        </a>
+                    </Button>
+                )}
+                {letter.group_url && (
+                    <Button asChild variant="outline" size="sm">
+                        <Link href={letter.group_url}>
+                            <Layers aria-hidden="true" />
+                            {t('letters.open')}
+                        </Link>
+                    </Button>
+                )}
+            </div>
         </section>
     );
 }

@@ -5,6 +5,7 @@ namespace App\Domain\Permits;
 use App\Data\LetterData;
 use App\Exceptions\PermitRuleViolation;
 use App\Models\Permit;
+use App\Models\RequestLetter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -59,9 +60,19 @@ final class RequestLetters
         $permit->save();
     }
 
+    /**
+     * Delete a scan nobody refers to any more: the permits of one letter share theirs.
+     */
     public function discard(?string $path): void
     {
-        if ($path !== null) {
+        if ($path === null) {
+            return;
+        }
+
+        $inUse = Permit::query()->where('letter_file_path', $path)->exists()
+            || RequestLetter::query()->where('letter_file_path', $path)->exists();
+
+        if (! $inUse) {
             Storage::disk(config('permits.documents_disk'))->delete($path);
         }
     }

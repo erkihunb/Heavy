@@ -93,6 +93,15 @@ Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
         Route::get('permit-register/organizations', 'organizations')
             ->middleware('throttle:60,1')
             ->name('permits.organizations');
+        // What each vehicle type of a letter costs for its days, for the form's total.
+        Route::get('permit-register/fee-estimate', 'feeEstimate')
+            ->middleware('throttle:120,1')
+            ->name('permits.fee-estimate');
+        // An organization's vehicles on record, to fill in a known vehicle's type.
+        Route::get('permit-register/organizations/{applicant}/vehicles', 'vehicles')
+            ->whereNumber('applicant')
+            ->middleware('throttle:60,1')
+            ->name('permits.organization-vehicles');
         Route::post('permit-register', 'store')
             ->middleware('throttle:30,1')
             ->name('permits.store');

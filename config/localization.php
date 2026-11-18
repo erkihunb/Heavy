@@ -40,6 +40,7 @@ return [
         'organization',
         'vehicles',
         'permits',
+        'letters',
         'verification',
         'reports',
         'payments',

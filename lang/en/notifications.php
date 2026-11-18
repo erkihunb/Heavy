@@ -46,4 +46,19 @@ return [
         'body' => 'The cashier could not accept the receipt you submitted for permit :number. Bring a correct receipt for :fee to the office.',
         'sms' => 'AACRA: the receipt for permit :number was not accepted. Please contact the office.',
     ],
+    'letter_approved' => [
+        'subject' => 'Letter :letter: :count vehicles approved — please pay the fee',
+        'body' => 'Your letter :letter has been decided: permits for :count vehicles were approved. Pay :total in total at the bank or the Authority\'s cashier, then bring the receipt to the office where you applied.',
+        'sms' => 'AACRA: letter :letter, :count vehicles approved. Pay the fee and bring the receipt to the office.',
+    ],
+    'letter_rejected' => [
+        'subject' => 'Letter :letter: :count vehicles not approved',
+        'body' => 'Permits for :count vehicles of your letter :letter were not approved.',
+        'sms' => 'AACRA: letter :letter, :count vehicles not approved. Ask the office for the reason.',
+    ],
+    'letter_issued' => [
+        'subject' => 'Letter :letter: :count permits issued',
+        'body' => 'The permits for :count vehicles of your letter :letter have been issued. Collect them at the office where you applied.',
+        'sms' => 'AACRA: letter :letter, :count permits issued. Collect them at the office.',
+    ],
 ];

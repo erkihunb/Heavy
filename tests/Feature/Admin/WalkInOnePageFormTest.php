@@ -92,6 +92,17 @@ it('registers the person, the organization, the vehicles and submits the permit 
     Notification::assertNothingSentTo($user);
 });
 
+it('records the organization asking as the owner of its vehicles', function () {
+    $form = onePageForm();
+    unset($form['vehicles'][0]['owner_name'], $form['vehicles'][1]['owner_name']);
+
+    $this->actingAs($this->registrar)
+        ->post(route('admin.permits.store'), $form)
+        ->assertSessionHasNoErrors();
+
+    expect(Vehicle::query()->pluck('owner_name')->unique()->all())->toBe(['አበበ የጭነት ማጓጓዣ']);
+});
+
 it('can keep the application as a draft', function () {
     $this->actingAs($this->registrar)
         ->post(route('admin.permits.store'), onePageForm(['submit' => false]))
@@ -156,7 +167,6 @@ it('saves nothing when a part is wrong', function (array $overrides, string $fie
         ['plate' => 'ኢት-03-40134', 'vehicle_type_id' => 1, 'owner_name' => 'A'],
         ['plate' => 'ኢት-03-40134', 'vehicle_type_id' => 1, 'owner_name' => 'A'],
     ]], 'vehicles.1.plate'],
-    'no owner' => [['vehicles' => [['plate' => 'ኢት-03-40134', 'vehicle_type_id' => 1, 'owner_name' => '']]], 'vehicles.0.owner_name'],
     'no permit type' => [['permit_type' => ''], 'permit_type'],
     'starts in the past' => [['valid_from' => '2020-01-01'], 'valid_from'],
     'no reason' => [['reason' => ''], 'reason'],

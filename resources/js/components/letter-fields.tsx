@@ -20,12 +20,15 @@ export function LetterFields({
     errors,
     onChange,
     hasStoredScan = false,
+    plain = false,
 }: {
     value: LetterValue;
     errors: Partial<Record<string, string>>;
     onChange: (next: Partial<LetterValue>) => void;
     /** An edit: the scan already attached is kept unless a new one is chosen. */
     hasStoredScan?: boolean;
+    /** Without the explanations: the fields only (the office form). */
+    plain?: boolean;
 }) {
     const { t } = useTranslation();
 
@@ -34,10 +37,12 @@ export function LetterFields({
             <legend className="px-1 text-sm font-semibold">
                 {t('permits.letter.title')}
             </legend>
-            <p className="text-sm text-muted-foreground">
-                {t('permits.letter.intro')}
-            </p>
-            <div className="grid gap-4 @md:grid-cols-2">
+            {!plain && (
+                <p className="text-sm text-muted-foreground">
+                    {t('permits.letter.intro')}
+                </p>
+            )}
+            <div className="grid items-start gap-4 @md:grid-cols-2 @xl:grid-cols-3">
                 <FormField
                     id="letter_number"
                     required
@@ -67,29 +72,31 @@ export function LetterFields({
                     yearsAfter={0}
                     onChange={(iso) => onChange({ letter_date: iso })}
                 />
+                <FormField
+                    id="letter_file"
+                    required={!hasStoredScan}
+                    label={t('permits.letter.file')}
+                    hint={
+                        hasStoredScan
+                            ? t('permits.letter.file_keep')
+                            : plain
+                              ? undefined
+                              : t('permits.letter.file_hint')
+                    }
+                    error={errors.letter_file}
+                >
+                    {(control) => (
+                        <FilePicker
+                            id={control.id}
+                            describedBy={control['aria-describedby']}
+                            invalid={control['aria-invalid']}
+                            accept="application/pdf,image/jpeg,image/png"
+                            file={value.letter_file}
+                            onChange={(file) => onChange({ letter_file: file })}
+                        />
+                    )}
+                </FormField>
             </div>
-            <FormField
-                id="letter_file"
-                required={!hasStoredScan}
-                label={t('permits.letter.file')}
-                hint={
-                    hasStoredScan
-                        ? t('permits.letter.file_keep')
-                        : t('permits.letter.file_hint')
-                }
-                error={errors.letter_file}
-            >
-                {(control) => (
-                    <FilePicker
-                        id={control.id}
-                        describedBy={control['aria-describedby']}
-                        invalid={control['aria-invalid']}
-                        accept="application/pdf,image/jpeg,image/png"
-                        file={value.letter_file}
-                        onChange={(file) => onChange({ letter_file: file })}
-                    />
-                )}
-            </FormField>
         </fieldset>
     );
 }

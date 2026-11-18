@@ -29,7 +29,7 @@ class RejectPermit
      * @throws InvalidPermitTransition
      * @throws PermitRuleViolation
      */
-    public function handle(Permit $permit, User $approver, string $note): Permit
+    public function handle(Permit $permit, User $approver, string $note, bool $notify = true): Permit
     {
         Gate::forUser($approver)->authorize(Permission::ApprovePermits->value);
 
@@ -45,7 +45,9 @@ class RejectPermit
             fn (Permit $permit) => $this->rules->ensureMayDecide($permit, $approver),
         );
 
-        $this->notifier->send($rejected, new PermitRejected($rejected, $note));
+        if ($notify) {
+            $this->notifier->send($rejected, new PermitRejected($rejected, $note));
+        }
 
         return $rejected;
     }

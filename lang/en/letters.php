@@ -1,0 +1,107 @@
+<?php
+
+/*
+ * A request letter asking for permits for several vehicles: each vehicle has
+ * a permit of its own; the letter is followed and decided together.
+ */
+return [
+    'title' => 'Letter :number',
+    'intro' => 'One letter, a permit for each vehicle. Review, decide, take the payment and issue them together; each vehicle keeps its own permit number, certificate and QR code.',
+    'breadcrumb' => 'Request letter',
+    'details' => [
+        'organization' => 'Organization',
+        'date' => 'Letter date',
+        'registered' => 'Registered',
+        'period' => 'Period',
+        'type' => 'Permit type',
+        'route' => 'Route',
+        'reason' => 'Reason',
+        'scan' => 'Open the scanned letter',
+        'any_route' => 'Not limited',
+    ],
+    'summary' => [
+        'vehicles' => 'Vehicles asked for',
+        'to_pay' => 'Waiting for payment',
+        'to_issue' => 'Paid, to issue',
+        'issued' => 'Issued',
+    ],
+    'table' => [
+        'title' => 'Vehicles in the letter',
+        'select_all' => 'Choose all vehicles waiting for a decision',
+        'select' => 'Choose :plate',
+        'plate' => 'Plate',
+        'type' => 'Vehicle type',
+        'trailers' => 'Trailers',
+        'status' => 'Status',
+        'number' => 'Permit number',
+        'fee' => 'Fee',
+        'recommendation' => 'Recommendation',
+        'open' => 'Open',
+        'none' => '—',
+    ],
+    'choose' => [
+        'selected' => ':count of :total chosen',
+        'all' => 'Choose all waiting',
+        'clear' => 'Clear',
+        'invert' => 'Swap: choose the others',
+        'hint' => 'Choose the vehicles, then decide for them. Do the rest the same way, for example approve 40 and then refuse the other 60.',
+    ],
+    'recommend' => [
+        'title' => 'Recommend',
+        'hint' => 'Your recommendation for the chosen vehicles. Vehicles not yet under review are taken into review.',
+        'recommendation' => 'Recommendation',
+        'note' => 'Assessment',
+        'submit' => 'Recommend for :count vehicles',
+    ],
+    'decide' => [
+        'title' => 'Decide',
+        'hint' => 'Approve the chosen vehicles, or refuse them. Each approved vehicle gets its own permit number and fee; the organization is told once.',
+        'note' => 'Note to the organization',
+        'note_reject' => 'Reason for refusing (required)',
+        'approve' => 'Approve :count vehicles',
+        'reject' => 'Refuse :count vehicles',
+        'confirm_approve' => 'Approve permits for :count vehicles?',
+        'confirm_reject' => 'Refuse permits for :count vehicles?',
+        'confirm_body' => 'Each vehicle is decided on its own permit. This cannot be undone here.',
+    ],
+    'payment' => [
+        'title' => 'Payment for the letter',
+        'hint' => 'One receipt for all :count approved vehicles waiting for payment: :total in total.',
+        'submit' => 'Record the payment',
+    ],
+    'issue' => [
+        'title' => 'Issue',
+        'hint' => ':count paid vehicles are ready. Each gets its own certificate and QR code.',
+        'submit' => 'Issue :count permits',
+    ],
+    'documents' => [
+        'title' => 'Certificates',
+        'hint' => 'Every issued certificate of the letter in one ZIP file; each keeps its own QR code.',
+        'am' => 'Download all (Amharic)',
+        'en' => 'Download all (English)',
+    ],
+    'link' => 'Part of letter :number (:count vehicles)',
+    'open' => 'Open the letter',
+    'messages' => [
+        'registered' => 'The letter was registered with :count vehicles, each with its own request.',
+        'recommended' => 'Recommendation recorded for :count vehicles.',
+        'approved' => ':count vehicles approved.',
+        'rejected' => ':count vehicles refused.',
+        'paid' => 'Payment recorded for :count vehicles.',
+        'issued' => ':count permits issued. Their certificates are being prepared.',
+    ],
+    'errors' => [
+        'none_chosen' => 'Choose at least one vehicle of this letter.',
+        'vehicle_refused' => 'Vehicle :plate: :reason Nothing was saved.',
+    ],
+    'intake' => [
+        'title' => 'Other vehicles in the same letter',
+        'hint' => 'Each vehicle gets its own permit, certificate and QR code, on the same terms as above. The first vehicle\'s rate sets the days; each vehicle pays the fee for its own type.',
+        'add' => 'Add a vehicle',
+        'remove' => 'Remove vehicle :number',
+        'vehicle' => 'Vehicle :number',
+        'count' => ':count vehicles in this letter',
+        'limit' => 'At most :max vehicles per letter.',
+        'same_owner' => 'Same owner as the first vehicle',
+    ],
+];

@@ -109,6 +109,26 @@ native implementation (integer arithmetic over the Julian Day Number).
   policy), `required` or `exempt` (`PUT users/{user}/two-factor-requirement`, audited).
 - There is no default password for new staff: they always get a link to choose one.
 
+### One request letter, many vehicles
+
+- An organization may ask for many vehicles' permits in one letter. The office form takes
+  the first vehicle as before plus "other vehicles in the same letter" (`more[]`, at most
+  `permits.max_letter_vehicles`, default 200). Each vehicle (with its trailers) becomes a
+  permit of its own — own number, fee, certificate and QR code — on the same terms; the
+  first vehicle's rate sets the days, each vehicle pays the fee for its own type.
+- `request_letters` groups them (`permits.request_letter_id`); the scan is stored once and
+  shared, and only deleted when nothing refers to it.
+- The letter page (`letters/{letter}`) acts on chosen vehicles together through the
+  single-permit Actions (`app/Actions/Letters`), in one transaction: any vehicle refused
+  stops the lot. The Approver can approve some vehicles and refuse the rest (e.g. 40 of 100).
+  The organization gets one message per decision, not one per vehicle.
+- One bank receipt pays for all approved vehicles of a letter: a payment per permit, same
+  receipt, `payments.request_letter_id`. The unique receipt index allows that only within
+  a letter (`receipt_scope`); `RecordLetterPayment` refuses a receipt used elsewhere.
+- Certificates are downloaded together as a ZIP of the issued PDFs (each keeps its QR).
+  One merged PDF is not made: a certificate can only be rendered at issue time, when its
+  verification token exists.
+
 ### Password policy and sign-in (System settings › Security)
 
 - `App\Security\PasswordPolicy` adds to `Password::defaults()`: a maximum length, no

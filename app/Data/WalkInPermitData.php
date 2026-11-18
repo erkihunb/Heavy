@@ -28,6 +28,17 @@ final readonly class WalkInPermitData
     ) {}
 
     /**
+     * The same request for another vehicle of the same letter: the letter's
+     * scan is stored once, with the first permit, and shared by the others.
+     */
+    public function forAnotherVehicle(): self
+    {
+        $letter = $this->letter === null ? null : new LetterData($this->letter->number, $this->letter->date);
+
+        return new self($this->permitType, $this->validFrom, $this->validTo, $this->reason, $this->submit, $this->hours, $letter, $this->route);
+    }
+
+    /**
      * @param  list<string>  $trailerVehicleIds
      */
     public function withVehicles(string $primaryVehicleId, array $trailerVehicleIds): PermitData

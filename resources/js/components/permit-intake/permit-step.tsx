@@ -21,12 +21,10 @@ import { PERMIT_TYPES } from '@/types/enums';
 export function PermitStep({
     form,
     state,
-    maxDurationDays,
     rates,
 }: {
     form: IntakeForm;
     state: StepState;
-    maxDurationDays: number;
     rates: FeeRates;
 }) {
     const { t } = useTranslation();
@@ -38,9 +36,6 @@ export function PermitStep({
             id="permit"
             number={3}
             title={t('applicants.intake.sections.permit.title')}
-            description={t('applicants.intake.sections.permit.intro', {
-                max: String(maxDurationDays),
-            })}
             state={state}
         >
             <div className="space-y-5">
@@ -51,6 +46,7 @@ export function PermitStep({
                         letter_file: data.letter_file,
                     }}
                     errors={errors}
+                    plain
                     onChange={(next) =>
                         form.setData((current) => ({
                             ...current,
@@ -102,43 +98,6 @@ export function PermitStep({
                     />
                 </fieldset>
 
-                <FormField
-                    id="reason"
-                    label={t('applicants.intake.fields.reason')}
-                    error={errors.reason}
-                >
-                    {(control) => (
-                        <Textarea
-                            {...control}
-                            rows={3}
-                            maxLength={2000}
-                            value={data.reason}
-                            onChange={(event) =>
-                                form.setData('reason', event.target.value)
-                            }
-                        />
-                    )}
-                </FormField>
-
-                <FormField
-                    id="route"
-                    label={t('permits.fields.route')}
-                    hint={t('permits.fields.route_hint')}
-                    error={errors.route}
-                >
-                    {(control) => (
-                        <Input
-                            {...control}
-                            maxLength={255}
-                            placeholder={t('permits.fields.route_placeholder')}
-                            value={data.route}
-                            onChange={(event) =>
-                                form.setData('route', event.target.value)
-                            }
-                        />
-                    )}
-                </FormField>
-
                 <FeeRateField
                     rates={rates}
                     value={data.fee_schedule_id}
@@ -182,6 +141,42 @@ export function PermitStep({
                         }
                     />
                 </div>
+
+                <FormField
+                    id="route"
+                    label={t('permits.fields.route')}
+                    error={errors.route}
+                >
+                    {(control) => (
+                        <Input
+                            {...control}
+                            maxLength={255}
+                            placeholder={t('permits.fields.route_placeholder')}
+                            value={data.route}
+                            onChange={(event) =>
+                                form.setData('route', event.target.value)
+                            }
+                        />
+                    )}
+                </FormField>
+
+                <FormField
+                    id="reason"
+                    label={t('applicants.intake.fields.reason')}
+                    error={errors.reason}
+                >
+                    {(control) => (
+                        <Textarea
+                            {...control}
+                            rows={3}
+                            maxLength={2000}
+                            value={data.reason}
+                            onChange={(event) =>
+                                form.setData('reason', event.target.value)
+                            }
+                        />
+                    )}
+                </FormField>
             </div>
         </Step>
     );

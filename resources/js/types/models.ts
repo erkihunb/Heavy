@@ -194,6 +194,8 @@ export type Permit = {
         number: string;
         date: DualDate | null;
         url: string | null;
+        /** The letter's own page, with its other vehicles. */
+        group_url?: string | null;
     } | null;
     /** Staff viewers only. */
     applicant?: string;

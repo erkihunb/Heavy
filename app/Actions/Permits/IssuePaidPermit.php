@@ -28,7 +28,7 @@ class IssuePaidPermit
      *
      * @throws InvalidPermitTransition when the payment has not been confirmed
      */
-    public function handle(Permit $permit, User $issuer, ?string $note = null): Permit
+    public function handle(Permit $permit, User $issuer, ?string $note = null, bool $notify = true): Permit
     {
         Gate::forUser($issuer)->authorize(Permission::IssuePermits->value);
 
@@ -38,7 +38,9 @@ class IssuePaidPermit
             $this->issuePermit->handle($permit);
         });
 
-        $this->notifier->send($issued, new PermitIssued($issued));
+        if ($notify) {
+            $this->notifier->send($issued, new PermitIssued($issued));
+        }
 
         return $issued;
     }

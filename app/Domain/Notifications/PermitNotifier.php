@@ -3,10 +3,12 @@
 namespace App\Domain\Notifications;
 
 use App\Enums\Permission;
+use App\Models\Organization;
 use App\Models\Permit;
 use App\Models\User;
 use App\Notifications\PermitNotification;
-use Illuminate\Support\Facades\Notification;
+use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Notification as Notifications;
 
 /**
  * Who hears about a permit (spec §11): every verified member of the permit's
@@ -17,20 +19,28 @@ final class PermitNotifier
 {
     public function send(Permit $permit, PermitNotification $notification): void
     {
+        $this->sendToOrganization($permit->organization_id, $notification);
+    }
+
+    /**
+     * The same, for a message about the organization's request letter.
+     */
+    public function sendToOrganization(int $organizationId, Notification $notification): void
+    {
         $members = User::query()
-            ->where('organization_id', $permit->organization_id)
+            ->where('organization_id', $organizationId)
             ->whereNotNull('email_verified_at')
             ->permission(Permission::ApplyForPermits->value)
             ->get();
 
         if (config('permits.notifications.mail') && $members->isNotEmpty()) {
-            Notification::send($members, $notification);
+            Notifications::send($members, $notification);
         }
 
-        $phone = $permit->organization()->value('phone');
+        $phone = Organization::query()->whereKey($organizationId)->value('phone');
 
         if (config('permits.notifications.sms') && is_string($phone) && trim($phone) !== '') {
-            Notification::route('sms', $phone)->notify($notification);
+            Notifications::route('sms', $phone)->notify($notification);
         }
     }
 }

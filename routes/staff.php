@@ -4,6 +4,7 @@ use App\Http\Controllers\Officer\VerificationController as OfficerVerificationCo
 use App\Http\Controllers\Staff\ExportController;
 use App\Http\Controllers\Staff\InstitutionPermitController;
 use App\Http\Controllers\Staff\InstitutionVehicleController;
+use App\Http\Controllers\Staff\LetterController;
 use App\Http\Controllers\Staff\PaymentController;
 use App\Http\Controllers\Staff\PermitDeskController;
 use App\Http\Controllers\Staff\PermitReviewController;
@@ -55,6 +56,26 @@ Route::middleware(['auth', 'verified', 'can:viewQueue,'.Permit::class])
 Route::middleware(['auth', 'verified'])
     ->get('queue/{permit}/letter', [PermitDeskController::class, 'letter'])
     ->name('staff.permits.letter');
+
+// A request letter for several vehicles, each with a permit of its own, followed and decided
+// together: whoever may see its permits, and the Registrar of its branch (LetterController).
+Route::middleware(['auth', 'verified'])
+    ->prefix('letters/{letter}')
+    ->name('letters.')
+    ->controller(LetterController::class)
+    ->whereUlid('letter')
+    ->group(function () {
+        Route::get('/', 'show')->name('show');
+        Route::post('recommend', 'recommend')->middleware('throttle:30,1')->name('recommend');
+        Route::post('approve', 'approve')->middleware('throttle:30,1')->name('approve');
+        Route::post('reject', 'reject')->middleware('throttle:30,1')->name('reject');
+        Route::post('payment', 'payment')->middleware('throttle:30,1')->name('payment');
+        Route::post('issue', 'issue')->middleware('throttle:30,1')->name('issue');
+        Route::get('documents/{language}', 'documents')
+            ->whereIn('language', ['am', 'en'])
+            ->middleware('throttle:20,1')
+            ->name('documents');
+    });
 
 /*
  * The traffic officer's tools (spec §7). Scanning a QR code opens the public

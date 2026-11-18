@@ -5,6 +5,8 @@ namespace App\Http\Requests\Admin;
 use App\Data\OrganizationData;
 use App\Data\VehicleData;
 use App\Data\WalkInPermitData;
+use App\Domain\Permits\FeeCalculator;
+use App\Domain\Permits\ValidityRules;
 use App\Domain\Vehicles\PlateNumber;
 use App\Enums\PermitType;
 use App\Exceptions\DuplicateVehiclePlate;
@@ -48,12 +50,26 @@ class RegisterApplicantRequest extends OrganizationRequest
         }
 
         // Trailer rows left empty in the form are not trailers.
+        $withoutEmptyTrailers = fn (array $vehicles): array => array_values(array_filter(
+            $vehicles,
+            fn (mixed $vehicle, int|string $index): bool => (int) $index === 0
+                || (is_array($vehicle) && collect($vehicle)->filter(fn (mixed $value): bool => filled($value))->isNotEmpty()),
+            ARRAY_FILTER_USE_BOTH,
+        ));
+
         if (is_array($this->input('vehicles'))) {
-            $this->merge(['vehicles' => array_values(array_filter(
-                $this->input('vehicles'),
-                fn (mixed $vehicle, int|string $index): bool => (int) $index === 0
-                    || (is_array($vehicle) && collect($vehicle)->filter(fn (mixed $value): bool => filled($value))->isNotEmpty()),
-                ARRAY_FILTER_USE_BOTH,
+            $this->merge(['vehicles' => $withoutEmptyTrailers($this->input('vehicles'))]);
+        }
+
+        // The other vehicles of the same letter; a row left empty is not a vehicle.
+        if (is_array($this->input('more'))) {
+            $this->merge(['more' => array_values(array_map(
+                fn (array $unit): array => ['vehicles' => $withoutEmptyTrailers((array) $unit['vehicles'])],
+                array_filter(
+                    $this->input('more'),
+                    fn (mixed $unit): bool => is_array($unit) && is_array($unit['vehicles'] ?? null)
+                        && collect($unit['vehicles'])->flatten()->filter(fn (mixed $value): bool => filled($value))->isNotEmpty(),
+                ),
             ))]);
         }
 
@@ -101,7 +117,15 @@ class RegisterApplicantRequest extends OrganizationRequest
             'vehicles' => [...$apply, 'required', 'array', 'min:1', 'max:'.(1 + (int) config('permits.max_trailers'))],
             'vehicles.*.plate' => [...$apply, 'bail', 'required', 'string', 'max:50', $this->freePlate(...)],
             'vehicles.*.vehicle_type_id' => [...$apply, 'required', 'integer', Rule::exists(VehicleType::class, 'id')->where('is_active', true)],
-            'vehicles.*.owner_name' => [...$apply, 'required', 'string', 'max:255'],
+            // The organization asking owns its vehicles: an owner is named only when it is someone else.
+            'vehicles.*.owner_name' => [...$apply, 'nullable', 'string', 'max:255'],
+            // The other vehicles the same letter asks for: each gets a permit of its own, on the same terms.
+            'more' => [...$apply, 'nullable', 'array', 'max:'.max(0, (int) config('permits.max_letter_vehicles') - 1)],
+            'more.*.vehicles' => [...$apply, 'required', 'array', 'min:1', 'max:'.(1 + (int) config('permits.max_trailers'))],
+            'more.*.vehicles.*.plate' => [...$apply, 'bail', 'required', 'string', 'max:50', $this->freePlate(...)],
+            'more.*.vehicles.*.vehicle_type_id' => [...$apply, 'required', 'integer', Rule::exists(VehicleType::class, 'id')->where('is_active', true)],
+            'more.*.vehicles.*.owner_name' => [...$apply, 'nullable', 'string', 'max:255'],
+            'more.*.vehicles.*.type_detail' => [...$apply, 'nullable', 'string', 'max:100'],
             'permit_type' => [...$apply, 'required', Rule::enum(PermitType::class)],
             // A fee rate and the start date; the end date follows from the rate.
             ...$this->feeRateRules($apply),
@@ -153,6 +177,28 @@ class RegisterApplicantRequest extends OrganizationRequest
                     ['vehicles', 'vehicles.0.vehicle_type_id'],
                 );
             },
+            // Every other vehicle of the letter runs for the same days, at the fee for its own type.
+            function (Validator $validator): void {
+                // Only once the first vehicle's rate, and so the number of days, is known.
+                if (! $this->boolean('apply') || $this->feeRate === null || $validator->errors()->hasAny(['permit_type', 'fee_schedule_id', 'valid_from'])) {
+                    return;
+                }
+
+                $days = $this->validFrom()->diffInDays($this->validTo()) + 1;
+                $type = PermitType::from($this->string('permit_type')->toString());
+
+                foreach ((array) $this->input('more') as $row => $unit) {
+                    $field = "more.{$row}.vehicles.0.vehicle_type_id";
+
+                    if ($validator->errors()->has($field)) {
+                        continue;
+                    }
+
+                    if (app(FeeCalculator::class)->amountFor($type, $this->integer($field), (int) $days, ValidityRules::today()) === null) {
+                        $validator->errors()->add($field, __('permits.errors.fee_not_set_for_letter_vehicle', ['days' => (int) $days]));
+                    }
+                }
+            },
             // An "other" vehicle is described in words.
             function (Validator $validator): void {
                 if (! $this->boolean('apply')) {
@@ -161,9 +207,9 @@ class RegisterApplicantRequest extends OrganizationRequest
 
                 $other = VehicleType::query()->where('code', VehicleType::OTHER)->value('id');
 
-                foreach ((array) $this->input('vehicles') as $row => $vehicle) {
-                    if ($other !== null && is_array($vehicle) && (int) ($vehicle['vehicle_type_id'] ?? 0) === $other && blank($vehicle['type_detail'] ?? null)) {
-                        $validator->errors()->add("vehicles.{$row}.type_detail", __('applicants.intake.type_detail_required'));
+                foreach ($this->allVehicleRows() as $prefix => $vehicle) {
+                    if ($other !== null && (int) ($vehicle['vehicle_type_id'] ?? 0) === $other && blank($vehicle['type_detail'] ?? null)) {
+                        $validator->errors()->add("{$prefix}.type_detail", __('applicants.intake.type_detail_required'));
                     }
                 }
             },
@@ -185,6 +231,11 @@ class RegisterApplicantRequest extends OrganizationRequest
             'vehicles.*.vehicle_type_id' => __('vehicles.fields.vehicle_type'),
             'vehicles.*.owner_name' => __('vehicles.fields.owner_name'),
             'vehicles.*.type_detail' => __('applicants.intake.type_detail'),
+            'more' => __('permits.fields.more_vehicles'),
+            'more.*.vehicles.*.plate' => __('vehicles.fields.plate'),
+            'more.*.vehicles.*.vehicle_type_id' => __('vehicles.fields.vehicle_type'),
+            'more.*.vehicles.*.owner_name' => __('vehicles.fields.owner_name'),
+            'more.*.vehicles.*.type_detail' => __('applicants.intake.type_detail'),
             'permit_type' => __('permits.fields.permit_type'),
             ...$this->feeRateAttributes(),
             'reason' => __('permits.fields.reason'),
@@ -218,15 +269,76 @@ class RegisterApplicantRequest extends OrganizationRequest
             return [];
         }
 
-        /** @var list<array{plate: string, vehicle_type_id: int|string, owner_name: string, type_detail?: string|null}> $vehicles */
+        /** @var list<array{plate: string, vehicle_type_id: int|string, owner_name?: string|null, type_detail?: string|null}> $vehicles */
         $vehicles = $this->validated('vehicles');
 
-        return array_map(fn (array $vehicle): VehicleData => new VehicleData(
+        return array_map($this->vehicleData(...), $vehicles);
+    }
+
+    /**
+     * The other vehicles the same letter asks for, each the primary vehicle first, then its trailers.
+     *
+     * @return list<list<VehicleData>>
+     */
+    public function moreVehicles(): array
+    {
+        if (! $this->boolean('apply')) {
+            return [];
+        }
+
+        /** @var list<array{vehicles: list<array{plate: string, vehicle_type_id: int|string, owner_name?: string|null, type_detail?: string|null}>}> $units */
+        $units = $this->validated('more') ?? [];
+
+        return array_map(fn (array $unit): array => array_map($this->vehicleData(...), $unit['vehicles']), $units);
+    }
+
+    /**
+     * @param  array{plate: string, vehicle_type_id: int|string, owner_name?: string|null, type_detail?: string|null}  $vehicle
+     */
+    private function vehicleData(array $vehicle): VehicleData
+    {
+        return new VehicleData(
             plate: PlateNumber::parse($vehicle['plate']),
             vehicleTypeId: (int) $vehicle['vehicle_type_id'],
-            ownerName: $vehicle['owner_name'],
+            ownerName: filled($vehicle['owner_name'] ?? null) ? trim((string) $vehicle['owner_name']) : $this->organizationName(),
             typeDetail: $vehicle['type_detail'] ?? null,
-        ), $vehicles);
+        );
+    }
+
+    /**
+     * The organization asking, which owns the vehicles: as on record, or as typed for a new one.
+     */
+    private function organizationName(): string
+    {
+        $existing = $this->existingApplicant()?->organization;
+
+        return $existing !== null ? $existing->localizedName('am') : trim($this->string('name_am')->toString());
+    }
+
+    /**
+     * Every vehicle row of the form, the letter's other vehicles included, by its field prefix.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function allVehicleRows(): array
+    {
+        $rows = [];
+
+        foreach ((array) $this->input('vehicles') as $row => $vehicle) {
+            if (is_array($vehicle)) {
+                $rows["vehicles.{$row}"] = $vehicle;
+            }
+        }
+
+        foreach ((array) $this->input('more') as $unit => $more) {
+            foreach (is_array($more) ? (array) ($more['vehicles'] ?? []) : [] as $row => $vehicle) {
+                if (is_array($vehicle)) {
+                    $rows["more.{$unit}.vehicles.{$row}"] = $vehicle;
+                }
+            }
+        }
+
+        return $rows;
     }
 
     public function permit(): ?WalkInPermitData
@@ -298,9 +410,10 @@ class RegisterApplicantRequest extends OrganizationRequest
             return;
         }
 
-        $others = collect((array) $this->input('vehicles'))
-            ->except([(int) str($attribute)->between('vehicles.', '.plate')->toString()])
-            ->map(fn (mixed $vehicle): ?PlateNumber => PlateNumber::tryParse(is_array($vehicle) ? (string) ($vehicle['plate'] ?? '') : ''))
+        // Every other plate of the form, the letter's other vehicles included.
+        $others = collect($this->allVehicleRows())
+            ->except([str($attribute)->beforeLast('.plate')->toString()])
+            ->map(fn (array $vehicle): ?PlateNumber => PlateNumber::tryParse((string) ($vehicle['plate'] ?? '')))
             ->filter();
 
         if ($others->contains(fn (PlateNumber $other): bool => $other->equals($plate))) {

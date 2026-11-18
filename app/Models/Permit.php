@@ -53,6 +53,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $issued_by the Issuer who issued and printed the permit
  * @property bool $is_institutional given directly to one of the Authority's own vehicles: free, with a paper of its own
  * @property string|null $route where the vehicles may travel, when the office or issuer said
+ * @property string|null $request_letter_id the letter it was asked for in, with other vehicles' permits
  * @property CarbonImmutable|null $created_at
  */
 class Permit extends Model
@@ -151,6 +152,16 @@ class Permit extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    /**
+     * The request letter it was asked for in, when the letter asked for several vehicles' permits.
+     *
+     * @return BelongsTo<RequestLetter, $this>
+     */
+    public function requestLetter(): BelongsTo
+    {
+        return $this->belongsTo(RequestLetter::class);
     }
 
     /**

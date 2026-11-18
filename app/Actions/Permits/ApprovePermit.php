@@ -51,14 +51,16 @@ class ApprovePermit
      * @throws OverlappingPermit
      * @throws PermitRuleViolation when the approval rules refuse, or the fee schedule has no line for this permit
      */
-    public function handle(Permit $permit, User $approver, ?string $note = null): Permit
+    public function handle(Permit $permit, User $approver, ?string $note = null, bool $notify = true): Permit
     {
         Gate::forUser($approver)->authorize(Permission::ApprovePermits->value);
 
         $approved = $this->approve($permit, $approver, $note);
 
-        // The organization is told what to pay (queued, after commit).
-        $this->notifier->send($approved, new PermitApproved($approved, $note));
+        // The organization is told what to pay (queued, after commit); for a letter, once for all its vehicles.
+        if ($notify) {
+            $this->notifier->send($approved, new PermitApproved($approved, $note));
+        }
 
         return $this->receiptTakenAtIntake($approved, $approver);
     }

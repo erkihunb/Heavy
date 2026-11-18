@@ -14,6 +14,7 @@ use App\Http\Requests\Admin\RegisterApplicantRequest;
 use App\Http\Resources\FeeRateResource;
 use App\Http\Resources\VehicleTypeResource;
 use App\Models\User;
+use App\Models\Vehicle;
 use App\Models\VehicleType;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -100,6 +101,8 @@ class ApplicantController extends Controller
             'limits' => [
                 'max_trailers' => (int) config('permits.max_trailers'),
                 'max_duration_days' => ValidityRules::maxDurationDays(),
+                // The most vehicles one letter may ask for; each gets a permit of its own.
+                'max_letter_vehicles' => (int) config('permits.max_letter_vehicles'),
             ],
         ]);
     }
@@ -127,6 +130,55 @@ class ApplicantController extends Controller
         ]);
     }
 
+    /**
+     * What each vehicle type costs for the letter's number of days, by
+     * today's schedule (FeeCalculator::amountFor, as approval charges it):
+     * the form adds up the letter's fee and warns of a type with no fee.
+     */
+    public function feeEstimate(Request $request, FeeCalculator $fees): JsonResponse
+    {
+        Gate::authorize('registerApplicant', User::class);
+
+        $validated = $request->validate([
+            'permit_type' => ['required', Rule::enum(PermitType::class)],
+            'days' => ['required', 'integer', 'min:1', 'max:'.ValidityRules::maxDurationDays()],
+            'types' => ['required', 'array', 'min:1', 'max:50'],
+            'types.*' => ['integer', Rule::exists(VehicleType::class, 'id')],
+        ]);
+
+        $type = PermitType::from($validated['permit_type']);
+        $today = ValidityRules::today();
+        $amounts = [];
+
+        foreach (array_unique(array_map('intval', $validated['types'])) as $vehicleType) {
+            $amounts[$vehicleType] = $fees->amountFor($type, $vehicleType, (int) $validated['days'], $today);
+        }
+
+        return response()->json(['amounts' => $amounts, 'currency' => 'ETB']);
+    }
+
+    /**
+     * The vehicles an organization on record already has, by plate, so the
+     * form fills in a known vehicle's type when its plate is typed.
+     */
+    public function vehicles(User $applicant): JsonResponse
+    {
+        Gate::authorize('registerApplicant', User::class);
+
+        abort_unless($applicant->isApplicant() && $applicant->organization_id !== null, 404);
+
+        return response()->json([
+            'data' => Vehicle::query()
+                ->where('organization_id', $applicant->organization_id)
+                ->orderBy('plate_normalized')
+                ->limit(1000)
+                ->get(['plate_normalized', 'vehicle_type_id'])
+                ->map(fn (Vehicle $vehicle): array => ['plate' => $vehicle->plate_normalized, 'vehicle_type_id' => $vehicle->vehicle_type_id])
+                ->values()
+                ->all(),
+        ]);
+    }
+
     private function startDate(?string $date): ?CarbonImmutable
     {
         return $date === null ? null : CarbonImmutable::createFromFormat('!Y-m-d', $date, 'UTC');
@@ -136,8 +188,8 @@ class ApplicantController extends Controller
     {
         $existing = $request->existingApplicant();
 
-        ['permit' => $permit] = $existing !== null
-            ? $register->forExisting($existing, $request->vehicles(), $request->permitData(), $request->user())
+        ['permit' => $permit, 'letter' => $letter] = $existing !== null
+            ? $register->forExisting($existing, $request->vehicles(), $request->permitData(), $request->user(), $request->moreVehicles())
             : $register->handle(
                 $request->string('contact_name')->toString(),
                 $request->string('contact_email')->toString(),
@@ -146,7 +198,15 @@ class ApplicantController extends Controller
                 $request->vehicles(),
                 $request->permit(),
                 $request->user(),
+                $request->moreVehicles(),
             );
+
+        // A letter for several vehicles opens on the letter, where they are followed together.
+        if ($letter !== null && $request->moreVehicles() !== []) {
+            return to_route('letters.show', $letter)->with('success', trim(
+                ($existing !== null ? '' : __('applicants.messages.registered').' ').__('letters.messages.registered', ['count' => $letter->permits()->count()]),
+            ));
+        }
 
         $message = $existing !== null ? '' : __('applicants.messages.registered').' ';
 

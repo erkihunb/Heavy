@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { RequiredMark } from '@/components/form-field';
 import InputError from '@/components/input-error';
 import { PlateChip } from '@/components/plate-chip';
@@ -38,6 +39,9 @@ export function PlateInput({
     disabled = false,
     label,
     required = false,
+    leading,
+    trailing,
+    plain = false,
 }: {
     id: string;
     value: string;
@@ -49,6 +53,15 @@ export function PlateInput({
     label?: string;
     /** Marks the heading as a field the server requires. */
     required?: boolean;
+    /**
+     * A field shown first in the same row (e.g. the vehicle type), labelled
+     * like the plate's parts; the heading above is then for screen readers only.
+     */
+    leading?: ReactNode;
+    /** Buttons at the end of the same row (add a trailer, another vehicle). */
+    trailing?: ReactNode;
+    /** Without the hint under the fields. */
+    plain?: boolean;
 }) {
     const { t } = useTranslation();
     const parts = split(value);
@@ -67,12 +80,31 @@ export function PlateInput({
             className="grid gap-3"
             disabled={disabled}
         >
-            <legend className="mb-2 text-sm leading-none font-medium">
+            <legend
+                className={
+                    leading
+                        ? 'sr-only'
+                        : 'mb-2 text-sm leading-none font-medium'
+                }
+            >
                 {label ?? t('vehicles.fields.plate')}
                 {required && <RequiredMark />}
             </legend>
 
-            <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)] gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.6fr)_minmax(0,1.4fr)]">
+            <div
+                className={
+                    leading && trailing !== undefined
+                        ? 'grid grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)] gap-3 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,0.6fr)_minmax(0,1.4fr)_auto]'
+                        : leading
+                          ? 'grid grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)] gap-3 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,0.6fr)_minmax(0,1.4fr)]'
+                          : 'grid grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)] gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.6fr)_minmax(0,1.4fr)]'
+                }
+            >
+                {leading && (
+                    <div className="col-span-2 grid gap-1.5 sm:col-span-1">
+                        {leading}
+                    </div>
+                )}
                 <div className="grid gap-1.5">
                     <label
                         htmlFor={`${id}-region`}
@@ -147,11 +179,18 @@ export function PlateInput({
                         }
                     />
                 </div>
+                {trailing !== undefined && (
+                    <div className="col-span-2 flex flex-wrap items-end gap-2 lg:col-span-1 lg:w-[19rem] lg:flex-nowrap">
+                        {trailing}
+                    </div>
+                )}
             </div>
 
-            <p id={hintId} className="text-sm text-muted-foreground">
-                {t('vehicles.plate_hint')}
-            </p>
+            {!plain && (
+                <p id={hintId} className="text-sm text-muted-foreground">
+                    {t('vehicles.plate_hint')}
+                </p>
+            )}
 
             {complete && (
                 <p className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">

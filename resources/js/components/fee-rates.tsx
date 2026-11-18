@@ -118,22 +118,10 @@ export function FeeRateField({
     const errorId = error ? 'fee_schedule_id-error' : undefined;
 
     return (
-        <fieldset
-            aria-describedby={
-                ['fee_schedule_id-hint', errorId].filter(Boolean).join(' ') ||
-                undefined
-            }
-            className="space-y-2"
-        >
+        <fieldset aria-describedby={errorId} className="space-y-2">
             <legend className="mb-2 text-sm font-medium">
                 {t('permits.rates.label')}
             </legend>
-            <p
-                id="fee_schedule_id-hint"
-                className="text-sm text-muted-foreground"
-            >
-                {t('permits.rates.hint')}
-            </p>
 
             <div aria-live="polite">
                 {rates.state === 'idle' && (

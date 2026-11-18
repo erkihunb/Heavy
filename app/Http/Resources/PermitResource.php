@@ -66,6 +66,8 @@ class PermitResource extends JsonResource
                 'number' => $this->letter_number,
                 'date' => EthiopianCalendar::present($this->letter_date, $locale),
                 'url' => $this->letter_file_path === null ? null : route('staff.permits.letter', $this->resource),
+                // The letter's page, with the other vehicles it asked for, when it asked for several.
+                'group_url' => $this->request_letter_id === null ? null : route('letters.show', $this->request_letter_id),
             ] : null,
             'organization' => $this->whenLoaded('organization', fn (): string => $this->organization->localizedName($locale)),
             'submitted_at' => EthiopianCalendar::present($this->submitted_at?->setTimezone($timezone), $locale),

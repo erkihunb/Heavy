@@ -42,6 +42,9 @@ enum AuditEvent: string
     case UserPasswordReset = 'user.password_reset';
     case UserTwoFactorReset = 'user.two_factor_reset';
     case UserTwoFactorRequirementChanged = 'user.two_factor_requirement_changed';
+    // A request letter asking for several vehicles' permits, and what was decided on it together.
+    case RequestLetterRegistered = 'request_letter.registered';
+    case RequestLetterDecided = 'request_letter.decided';
     // The Authority's own vehicles (the register; their permits are permit transitions).
     case InstitutionVehicleUpdated = 'institution_vehicle.updated';
     case InstitutionVehicleDeleted = 'institution_vehicle.deleted';

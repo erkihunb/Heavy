@@ -30,6 +30,9 @@ return [
 
     'max_trailers' => (int) env('PERMITS_MAX_TRAILERS', 2),
 
+    // The most vehicles one request letter may ask for at the office; each gets a permit of its own.
+    'max_letter_vehicles' => (int) env('PERMITS_MAX_LETTER_VEHICLES', 200),
+
     /*
     |--------------------------------------------------------------------------
     | Permit Number Rule

@@ -29,6 +29,7 @@ return [
         'trailer' => 'ተሳቢ',
     ],
     'fields' => [
+        'more_vehicles' => 'በደብዳቤው ያሉ ሌሎች ተሽከርካሪዎች',
         'permit_number' => 'የፈቃድ ቁጥር',
         'status' => 'ሁኔታ',
         'permit_type' => 'የፈቃድ ዓይነት',
@@ -189,6 +190,9 @@ return [
         'commented' => 'አስተያየቱ በተሳካ ሁኔታ ተመዝግቧል።',
     ],
     'errors' => [
+        'fee_not_set_for_letter_vehicle' => 'ለዚህ የተሽከርካሪ ዓይነት ለ:days ቀናት በክፍያ ተመን ውስጥ ክፍያ የለም። መጀመሪያ ክፍያውን ይጨምሩ ወይም ይህን ተሽከርካሪ ከደብዳቤው ያስወጡ።',
+        'letter_nothing_to_pay' => 'በዚህ ደብዳቤ ክፍያ የሚጠብቅ ተሽከርካሪ የለም።',
+        'letter_nothing_to_issue' => 'በዚህ ደብዳቤ ተከፍሎ ለመሰጠት የሚጠብቅ ተሽከርካሪ የለም።',
         'invalid_transition' => 'ማመልከቻው በ":status" ሁኔታ ላይ ስለሆነ ይህን እርምጃ መውሰድ አይቻልም።',
         'overlap' => 'ተሽከርካሪ :plate ከ:from እስከ :to ድረስ ሕጋዊ ፈቃድ አለው። ሌላ ቀን ወይም ሌላ ተሽከርካሪ ይምረጡ።',
         'overlap_generic' => 'ከተሽከርካሪዎቹ አንዱ ለእነዚህ ቀናት ቀደም ሲል የተሰጠ ፈቃድ አለው።',

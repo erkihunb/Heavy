@@ -29,6 +29,7 @@ return [
         'trailer' => 'Trailer',
     ],
     'fields' => [
+        'more_vehicles' => 'Other vehicles in the letter',
         'permit_number' => 'Permit number',
         'status' => 'Status',
         'permit_type' => 'Permit type',
@@ -189,6 +190,9 @@ return [
         'commented' => 'Comment added.',
     ],
     'errors' => [
+        'fee_not_set_for_letter_vehicle' => 'The fee schedule has no fee for this vehicle type for :days days. Add the fee first, or leave this vehicle out of the letter.',
+        'letter_nothing_to_pay' => 'No vehicle of this letter is waiting for payment.',
+        'letter_nothing_to_issue' => 'No vehicle of this letter is paid and waiting to be issued.',
         'invalid_transition' => 'This cannot be done while the application is ":status". Nothing was changed.',
         'overlap' => 'Vehicle :plate already has a permit from :from to :to. Choose other dates or another vehicle.',
         'overlap_generic' => 'One of the vehicles already has a permit for some of these dates.',

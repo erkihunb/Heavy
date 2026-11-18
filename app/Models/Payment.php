@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property string $id
  * @property string $permit_id
+ * @property string|null $request_letter_id the letter whose vehicles one receipt paid for together
  * @property PaymentMethod $method
  * @property string $receipt_number
  * @property int $amount_cents

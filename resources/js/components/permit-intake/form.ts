@@ -11,6 +11,16 @@ export const OTHER_TYPE = 'other';
 /** The type a trailer plate is registered with (App\Models\VehicleType::TRAILER). */
 export const TRAILER_TYPE = 'trailer';
 
+/** Another vehicle of the same request letter: a request of its own, on the same terms. */
+export type MoreVehicle = {
+    /** The trailer row is open (the form's own state; not sent). */
+    with_trailer: boolean;
+    vehicle_type_id: string;
+    type_detail: string;
+    plate: string;
+    trailer_plate: string;
+};
+
 export type IntakeFormData = {
     // 1. The applicant: an organization on record, or a new one.
     applicant_id: string;
@@ -19,19 +29,16 @@ export type IntakeFormData = {
     phone: string;
     name_am: string;
     tin: string;
-    // More about the organization (optional).
-    name_en: string;
-    email: string;
-    address: string;
     locale: string;
     apply: boolean;
     submit: boolean;
-    // 2. The vehicle, and its trailer if any.
-    owner_name: string;
+    // 2. The vehicle, and its trailer if any; the organization asking owns it.
     vehicle_type_id: string;
     type_detail: string;
     plate: string;
     trailer_plate: string;
+    /** The other vehicles the same letter asks for. */
+    more: MoreVehicle[];
     // 3. The permit.
     permit_type: string;
     reason: string;
@@ -68,7 +75,8 @@ export const STEP_FIELDS: Record<StepKey, (field: string) => boolean> = {
             'email',
             'address',
         ].includes(field),
-    vehicle: (field) => field.startsWith('vehicles'),
+    vehicle: (field) =>
+        field.startsWith('vehicles') || field.startsWith('more'),
     permit: (field) =>
         [
             'permit_type',
@@ -84,9 +92,6 @@ export const STEP_FIELDS: Record<StepKey, (field: string) => boolean> = {
             'letter_file',
         ].includes(field),
 };
-
-/** Fields the organization's details hide under "more", to open them on an error. */
-export const MORE_FIELDS = ['name_en', 'email', 'address', 'locale'];
 
 /** The form as Inertia holds it, handed to each part of the page. */
 export type IntakeForm = InertiaFormProps<IntakeFormData>;

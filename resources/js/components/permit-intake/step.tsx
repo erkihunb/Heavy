@@ -19,7 +19,7 @@ export function Step({
     id: StepKey;
     number: number;
     title: string;
-    description: string;
+    description?: string;
     state: StepState;
     children: ReactNode;
 }) {
@@ -38,9 +38,11 @@ export function Step({
                     <h2 id={`step-${id}-title`} className="text-section-title">
                         {title}
                     </h2>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                        {description}
-                    </p>
+                    {description && (
+                        <p className="mt-0.5 text-sm text-muted-foreground">
+                            {description}
+                        </p>
+                    )}
                 </div>
             </header>
             <div className="p-5 sm:p-6">{children}</div>
