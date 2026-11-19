@@ -244,6 +244,45 @@ class Permit extends Model
     }
 
     /**
+     * Who the Approver asked for an opinion, oldest first, from every round.
+     *
+     * @return HasMany<PermitReviewRequest, $this>
+     */
+    public function reviewRequests(): HasMany
+    {
+        return $this->hasMany(PermitReviewRequest::class)->orderBy('id');
+    }
+
+    /**
+     * Whether the application was sent to this person for an opinion in the
+     * current round (since it was last submitted).
+     */
+    public function wasSentForReviewTo(User $user): bool
+    {
+        return $this->reviewRequests()
+            ->where('reviewer_id', $user->id)
+            ->when($this->submitted_at !== null, fn ($query) => $query->where('created_at', '>=', $this->submitted_at))
+            ->exists();
+    }
+
+    /**
+     * Applications sent to this person for an opinion in their current round.
+     *
+     * @param  Builder<Permit>  $query
+     */
+    public function scopeSentForReviewTo(Builder $query, User $user): void
+    {
+        $query->whereExists(fn ($sent) => $sent
+            ->selectRaw('1')
+            ->from('permit_review_requests')
+            ->whereColumn('permit_review_requests.permit_id', 'permits.id')
+            ->where('permit_review_requests.reviewer_id', $user->id)
+            ->where(fn ($round) => $round
+                ->whereNull('permits.submitted_at')
+                ->orWhereColumn('permit_review_requests.created_at', '>=', 'permits.submitted_at')));
+    }
+
+    /**
      * Whether this person assessed the application in the current round.
      */
     public function wasReviewedBy(User $user): bool

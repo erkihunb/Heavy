@@ -66,6 +66,7 @@ Route::middleware(['auth', 'verified'])
     ->whereUlid('letter')
     ->group(function () {
         Route::get('/', 'show')->name('show');
+        Route::post('send-for-review', 'sendForReview')->middleware('throttle:30,1')->name('send-for-review');
         Route::post('recommend', 'recommend')->middleware('throttle:30,1')->name('recommend');
         Route::post('approve', 'approve')->middleware('throttle:30,1')->name('approve');
         Route::post('reject', 'reject')->middleware('throttle:30,1')->name('reject');

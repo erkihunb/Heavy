@@ -4,19 +4,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Two-Step Approval
-    |--------------------------------------------------------------------------
-    |
-    | When enabled, an Approver can approve or reject an application only after
-    | a Reviewer has recorded a recommendation, and the Approver must be a
-    | different person from that Reviewer (spec §14, question 5).
-    |
-    */
-
-    'two_step_approval' => (bool) env('PERMITS_TWO_STEP_APPROVAL', true),
-
-    /*
-    |--------------------------------------------------------------------------
     | Validity Limits
     |--------------------------------------------------------------------------
     |

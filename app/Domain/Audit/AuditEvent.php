@@ -22,6 +22,8 @@ enum AuditEvent: string
     case PermitCommented = 'permit.commented';
     // A Reviewer's assessment and recommendation to the Approver.
     case PermitReviewed = 'permit.reviewed';
+    // An Approver asking chosen Reviewers for an opinion.
+    case PermitSentForReview = 'permit.sent_for_review';
     case PaymentRejected = 'payment.rejected';
     case FeeScheduleSaved = 'fee_schedule.saved';
     case UserCreated = 'user.created';

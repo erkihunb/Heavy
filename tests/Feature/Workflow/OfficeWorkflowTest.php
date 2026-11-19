@@ -27,7 +27,6 @@ use Inertia\Testing\AssertableInertia as Assert;
  */
 
 beforeEach(function () {
-    config(['permits.two_step_approval' => false]);
 
     Notification::fake();
     Bus::fake([GeneratePermitDocument::class]);

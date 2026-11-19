@@ -3,7 +3,6 @@
 namespace App\Actions\Permits;
 
 use App\Domain\Notifications\PermitNotifier;
-use App\Domain\Permits\ApprovalRules;
 use App\Domain\Permits\PermitTransitions;
 use App\Enums\Permission;
 use App\Enums\PermitStatus;
@@ -18,7 +17,6 @@ class RejectPermit
 {
     public function __construct(
         private readonly PermitTransitions $transitions,
-        private readonly ApprovalRules $rules,
         private readonly PermitNotifier $notifier,
     ) {}
 
@@ -42,7 +40,6 @@ class RejectPermit
             PermitStatus::Rejected,
             $approver,
             $note,
-            fn (Permit $permit) => $this->rules->ensureMayDecide($permit, $approver),
         );
 
         if ($notify) {

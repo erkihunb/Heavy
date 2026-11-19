@@ -5,7 +5,6 @@ namespace App\Actions\Permits;
 use App\Domain\Audit\AuditEvent;
 use App\Domain\Audit\AuditLog;
 use App\Domain\Notifications\PermitNotifier;
-use App\Domain\Permits\ApprovalRules;
 use App\Domain\Permits\FeeCalculator;
 use App\Domain\Permits\OverlapGuard;
 use App\Domain\Permits\PermitNumberGenerator;
@@ -33,7 +32,6 @@ class ApprovePermit
 
     public function __construct(
         private readonly PermitTransitions $transitions,
-        private readonly ApprovalRules $rules,
         private readonly OverlapGuard $overlap,
         private readonly PermitNumberGenerator $numbers,
         private readonly FeeCalculator $fees,
@@ -49,7 +47,7 @@ class ApprovePermit
      *
      * @throws InvalidPermitTransition
      * @throws OverlappingPermit
-     * @throws PermitRuleViolation when the approval rules refuse, or the fee schedule has no line for this permit
+     * @throws PermitRuleViolation when the fee schedule has no line for this permit
      */
     public function handle(Permit $permit, User $approver, ?string $note = null, bool $notify = true): Permit
     {
@@ -113,8 +111,6 @@ class ApprovePermit
     {
         try {
             return $this->transitions->apply($permit, PermitStatus::AwaitingPayment, $approver, $note, function (Permit $permit) use ($approver): void {
-                $this->rules->ensureMayDecide($permit, $approver);
-
                 // Authoritative: the vehicle rows stay locked until the approval commits.
                 $this->overlap->ensureNoOverlap($permit, lock: true);
 

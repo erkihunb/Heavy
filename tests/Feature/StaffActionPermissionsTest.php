@@ -32,6 +32,10 @@ it('refuses direct staff actions after their role permission is removed', functi
     $actor = staffUser($role);
     expect($actor->can($permission->value))->toBeTrue();
     RoleModel::findByName($role->value)->revokePermissionTo($permission->value);
+    if ($action === Permits\StartReview::class) {
+        // The person who decides may take a request into review too.
+        RoleModel::findByName($role->value)->revokePermissionTo(Permission::ApprovePermits->value);
+    }
     $actor->refresh();
 
     // No ambient login: the action must authorize its explicit actor.

@@ -122,7 +122,7 @@ it('tells the organization when the permit is revoked, with the reason', functio
 it('sends nothing when the action is refused', function () {
     $permit = Permit::factory()->forVehicles($this->vehicle)->underReview()->create();
 
-    expect(fn () => app(ApprovePermit::class)->handle($permit, $this->approver))->toThrow(PermitRuleViolation::class);
+    expect(fn () => app(RejectPermit::class)->handle($permit, $this->approver, ' '))->toThrow(PermitRuleViolation::class);
 
     Notification::assertNothingSent();
 });

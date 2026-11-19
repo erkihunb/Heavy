@@ -71,14 +71,27 @@ type Props = {
     can: {
         recommend: boolean;
         decide: boolean;
+        sendForReview: boolean;
         recordPayment: boolean;
         issue: boolean;
         download: boolean;
     };
-    twoStep: boolean;
+    reviewable: string[];
+    review: {
+        sent: { name: string; answered: boolean }[];
+        opinions: {
+            reviewer: string;
+            recommendation: string;
+            note: string;
+            vehicles: number;
+            at: string | null;
+        }[];
+    };
+    reviewers: { id: number; name: string }[];
     recommendations: string[];
     receiptMaxKilobytes: number;
     urls: {
+        sendForReview: string;
         recommend: string;
         approve: string;
         reject: string;
@@ -103,15 +116,23 @@ function LetterPage({
     permits,
     summary,
     can,
+    reviewable,
+    review,
+    reviewers,
     recommendations,
     receiptMaxKilobytes,
     urls,
 }: Props) {
     const { t } = useTranslation();
     const { confirm } = useConfirm();
+    // The person who decides chooses among every waiting vehicle; a reviewer
+    // only among those sent to them.
     const waiting = useMemo(
-        () => permits.filter((row) => row.undecided).map((row) => row.id),
-        [permits],
+        () =>
+            can.decide || can.sendForReview
+                ? permits.filter((row) => row.undecided).map((row) => row.id)
+                : reviewable,
+        [permits, reviewable, can.decide, can.sendForReview],
     );
     const [chosen, setChosen] = useState<string[]>([]);
     // Only vehicles still waiting for a decision can be chosen.
@@ -121,9 +142,10 @@ function LetterPage({
     );
     const [assessment, setAssessment] = useState('');
     const [decisionNote, setDecisionNote] = useState('');
+    const [askReviewers, setAskReviewers] = useState<number[]>([]);
     const [busy, setBusy] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const choosing = can.recommend || can.decide;
+    const choosing = can.recommend || can.decide || can.sendForReview;
 
     const toggle = (id: string, on: boolean) =>
         setChosen((current) =>
@@ -143,6 +165,7 @@ function LetterPage({
                 setChosen([]);
                 setAssessment('');
                 setDecisionNote('');
+                setAskReviewers([]);
             },
         });
 
@@ -409,7 +432,9 @@ function LetterPage({
                                                         tableCellClassName
                                                     }
                                                 >
-                                                    {row.undecided && (
+                                                    {waiting.includes(
+                                                        row.id,
+                                                    ) && (
                                                         <Checkbox
                                                             aria-label={t(
                                                                 'letters.table.select',
@@ -508,6 +533,149 @@ function LetterPage({
                 </div>
 
                 <aside className="space-y-6 xl:sticky xl:top-20">
+                    {(can.decide || can.sendForReview) && (
+                        <section className={panel}>
+                            <h2 className="text-section-title">
+                                {t('letters.review.opinions')}
+                            </h2>
+                            {review.opinions.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">
+                                    {t('letters.review.opinions_empty')}
+                                </p>
+                            ) : (
+                                <ul className="space-y-3">
+                                    {review.opinions.map((opinion, index) => (
+                                        <li
+                                            key={index}
+                                            className="space-y-1 border-b border-border pb-3 last:border-0 last:pb-0"
+                                        >
+                                            <p className="text-sm font-medium text-foreground">
+                                                {opinion.reviewer}
+                                                {' · '}
+                                                {t(
+                                                    `permits.staff.recommend.${opinion.recommendation}` as TranslationKey,
+                                                )}
+                                            </p>
+                                            <p className="text-sm whitespace-pre-line text-foreground">
+                                                {opinion.note}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {t('letters.review.vehicles', {
+                                                    count: opinion.vehicles,
+                                                })}
+                                                {opinion.at
+                                                    ? ' · ' + opinion.at
+                                                    : ''}
+                                            </p>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                            {review.sent.length > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                    {t('letters.review.sent_to')}:{' '}
+                                    {review.sent
+                                        .map(
+                                            (person) =>
+                                                person.name +
+                                                ' (' +
+                                                t(
+                                                    person.answered
+                                                        ? 'letters.review.answered'
+                                                        : 'letters.review.waiting',
+                                                ) +
+                                                ')',
+                                        )
+                                        .join(', ')}
+                                </p>
+                            )}
+                        </section>
+                    )}
+
+                    {can.sendForReview && (
+                        <section className={panel}>
+                            <div className="space-y-1">
+                                <h2 className="text-section-title">
+                                    {t('letters.review.title')}
+                                </h2>
+                                <p className="text-xs text-muted-foreground">
+                                    {t('letters.review.hint')}
+                                </p>
+                            </div>
+                            {reviewers.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">
+                                    {t('letters.review.none')}
+                                </p>
+                            ) : (
+                                <fieldset className="space-y-2">
+                                    <legend className="mb-1 text-sm font-medium text-foreground">
+                                        {t('letters.review.reviewers')}
+                                    </legend>
+                                    {reviewers.map((person) => (
+                                        <label
+                                            key={person.id}
+                                            className="flex items-center gap-2 text-sm text-foreground"
+                                        >
+                                            <Checkbox
+                                                aria-label={person.name}
+                                                checked={askReviewers.includes(
+                                                    person.id,
+                                                )}
+                                                onCheckedChange={(on) =>
+                                                    setAskReviewers(
+                                                        (current) =>
+                                                            on === true
+                                                                ? [
+                                                                      ...current.filter(
+                                                                          (
+                                                                              id,
+                                                                          ) =>
+                                                                              id !==
+                                                                              person.id,
+                                                                      ),
+                                                                      person.id,
+                                                                  ]
+                                                                : current.filter(
+                                                                      (id) =>
+                                                                          id !==
+                                                                          person.id,
+                                                                  ),
+                                                    )
+                                                }
+                                            />
+                                            {person.name}
+                                        </label>
+                                    ))}
+                                    {errors.reviewers && (
+                                        <p className="text-sm text-destructive">
+                                            {errors.reviewers}
+                                        </p>
+                                    )}
+                                </fieldset>
+                            )}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full"
+                                disabled={
+                                    busy ||
+                                    selected.length === 0 ||
+                                    askReviewers.length === 0
+                                }
+                                onClick={() =>
+                                    send(urls.sendForReview, {
+                                        permits: selected,
+                                        reviewers: askReviewers.map(String),
+                                    })
+                                }
+                            >
+                                {t('letters.review.submit', {
+                                    count: selected.length,
+                                })}
+                            </Button>
+                        </section>
+                    )}
+
                     {can.recommend && (
                         <section className={panel}>
                             <div className="space-y-1">

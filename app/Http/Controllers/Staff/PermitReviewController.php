@@ -84,7 +84,7 @@ class PermitReviewController extends Controller
             ->inBranchOf($request->user())
             ->when($status !== null, fn (Builder $query) => $query->inEffectiveStatus($status))
             // Unless asked otherwise, the queue is what waits for this person's desk.
-            ->when($status === null && ! $all, fn (Builder $query) => $query->whereIn('status', $this->desk($request->user())))
+            ->when($status === null && ! $all, fn (Builder $query) => $this->onDesk($query, $request->user()))
             ->when($permitType !== null, fn (Builder $query) => $query->where('permit_type', $permitType))
             ->when($plate !== '', fn (Builder $query) => $query->whereHas('vehicles', fn (Builder $query) => $query
                 ->whereLike('plate_normalized', $like(PlateNumber::searchTerm($plate)))))
@@ -127,6 +127,33 @@ class PermitReviewController extends Controller
                 'submitted_to' => $submittedTo?->toDateString(),
             ],
         ]);
+    }
+
+    /**
+     * Limits the queue to what waits for the person's desks. A Reviewer who
+     * does not decide sees, of a letter's vehicles waiting for review, only
+     * those an Approver sent them for an opinion (requests without a letter,
+     * from before letters, stay open to every Reviewer).
+     *
+     * @param  Builder<Permit>  $query
+     */
+    private function onDesk(Builder $query, User $user): void
+    {
+        $desk = $this->desk($user);
+        $review = [PermitStatus::Submitted, PermitStatus::UnderReview];
+
+        if ($user->can(Permission::ApprovePermits->value) || ! $user->can(Permission::ReviewPermits->value)) {
+            $query->whereIn('status', $desk);
+
+            return;
+        }
+
+        $others = array_values(array_filter($desk, fn (PermitStatus $status): bool => ! in_array($status, $review, true)));
+
+        $query->where(fn (Builder $query) => $query
+            ->where(fn (Builder $query) => $query->whereIn('status', $review)
+                ->where(fn (Builder $query) => $query->whereNull('request_letter_id')->orWhere(fn (Builder $query) => $query->sentForReviewTo($user))))
+            ->when($others !== [], fn (Builder $query) => $query->orWhereIn('status', $others)));
     }
 
     /**

@@ -566,9 +566,9 @@ Flows and diagrams: [ARCHITECTURE.md](ARCHITECTURE.md).
   only when none is stored) and sends it on. Scans are on the private documents disk under
   `letters/`, served by `staff.permits.letter` to staff who see the application and to Registrars
   of its branch; never to the applicant.
-- **The Reviewer decides alone.** Two-step approval now defaults to off, and Reviewers hold
-  `permits.approve`. With two-step approval on, a Reviewer still cannot decide on a recommendation
-  they recorded. Revoking and reissuing stay with Approvers.
+- **The Reviewer decides alone.** Reviewers hold `permits.approve`. Revoking and reissuing stay
+  with Approvers. (Two-step approval was removed on 2026-11-18: see "Asking Reviewers for an
+  opinion" below.)
 - **Payment at the cashier's desk.** A cashier takes the fee or checks a bank/mobile payment and
   records the receipt (`RecordPayment`): the payment is created verified and the application moves
   to the new status `payment_confirmed`. Methods: bank deposit, bank transfer, mobile money, cash,
@@ -1255,3 +1255,35 @@ seal or flag is drawn by this code.
 illustration and removed with it. Nothing left needs orchestration from
 JavaScript: the card's entrance and shake are CSS keyframes on `transform`
 and `opacity`.
+
+## Asking Reviewers for an opinion; the decision never waits (owner's decision, 2026-11-18)
+
+The owner's aim for the whole system: heavy vehicles move in Addis Ababa only in set hours, and
+a permit is given when a compelling need arises. The system must stay very simple for its users.
+
+- **Who decides may ask, and need not wait.** Whoever holds `permits.approve` may, on the
+  letter's page, choose vehicles and send them to chosen people for an opinion
+  (`letters.send-for-review`, `SendLetterForReview`, policy ability `sendForReview`). They may
+  approve, refuse or return the vehicles at any time, whether or not an opinion has come.
+- **Only the people chosen.** The list offers active accounts holding `permits.review` and the
+  review queue whose branch scope covers the request; never the asker. Each request is a row of
+  `permit_review_requests` (append-only; a resubmitted request starts a new round, as reviews do).
+  Sending the same person again in the same round adds nothing. The audit log records
+  `permit.sent_for_review`.
+- **A Reviewer sees what was sent to them.** Someone who reviews but does not decide gives an
+  opinion (`recommend`) only on a letter's vehicles sent to them, and their queue's default view
+  shows only those. Someone who may decide may still record an opinion without being asked.
+  Requests without a letter (from before letters) stay open to every Reviewer, since they have
+  no page to be sent from.
+- **The opinions are on the letter's page.** The person who decides sees each Reviewer's
+  opinion for the current round (one line per Reviewer and opinion, with how many vehicles) and
+  who was asked and has answered.
+- **Two-step approval is gone.** `permits.two_step_approval`, its System settings switch and
+  `ApprovalRules` (an opinion required first; the one who gave it may not decide) were removed:
+  they made the decision wait for a Reviewer. Taking a request into review (`StartReview`) is
+  allowed to `permits.review` or `permits.approve`, so a letter's vehicles go straight from
+  "submitted" to a decision.
+- **Who does what is permissions, never roles.** Each step is described and checked by its
+  permission; one person holding several permissions may do several steps in a row.
+- **Not done here.** Reviewers are not sent a notice (the queue is the signal); the one-vehicle
+  decision page has no "send for review" (every new request has a letter).

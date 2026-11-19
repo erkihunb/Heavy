@@ -6,6 +6,7 @@ use App\Actions\Letters\DecideLetter;
 use App\Actions\Letters\IssueLetter;
 use App\Actions\Letters\LetterPermits;
 use App\Actions\Letters\RecordLetterPayment;
+use App\Actions\Letters\SendLetterForReview;
 use App\Data\RecommendationData;
 use App\Domain\Audit\AuditEvent;
 use App\Domain\Audit\AuditLog;
@@ -16,12 +17,15 @@ use App\Enums\Recommendation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\RecordLetterPaymentRequest;
 use App\Models\Permit;
+use App\Models\PermitReview;
+use App\Models\PermitReviewRequest;
 use App\Models\RequestLetter;
 use App\Models\User;
 use App\Support\EthiopianCalendar;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -43,7 +47,13 @@ class LetterController extends Controller
     {
         $first = $this->authorizeView($letter);
         $user = $request->user();
-        $letter->load(['organization', 'registrar:id,name', 'permits.vehicles.vehicleType']);
+        $letter->load([
+            'organization',
+            'registrar:id,name',
+            'permits.vehicles.vehicleType',
+            'permits.reviews.reviewer:id,name',
+            'permits.reviewRequests.reviewer:id,name',
+        ]);
         $zone = (string) config('localization.display_timezone');
         $locale = app()->getLocale();
 
@@ -54,6 +64,13 @@ class LetterController extends Controller
         $issued = $permits->filter(fn (Permit $permit): bool => StoredDocument::isUsable($permit, 'am'));
         $currency = $first->currency;
         $may = fn (string $ability): bool => $user instanceof User && Gate::forUser($user)->inspect($ability, $first)->allowed();
+        // The vehicles this person may give an opinion on: those sent to them, or all
+        // waiting ones for someone who may decide.
+        $reviewable = $undecided
+            ->filter(fn (Permit $permit): bool => $user instanceof User && Gate::forUser($user)->inspect('recommend', $permit)->allowed())
+            ->map(fn (Permit $permit): string => $permit->id)
+            ->values()
+            ->all();
 
         return Inertia::render('staff/letters/show', [
             'letter' => [
@@ -85,16 +102,24 @@ class LetterController extends Controller
                 'issued' => $issued->count(),
             ],
             'can' => [
-                'recommend' => $undecided->isNotEmpty() && $may('recommend'),
+                'recommend' => $reviewable !== [],
                 'decide' => $undecided->isNotEmpty() && $may('approve'),
+                'sendForReview' => $undecided->isNotEmpty() && $may('sendForReview'),
                 'recordPayment' => $unpaid->isNotEmpty() && $user?->can(Permission::VerifyPayments->value) === true && $first->isInBranchOf($user),
                 'issue' => $paid->isNotEmpty() && $user?->can(Permission::IssuePermits->value) === true && $first->isInBranchOf($user),
                 'download' => $issued->contains(fn (Permit $permit): bool => Gate::inspect('download', $permit)->allowed()),
             ],
-            'twoStep' => (bool) config('permits.two_step_approval'),
+            'reviewable' => $reviewable,
+            'review' => $this->reviewRound($undecided),
+            'reviewers' => $user instanceof User && $undecided->isNotEmpty() && $may('sendForReview')
+                ? SendLetterForReview::candidates($first, $user)
+                    ->map(fn (User $reviewer): array => ['id' => $reviewer->id, 'name' => $reviewer->name])
+                    ->all()
+                : [],
             'receiptMaxKilobytes' => (int) config('permits.receipt_max_kilobytes'),
             'recommendations' => array_map(fn (Recommendation $recommendation): string => $recommendation->value, Recommendation::cases()),
             'urls' => [
+                'sendForReview' => route('letters.send-for-review', $letter),
                 'recommend' => route('letters.recommend', $letter),
                 'approve' => route('letters.approve', $letter),
                 'reject' => route('letters.reject', $letter),
@@ -104,6 +129,20 @@ class LetterController extends Controller
                 'documentsEn' => route('letters.documents', [$letter, 'en']),
             ],
         ]);
+    }
+
+    public function sendForReview(Request $request, RequestLetter $letter, SendLetterForReview $send): RedirectResponse
+    {
+        $this->authorizeView($letter);
+        $validated = $request->validate([
+            ...$this->choiceRules(),
+            'reviewers' => ['required', 'array', 'min:1', 'max:20'],
+            'reviewers.*' => ['required', 'integer'],
+        ]);
+
+        $done = $send->handle($letter, $validated['permits'], $request->user(), $validated['reviewers']);
+
+        return back()->with('success', __('letters.messages.sent_for_review', ['count' => count($done)]));
     }
 
     public function recommend(Request $request, RequestLetter $letter, DecideLetter $decide): RedirectResponse
@@ -198,6 +237,54 @@ class LetterController extends Controller
             'Content-Type' => 'application/zip',
             'Cache-Control' => 'private, no-store',
         ])->deleteFileAfterSend();
+    }
+
+    /**
+     * The current round of opinions on the vehicles still waiting for a
+     * decision: who was asked, and what each Reviewer said. One Reviewer's
+     * same opinion on several vehicles is one line, with how many vehicles.
+     *
+     * @param  Collection<int, Permit>  $undecided
+     * @return array{sent: list<array{name: string, answered: bool}>, opinions: list<array{reviewer: string, recommendation: string, note: string, vehicles: int, at: string|null}>}
+     */
+    private function reviewRound(Collection $undecided): array
+    {
+        $zone = (string) config('localization.display_timezone');
+        $locale = app()->getLocale();
+        $opinions = [];
+        $sent = [];
+        $answered = [];
+
+        foreach ($undecided as $permit) {
+            foreach ($permit->reviews->filter(fn (PermitReview $review): bool => $permit->isCurrentReview($review)) as $review) {
+                $answered[$review->reviewer_id] = true;
+                $key = $review->reviewer_id.'|'.$review->recommendation->value.'|'.$review->assessment;
+                $opinions[$key] ??= [
+                    'reviewer' => (string) $review->reviewer?->name,
+                    'recommendation' => $review->recommendation->value,
+                    'note' => $review->assessment,
+                    'vehicles' => 0,
+                    'at' => EthiopianCalendar::present($review->created_at->setTimezone($zone), $locale)['ethiopian_label'] ?? null,
+                ];
+                $opinions[$key]['vehicles']++;
+            }
+
+            foreach ($permit->reviewRequests as $request) {
+                /** @var PermitReviewRequest $request */
+                if ($permit->submitted_at === null || $request->created_at->greaterThanOrEqualTo($permit->submitted_at)) {
+                    $sent[$request->reviewer_id] = (string) $request->reviewer?->name;
+                }
+            }
+        }
+
+        return [
+            'sent' => array_map(
+                fn (int $id, string $name): array => ['name' => $name, 'answered' => isset($answered[$id])],
+                array_keys($sent),
+                $sent,
+            ),
+            'opinions' => array_values($opinions),
+        ];
     }
 
     /**

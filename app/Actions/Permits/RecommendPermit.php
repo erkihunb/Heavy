@@ -27,8 +27,8 @@ class RecommendPermit
      * A Reviewer assesses an application under review: a written assessment
      * and what they recommend the Approver do (approve, ask for changes or
      * reject). It is not a status change. Every assessment is kept, so several
-     * Reviewers can each leave theirs; the permit also carries the latest one,
-     * which the two-step approval rule reads.
+     * Reviewers can each leave theirs; the permit also carries the latest one.
+     * The decision never waits for it.
      *
      * @throws PermitRuleViolation
      */

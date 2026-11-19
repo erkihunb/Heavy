@@ -275,14 +275,15 @@ describe('PermitResource', function () {
         'applicant, awaiting payment' => ['awaitingPayment', 'applicant', []],
         'applicant, issued' => ['issued', 'applicant', []],
         'reviewer, submitted' => ['submitted', 'reviewer', ['startReview']],
-        'reviewer, under review' => ['underReview', 'reviewer', ['recommend', 'requestChanges']],
-        'reviewer, recommended' => ['recommended', 'reviewer', ['recommend', 'requestChanges']],
+        'reviewer, under review' => ['underReview', 'reviewer', ['recommend', 'requestChanges', 'approve', 'reject']],
+        'reviewer, recommended' => ['recommended', 'reviewer', ['recommend', 'requestChanges', 'approve', 'reject']],
         'reviewer, changes requested' => ['changesRequested', 'reviewer', []],
         'reviewer, issued' => ['issued', 'reviewer', []],
         'approver, submitted' => ['submitted', 'approver', []],
-        'approver, under review without a recommendation' => ['underReview', 'approver', []],
+        // The decision never waits for a Reviewer's opinion.
+        'approver, under review without a recommendation' => ['underReview', 'approver', ['approve', 'reject']],
         'approver, recommended' => ['recommended', 'approver', ['approve', 'reject']],
-        'approver, own recommendation' => ['recommended by the approver', 'approver', []],
+        'approver, own recommendation' => ['recommended by the approver', 'approver', ['approve', 'reject']],
         'approver, awaiting payment' => ['awaitingPayment', 'approver', []],
         'approver, issued' => ['issued', 'approver', ['revoke', 'reissue']],
         'approver, active' => ['active', 'approver', ['revoke', 'reissue']],
@@ -291,7 +292,6 @@ describe('PermitResource', function () {
     ]);
 
     it('lets an Approver decide without a recommendation when approval is single-step', function () {
-        config(['permits.two_step_approval' => false]);
         $permit = Permit::factory()->forVehicles($this->vehicle)->underReview()->create();
 
         $data = resourceAs($this->approver, PermitResource::make($permit));

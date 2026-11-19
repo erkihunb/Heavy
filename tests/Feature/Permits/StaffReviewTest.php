@@ -716,19 +716,7 @@ describe('approving', function () {
         expect($this->permit->refresh()->status)->toBe(PermitStatus::UnderReview);
     });
 
-    it('is not for the Reviewer who recorded the recommendation (two-step approval)', function () {
-        $this->actingAs($this->reviewer)
-            ->from(route('staff.permits.show', $this->permit))
-            ->post(route('staff.permits.approve', $this->permit))
-            ->assertRedirect(route('staff.permits.show', $this->permit))
-            ->assertSessionHas('warning', __('permits.errors.approver_is_recommender'));
-
-        expect($this->permit->refresh()->status)->toBe(PermitStatus::UnderReview)
-            ->and($this->permit->permit_number)->toBeNull();
-    });
-
-    it('lets a Reviewer decide alone when two-step approval is switched off', function () {
-        config(['permits.two_step_approval' => false]);
+    it('lets a Reviewer decide alone', function () {
         $permit = Permit::factory()->forVehicles($this->vehicle)->underReview()->create();
 
         $this->actingAs($this->reviewer)
@@ -739,36 +727,7 @@ describe('approving', function () {
             ->and($permit->approved_by)->toBe($this->reviewer->id);
     });
 
-    it('explains instead of failing when no recommendation has been recorded', function () {
-        $permit = Permit::factory()->forVehicles($this->vehicle)->underReview()->create();
-
-        $this->actingAs($this->approver)
-            ->from(route('staff.permits.show', $permit))
-            ->post(route('staff.permits.approve', $permit))
-            ->assertRedirect(route('staff.permits.show', $permit))
-            ->assertSessionHas('warning', __('permits.errors.recommendation_required'))
-            ->assertSessionMissing('success');
-
-        expect($permit->refresh()->status)->toBe(PermitStatus::UnderReview)
-            ->and($permit->permit_number)->toBeNull();
-    });
-
-    it('explains instead of failing when the Approver recorded the recommendation', function () {
-        $both = staffUser(Role::Reviewer);
-        $both->assignRole(Role::Approver->value);
-        $permit = Permit::factory()->forVehicles($this->vehicle)->recommended(reviewer: $both)->create();
-
-        $this->actingAs($both)
-            ->from(route('staff.permits.show', $permit))
-            ->post(route('staff.permits.approve', $permit))
-            ->assertRedirect(route('staff.permits.show', $permit))
-            ->assertSessionHas('warning', __('permits.errors.approver_is_recommender'));
-
-        expect($permit->refresh()->status)->toBe(PermitStatus::UnderReview);
-    });
-
-    it('approves without a recommendation when two-step approval is switched off', function () {
-        config(['permits.two_step_approval' => false]);
+    it('approves without a recommendation', function () {
         $permit = Permit::factory()->forVehicles($this->vehicle)->underReview()->create();
 
         $this->actingAs($this->approver)
@@ -814,12 +773,12 @@ describe('approving', function () {
     })->with([PermitStatus::Submitted, PermitStatus::ChangesRequested, PermitStatus::Rejected]);
 
     it('answers a JSON request with 422 and the reason', function () {
-        $permit = Permit::factory()->forVehicles($this->vehicle)->underReview()->create();
+        $permit = Permit::factory()->forVehicles($this->vehicle)->submitted()->create();
 
         $this->actingAs($this->approver)
             ->postJson(route('staff.permits.approve', $permit))
             ->assertUnprocessable()
-            ->assertExactJson(['message' => __('permits.errors.recommendation_required')]);
+            ->assertExactJson(['message' => __('permits.errors.invalid_transition', ['status' => __('permits.status.submitted')])]);
     });
 
     it('answers 404 for a draft and a withdrawn application', function () {
@@ -863,27 +822,6 @@ describe('rejecting', function () {
 
         expect($this->permit->refresh()->status)->toBe(PermitStatus::UnderReview);
     })->with([null, '', '   ']);
-
-    it('is not for the Reviewer who recorded the recommendation (two-step approval)', function () {
-        $this->actingAs($this->reviewer)
-            ->from(route('staff.permits.show', $this->permit))
-            ->post(route('staff.permits.reject', $this->permit), ['note' => 'ምክንያት'])
-            ->assertSessionHas('warning', __('permits.errors.approver_is_recommender'));
-
-        expect($this->permit->refresh()->status)->toBe(PermitStatus::UnderReview);
-    });
-
-    it('explains instead of failing when no recommendation has been recorded', function () {
-        $permit = Permit::factory()->forVehicles($this->vehicle)->underReview()->create();
-
-        $this->actingAs($this->approver)
-            ->from(route('staff.permits.show', $permit))
-            ->post(route('staff.permits.reject', $permit), ['note' => 'ምክንያት'])
-            ->assertRedirect(route('staff.permits.show', $permit))
-            ->assertSessionHas('warning', __('permits.errors.recommendation_required'));
-
-        expect($permit->refresh()->status)->toBe(PermitStatus::UnderReview);
-    });
 
     it('explains instead of failing when the application was already decided', function () {
         $permit = Permit::factory()->forVehicles($this->vehicle)->awaitingPayment()->create();

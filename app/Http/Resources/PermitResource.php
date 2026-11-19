@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Domain\Documents\StoredDocument;
-use App\Domain\Permits\ApprovalRules;
 use App\Domain\Permits\PermitStateMachine;
 use App\Enums\PermitStatus;
 use App\Models\Permit;
@@ -144,15 +143,14 @@ class PermitResource extends JsonResource
 
         $may = fn (string $ability): bool => (bool) $user?->can($ability, $permit);
         $canMoveTo = fn (PermitStatus $to): bool => $machine->canTransition($status, $to);
-        $mayDecide = fn (): bool => $user !== null && app(ApprovalRules::class)->violation($permit, $user) === null;
 
         return [
             'startReview' => $canMoveTo(PermitStatus::UnderReview) && $may('startReview'),
-            // A Reviewer's assessment, while the application is under review (with or without two-step approval).
+            // A Reviewer's assessment, while the application is under review; the decision never waits for it.
             'recommend' => $status === PermitStatus::UnderReview && $may('recommend'),
             'requestChanges' => $canMoveTo(PermitStatus::ChangesRequested) && $may('requestChanges'),
-            'approve' => $canMoveTo(PermitStatus::AwaitingPayment) && $may('approve') && $mayDecide(),
-            'reject' => $canMoveTo(PermitStatus::Rejected) && $may('reject') && $mayDecide(),
+            'approve' => $canMoveTo(PermitStatus::AwaitingPayment) && $may('approve'),
+            'reject' => $canMoveTo(PermitStatus::Rejected) && $may('reject'),
             'recordPayment' => $status === PermitStatus::AwaitingPayment && $may('recordPayment'),
             'issue' => $status === PermitStatus::PaymentConfirmed && $may('issue'),
             'comment' => $may('comment'),

@@ -23,7 +23,7 @@ use Inertia\Testing\AssertableInertia as Assert;
  */
 
 beforeEach(function () {
-    config(['permits.two_step_approval' => false, 'permits.max_duration_days' => 90]);
+    config(['permits.max_duration_days' => 90]);
     Notification::fake();
     Bus::fake([GeneratePermitDocument::class]);
     Storage::fake('documents');

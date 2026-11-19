@@ -11,6 +11,7 @@ use App\Enums\Role;
 use App\Models\FeeSchedule;
 use App\Models\Organization;
 use App\Models\Permit;
+use App\Models\RequestLetter;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
@@ -293,4 +294,55 @@ function settingsForm(string $section, array $changes = []): array
     }
 
     return $form;
+}
+
+/**
+ * The one-page form for a new organization whose letter asks for three vehicles.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function letterForm(array $overrides = []): array
+{
+    $types = VehicleType::query()->orderBy('id')->pluck('id');
+
+    return withFeeRate([
+        'contact_name' => 'Abebe Kebede',
+        'contact_email' => 'abebe@example.test',
+        'locale' => 'am',
+        'name_am' => 'አበበ የጭነት ማጓጓዣ',
+        'tin' => '0012345678',
+        'phone' => '0911223344',
+        'email' => 'office@abebe.test',
+        'apply' => true,
+        'submit' => true,
+        'vehicles' => [
+            ['plate' => 'ኢት-03-40134', 'vehicle_type_id' => $types[0], 'owner_name' => 'አበበ ከበደ'],
+            ['plate' => 'ኢት-03-40135', 'vehicle_type_id' => $types[0], 'owner_name' => 'አበበ ከበደ'],
+        ],
+        'more' => [
+            ['vehicles' => [['plate' => 'ኢት-03-50001', 'vehicle_type_id' => $types[1], 'owner_name' => 'አበበ ከበደ']]],
+            ['vehicles' => [
+                ['plate' => 'ኢት-03-50002', 'vehicle_type_id' => $types[0], 'owner_name' => 'ሰላም ተስፋዬ'],
+                ['plate' => '', 'vehicle_type_id' => '', 'owner_name' => ''],
+            ]],
+        ],
+        'permit_type' => PermitType::FullDay->value,
+        'valid_from' => ValidityRules::today()->addDays(3)->toDateString(),
+        'reason' => 'የግንባታ ዕቃ ማጓጓዝ',
+        ...letterFields(),
+        ...$overrides,
+    ]);
+}
+
+/**
+ * A letter registered through the form, with its permits submitted.
+ */
+function registeredLetter(): RequestLetter
+{
+    test()->actingAs(test()->registrar)
+        ->post(route('admin.permits.store'), letterForm())
+        ->assertSessionHasNoErrors();
+
+    return RequestLetter::query()->sole();
 }

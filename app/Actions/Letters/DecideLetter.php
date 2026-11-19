@@ -101,11 +101,13 @@ final class DecideLetter
 
     /**
      * A permit waiting for review is taken into review by whoever acts on it,
-     * when they may review (as on a single permit, review comes first).
+     * when they may review or decide: the deciding person never waits for a
+     * Reviewer to open it first.
      */
     private function underReview(Permit $permit, User $actor): Permit
     {
-        if ($permit->status === PermitStatus::Submitted && $actor->can(Permission::ReviewPermits->value)) {
+        if ($permit->status === PermitStatus::Submitted
+            && ($actor->can(Permission::ReviewPermits->value) || $actor->can(Permission::ApprovePermits->value))) {
             return $this->startReview->handle($permit, $actor);
         }
 

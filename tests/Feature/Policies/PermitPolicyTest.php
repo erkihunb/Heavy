@@ -11,14 +11,14 @@ use Illuminate\Support\Facades\Gate;
 /*
  * Role × action matrix for permits. Applicants have no pages of their own:
  * a Registrar records their request at the office (the *For abilities).
- * Reviewers and Approvers act on applications that have been submitted. A Reviewer may also decide (with
- * two-step approval off nobody else needs to); revoking stays with Approvers.
+ * Reviewers and Approvers act on applications that have been submitted. A Reviewer may also decide, and the
+ * decision never waits for a Reviewer's opinion; revoking stays with Approvers.
  * Cashiers, Issuers and the head office open applications for their own desk.
  * For staff the policy decides who, the state machine decides when.
  */
 
 const REVIEWER_ABILITIES = ['startReview', 'recommend', 'requestChanges'];
-const APPROVER_ABILITIES = ['approve', 'reject', 'revoke'];
+const APPROVER_ABILITIES = ['approve', 'reject', 'sendForReview', 'revoke'];
 const DESK_ABILITIES = ['recordPayment', 'issue', 'comment'];
 
 /** Staff who open submitted applications. */
@@ -112,8 +112,8 @@ describe('the decisions of staff', function () {
         $user = memberWithRole($role, $permit);
 
         $expected = match ($role) {
-            // The Reviewer decides too; with two-step approval on, ApprovalRules still ask for a recommendation first.
-            Role::Reviewer => [...REVIEWER_ABILITIES, 'approve', 'reject'],
+            // The Reviewer decides too, and so may ask other Reviewers for an opinion.
+            Role::Reviewer => [...REVIEWER_ABILITIES, 'approve', 'reject', 'sendForReview'],
             Role::Approver => APPROVER_ABILITIES,
             Role::Admin => [...REVIEWER_ABILITIES, ...APPROVER_ABILITIES],
             default => [],

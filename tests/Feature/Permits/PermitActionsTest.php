@@ -510,35 +510,6 @@ describe('ApprovePermit', function () {
         expect(permitHistory($permit))->toBe([['under_review', 'awaiting_payment', $this->approver->id, null]]);
     });
 
-    it('needs a recommendation first when approval is two-step', function () {
-        $permit = Permit::factory()->forVehicles($this->vehicle)->underReview()->create();
-
-        expectPermitRule(fn () => app(ApprovePermit::class)->handle($permit, $this->approver), 'recommendation_required');
-
-        expect($permit->refresh()->status)->toBe(PermitStatus::UnderReview)
-            ->and($permit->permit_number)->toBeNull()
-            ->and($permit->approved_by)->toBeNull()
-            ->and(permitHistory($permit))->toBe([])
-            ->and(permitVehicleRows($permit)->pluck('is_blocking')->all())->toBe([false])
-            // No number was used up.
-            ->and(DB::table('permit_number_sequences')->count())->toBe(0);
-    });
-
-    it('does not let the person who recommended also decide', function () {
-        $both = userWithRole(Role::Reviewer);
-        $both->assignRole(Role::Approver->value);
-        $permit = Permit::factory()->forVehicles($this->vehicle)->recommended(reviewer: $both)->create();
-
-        expectPermitRule(fn () => app(ApprovePermit::class)->handle($permit, $both), 'approver_is_recommender');
-
-        expect($permit->refresh()->status)->toBe(PermitStatus::UnderReview)
-            ->and($permit->permit_number)->toBeNull();
-
-        app(ApprovePermit::class)->handle($permit, $this->approver);
-
-        expect($permit->refresh()->status)->toBe(PermitStatus::AwaitingPayment);
-    });
-
     it('leaves the decision to the Approver, whatever was recommended', function () {
         $permit = Permit::factory()->forVehicles($this->vehicle)->recommended(Recommendation::Reject)->create();
 
@@ -547,8 +518,7 @@ describe('ApprovePermit', function () {
         expect($permit->refresh()->status)->toBe(PermitStatus::AwaitingPayment);
     });
 
-    it('approves without a recommendation when two-step approval is switched off', function () {
-        config(['permits.two_step_approval' => false]);
+    it('approves without a recommendation', function () {
         $permit = Permit::factory()->forVehicles($this->vehicle)->underReview()->create();
 
         app(ApprovePermit::class)->handle($permit, $this->approver);
@@ -610,26 +580,6 @@ describe('RejectPermit', function () {
 
         expect($permit->refresh()->status)->toBe(PermitStatus::UnderReview);
     })->with(['', '  ']);
-
-    it('follows the two-step rules', function () {
-        $unrecommended = Permit::factory()->forVehicles($this->vehicle)->underReview()->create();
-
-        expectPermitRule(fn () => app(RejectPermit::class)->handle($unrecommended, $this->approver, 'ምክንያት'), 'recommendation_required');
-
-        $both = userWithRole(Role::Approver);
-        $own = Permit::factory()->forVehicles($this->vehicle)->recommended(reviewer: $both)->create();
-
-        expectPermitRule(fn () => app(RejectPermit::class)->handle($own, $both, 'ምክንያት'), 'approver_is_recommender');
-
-        expect($unrecommended->refresh()->status)->toBe(PermitStatus::UnderReview)
-            ->and($own->refresh()->status)->toBe(PermitStatus::UnderReview);
-
-        config(['permits.two_step_approval' => false]);
-
-        app(RejectPermit::class)->handle($unrecommended, $this->approver, 'ምክንያት');
-
-        expect($unrecommended->refresh()->status)->toBe(PermitStatus::Rejected);
-    });
 
     it('cannot reject an application that is not under review', function (PermitStatus $status) {
         $permit = Permit::factory()->forVehicles($this->vehicle)->recommended()->create(['status' => $status]);

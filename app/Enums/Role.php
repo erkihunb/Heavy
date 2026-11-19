@@ -59,8 +59,8 @@ enum Role: string
             self::Applicant => [
                 Permission::ApplyForPermits,
             ],
-            // A Reviewer examines a request and decides on it; with two-step
-            // approval on, an Approver must decide after the recommendation.
+            // A Reviewer examines a request and decides on it; the decision never
+            // waits for another Reviewer's opinion.
             self::Reviewer => [
                 Permission::ViewDashboard,
                 Permission::ViewReviewQueue,

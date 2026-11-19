@@ -201,8 +201,6 @@ return [
         'note_required' => 'Write a note explaining the decision.',
         'not_editable' => 'This application can no longer be changed.',
         'not_under_review' => 'A review can only be recorded while the application is under review.',
-        'recommendation_required' => 'A Reviewer must review this application before it can be decided.',
-        'approver_is_recommender' => 'You reviewed this application, so another Approver must take the decision.',
         'assessment_required' => 'Write your assessment of the application.',
         'revocation_reason_required' => 'Give the reason for revoking the permit.',
         'reissue_reason_required' => 'Give the reason for replacing the QR code and document.',

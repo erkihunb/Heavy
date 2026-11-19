@@ -39,9 +39,32 @@ class PermitPolicy
         return $this->staffWith($user, $permit, Permission::ReviewPermits);
     }
 
+    /**
+     * A Reviewer gives an opinion on a letter's vehicles an Approver sent
+     * them; someone who may decide may also record one without being asked.
+     * A request without a letter (from before letters) is open to every
+     * Reviewer, since it has no page to be sent from.
+     */
     public function recommend(User $user, Permit $permit): Response
     {
-        return $this->staffWith($user, $permit, Permission::ReviewPermits);
+        $allowed = $this->staffWith($user, $permit, Permission::ReviewPermits);
+
+        if ($allowed->denied()
+            || $permit->request_letter_id === null
+            || $user->can(Permission::ApprovePermits->value)
+            || $permit->wasSentForReviewTo($user)) {
+            return $allowed;
+        }
+
+        return Response::deny(__('letters.review.not_sent'));
+    }
+
+    /**
+     * Asking Reviewers for an opinion is the deciding person's choice.
+     */
+    public function sendForReview(User $user, Permit $permit): Response
+    {
+        return $this->staffWith($user, $permit, Permission::ApprovePermits);
     }
 
     public function requestChanges(User $user, Permit $permit): Response

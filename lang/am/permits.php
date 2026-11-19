@@ -201,8 +201,6 @@ return [
         'note_required' => 'ውሳኔውን የሚያብራራ ማስታወሻ መጻፍ ግዴታ ነው።',
         'not_editable' => 'ይህ ማመልከቻ በዚህ ደረጃ ላይ ሊስተካከል አይችልም።',
         'not_under_review' => 'የውሳኔ ሐሳብ መመዝገብ የሚቻለው ማመልከቻው በግምገማ ላይ ሲሆን ብቻ ነው።',
-        'recommendation_required' => 'በዚህ ማመልከቻ ላይ ውሳኔ ከመሰጠቱ በፊት ገምጋሚው የውሳኔ ሐሳብ ማቅረብ አለበት።',
-        'approver_is_recommender' => 'የውሳኔ ሐሳቡን ያቀረቡት እርስዎ ስለሆኑ ውሳኔውን ሌላ አጽዳቂ ባለሥልጣን መስጠት አለበት።',
         'assessment_required' => 'ስለ ማመልከቻው የግምገማ ሐሳብዎን ይጻፉ።',
         'revocation_reason_required' => 'ፈቃዱ የሚሰረዝበትን ምክንያት በግልጽ ይግለጹ።',
         'reissue_reason_required' => 'ምትክ ፈቃድ የሚሰጥበትን ምክንያት ይግለጹ።',

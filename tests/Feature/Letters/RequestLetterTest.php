@@ -35,57 +35,6 @@ beforeEach(function () {
 });
 
 /**
- * The one-page form for a new organization whose letter asks for three vehicles.
- *
- * @param  array<string, mixed>  $overrides
- * @return array<string, mixed>
- */
-function letterForm(array $overrides = []): array
-{
-    $types = VehicleType::query()->orderBy('id')->pluck('id');
-
-    return withFeeRate([
-        'contact_name' => 'Abebe Kebede',
-        'contact_email' => 'abebe@example.test',
-        'locale' => 'am',
-        'name_am' => 'አበበ የጭነት ማጓጓዣ',
-        'tin' => '0012345678',
-        'phone' => '0911223344',
-        'email' => 'office@abebe.test',
-        'apply' => true,
-        'submit' => true,
-        'vehicles' => [
-            ['plate' => 'ኢት-03-40134', 'vehicle_type_id' => $types[0], 'owner_name' => 'አበበ ከበደ'],
-            ['plate' => 'ኢት-03-40135', 'vehicle_type_id' => $types[0], 'owner_name' => 'አበበ ከበደ'],
-        ],
-        'more' => [
-            ['vehicles' => [['plate' => 'ኢት-03-50001', 'vehicle_type_id' => $types[1], 'owner_name' => 'አበበ ከበደ']]],
-            ['vehicles' => [
-                ['plate' => 'ኢት-03-50002', 'vehicle_type_id' => $types[0], 'owner_name' => 'ሰላም ተስፋዬ'],
-                ['plate' => '', 'vehicle_type_id' => '', 'owner_name' => ''],
-            ]],
-        ],
-        'permit_type' => PermitType::FullDay->value,
-        'valid_from' => ValidityRules::today()->addDays(3)->toDateString(),
-        'reason' => 'የግንባታ ዕቃ ማጓጓዝ',
-        ...letterFields(),
-        ...$overrides,
-    ]);
-}
-
-/**
- * A letter registered through the form, with its permits submitted.
- */
-function registeredLetter(): RequestLetter
-{
-    test()->actingAs(test()->registrar)
-        ->post(route('admin.permits.store'), letterForm())
-        ->assertSessionHasNoErrors();
-
-    return RequestLetter::query()->sole();
-}
-
-/**
  * @param  array<string, mixed>  $overrides
  * @return array<string, mixed>
  */
@@ -232,23 +181,6 @@ describe('deciding', function () {
         Notification::assertNotSentTo($applicant, PermitRejected::class);
         Notification::assertSentTo($applicant, LetterNotification::class, fn (LetterNotification $n): bool => $n->what === 'approved' && $n->count === 2 && $n->totalCents === 200_000);
         Notification::assertSentTo($applicant, LetterNotification::class, fn (LetterNotification $n): bool => $n->what === 'rejected' && $n->count === 1);
-    });
-
-    it('keeps the approval rules: the reviewer cannot approve what they reviewed', function () {
-        $ids = $this->permits->pluck('id')->all();
-        $both = staffUser(Role::Reviewer);
-        $both->assignRole(Role::Approver->value);
-
-        $this->actingAs($both)
-            ->post(route('letters.recommend', $this->letter), ['permits' => $ids, 'recommendation' => 'approve', 'note' => 'Fine.'])
-            ->assertSessionHasNoErrors();
-
-        $this->actingAs($both)
-            ->post(route('letters.approve', $this->letter), ['permits' => $ids])
-            ->assertSessionHas('warning');
-
-        // Nothing was approved: one refused vehicle stops the lot.
-        expect(Permit::query()->pluck('status')->unique()->all())->toBe([PermitStatus::UnderReview]);
     });
 
     it('needs a reason to refuse, and the vehicles chosen must be the letter\'s', function () {
