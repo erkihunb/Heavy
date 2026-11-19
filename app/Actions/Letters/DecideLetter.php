@@ -5,6 +5,7 @@ namespace App\Actions\Letters;
 use App\Actions\Permits\ApprovePermit;
 use App\Actions\Permits\RecommendPermit;
 use App\Actions\Permits\RejectPermit;
+use App\Actions\Permits\RequestChanges;
 use App\Actions\Permits\StartReview;
 use App\Data\RecommendationData;
 use App\Domain\Audit\AuditEvent;
@@ -34,6 +35,7 @@ final class DecideLetter
         private readonly RecommendPermit $recommendPermit,
         private readonly ApprovePermit $approvePermit,
         private readonly RejectPermit $rejectPermit,
+        private readonly RequestChanges $requestChanges,
         private readonly PermitNotifier $notifier,
         private readonly AuditLog $audit,
     ) {}
@@ -95,6 +97,27 @@ final class DecideLetter
 
         $this->record($letter, $approver, 'rejected', $permits, $note);
         $this->notify($letter, $permits, 'rejected', $note);
+
+        return $permits;
+    }
+
+    /**
+     * Return the chosen vehicles to the Registrar to correct, with what is
+     * wrong; the organization is told once for the letter.
+     *
+     * @param  list<string>  $ids
+     * @return list<Permit>
+     */
+    public function requestChanges(RequestLetter $letter, array $ids, User $actor, string $note): array
+    {
+        $permits = $this->letters->each($this->letters->chosen($letter, $ids), function (Permit $permit) use ($actor, $note): Permit {
+            Gate::forUser($actor)->authorize('requestChanges', $permit);
+
+            return $this->requestChanges->handle($this->underReview($permit, $actor), $actor, $note, notify: false);
+        });
+
+        $this->record($letter, $actor, 'changes_requested', $permits, $note);
+        $this->notify($letter, $permits, 'changes_requested', $note);
 
         return $permits;
     }

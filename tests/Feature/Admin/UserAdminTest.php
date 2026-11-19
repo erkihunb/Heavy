@@ -43,7 +43,8 @@ it('lists users with their roles, searchable and filtered by role and status', f
 
     $this->actingAs($this->admin)
         ->get(route('admin.users.index', ['role' => 'applicant']))
-        ->assertInertia(fn (Assert $page) => $page->has('users.data', 1)->where('users.data.0.is_staff', false));
+        // Applicants' accounts are records of who a request is for: not listed.
+        ->assertInertia(fn (Assert $page) => $page->has('users.data', 0));
 
     $cashier->forceFill(['deactivated_at' => now()])->save();
 
@@ -70,7 +71,8 @@ it('lists many users at once, telling staff by their permissions', function () {
 
     expect($staff[$this->admin->id])->toBeTrue()
         ->and($staff[$cashier->id])->toBeTrue()
-        ->and($staff[$applicant->id])->toBeFalse()
+        // Applicants' accounts are not listed at all.
+        ->and($staff->has($applicant->id))->toBeFalse()
         // The dashboard alone is not the office's work.
         ->and($staff[$onlooker->id])->toBeFalse();
 });

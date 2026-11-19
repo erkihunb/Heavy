@@ -76,7 +76,7 @@ class SettingsController extends Controller
                 'error_tracking' => filled(config('sentry.dsn')),
             ],
             'counts' => [
-                'users' => User::query()->count(),
+                'users' => User::query()->exceptApplicants()->count(),
                 'staff' => User::permission(PermissionCatalog::staffPermissions())->count(),
                 'organizations' => Organization::query()->count(),
                 'vehicles' => Vehicle::query()->count(),
@@ -134,7 +134,7 @@ class SettingsController extends Controller
             // The roles two-factor can be required for (Security).
             'roles' => $section === 'security'
                 // Applicants do not sign in, so two-factor is never asked of them.
-                ? Role::query()->where('name', '!=', RoleEnum::Applicant->value)->withCount('users')->orderBy('name')->get()
+                ? Role::query()->where('name', '!=', RoleEnum::Applicant->value)->withCount(['users' => fn ($query) => $query->exceptApplicants()])->orderBy('name')->get()
                     ->map(fn (Role $role): array => ['id' => $role->id, 'label' => $role->label(), 'users' => (int) $role->users_count])
                     ->values()->all()
                 : null,

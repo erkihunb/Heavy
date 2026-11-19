@@ -43,7 +43,7 @@ class RoleController extends Controller
 
         $roles = Role::query()
             ->with('permissions:id,name')
-            ->withCount('users')
+            ->withCount(['users' => fn ($query) => $query->exceptApplicants()])
             ->when($filters['search'] !== '', fn (Builder $query) => $query->where(
                 fn (Builder $inner) => $inner->whereLike('name', "%{$filters['search']}%")->orWhereLike('name_am', "%{$filters['search']}%"),
             ))
@@ -134,7 +134,7 @@ class RoleController extends Controller
                 'permissions' => $role->permissions()->pluck('name')->values()->all(),
                 'is_protected' => $role->isProtected(),
                 'is_system' => $role->is_system,
-                'users_count' => $role->users()->count(),
+                'users_count' => User::query()->role($role)->exceptApplicants()->count(),
             ],
             'permissions' => PermissionCatalog::entries(),
             'can' => [

@@ -55,6 +55,7 @@ class PermitRegisterController extends Controller
 
         $base = fn (): Builder => Permit::query()->ordinary()
             ->inBranchOf($viewer)
+            ->visibleIssuedTo($viewer)
             ->when(! $registrar, fn (Builder $query) => $query->whereNotIn('status', PermitStatus::hiddenFromStaff()))
             ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $query) => $query
                 ->whereLike('permit_number', $like($search))

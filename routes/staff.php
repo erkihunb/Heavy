@@ -70,6 +70,8 @@ Route::middleware(['auth', 'verified'])
         Route::post('recommend', 'recommend')->middleware('throttle:30,1')->name('recommend');
         Route::post('approve', 'approve')->middleware('throttle:30,1')->name('approve');
         Route::post('reject', 'reject')->middleware('throttle:30,1')->name('reject');
+        Route::post('return', 'requestChanges')->middleware('throttle:30,1')->name('return');
+        Route::post('resubmit', 'resubmit')->middleware('throttle:30,1')->name('resubmit');
         Route::post('payment', 'payment')->middleware('throttle:30,1')->name('payment');
         Route::post('issue', 'issue')->middleware('throttle:30,1')->name('issue');
         Route::get('documents/{language}', 'documents')

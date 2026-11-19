@@ -78,7 +78,7 @@ class PermissionController extends Controller
 
         $roles = Role::query()
             ->whereHas('permissions', fn ($query) => $query->where('name', $permission))
-            ->withCount('users')
+            ->withCount(['users' => fn ($query) => $query->exceptApplicants()])
             ->orderBy('name')
             ->get()
             ->map(fn (Role $role): array => [

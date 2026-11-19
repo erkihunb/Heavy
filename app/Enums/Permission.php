@@ -16,6 +16,8 @@ enum Permission: string
 
     // Reviewer
     case ViewReviewQueue = 'permits.view-queue';
+    // Seeing permits once issued (issued, in force, expired, revoked): lists, pages, certificates.
+    case ViewIssuedPermits = 'permits.view-issued';
     case ReviewPermits = 'permits.review';
 
     // Approver

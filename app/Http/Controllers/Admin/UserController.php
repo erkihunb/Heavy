@@ -59,6 +59,8 @@ class UserController extends Controller
         $status = in_array($request->query('status'), ['active', 'inactive'], true) ? (string) $request->query('status') : '';
 
         $users = User::query()
+            // Applicants' accounts are records of who a request is for, not users of the system.
+            ->exceptApplicants()
             // Each row says whether the person is staff, by their permissions: load them with the page.
             ->with(['roles:id,name,name_am,scope_type', 'roles.permissions:id,name', 'permissions:id,name', 'branch'])
             ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $query) => $query

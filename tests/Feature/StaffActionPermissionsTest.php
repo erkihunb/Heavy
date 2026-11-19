@@ -30,8 +30,8 @@ it('refuses direct staff actions after their role permission is removed', functi
     $actor = staffUser($role);
     expect($actor->can($permission->value))->toBeTrue();
     RoleModel::findByName($role->value)->revokePermissionTo($permission->value);
-    if ($action === Permits\StartReview::class) {
-        // The person who decides may take a request into review too.
+    if (in_array($action, [Permits\StartReview::class, Permits\RequestChanges::class], true)) {
+        // The person who decides may take a request into review, or return it, too.
         RoleModel::findByName($role->value)->revokePermissionTo(Permission::ApprovePermits->value);
     }
     $actor->refresh();
@@ -53,6 +53,10 @@ it('refuses direct staff actions after their role permission is removed', functi
 it('blocks direct HTTP submissions after their role permission is removed', function (string $action, Role $role, Permission $permission, string $route) {
     $actor = staffUser($role);
     RoleModel::findByName($role->value)->revokePermissionTo($permission->value);
+    if (in_array($action, [Permits\StartReview::class, Permits\RequestChanges::class], true)) {
+        // The person who decides may take a request into review, or return it, too.
+        RoleModel::findByName($role->value)->revokePermissionTo(Permission::ApprovePermits->value);
+    }
     $actor->refresh();
     $permit = Permit::factory()->submitted()->create();
     $target = str_starts_with($route, 'staff.payments.')

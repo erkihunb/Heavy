@@ -655,12 +655,11 @@ describe('requesting changes', function () {
         expect($this->permit->refresh()->status)->toBe(PermitStatus::UnderReview);
     })->with([null, '', '   ']);
 
-    it('is not for Approvers', function () {
+    it('is for Approvers too', function () {
         $this->actingAs($this->approver)
-            ->post(route('staff.permits.request-changes', $this->permit), ['note' => 'ማስታወሻ'])
-            ->assertForbidden();
+            ->post(route('staff.permits.request-changes', $this->permit), ['note' => 'ማስታወሻ']);
 
-        expect($this->permit->refresh()->status)->toBe(PermitStatus::UnderReview);
+        expect($this->permit->refresh()->status)->toBe(PermitStatus::ChangesRequested);
     });
 
     it('explains instead of failing when the review has not started', function () {

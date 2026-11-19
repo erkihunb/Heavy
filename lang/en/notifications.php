@@ -46,6 +46,11 @@ return [
         'body' => 'Your letter :letter has been decided: permits for :count vehicles were approved. Pay :total in total at the bank or the Authority\'s cashier, then bring the receipt to the office where you applied.',
         'sms' => 'AACRA: letter :letter, :count vehicles approved. Pay the fee and bring the receipt to the office.',
     ],
+    'letter_changes_requested' => [
+        'subject' => 'Letter :letter: :count vehicles returned for changes',
+        'body' => 'Your letter :letter needs correcting for :count vehicles before it can be decided. Please contact the office where you applied.',
+        'sms' => 'AACRA: letter :letter, :count vehicles returned for changes. Please contact the office.',
+    ],
     'letter_rejected' => [
         'subject' => 'Letter :letter: :count vehicles not approved',
         'body' => 'Permits for :count vehicles of your letter :letter were not approved.',

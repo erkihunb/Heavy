@@ -21,9 +21,20 @@ class PermitPolicy
 {
     public function view(User $user, Permit $permit): Response
     {
-        return $this->isVisibleToStaff($user, $permit)
+        return $this->isVisibleToStaff($user, $permit) && ! $this->hidesIssued($user, $permit)
             ? Response::allow()
             : Response::denyAsNotFound();
+    }
+
+    /**
+     * An issued permit (in force, expired or revoked) is seen only with
+     * `permits.view-issued`. Institution permits have their own page.
+     */
+    private function hidesIssued(User $user, Permit $permit): bool
+    {
+        return ! $permit->is_institutional
+            && in_array($permit->status, Permit::ISSUED_STATUSES, true)
+            && ! $user->can(Permission::ViewIssuedPermits->value);
     }
 
     /**
@@ -67,9 +78,14 @@ class PermitPolicy
         return $this->staffWith($user, $permit, Permission::ApprovePermits);
     }
 
+    /**
+     * Returning a request for changes: a Reviewer or the person who decides.
+     */
     public function requestChanges(User $user, Permit $permit): Response
     {
-        return $this->staffWith($user, $permit, Permission::ReviewPermits);
+        $review = $this->staffWith($user, $permit, Permission::ReviewPermits);
+
+        return $review->allowed() ? $review : $this->staffWith($user, $permit, Permission::ApprovePermits);
     }
 
     public function approve(User $user, Permit $permit): Response
@@ -176,6 +192,10 @@ class PermitPolicy
      */
     public function download(User $user, Permit $permit): Response
     {
+        if ($this->hidesIssued($user, $permit)) {
+            return Response::denyAsNotFound();
+        }
+
         // An institution permit's paper is opened by whoever may give such permits.
         if ($permit->is_institutional && $user->can(Permission::IssueInstitutionPermits->value)) {
             return Response::allow();
@@ -219,6 +239,10 @@ class PermitPolicy
      */
     public function viewFor(User $user, Permit $permit, User $applicant): Response
     {
+        if ($this->hidesIssued($user, $permit)) {
+            return Response::denyAsNotFound();
+        }
+
         return $this->forApplicant($user, $permit, $applicant, PermitStatus::cases());
     }
 

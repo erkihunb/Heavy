@@ -1353,3 +1353,24 @@ older rows depend on them); what people see is simpler.
   a badge, since the difference matters on the road.
 - **Not changed:** reports and exports still count each stored status.
 
+## Four requests from the office (owner's decisions, 2026-11-19)
+
+- **Applicants are not users.** An applicant's account is the record of who a request is for.
+  The Users list, its total, and every count of users (roles, permissions, branches, System
+  settings) leave applicants out (`User::scopeExceptApplicants`), unless their roles also give
+  them office work.
+- **Seeing issued permits is a permission:** `permits.view-issued`. Without it, issued permits
+  (issued, in force, expired, revoked) are left out of the permits list, the queue and a letter's
+  page, their pages answer "not found", and their certificates cannot be downloaded. Institution
+  permits are not affected. Every role that saw permits keeps seeing them (migration
+  `2026_12_08_000001`); administrators take it away on the Roles screen.
+- **A letter can be returned and corrected.** On the letter's page, whoever holds
+  `permits.review` or `permits.approve` may return the chosen vehicles for changes, with a
+  reason; the organization hears once for the letter. The Registrar sees what to correct on the
+  letter's page, opens each vehicle to correct it, and sends them all again with one button
+  (`letters.return`, `letters.resubmit`).
+- **The queue opens the letter.** A letter's vehicles waiting for a decision are one row in the
+  queue, which opens the letter's page, where the person who decides finds "Send for review",
+  "Return for changes", approve and refuse. A Reviewer who does not decide still sees each
+  vehicle sent to them, and its row opens the letter too.
+

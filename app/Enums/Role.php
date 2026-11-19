@@ -63,12 +63,14 @@ enum Role: string
             // waits for another Reviewer's opinion.
             self::Reviewer => [
                 Permission::ViewDashboard,
+                Permission::ViewIssuedPermits,
                 Permission::ViewReviewQueue,
                 Permission::ReviewPermits,
                 Permission::ApprovePermits,
             ],
             self::Approver => [
                 Permission::ViewDashboard,
+                Permission::ViewIssuedPermits,
                 Permission::ViewReviewQueue,
                 Permission::ApprovePermits,
                 Permission::RevokePermits,
@@ -77,6 +79,7 @@ enum Role: string
             // The cashier opens approved applications to take or check their payment.
             self::Cashier => [
                 Permission::ViewDashboard,
+                Permission::ViewIssuedPermits,
                 Permission::ViewReviewQueue,
                 Permission::VerifyPayments,
                 Permission::ViewReports,
@@ -87,17 +90,20 @@ enum Role: string
             ],
             self::Registrar => [
                 Permission::ViewDashboard,
+                Permission::ViewIssuedPermits,
                 Permission::RegisterApplicants,
             ],
             // The Issuer opens paid applications to check, issue and print them.
             self::Issuer => [
                 Permission::ViewDashboard,
+                Permission::ViewIssuedPermits,
                 Permission::ViewReviewQueue,
                 Permission::IssuePermits,
             ],
             // Head office: sees every branch's applications and figures and comments on them.
             self::Supervisor => [
                 Permission::ViewDashboard,
+                Permission::ViewIssuedPermits,
                 Permission::ViewReviewQueue,
                 Permission::CommentOnPermits,
                 Permission::ViewReports,

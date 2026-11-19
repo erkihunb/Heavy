@@ -31,6 +31,7 @@ final class PermissionCatalog
         'dashboard.view',
         'permits.apply',
         'permits.view-queue',
+        'permits.view-issued',
         'permits.review',
         'permits.approve',
         'permits.issue',

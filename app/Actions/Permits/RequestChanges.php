@@ -11,6 +11,7 @@ use App\Exceptions\PermitRuleViolation;
 use App\Models\Permit;
 use App\Models\User;
 use App\Notifications\ChangesRequested;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Gate;
 
 class RequestChanges
@@ -27,9 +28,11 @@ class RequestChanges
      * @throws InvalidPermitTransition
      * @throws PermitRuleViolation
      */
-    public function handle(Permit $permit, User $reviewer, string $note): Permit
+    public function handle(Permit $permit, User $reviewer, string $note, bool $notify = true): Permit
     {
-        Gate::forUser($reviewer)->authorize(Permission::ReviewPermits->value);
+        if (! Gate::forUser($reviewer)->any([Permission::ReviewPermits->value, Permission::ApprovePermits->value])) {
+            throw new AuthorizationException;
+        }
 
         if (blank($note)) {
             throw new PermitRuleViolation('note_required');
@@ -37,7 +40,9 @@ class RequestChanges
 
         $returned = $this->transitions->apply($permit, PermitStatus::ChangesRequested, $reviewer, $note);
 
-        $this->notifier->send($returned, new ChangesRequested($returned, $note));
+        if ($notify) {
+            $this->notifier->send($returned, new ChangesRequested($returned, $note));
+        }
 
         return $returned;
     }

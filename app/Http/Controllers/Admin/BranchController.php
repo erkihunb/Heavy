@@ -23,7 +23,7 @@ class BranchController extends Controller
 
         return Inertia::render('admin/branches/index', [
             'branches' => Branch::query()
-                ->withCount(['users', 'permits'])
+                ->withCount(['users' => fn ($query) => $query->exceptApplicants(), 'permits'])
                 ->orderBy('code')
                 ->get()
                 ->map(fn (Branch $branch): array => [

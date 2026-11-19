@@ -10,6 +10,7 @@ use Carbon\CarbonInterface;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Translation\HasLocalePreference;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -286,6 +287,21 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
         $supported = array_keys((array) config('localization.supported'));
 
         return in_array($this->locale, $supported, true) ? (string) $this->locale : (string) config('app.locale');
+    }
+
+    /**
+     * Accounts that are not only applicants: an applicant's account is the
+     * record of who a request was recorded for, so the Users list and every
+     * count of users leave it out (owner's decision, 2026-11-19), unless its
+     * roles also give it some of the office's work.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeExceptApplicants(Builder $query): void
+    {
+        $query->where(fn (Builder $query) => $query
+            ->withoutPermission(Permission::ApplyForPermits->value)
+            ->orWhere(fn (Builder $query) => $query->permission(PermissionCatalog::staffPermissions())));
     }
 
     /**

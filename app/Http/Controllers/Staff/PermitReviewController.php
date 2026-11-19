@@ -48,11 +48,19 @@ class PermitReviewController extends Controller
 {
     /**
      * The stages at which a request letter's vehicles are handled together
-     * (one payment, one issuing), so the queue shows the letter once.
+     * (one decision, one payment, one issuing), so the queue shows the
+     * letter once, opening the letter's page.
      *
      * @var list<string>
      */
-    private const array LETTER_STAGES = ['awaiting_payment', 'payment_confirmed'];
+    private const array LETTER_STAGES = ['submitted', 'under_review', 'awaiting_payment', 'payment_confirmed'];
+
+    /**
+     * The stages that are one step for a letter: waiting for a decision.
+     *
+     * @var list<string>
+     */
+    private const array REVIEW_STAGES = ['submitted', 'under_review'];
 
     private const int PER_PAGE = 20;
 
@@ -82,6 +90,7 @@ class PermitReviewController extends Controller
             ->whereNotIn('status', PermitStatus::hiddenFromStaff())
             // Staff placed at a branch work on that branch's applications only.
             ->inBranchOf($request->user())
+            ->visibleIssuedTo($request->user())
             ->when($status !== null, fn (Builder $query) => $query->inStatusGroup($status))
             // Unless asked otherwise, the queue is what waits for this person's desk.
             ->when($status === null && ! $all, fn (Builder $query) => $this->onDesk($query, $request->user()))
@@ -94,17 +103,22 @@ class PermitReviewController extends Controller
                     ->orWhereLike('name_en', $like($organization)))))
             ->when($submittedFrom !== null, fn (Builder $query) => $query->where('submitted_at', '>=', $submittedFrom->startOfDay()->utc()))
             ->when($submittedTo !== null, fn (Builder $query) => $query->where('submitted_at', '<=', $submittedTo->endOfDay()->utc()))
-            // A letter's vehicles are paid for, and issued, together: while waiting for
-            // either, they are one row — the first vehicle at that stage.
+            // A letter's vehicles are decided, paid for and issued together: while waiting
+            // for one of those, they are one row — the first vehicle at that stage. A Reviewer
+            // who does not decide sees each vehicle sent to them instead.
             ->where(fn (Builder $query) => $query
                 ->whereNull('request_letter_id')
-                ->orWhereNotIn('status', self::LETTER_STAGES)
+                ->orWhereNotIn('status', $this->collapsed($request->user()))
                 ->orWhereNotExists(fn ($sibling) => $sibling
                     ->selectRaw('1')
                     ->from('permits as sibling')
                     ->whereColumn('sibling.request_letter_id', 'permits.request_letter_id')
-                    ->whereColumn('sibling.status', 'permits.status')
-                    ->whereColumn('sibling.id', '<', 'permits.id')))
+                    ->whereColumn('sibling.id', '<', 'permits.id')
+                    ->where(fn ($stage) => $stage
+                        ->whereColumn('sibling.status', 'permits.status')
+                        ->orWhere(fn ($review) => $review
+                            ->whereIn('permits.status', self::REVIEW_STAGES)
+                            ->whereIn('sibling.status', self::REVIEW_STAGES)))))
             // Oldest first: the application that has waited longest is on top.
             ->orderBy('submitted_at')
             ->orderBy('id')
@@ -112,7 +126,7 @@ class PermitReviewController extends Controller
             ->withQueryString();
 
         // Worked out before the rows become resources (that replaces them in the paginator).
-        $letterPayments = $this->letterPayments($permits->getCollection());
+        $letterPayments = $this->letterPayments($permits->getCollection(), $this->collapsed($request->user()));
 
         return Inertia::render('staff/permits/index', [
             'permits' => PermitResource::collection($permits),
@@ -276,44 +290,74 @@ class PermitReviewController extends Controller
     }
 
     /**
-     * For each row that stands for a request letter's one payment (keyed by
-     * the permit's id): how many vehicles the payment covers, its total and
-     * the letter's page where it is taken.
+     * The stages whose letter vehicles are one row for this person. A Reviewer
+     * who does not decide sees each vehicle sent to them for an opinion.
+     *
+     * @return list<string>
+     */
+    private function collapsed(User $user): array
+    {
+        $reviewerOnly = $user->can(Permission::ReviewPermits->value) && ! $user->can(Permission::ApprovePermits->value);
+
+        return $reviewerOnly
+            ? array_values(array_diff(self::LETTER_STAGES, self::REVIEW_STAGES))
+            : self::LETTER_STAGES;
+    }
+
+    /**
+     * The stage a status is at for a letter: both review statuses are one.
+     */
+    private static function stageOf(string $status): string
+    {
+        return in_array($status, self::REVIEW_STAGES, true) ? 'review' : $status;
+    }
+
+    /**
+     * For each row that stands for a request letter's vehicles at one stage
+     * (keyed by the permit's id): how many vehicles, the total to pay (none
+     * while waiting for a decision) and the letter's page where it is done.
      *
      * @param  Collection<int, Permit>  $permits
-     * @return array<string, array{letter: string|null, vehicles: int, total: string, url: string, stage: string}>
+     * @param  list<string>  $stages  the stages shown as one row for this person
+     * @return array<string, array{letter: string|null, vehicles: int, total: string|null, url: string, stage: string}>
      */
-    private function letterPayments(Collection $permits): array
+    private function letterPayments(Collection $permits, array $stages): array
     {
-        $rows = $permits->filter(fn (Permit $permit): bool => $permit->request_letter_id !== null && in_array($permit->status->value, self::LETTER_STAGES, true));
+        $rows = $permits->filter(fn (Permit $permit): bool => $permit->request_letter_id !== null && in_array($permit->status->value, $stages, true));
 
         if ($rows->isEmpty()) {
             return [];
         }
 
-        $totals = Permit::query()
+        $totals = [];
+
+        foreach (Permit::query()
             ->whereIn('request_letter_id', $rows->pluck('request_letter_id')->unique()->all())
-            ->whereIn('status', self::LETTER_STAGES)
+            ->whereIn('status', $stages)
             ->groupBy('request_letter_id', 'status')
             ->selectRaw('request_letter_id, status, count(*) as vehicles, sum(fee_cents) as total')
-            ->get()
-            ->keyBy(fn (Permit $row): string => $row->request_letter_id.'|'.$row->status->value);
+            ->get() as $row) {
+            $key = $row->request_letter_id.'|'.self::stageOf($row->status->value);
+            $totals[$key]['vehicles'] = ($totals[$key]['vehicles'] ?? 0) + (int) $row->getAttribute('vehicles');
+            $totals[$key]['total'] = ($totals[$key]['total'] ?? 0) + (int) $row->getAttribute('total');
+        }
 
         $groups = [];
 
         foreach ($rows as $permit) {
-            $total = $totals->get($permit->request_letter_id.'|'.$permit->status->value);
+            $stage = self::stageOf($permit->status->value);
+            $total = $totals[$permit->request_letter_id.'|'.$stage] ?? null;
 
-            if ($total === null || (int) $total->getAttribute('vehicles') < 2) {
+            if ($total === null || $total['vehicles'] < 2) {
                 continue;
             }
 
             $groups[$permit->id] = [
                 'letter' => $permit->letter_number,
-                'vehicles' => (int) $total->getAttribute('vehicles'),
-                'total' => Money::format((int) $total->getAttribute('total'), $permit->currency),
+                'vehicles' => $total['vehicles'],
+                'total' => $stage === 'review' ? null : Money::format($total['total'], $permit->currency),
                 'url' => route('letters.show', $permit->request_letter_id),
-                'stage' => $permit->status->value,
+                'stage' => $stage,
             ];
         }
 

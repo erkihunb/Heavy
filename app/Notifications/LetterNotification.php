@@ -29,7 +29,7 @@ final class LetterNotification extends Notification implements ShouldQueue
     public array $backoff = [60, 300, 900];
 
     /**
-     * @param  'approved'|'rejected'|'issued'  $what
+     * @param  'approved'|'rejected'|'issued'|'changes_requested'  $what
      */
     public function __construct(
         public readonly RequestLetter $letter,

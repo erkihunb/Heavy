@@ -66,11 +66,18 @@ type Props = {
         to_pay_total: string;
         to_pay_money: Money;
         to_issue: number;
+        /** Vehicles returned for changes, and how many this person may send again. */
+        returned: number;
+        resubmittable: number;
+        /** What the latest return asked to correct. */
+        return_note: string | null;
         issued: number;
     };
     can: {
         recommend: boolean;
         decide: boolean;
+        return: boolean;
+        resubmit: boolean;
         sendForReview: boolean;
         recordPayment: boolean;
         issue: boolean;
@@ -95,6 +102,8 @@ type Props = {
         recommend: string;
         approve: string;
         reject: string;
+        return: string;
+        resubmit: string;
         payment: string;
         issue: string;
         documentsAm: string;
@@ -145,7 +154,8 @@ function LetterPage({
     const [askReviewers, setAskReviewers] = useState<number[]>([]);
     const [busy, setBusy] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const choosing = can.recommend || can.decide || can.sendForReview;
+    const choosing =
+        can.recommend || can.decide || can.sendForReview || can.return;
 
     const toggle = (id: string, on: boolean) =>
         setChosen((current) =>
@@ -169,26 +179,35 @@ function LetterPage({
             },
         });
 
-    async function decide(kind: 'approve' | 'reject') {
+    const DECISIONS = {
+        approve: {
+            title: 'letters.decide.confirm_approve',
+            label: 'letters.decide.approve',
+            url: urls.approve,
+        },
+        reject: {
+            title: 'letters.decide.confirm_reject',
+            label: 'letters.decide.reject',
+            url: urls.reject,
+        },
+        return: {
+            title: 'letters.decide.confirm_return',
+            label: 'letters.decide.return',
+            url: urls.return,
+        },
+    } as const;
+
+    async function decide(kind: keyof typeof DECISIONS) {
+        const decision = DECISIONS[kind];
         const { confirmed } = await confirm({
-            title: t(
-                kind === 'approve'
-                    ? 'letters.decide.confirm_approve'
-                    : 'letters.decide.confirm_reject',
-                { count: selected.length },
-            ),
+            title: t(decision.title, { count: selected.length }),
             description: t('letters.decide.confirm_body'),
-            confirmLabel: t(
-                kind === 'approve'
-                    ? 'letters.decide.approve'
-                    : 'letters.decide.reject',
-                { count: selected.length },
-            ),
-            variant: kind === 'approve' ? 'default' : 'danger',
+            confirmLabel: t(decision.label, { count: selected.length }),
+            variant: kind === 'reject' ? 'danger' : 'default',
         });
 
         if (confirmed) {
-            send(kind === 'approve' ? urls.approve : urls.reject, {
+            send(decision.url, {
                 permits: selected,
                 note: decisionNote,
             });
@@ -746,7 +765,44 @@ function LetterPage({
                         </section>
                     )}
 
-                    {can.decide && (
+                    {summary.returned > 0 && (
+                        <section className={panel}>
+                            <div className="space-y-1">
+                                <h2 className="text-section-title">
+                                    {t('letters.returned.title')}
+                                </h2>
+                                <p className="text-xs text-muted-foreground">
+                                    {t('letters.returned.hint', {
+                                        count: summary.returned,
+                                    })}
+                                </p>
+                            </div>
+                            {summary.return_note && (
+                                <div className="space-y-1 rounded-md bg-muted p-3">
+                                    <p className="text-xs font-medium text-muted-foreground">
+                                        {t('letters.returned.note')}
+                                    </p>
+                                    <p className="text-sm whitespace-pre-line text-foreground">
+                                        {summary.return_note}
+                                    </p>
+                                </div>
+                            )}
+                            {can.resubmit && (
+                                <Button
+                                    type="button"
+                                    className="w-full"
+                                    disabled={busy}
+                                    onClick={() => send(urls.resubmit, {})}
+                                >
+                                    {t('letters.returned.submit', {
+                                        count: summary.resubmittable,
+                                    })}
+                                </Button>
+                            )}
+                        </section>
+                    )}
+
+                    {(can.decide || can.return) && (
                         <section className={panel}>
                             <div className="space-y-1">
                                 <h2 className="text-section-title">
@@ -783,29 +839,49 @@ function LetterPage({
                                 )}
                             </div>
                             <div className="grid gap-2">
-                                <Button
-                                    type="button"
-                                    disabled={busy || selected.length === 0}
-                                    onClick={() => void decide('approve')}
-                                >
-                                    {t('letters.decide.approve', {
-                                        count: selected.length,
-                                    })}
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    disabled={
-                                        busy ||
-                                        selected.length === 0 ||
-                                        decisionNote.trim() === ''
-                                    }
-                                    onClick={() => void decide('reject')}
-                                >
-                                    {t('letters.decide.reject', {
-                                        count: selected.length,
-                                    })}
-                                </Button>
+                                {can.decide && (
+                                    <Button
+                                        type="button"
+                                        disabled={busy || selected.length === 0}
+                                        onClick={() => void decide('approve')}
+                                    >
+                                        {t('letters.decide.approve', {
+                                            count: selected.length,
+                                        })}
+                                    </Button>
+                                )}
+                                {can.return && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        disabled={
+                                            busy ||
+                                            selected.length === 0 ||
+                                            decisionNote.trim() === ''
+                                        }
+                                        onClick={() => void decide('return')}
+                                    >
+                                        {t('letters.decide.return', {
+                                            count: selected.length,
+                                        })}
+                                    </Button>
+                                )}
+                                {can.decide && (
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        disabled={
+                                            busy ||
+                                            selected.length === 0 ||
+                                            decisionNote.trim() === ''
+                                        }
+                                        onClick={() => void decide('reject')}
+                                    >
+                                        {t('letters.decide.reject', {
+                                            count: selected.length,
+                                        })}
+                                    </Button>
+                                )}
                             </div>
                         </section>
                     )}

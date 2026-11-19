@@ -114,7 +114,8 @@ describe('the decisions of staff', function () {
         $expected = match ($role) {
             // The Reviewer decides too, and so may ask other Reviewers for an opinion.
             Role::Reviewer => [...REVIEWER_ABILITIES, 'approve', 'reject', 'sendForReview'],
-            Role::Approver => APPROVER_ABILITIES,
+            // The person who decides may also return a request for changes.
+            Role::Approver => ['requestChanges', ...APPROVER_ABILITIES],
             Role::Admin => [...REVIEWER_ABILITIES, ...APPROVER_ABILITIES],
             default => [],
         };
@@ -149,7 +150,8 @@ describe('the decisions of staff', function () {
 
         expect(denialStatus($reviewer, 'revoke', $permit))->toBe(403);
 
-        foreach (REVIEWER_ABILITIES as $ability) {
+        // An Approver may return a request (requestChanges), but not review it.
+        foreach (['startReview', 'recommend'] as $ability) {
             expect(denialStatus($approver, $ability, $permit))->toBe(403);
         }
 

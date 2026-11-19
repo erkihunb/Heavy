@@ -7,6 +7,7 @@ use App\Actions\Letters\IssueLetter;
 use App\Actions\Letters\LetterPermits;
 use App\Actions\Letters\RecordLetterPayment;
 use App\Actions\Letters\SendLetterForReview;
+use App\Actions\Permits\SubmitPermit;
 use App\Data\RecommendationData;
 use App\Domain\Audit\AuditEvent;
 use App\Domain\Audit\AuditLog;
@@ -19,6 +20,7 @@ use App\Http\Requests\Staff\RecordLetterPaymentRequest;
 use App\Models\Permit;
 use App\Models\PermitReview;
 use App\Models\PermitReviewRequest;
+use App\Models\PermitStatusTransition;
 use App\Models\RequestLetter;
 use App\Models\User;
 use App\Support\EthiopianCalendar;
@@ -26,6 +28,7 @@ use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -51,16 +54,25 @@ class LetterController extends Controller
             'organization',
             'registrar:id,name',
             'permits.vehicles.vehicleType',
+            'permits.applicant',
             'permits.reviews.reviewer:id,name',
             'permits.reviewRequests.reviewer:id,name',
         ]);
         $zone = (string) config('localization.display_timezone');
         $locale = app()->getLocale();
 
-        $permits = $letter->permits;
+        // Issued vehicles are seen only with `permits.view-issued`.
+        $permits = $user instanceof User && ! $user->can(Permission::ViewIssuedPermits->value)
+            ? $letter->permits->reject(fn (Permit $permit): bool => in_array($permit->status, Permit::ISSUED_STATUSES, true))->values()
+            : $letter->permits;
         $undecided = $permits->filter(fn (Permit $permit): bool => $permit->status->isAwaitingReview());
         $unpaid = $permits->where('status', PermitStatus::AwaitingPayment);
         $paid = $permits->where('status', PermitStatus::PaymentConfirmed);
+        $returned = $permits->where('status', PermitStatus::ChangesRequested);
+        // The Registrar sends the corrected vehicles again (PermitPolicy::submitFor).
+        $resubmittable = $returned->filter(fn (Permit $permit): bool => $user instanceof User
+            && $permit->applicant !== null
+            && Gate::forUser($user)->inspect('submitFor', [$permit, $permit->applicant])->allowed());
         $issued = $permits->filter(fn (Permit $permit): bool => StoredDocument::isUsable($permit, 'am'));
         $currency = $first->currency;
         $may = fn (string $ability): bool => $user instanceof User && Gate::forUser($user)->inspect($ability, $first)->allowed();
@@ -99,11 +111,21 @@ class LetterController extends Controller
                     'formatted' => Money::format((int) $unpaid->sum('fee_cents'), $currency),
                 ],
                 'to_issue' => $paid->count(),
+                'returned' => $returned->count(),
+                'resubmittable' => $resubmittable->count(),
+                // What the person who returned them asked to correct (the latest return).
+                'return_note' => $returned->isEmpty() ? null : PermitStatusTransition::query()
+                    ->whereIn('permit_id', $returned->pluck('id')->all())
+                    ->where('to_status', PermitStatus::ChangesRequested->value)
+                    ->latest('id')
+                    ->value('note'),
                 'issued' => $issued->count(),
             ],
             'can' => [
                 'recommend' => $reviewable !== [],
                 'decide' => $undecided->isNotEmpty() && $may('approve'),
+                'return' => $undecided->isNotEmpty() && $may('requestChanges'),
+                'resubmit' => $resubmittable->isNotEmpty(),
                 'sendForReview' => $undecided->isNotEmpty() && $may('sendForReview'),
                 'recordPayment' => $unpaid->isNotEmpty() && $user?->can(Permission::VerifyPayments->value) === true && $first->isInBranchOf($user),
                 'issue' => $paid->isNotEmpty() && $user?->can(Permission::IssuePermits->value) === true && $first->isInBranchOf($user),
@@ -123,6 +145,8 @@ class LetterController extends Controller
                 'recommend' => route('letters.recommend', $letter),
                 'approve' => route('letters.approve', $letter),
                 'reject' => route('letters.reject', $letter),
+                'return' => route('letters.return', $letter),
+                'resubmit' => route('letters.resubmit', $letter),
                 'payment' => route('letters.payment', $letter),
                 'issue' => route('letters.issue', $letter),
                 'documentsAm' => route('letters.documents', [$letter, 'am']),
@@ -180,6 +204,35 @@ class LetterController extends Controller
         $done = $decide->reject($letter, $validated['permits'], $request->user(), trim($validated['note']));
 
         return back()->with('success', __('letters.messages.rejected', ['count' => count($done)]));
+    }
+
+    public function requestChanges(Request $request, RequestLetter $letter, DecideLetter $decide): RedirectResponse
+    {
+        $this->authorizeView($letter);
+        $validated = $request->validate([...$this->choiceRules(), 'note' => ['required', 'string', 'max:2000']]);
+
+        $done = $decide->requestChanges($letter, $validated['permits'], $request->user(), trim($validated['note']));
+
+        return back()->with('success', __('letters.messages.returned', ['count' => count($done)]));
+    }
+
+    /**
+     * The Registrar sends every corrected vehicle of the letter again, at once.
+     */
+    public function resubmit(Request $request, RequestLetter $letter, SubmitPermit $submit): RedirectResponse
+    {
+        $this->authorizeView($letter);
+        $user = $request->user();
+
+        $permits = $letter->permits()->with('applicant')->where('status', PermitStatus::ChangesRequested->value)->get()
+            ->filter(fn (Permit $permit): bool => $permit->applicant !== null
+                && Gate::forUser($user)->inspect('submitFor', [$permit, $permit->applicant])->allowed());
+
+        abort_if($permits->isEmpty(), 403);
+
+        $done = DB::transaction(fn (): int => $permits->each(fn (Permit $permit) => $submit->handle($permit, $user))->count());
+
+        return back()->with('success', __('letters.messages.resubmitted', ['count' => $done]));
     }
 
     public function payment(RecordLetterPaymentRequest $request, RequestLetter $letter, RecordLetterPayment $record): RedirectResponse

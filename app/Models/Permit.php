@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Domain\Permits\MovementHours;
+use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Enums\PermitType;
 use App\Enums\Recommendation;
@@ -58,6 +59,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Permit extends Model
 {
+    /**
+     * The stored statuses of a permit once issued: seen only with
+     * `permits.view-issued` (PermitPolicy, scopeVisibleIssuedTo).
+     *
+     * @var list<PermitStatus>
+     */
+    public const array ISSUED_STATUSES = [PermitStatus::Issued, PermitStatus::Expired, PermitStatus::Revoked];
+
     /** @use HasFactory<PermitFactory> */
     use HasFactory, HasUlids;
 
@@ -319,6 +328,18 @@ class Permit extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class)->orderBy('id');
+    }
+
+    /**
+     * Leaves out issued permits for someone without `permits.view-issued`.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeVisibleIssuedTo(Builder $query, User $user): void
+    {
+        if (! $user->can(Permission::ViewIssuedPermits->value)) {
+            $query->whereNotIn($query->qualifyColumn('status'), array_map(fn (PermitStatus $status): string => $status->value, self::ISSUED_STATUSES));
+        }
     }
 
     /**

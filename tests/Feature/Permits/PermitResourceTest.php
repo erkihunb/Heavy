@@ -281,9 +281,9 @@ describe('PermitResource', function () {
         'reviewer, issued' => ['issued', 'reviewer', []],
         'approver, submitted' => ['submitted', 'approver', []],
         // The decision never waits for a Reviewer's opinion.
-        'approver, under review without a recommendation' => ['underReview', 'approver', ['approve', 'reject']],
-        'approver, recommended' => ['recommended', 'approver', ['approve', 'reject']],
-        'approver, own recommendation' => ['recommended by the approver', 'approver', ['approve', 'reject']],
+        'approver, under review without a recommendation' => ['underReview', 'approver', ['requestChanges', 'approve', 'reject']],
+        'approver, recommended' => ['recommended', 'approver', ['requestChanges', 'approve', 'reject']],
+        'approver, own recommendation' => ['recommended by the approver', 'approver', ['requestChanges', 'approve', 'reject']],
         'approver, awaiting payment' => ['awaitingPayment', 'approver', []],
         'approver, issued' => ['issued', 'approver', ['revoke', 'reissue']],
         'approver, active' => ['active', 'approver', ['revoke', 'reissue']],
@@ -296,7 +296,7 @@ describe('PermitResource', function () {
 
         $data = resourceAs($this->approver, PermitResource::make($permit));
 
-        expect(array_keys(array_filter($data['can'])))->toBe(['approve', 'reject']);
+        expect(array_keys(array_filter($data['can'])))->toBe(['requestChanges', 'approve', 'reject']);
     });
 
     it('offers nothing to an applicant of another organization', function () {

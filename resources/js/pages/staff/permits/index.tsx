@@ -27,16 +27,29 @@ import { FilterField, FilterPanel, Input, Select } from '@/shell/Components/ui';
 import type { BreadcrumbItem, Paginated, Permit } from '@/types';
 import { PERMIT_TYPES } from '@/types/enums';
 import type { PermitStatus, PermitType } from '@/types/enums';
+import type { TranslationKey } from '@/types/translations';
 
-/** A row standing for a request letter's one payment (PermitReviewController::letterPayments). */
+/** A row standing for a request letter's vehicles at one stage (PermitReviewController::letterPayments). */
 type LetterPayment = {
     letter: string | null;
     vehicles: number;
-    total: string;
+    /** What to pay; null while the letter waits for a decision. */
+    total: string | null;
     url: string;
-    /** awaiting_payment: take its one payment; payment_confirmed: issue it. */
+    /** review: decide it; awaiting_payment: take its one payment; payment_confirmed: issue it. */
     stage: string;
 };
+
+/** What the row's button says, by the letter's stage. */
+const LETTER_ACTION: Record<string, TranslationKey> = {
+    review: 'letters.go_decide',
+    awaiting_payment: 'letters.go_pay',
+    payment_confirmed: 'letters.go_issue',
+};
+
+/** Waiting for a decision: a letter's vehicle is decided on the letter's page. */
+const reviewStage = (status: PermitStatus) =>
+    status === 'submitted' || status === 'under_review';
 
 type Props = {
     permits: Paginated<Permit>;
@@ -274,18 +287,44 @@ export default function StaffPermitsIndex({
                                         <Td>
                                             {letterPayments[permit.id] ? (
                                                 <span className="text-sm font-medium">
-                                                    {t('letters.queue_row', {
-                                                        letter:
-                                                            letterPayments[
-                                                                permit.id
-                                                            ].letter ?? '',
-                                                        count: letterPayments[
-                                                            permit.id
-                                                        ].vehicles,
-                                                        total: letterPayments[
-                                                            permit.id
-                                                        ].total,
-                                                    })}
+                                                    {letterPayments[permit.id]
+                                                        .total === null
+                                                        ? t(
+                                                              'letters.queue_row_review',
+                                                              {
+                                                                  letter:
+                                                                      letterPayments[
+                                                                          permit
+                                                                              .id
+                                                                      ]
+                                                                          .letter ??
+                                                                      '',
+                                                                  count: letterPayments[
+                                                                      permit.id
+                                                                  ].vehicles,
+                                                              },
+                                                          )
+                                                        : t(
+                                                              'letters.queue_row',
+                                                              {
+                                                                  letter:
+                                                                      letterPayments[
+                                                                          permit
+                                                                              .id
+                                                                      ]
+                                                                          .letter ??
+                                                                      '',
+                                                                  count: letterPayments[
+                                                                      permit.id
+                                                                  ].vehicles,
+                                                                  total:
+                                                                      letterPayments[
+                                                                          permit
+                                                                              .id
+                                                                      ].total ??
+                                                                      '',
+                                                              },
+                                                          )}
                                                 </span>
                                             ) : (
                                                 <span className="flex flex-wrap gap-1.5">
@@ -349,22 +388,27 @@ export default function StaffPermitsIndex({
                                                         letterPayments[
                                                             permit.id
                                                         ]?.url ??
+                                                        // A letter's vehicle is decided on the letter's page.
+                                                        (reviewStage(
+                                                            permit.status,
+                                                        )
+                                                            ? permit.letter
+                                                                  ?.group_url
+                                                            : undefined) ??
                                                         show({
                                                             permit: permit.id,
                                                         })
                                                     }
                                                 >
                                                     {letterPayments[permit.id]
-                                                        ? letterPayments[
-                                                              permit.id
-                                                          ].stage ===
-                                                          'payment_confirmed'
-                                                            ? t(
-                                                                  'letters.go_issue',
-                                                              )
-                                                            : t(
+                                                        ? t(
+                                                              LETTER_ACTION[
+                                                                  letterPayments[
+                                                                      permit.id
+                                                                  ].stage
+                                                              ] ??
                                                                   'letters.go_pay',
-                                                              )
+                                                          )
                                                         : t(
                                                               'permits.actions.view',
                                                           )}
