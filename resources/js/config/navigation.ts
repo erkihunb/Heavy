@@ -2,6 +2,7 @@ import { dashboard } from '@/routes';
 import { index as auditLog } from '@/routes/admin/audit-log';
 import { index as branches } from '@/routes/admin/branches';
 import { index as feeSchedules } from '@/routes/admin/fee-schedules';
+import { index as organizations } from '@/routes/admin/organizations';
 import { index as permissions } from '@/routes/admin/permissions';
 import { index as permitRegister } from '@/routes/admin/permits';
 import { index as roles } from '@/routes/admin/roles';
@@ -121,20 +122,29 @@ export const navigation: Navigation = {
                             anyPermission: [
                                 'permits.view-queue',
                                 'applicants.register',
+                                'permits.update-registered',
+                                'permits.delete-registered',
                             ],
+                        },
+                        // The organizations requests are registered for, and their vehicles.
+                        {
+                            href: organizations().url,
+                            labelKey: 'organizations.nav',
+                            icon: Buildings3Icon,
+                            permission: 'organizations.view',
                         },
                         // The Authority's own vehicles, and the permits given to them directly, free of charge.
                         {
                             href: institutionVehicles().url,
                             labelKey: 'institution.nav_vehicles',
                             icon: Buildings3Icon,
-                            permission: 'institution-permits.issue',
+                            permission: 'institution-vehicles.view',
                         },
                         {
                             href: institutionPermits().url,
                             labelKey: 'institution.nav',
                             icon: ClipboardListIcon,
-                            permission: 'institution-permits.issue',
+                            permission: 'institution-permits.view',
                         },
                     ],
                 },
@@ -147,7 +157,7 @@ export const navigation: Navigation = {
                             href: paymentQueue().url,
                             labelKey: 'nav.payments',
                             icon: BanknoteIcon,
-                            permission: 'payments.verify',
+                            permission: 'payments.view',
                         },
                         {
                             href: reports().url,
@@ -215,25 +225,25 @@ export const navigation: Navigation = {
                             href: feeSchedules().url,
                             labelKey: 'nav.fee_schedules',
                             icon: BillListIcon,
-                            permission: 'fee-schedules.manage',
+                            permission: 'fee-schedules.view',
                         },
                         {
                             href: vehicleTypes().url,
                             labelKey: 'nav.vehicle_types',
                             icon: TagsIcon,
-                            permission: 'vehicle-types.manage',
+                            permission: 'vehicle-types.view',
                         },
                         {
                             href: branches().url,
                             labelKey: 'nav.branches',
                             icon: Buildings3Icon,
-                            permission: 'settings.manage',
+                            permission: 'branches.view',
                         },
                         {
                             href: systemSettings().url,
                             labelKey: 'nav.system_settings',
                             icon: TuningIcon,
-                            permission: 'settings.manage',
+                            permission: 'settings.view',
                         },
                     ],
                 },

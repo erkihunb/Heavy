@@ -1,6 +1,12 @@
 <?php
 
 return [
+    'delete' => [
+        'button' => 'Delete',
+        'title' => 'Delete :name?',
+        'body' => 'This cannot be undone.',
+        'in_use' => 'In use, so it cannot be deleted',
+    ],
     'app_name' => 'Heavy Vehicle Movement Permits',
     'authority' => 'Addis Ababa City Roads Authority',
     'language' => 'Language',

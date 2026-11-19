@@ -23,7 +23,7 @@ final class PermitStateMachine
             PermitStatus::Rejected,
             PermitStatus::AwaitingPayment,
         ],
-        PermitStatus::ChangesRequested->value => [PermitStatus::Submitted],
+        PermitStatus::ChangesRequested->value => [PermitStatus::Submitted, PermitStatus::Withdrawn],
         // A receipt sent in for verification, or a payment a cashier takes and records.
         PermitStatus::AwaitingPayment->value => [PermitStatus::PaymentSubmitted, PermitStatus::PaymentConfirmed],
         PermitStatus::PaymentSubmitted->value => [PermitStatus::PaymentConfirmed, PermitStatus::AwaitingPayment],

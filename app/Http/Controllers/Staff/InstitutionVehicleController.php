@@ -10,6 +10,7 @@ use App\Domain\Institution\InstitutionFleet;
 use App\Domain\Permits\ValidityRules;
 use App\Domain\Vehicles\PlateNumber;
 use App\Domain\Vehicles\PlateRegistry;
+use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Exceptions\DuplicateVehiclePlate;
 use App\Exceptions\InvalidPlateNumber;
@@ -24,7 +25,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -43,7 +43,7 @@ class InstitutionVehicleController extends Controller
 
     public function index(Request $request): Response
     {
-        Gate::authorize('issueInstitutional', Permit::class);
+        abort_unless($this->may(Permission::ViewInstitutionVehicles), 403);
 
         $locale = app()->getLocale();
         $today = ValidityRules::today()->toDateString();
@@ -72,8 +72,10 @@ class InstitutionVehicleController extends Controller
                         'valid_to' => EthiopianCalendar::present($permit->valid_to, $locale),
                     ],
                     // One that has held a permit stays on record, so its permits keep naming it.
-                    'deletable' => $vehicle->permits_count === 0,
-                    'editUrl' => route('staff.institution-vehicles.edit', $vehicle),
+                    'deletable' => $vehicle->permits_count === 0 && $this->may(Permission::DeleteInstitutionVehicles),
+                    'editUrl' => $this->may(Permission::UpdateInstitutionVehicles) ? route('staff.institution-vehicles.edit', $vehicle) : null,
+                    'canDelete' => $this->may(Permission::DeleteInstitutionVehicles),
+                    'canIssue' => $this->may(Permission::IssueInstitutionPermits),
                     // Straight to the give-permit form with this vehicle chosen.
                     'issueUrl' => route('staff.institution-permits.create', ['vehicle' => $vehicle->id]),
                     'destroyUrl' => route('staff.institution-vehicles.destroy', $vehicle),
@@ -86,16 +88,16 @@ class InstitutionVehicleController extends Controller
             'total' => InstitutionFleet::vehicles()->count(),
             'urls' => [
                 'index' => route('staff.institution-vehicles.index'),
-                'create' => route('staff.institution-vehicles.create'),
-                'permits' => route('staff.institution-permits.index'),
-                'issue' => route('staff.institution-permits.create'),
+                'create' => $this->may(Permission::CreateInstitutionVehicles) ? route('staff.institution-vehicles.create') : null,
+                'permits' => $this->may(Permission::IssueInstitutionPermits) ? route('staff.institution-permits.index') : null,
+                'issue' => $this->may(Permission::IssueInstitutionPermits) ? route('staff.institution-permits.create') : null,
             ],
         ]);
     }
 
     public function create(): Response
     {
-        Gate::authorize('issueInstitutional', Permit::class);
+        abort_unless($this->may(Permission::CreateInstitutionVehicles), 403);
 
         return Inertia::render('staff/institution-vehicles/form', [
             'vehicle' => null,
@@ -109,7 +111,7 @@ class InstitutionVehicleController extends Controller
 
     public function store(Request $request, RegisterVehicle $register): RedirectResponse
     {
-        Gate::authorize('issueInstitutional', Permit::class);
+        abort_unless($this->may(Permission::CreateInstitutionVehicles), 403);
 
         $validated = $this->validated($request);
 
@@ -131,7 +133,7 @@ class InstitutionVehicleController extends Controller
 
     public function edit(Vehicle $vehicle): Response
     {
-        Gate::authorize('issueInstitutional', Permit::class);
+        abort_unless($this->may(Permission::UpdateInstitutionVehicles), 403);
         $this->ensureInstitutional($vehicle);
 
         return Inertia::render('staff/institution-vehicles/form', [
@@ -152,7 +154,7 @@ class InstitutionVehicleController extends Controller
 
     public function update(Request $request, Vehicle $vehicle, PlateRegistry $plates, AuditLog $audit): RedirectResponse
     {
-        Gate::authorize('issueInstitutional', Permit::class);
+        abort_unless($this->may(Permission::UpdateInstitutionVehicles), 403);
         $this->ensureInstitutional($vehicle);
 
         $validated = $this->validated($request, $vehicle->vehicle_type_id);
@@ -196,7 +198,7 @@ class InstitutionVehicleController extends Controller
 
     public function destroy(Request $request, Vehicle $vehicle, AuditLog $audit): RedirectResponse
     {
-        Gate::authorize('issueInstitutional', Permit::class);
+        abort_unless($this->may(Permission::DeleteInstitutionVehicles), 403);
         $this->ensureInstitutional($vehicle);
 
         if ($vehicle->permits()->exists()) {
@@ -209,6 +211,14 @@ class InstitutionVehicleController extends Controller
         });
 
         return back()->with('success', __('institution.messages.vehicle_deleted'));
+    }
+
+    /**
+     * Each action on the register has its own permission.
+     */
+    private function may(Permission $permission): bool
+    {
+        return request()->user()?->can($permission->value) ?? false;
     }
 
     /**

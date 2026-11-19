@@ -41,7 +41,7 @@ trait ActsForApplicant
         /** @var Permit|null $permit */
         $permit = $this->route('permit');
 
-        return ($this->user()?->can('registerApplicant', User::class) ?? false)
+        return ($this->user()?->can('workOnRegisteredRequests', User::class) ?? false)
             && $permit?->applicant !== null
             && $permit->applicant->can(Permission::ApplyForPermits->value)
             && $permit->applicant->organization_id !== null;

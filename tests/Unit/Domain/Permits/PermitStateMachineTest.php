@@ -17,6 +17,8 @@ const ALLOWED_TRANSITIONS = [
     'reject' => [PermitStatus::UnderReview, PermitStatus::Rejected],
     'approve' => [PermitStatus::UnderReview, PermitStatus::AwaitingPayment],
     'resubmit' => [PermitStatus::ChangesRequested, PermitStatus::Submitted],
+    // The Registrar deletes a returned request: it stays in the record as withdrawn.
+    'withdraw after changes were requested' => [PermitStatus::ChangesRequested, PermitStatus::Withdrawn],
     'submit payment' => [PermitStatus::AwaitingPayment, PermitStatus::PaymentSubmitted],
     'verify payment' => [PermitStatus::PaymentSubmitted, PermitStatus::PaymentConfirmed],
     'record a payment at the desk' => [PermitStatus::AwaitingPayment, PermitStatus::PaymentConfirmed],
@@ -50,7 +52,6 @@ it('refuses transitions the specification does not list', function (PermitStatus
     'withdraw during review' => [PermitStatus::UnderReview, PermitStatus::Withdrawn],
     'issue without payment' => [PermitStatus::UnderReview, PermitStatus::Issued],
     'send back to the queue' => [PermitStatus::UnderReview, PermitStatus::Submitted],
-    'withdraw after changes were requested' => [PermitStatus::ChangesRequested, PermitStatus::Withdrawn],
     'review without resubmission' => [PermitStatus::ChangesRequested, PermitStatus::UnderReview],
     'issue before payment' => [PermitStatus::AwaitingPayment, PermitStatus::Issued],
     'reject after approval' => [PermitStatus::AwaitingPayment, PermitStatus::Rejected],

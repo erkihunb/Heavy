@@ -54,6 +54,7 @@ return [
         // Users, roles and permissions (EUISIS RBAC).
         'rbac',
         'institution',
+        'organizations',
     ],
 
     /*

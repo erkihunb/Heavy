@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Permits\ResolveEditedVehicles;
 use App\Actions\Permits\SubmitPermit;
 use App\Actions\Permits\UpdateDraftPermit;
+use App\Actions\Permits\WithdrawPermit;
+use App\Actions\Vehicles\CorrectVehicle;
 use App\Actions\Vehicles\RegisterVehicle;
 use App\Domain\Permits\FeeCalculator;
 use App\Domain\Permits\ValidityRules;
@@ -15,9 +18,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Registrar\FeeRatesForApplicantRequest;
 use App\Http\Requests\Registrar\StoreVehicleForApplicantRequest;
 use App\Http\Requests\Registrar\UpdatePermitForApplicantRequest;
+use App\Http\Requests\Registrar\UpdateVehicleForApplicantRequest;
 use App\Http\Resources\FeeRateResource;
 use App\Http\Resources\PermitResource;
-use App\Http\Resources\VehicleResource;
 use App\Http\Resources\VehicleTypeResource;
 use App\Models\Organization;
 use App\Models\Permit;
@@ -28,7 +31,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -55,6 +58,7 @@ class WalkInController extends Controller
             'actions' => [
                 'update' => $may('updateFor'),
                 'submit' => $may('submitFor'),
+                'delete' => $may('deleteFor'),
             ],
         ]);
     }
@@ -66,20 +70,76 @@ class WalkInController extends Controller
 
         $permit->load(['vehicles.vehicleType', 'organization', 'branch', 'transitions']);
 
+        $organization = $this->organization($applicant);
+        $primary = $permit->vehicles->first(fn (Vehicle $vehicle): bool => $vehicle->roleOnPermit() === VehicleRole::Primary);
+        $trailer = $permit->vehicles->first(fn (Vehicle $vehicle): bool => $vehicle->roleOnPermit() === VehicleRole::Trailer);
+        $typeIds = $permit->vehicles->pluck('vehicle_type_id')->all();
+
+        // The same form as registering a request, filled in with this one.
         return Inertia::render('admin/permits/edit', [
             'applicant' => $this->summary($applicant),
+            'organization' => [
+                'name' => $organization->name_am,
+                'tin' => $organization->tin,
+                'phone' => $applicant->phone ?? $organization->phone,
+                'contact_name' => $applicant->name,
+                'contact_email' => $applicant->email,
+            ],
             'permit' => PermitResource::make($permit),
-            'vehicles' => $this->vehicles($this->organization($applicant)),
+            'intake' => [
+                'vehicle_type_id' => $primary === null ? '' : (string) $primary->vehicle_type_id,
+                'type_detail' => $primary->type_detail ?? '',
+                'plate' => $primary->plate_raw ?? '',
+                'owner_name' => $primary->owner_name ?? '',
+                'trailer_plate' => $trailer->plate_raw ?? '',
+            ],
+            'vehicleTypes' => VehicleTypeResource::collection(VehicleType::cachedOrdered()
+                ->filter(fn (VehicleType $type): bool => $type->is_active || in_array($type->id, $typeIds, true))
+                ->values()),
+            'plateRegions' => array_map(
+                fn (PlateRegion $region): array => ['value' => $region->value, 'latin' => $region->latinCode()],
+                PlateRegion::cases(),
+            ),
             'limits' => $this->limits(),
             'feeScheduleId' => $this->currentRate($permit, $fees),
+            // A vehicle of a request letter shares the letter's scan.
+            'hasStoredScan' => $permit->letter_file_path !== null || $permit->requestLetter?->letter_file_path !== null,
         ]);
     }
 
-    public function update(UpdatePermitForApplicantRequest $request, Permit $permit, UpdateDraftPermit $updateDraftPermit): RedirectResponse
+    public function update(UpdatePermitForApplicantRequest $request, Permit $permit, UpdateDraftPermit $updateDraftPermit, ResolveEditedVehicles $resolveVehicles): RedirectResponse
     {
-        $updateDraftPermit->handle($permit, $request->toData(), keepBranch: true);
+        /** @var User $user */
+        $user = $request->user();
+        $typed = $request->typedVehicles();
+
+        // The vehicles typed on the form become vehicles of the register, and the
+        // request is saved with them, together or not at all.
+        DB::transaction(function () use ($request, $permit, $updateDraftPermit, $resolveVehicles, $typed, $user): void {
+            $resolved = $typed === null
+                ? null
+                : $resolveVehicles->handle($permit, $this->organization($this->applicant($permit)), $typed, $user);
+
+            $updateDraftPermit->handle($permit, $request->toData($resolved), keepBranch: true);
+        });
 
         return to_route('admin.permits.show', $permit)->with('success', __('permits.messages.draft_saved'));
+    }
+
+    /**
+     * Delete a draft or returned request: it becomes withdrawn and stays in the record.
+     */
+    public function destroy(Request $request, Permit $permit, WithdrawPermit $withdrawPermit): RedirectResponse
+    {
+        Gate::authorize('deleteFor', [$permit, $this->applicant($permit)]);
+
+        $request->validate(['note' => ['nullable', 'string', 'max:2000']]);
+
+        /** @var User $user */
+        $user = $request->user();
+        $withdrawPermit->handle($permit, $user, $request->string('note')->trim()->value() ?: null);
+
+        return to_route('admin.permits.index')->with('success', __('permits.messages.deleted'));
     }
 
     public function submit(Request $request, Permit $permit, SubmitPermit $submitPermit): RedirectResponse
@@ -119,6 +179,42 @@ class WalkInController extends Controller
         $registerVehicle->handle($this->organization($applicant), $request->toData());
 
         return to_route('admin.permits.edit', $permit)->with('success', __('vehicles.registered_message'));
+    }
+
+    /**
+     * Correct a vehicle of the request: its plate, type and owner.
+     */
+    public function editVehicle(Permit $permit, Vehicle $vehicle): Response
+    {
+        $applicant = $this->applicant($permit);
+        Gate::authorize('updateVehicleFor', [$permit, $applicant, $vehicle]);
+
+        return Inertia::render('admin/permits/vehicle-edit', [
+            'applicant' => $this->summary($applicant),
+            'permit' => ['id' => $permit->id, 'permit_number' => $permit->permit_number],
+            'vehicle' => [
+                'id' => $vehicle->id,
+                'plate' => $vehicle->plate_raw,
+                'vehicle_type_id' => (string) $vehicle->vehicle_type_id,
+                'owner_name' => $vehicle->owner_name ?? '',
+            ],
+            'vehicleTypes' => VehicleTypeResource::collection(VehicleType::cachedOrdered()
+                ->filter(fn (VehicleType $type): bool => $type->is_active || $type->id === $vehicle->vehicle_type_id)
+                ->values()),
+            'plateRegions' => array_map(
+                fn (PlateRegion $region): array => ['value' => $region->value, 'latin' => $region->latinCode()],
+                PlateRegion::cases(),
+            ),
+        ]);
+    }
+
+    public function updateVehicle(UpdateVehicleForApplicantRequest $request, Permit $permit, Vehicle $vehicle, CorrectVehicle $correctVehicle): RedirectResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $correctVehicle->handle($vehicle, $request->toData(), $user);
+
+        return to_route('admin.permits.edit', $permit)->with('success', __('vehicles.corrected_message'));
     }
 
     /**
@@ -182,7 +278,7 @@ class WalkInController extends Controller
      */
     private function organization(User $applicant): Organization
     {
-        Gate::authorize('registerApplicant', User::class);
+        Gate::authorize('workOnRegisteredRequests', User::class);
 
         $organization = $applicant->can(Permission::ApplyForPermits->value) ? $applicant->organization : null;
 
@@ -203,17 +299,6 @@ class WalkInController extends Controller
             'name' => $applicant->name,
             'organization' => $organization->localizedName(app()->getLocale()),
         ];
-    }
-
-    private function vehicles(Organization $organization): AnonymousResourceCollection
-    {
-        return VehicleResource::collection(
-            Vehicle::query()
-                ->whereBelongsTo($organization)
-                ->with('vehicleType')
-                ->orderBy('plate_normalized')
-                ->get(),
-        );
     }
 
     /**

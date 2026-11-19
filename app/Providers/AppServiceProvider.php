@@ -82,7 +82,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('viewReports', fn (User $user): bool => $user->can(Permission::ViewReports->value));
 
         // Administration without a model of its own (spec §11).
-        Gate::define('manageSettings', fn (User $user): bool => $user->can(Permission::ManageSettings->value));
+        Gate::define('viewSettings', fn (User $user): bool => $user->can(Permission::ViewSettings->value));
+        Gate::define('updateSettings', fn (User $user): bool => $user->can(Permission::UpdateSettings->value));
         Gate::define('viewAuditLog', fn (User $user): bool => $user->can(Permission::ViewAuditLog->value));
 
         // Permit verification: per IP address, for the public and officers alike (spec §7).

@@ -32,6 +32,7 @@ return [
         'cancel' => 'Cancel',
     ],
     'messages' => [
+        'deleted' => 'The fee rate was deleted.',
         'saved' => 'Fee saved.',
     ],
     'errors' => [

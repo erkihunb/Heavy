@@ -1374,3 +1374,22 @@ older rows depend on them); what people see is simpler.
   "Return for changes", approve and refuse. A Reviewer who does not decide still sees each
   vehicle sent to them, and its row opens the letter too.
 
+
+## Every action its own permission; every record its CRUD (owner's decision, 2026-11-20)
+
+- **No "manage" permissions.** Fee rates, vehicle types, branches and the Authority's own
+  vehicles each have `view`, `create`, `update` and `delete`. System settings have `view` and
+  `update`; without `update` the pages are read only. Seeing payments (`payments.view`), seeing
+  the Authority's own permits (`institution-permits.view`) and revoking one
+  (`institution-permits.revoke`) no longer ride on another permission.
+- **Registered requests:** `applicants.register` creates, `permits.update-registered` corrects a
+  draft or returned request on the same form it was registered with, `permits.delete-registered`
+  deletes it (it is withdrawn and stays in the record).
+- **Organizations** have a register of their own (`organizations.view/update/delete`,
+  `vehicles.update/delete`). They are created with their first request.
+- **Delete never breaks a record.** A branch with staff or permits, a vehicle type in use, an
+  organization with any request and a vehicle on any request are refused, saying why; a vehicle is
+  corrected only while no request that has gone further carries it. Payments, issued permits and
+  the audit log are never edited or deleted: they are corrected by reversal (revoke, reissue).
+- **Deploys lose nobody's access:** each migration grants a new permission to every role that
+  held the permission which covered the action before.

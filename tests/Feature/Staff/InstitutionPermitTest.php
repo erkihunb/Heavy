@@ -57,7 +57,12 @@ it('is only for people who may give institution permits', function () {
     $fleet = User::factory()->withTwoFactor()->create();
     $fleet->assignRole($role);
 
-    $this->actingAs($fleet)->get(route('staff.institution-permits.index'))->assertOk();
+    // Giving permits and seeing the list are two permissions.
+    $this->actingAs($fleet)->get(route('staff.institution-permits.create'))->assertOk();
+    $this->actingAs($fleet)->get(route('staff.institution-permits.index'))->assertForbidden();
+
+    $role->givePermissionTo(Permission::ViewInstitutionPermits->value);
+    $this->actingAs($fleet->refresh())->get(route('staff.institution-permits.index'))->assertOk();
 });
 
 it('registers the institution\'s vehicles under the Authority itself', function () {

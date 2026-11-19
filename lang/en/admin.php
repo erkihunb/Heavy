@@ -71,7 +71,11 @@ return [
             'is_active' => 'Open',
             'is_active_hint' => 'Untick to close the branch: no new staff or applications go there.',
         ],
+        'errors' => [
+            'in_use' => 'This branch has staff or permits. Close it instead.',
+        ],
         'messages' => [
+            'deleted' => 'The branch was deleted.',
             'saved' => 'Branch saved.',
         ],
     ],
@@ -94,7 +98,11 @@ return [
             'is_active_hint' => 'Untick to retire the type.',
             'sort_order' => 'Order in lists',
         ],
+        'errors' => [
+            'in_use' => 'This vehicle type is used by vehicles or fee rates. Retire it instead.',
+        ],
         'messages' => [
+            'deleted' => 'The vehicle type was deleted.',
             'saved' => 'Vehicle type saved.',
         ],
     ],
@@ -620,6 +628,13 @@ return [
             'user.restored' => 'User restored',
             'user.password_reset' => 'Password reset',
             'institution_vehicle.updated' => 'Institution vehicle changed',
+            'fee_schedule.deleted' => 'Fee rate deleted',
+            'vehicle_type.deleted' => 'Vehicle type deleted',
+            'branch.deleted' => 'Branch deleted',
+            'vehicle.deleted' => 'Vehicle deleted',
+            'organization.updated' => 'Organization corrected',
+            'organization.deleted' => 'Organization deleted',
+            'vehicle.corrected' => 'Vehicle details corrected',
             'institution_vehicle.deleted' => 'Institution vehicle removed',
             'user.permissions_changed' => 'User permissions changed',
             'user.two_factor_reset' => 'Two-factor reset',

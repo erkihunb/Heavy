@@ -24,15 +24,19 @@ final class Landing
         // The cashier collects from the queue (approved requests waiting for payment).
         Permission::VerifyPayments->value => 'staff.permits.index',
         Permission::RegisterApplicants->value => 'admin.permits.index',
+        Permission::UpdateRegisteredPermits->value => 'admin.permits.index',
+        Permission::DeleteRegisteredPermits->value => 'admin.permits.index',
+        Permission::ViewOrganizations->value => 'admin.organizations.index',
         Permission::ScanPermits->value => 'officer.verify',
         Permission::ViewReports->value => 'staff.reports.index',
         Permission::ViewUsers->value => 'admin.users.index',
         Permission::ViewRoles->value => 'admin.roles.index',
         Permission::ViewPermissions->value => 'admin.permissions.index',
         Permission::ViewAuditLog->value => 'admin.audit-log.index',
-        Permission::ManageFeeSchedules->value => 'admin.fee-schedules.index',
-        Permission::ManageVehicleTypes->value => 'admin.vehicle-types.index',
-        Permission::ManageSettings->value => 'admin.settings.overview',
+        Permission::ViewFeeSchedules->value => 'admin.fee-schedules.index',
+        Permission::ViewVehicleTypes->value => 'admin.vehicle-types.index',
+        Permission::ViewBranches->value => 'admin.branches.index',
+        Permission::ViewSettings->value => 'admin.settings.overview',
     ];
 
     public static function routeFor(User $user): string

@@ -26,6 +26,8 @@ enum Permission: string
 
     // Cashier / Finance: verify receipts and record payments taken at the office
     case VerifyPayments = 'payments.verify';
+    // The record of payments taken, read only
+    case ViewPayments = 'payments.view';
 
     // Issuer: check a paid application, issue the permit and print it
     case IssuePermits = 'permits.issue';
@@ -38,9 +40,32 @@ enum Permission: string
 
     // Give the Authority's own vehicles their permits directly: no review, approval or payment
     case IssueInstitutionPermits = 'institution-permits.issue';
+    // See the permits given to the Authority's own vehicles; revoke one
+    case ViewInstitutionPermits = 'institution-permits.view';
+    case RevokeInstitutionPermits = 'institution-permits.revoke';
+    // The register of the Authority's own vehicles: see, add, change, remove
+    case ViewInstitutionVehicles = 'institution-vehicles.view';
+    case CreateInstitutionVehicles = 'institution-vehicles.create';
+    case UpdateInstitutionVehicles = 'institution-vehicles.update';
+    case DeleteInstitutionVehicles = 'institution-vehicles.delete';
 
     // Registrar: register applicants who come to the office in person
     case RegisterApplicants = 'applicants.register';
+
+    // Registrar: correct a request registered at the office while it is a draft or
+    // returned for changes, its vehicles' plate, type and owner included
+    case UpdateRegisteredPermits = 'permits.update-registered';
+
+    // Registrar: delete (withdraw) such a request; it stays in the record as withdrawn
+    case DeleteRegisteredPermits = 'permits.delete-registered';
+
+    // The organizations requests are registered for, and their vehicles: see, correct, delete.
+    // (They are added with a request, by applicants.register.)
+    case ViewOrganizations = 'organizations.view';
+    case UpdateOrganizations = 'organizations.update';
+    case DeleteOrganizations = 'organizations.delete';
+    case UpdateVehicles = 'vehicles.update';
+    case DeleteVehicles = 'vehicles.delete';
 
     // Approver and Cashier: the reporting dashboard and exports
     case ViewReports = 'reports.view';
@@ -61,9 +86,20 @@ enum Permission: string
     case ManageGlobalRoles = 'roles.manage-global';
     case ViewPermissions = 'permissions.view';
 
-    // Admin: configuration and the audit log
-    case ManageVehicleTypes = 'vehicle-types.manage';
-    case ManageFeeSchedules = 'fee-schedules.manage';
-    case ManageSettings = 'settings.manage';
+    // Admin: configuration, each part seen, added, changed and removed by its own permission
+    case ViewVehicleTypes = 'vehicle-types.view';
+    case CreateVehicleTypes = 'vehicle-types.create';
+    case UpdateVehicleTypes = 'vehicle-types.update';
+    case DeleteVehicleTypes = 'vehicle-types.delete';
+    case ViewFeeSchedules = 'fee-schedules.view';
+    case CreateFeeSchedules = 'fee-schedules.create';
+    case UpdateFeeSchedules = 'fee-schedules.update';
+    case DeleteFeeSchedules = 'fee-schedules.delete';
+    case ViewBranches = 'branches.view';
+    case CreateBranches = 'branches.create';
+    case UpdateBranches = 'branches.update';
+    case DeleteBranches = 'branches.delete';
+    case ViewSettings = 'settings.view';
+    case UpdateSettings = 'settings.update';
     case ViewAuditLog = 'audit-log.view';
 }

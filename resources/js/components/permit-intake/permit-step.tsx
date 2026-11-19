@@ -24,10 +24,13 @@ export function PermitStep({
     state,
     rates,
     letter,
+    hasStoredScan = false,
 }: {
     form: IntakeForm;
     state: StepState;
     rates: FeeRates;
+    /** Correcting a request: a scan of the letter is already kept. */
+    hasStoredScan?: boolean;
     /** The letter's fee, when it asks for several vehicles. */
     letter?: ComponentProps<typeof PermitEndDate>['letter'];
 }) {
@@ -51,6 +54,7 @@ export function PermitStep({
                     }}
                     errors={errors}
                     plain
+                    hasStoredScan={hasStoredScan}
                     onChange={(next) =>
                         form.setData((current) => ({
                             ...current,

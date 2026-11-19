@@ -19,6 +19,8 @@ return [
         'save' => 'ተሽከርካሪ መዝግብ',
         'cancel' => 'ይሰረዝ',
     ],
+    'corrected_message' => 'የተሽከርካሪው መረጃ ተስተካክሏል።',
+    'correct_title' => 'ተሽከርካሪውን አስተካክል',
     'registered_message' => 'ተሽከርካሪው በተሳካ ሁኔታ ተመዝግቧል።',
     'errors' => [
         'plate_invalid' => 'ሰሌዳውን በክልል፣ በኮድ እና በቁጥር ቅርጸት ያስገቡ፤ ለምሳሌ አአ-03-A45301።',

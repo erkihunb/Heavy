@@ -71,7 +71,11 @@ return [
             'is_active' => 'አገልግሎት ይሰጣል',
             'is_active_hint' => 'ቅርንጫፉን ከአገልግሎት ውጭ ለማድረግ ምልክቱን ያንሱ።',
         ],
+        'errors' => [
+            'in_use' => 'ይህ ቅርንጫፍ ሠራተኞች ወይም ፈቃዶች አሉት። በምትኩ ይዝጉት።',
+        ],
         'messages' => [
+            'deleted' => 'ቅርንጫፉ ተሰርዟል።',
             'saved' => 'የቅርንጫፍ ጽሕፈት ቤቱ መረጃ በተሳካ ሁኔታ ተቀምጧል።',
         ],
     ],
@@ -94,7 +98,11 @@ return [
             'is_active_hint' => 'ዓይነቱን ከአገልግሎት ለማውጣት ምልክቱን ያንሱ።',
             'sort_order' => 'በዝርዝር ውስጥ ያለው ቅደም ተከተል',
         ],
+        'errors' => [
+            'in_use' => 'ይህ የተሽከርካሪ ዓይነት በተሽከርካሪዎች ወይም በክፍያ ተመኖች ጥቅም ላይ ነው። በምትኩ ከአገልግሎት ያስወጡት።',
+        ],
         'messages' => [
+            'deleted' => 'የተሽከርካሪ ዓይነቱ ተሰርዟል።',
             'saved' => 'የተሽከርካሪ ዓይነቱ በተሳካ ሁኔታ ተቀምጧል።',
         ],
     ],
@@ -620,6 +628,13 @@ return [
             'user.restored' => 'የተጠቃሚ መለያ ወደ አገልግሎት ተመለሰ',
             'user.password_reset' => 'የይለፍ ቃል ዳግም ተጀመረ',
             'institution_vehicle.updated' => 'የተቋም ተሽከርካሪ መረጃ ተሻሻለ',
+            'fee_schedule.deleted' => 'የክፍያ ተመን ተሰረዘ',
+            'vehicle_type.deleted' => 'የተሽከርካሪ ዓይነት ተሰረዘ',
+            'branch.deleted' => 'ቅርንጫፍ ተሰረዘ',
+            'vehicle.deleted' => 'ተሽከርካሪ ተሰረዘ',
+            'organization.updated' => 'የተቋም መረጃ ተስተካከለ',
+            'organization.deleted' => 'ተቋም ተሰረዘ',
+            'vehicle.corrected' => 'የተሽከርካሪ መረጃ ተስተካከለ',
             'institution_vehicle.deleted' => 'የተቋም ተሽከርካሪ ከመዝገብ ተወገደ',
             'user.permissions_changed' => 'የተጠቃሚ ተጨማሪ መብቶች ተቀየሩ',
             'user.two_factor_reset' => 'ባለሁለት ደረጃ ማረጋገጫ ዳግም ተጀመረ',

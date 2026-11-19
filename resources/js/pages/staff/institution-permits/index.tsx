@@ -53,7 +53,8 @@ type InstitutionPermit = {
     in_force: boolean;
     document_pending: boolean;
     document_urls: { am: string; en: string } | null;
-    revokeUrl: string;
+    /** Null without institution-permits.revoke. */
+    revokeUrl: string | null;
 };
 
 const statusTone = (
@@ -83,7 +84,8 @@ function InstitutionPermitsPage({
     vehicleCount: number;
     filters: { search: string; status: string };
     statuses: { value: string; label: string }[];
-    urls: { index: string; create: string; vehicles: string };
+    /** Null where this person lacks the permission. */
+    urls: { index: string; create: string | null; vehicles: string | null };
 }) {
     const { t } = useLocale();
     const { confirm } = useConfirm();
@@ -108,7 +110,7 @@ function InstitutionPermitsPage({
             requireReason: true,
             reasonLabel: t('institution.fields.revoke_reason'),
         });
-        if (confirmed)
+        if (confirmed && permit.revokeUrl !== null)
             router.post(
                 permit.revokeUrl,
                 { reason: reason ?? '' },
@@ -120,7 +122,7 @@ function InstitutionPermitsPage({
         if (url) window.open(url, '_blank', 'noopener');
     };
 
-    const giveButton = (
+    const giveButton = urls.create && (
         <Link href={urls.create} className={buttonClassName({})}>
             <Plus aria-hidden="true" className="size-4" />
             {t('institution.issue')}
@@ -135,15 +137,20 @@ function InstitutionPermitsPage({
                     description={t('institution.intro')}
                     actions={
                         <span className="flex flex-wrap gap-2">
-                            <Link
-                                href={urls.vehicles}
-                                className={buttonClassName({
-                                    variant: 'outline',
-                                })}
-                            >
-                                <Truck aria-hidden="true" className="size-4" />
-                                {t('institution.go_to_vehicles')}
-                            </Link>
+                            {urls.vehicles && (
+                                <Link
+                                    href={urls.vehicles}
+                                    className={buttonClassName({
+                                        variant: 'outline',
+                                    })}
+                                >
+                                    <Truck
+                                        aria-hidden="true"
+                                        className="size-4"
+                                    />
+                                    {t('institution.go_to_vehicles')}
+                                </Link>
+                            )}
                             {vehicleCount > 0 && giveButton}
                         </span>
                     }
@@ -209,7 +216,7 @@ function InstitutionPermitsPage({
                             }
                             action={
                                 filtersActive ? undefined : vehicleCount ===
-                                  0 ? (
+                                      0 && urls.vehicles ? (
                                     <Link
                                         href={urls.vehicles}
                                         className={buttonClassName({})}
@@ -221,7 +228,7 @@ function InstitutionPermitsPage({
                                         {t('institution.go_to_vehicles')}
                                     </Link>
                                 ) : (
-                                    giveButton
+                                    giveButton || undefined
                                 )
                             }
                         />
@@ -437,7 +444,10 @@ function InstitutionPermitsPage({
                                                                             ),
                                                                     variant:
                                                                         'danger',
-                                                                    show: permit.in_force,
+                                                                    show:
+                                                                        permit.in_force &&
+                                                                        permit.revokeUrl !==
+                                                                            null,
                                                                     separatorBefore: true,
                                                                 },
                                                             ]}

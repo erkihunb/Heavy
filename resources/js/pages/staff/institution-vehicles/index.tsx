@@ -37,9 +37,12 @@ type VehicleRow = {
     registered_at: DateLabel;
     permit: { number: string; valid_to: DateLabel } | null;
     deletable: boolean;
-    editUrl: string;
+    /** Null without institution-vehicles.update. */
+    editUrl: string | null;
     issueUrl: string;
     destroyUrl: string;
+    canDelete: boolean;
+    canIssue: boolean;
 };
 
 /**
@@ -57,7 +60,13 @@ function InstitutionVehiclesPage({
     vehicles: { data: VehicleRow[]; meta: LaravelPageMeta };
     filters: { search: string };
     total: number;
-    urls: { index: string; create: string; permits: string; issue: string };
+    /** Null where this person lacks the permission. */
+    urls: {
+        index: string;
+        create: string | null;
+        permits: string | null;
+        issue: string | null;
+    };
 }) {
     const { t } = useLocale();
     const { confirm } = useConfirm();
@@ -78,7 +87,7 @@ function InstitutionVehiclesPage({
             router.delete(vehicle.destroyUrl, { preserveScroll: true });
     }
 
-    const registerButton = (
+    const registerButton = urls.create && (
         <Link href={urls.create} className={buttonClassName({})}>
             <Plus aria-hidden="true" className="size-4" />
             {t('institution.register_vehicle')}
@@ -93,7 +102,7 @@ function InstitutionVehiclesPage({
                     description={t('institution.vehicles_intro')}
                     actions={
                         <span className="flex flex-wrap gap-2">
-                            {total > 0 && (
+                            {total > 0 && urls.issue && (
                                 <Link
                                     href={urls.issue}
                                     className={buttonClassName({
@@ -214,12 +223,20 @@ function InstitutionVehiclesPage({
                                                         'whitespace-nowrap',
                                                     )}
                                                 >
-                                                    <Link
-                                                        href={vehicle.editUrl}
-                                                        className="font-mono text-sm font-semibold text-(--app-foreground) hover:text-primary hover:underline"
-                                                    >
-                                                        {vehicle.plate}
-                                                    </Link>
+                                                    {vehicle.editUrl ? (
+                                                        <Link
+                                                            href={
+                                                                vehicle.editUrl
+                                                            }
+                                                            className="font-mono text-sm font-semibold text-(--app-foreground) hover:text-primary hover:underline"
+                                                        >
+                                                            {vehicle.plate}
+                                                        </Link>
+                                                    ) : (
+                                                        <span className="font-mono text-sm font-semibold">
+                                                            {vehicle.plate}
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td
                                                     className={
@@ -296,14 +313,20 @@ function InstitutionVehiclesPage({
                                                                     ),
                                                                     href: vehicle.issueUrl,
                                                                     show:
+                                                                        vehicle.canIssue &&
                                                                         vehicle.permit ===
-                                                                        null,
+                                                                            null,
                                                                 },
                                                                 {
                                                                     label: t(
                                                                         'shell.actions.edit',
                                                                     ),
-                                                                    href: vehicle.editUrl,
+                                                                    href:
+                                                                        vehicle.editUrl ??
+                                                                        undefined,
+                                                                    show:
+                                                                        vehicle.editUrl !==
+                                                                        null,
                                                                 },
                                                                 {
                                                                     label: t(
@@ -316,6 +339,7 @@ function InstitutionVehiclesPage({
                                                                             ),
                                                                     variant:
                                                                         'danger',
+                                                                    show: vehicle.canDelete,
                                                                     disabled:
                                                                         !vehicle.deletable,
                                                                     title: vehicle.deletable

@@ -1,0 +1,42 @@
+<?php
+
+return [
+    'nav' => 'Organizations',
+    'title' => 'Organizations',
+    'intro' => 'The organizations requests are registered for. A new organization is added with its first request.',
+    'new' => 'Register organization',
+    'search' => 'Search by name, TIN or phone',
+    'search_button' => 'Search',
+    'empty' => 'No organizations found.',
+    'open' => 'Open',
+    'edit_title' => 'Correct organization',
+    'save' => 'Save organization',
+    'details' => 'Organization details',
+    'contacts' => 'Applicants',
+    'vehicles' => 'Vehicles',
+    'requests' => 'Latest requests',
+    'no_vehicles' => 'No vehicles in its register.',
+    'no_requests' => 'No requests yet.',
+    'vehicle_locked' => 'On a request that has gone further',
+    'delete' => 'Delete organization',
+    'fields' => [
+        'name_am' => 'Name (Amharic)',
+        'name_en' => 'Name (English)',
+        'tin' => 'TIN',
+        'phone' => 'Phone',
+        'email' => 'E-mail',
+        'address' => 'Address',
+        'vehicles' => 'Vehicles',
+        'permits' => 'Requests',
+        'owner' => 'Owner',
+    ],
+    'messages' => [
+        'saved' => 'The organization was saved.',
+        'deleted' => 'The organization was deleted.',
+        'vehicle_deleted' => 'The vehicle was deleted.',
+    ],
+    'errors' => [
+        'in_use' => 'This organization has requests, so it cannot be deleted.',
+        'vehicle_in_use' => 'This vehicle is on a request, so it cannot be deleted.',
+    ],
+];

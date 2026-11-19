@@ -19,6 +19,8 @@ return [
         'save' => 'Save vehicle',
         'cancel' => 'Cancel',
     ],
+    'corrected_message' => 'The vehicle details were corrected.',
+    'correct_title' => 'Correct vehicle',
     'registered_message' => 'Vehicle registered.',
     'errors' => [
         'plate_invalid' => 'Enter the plate as region, code and number, for example አአ-03-A45301.',

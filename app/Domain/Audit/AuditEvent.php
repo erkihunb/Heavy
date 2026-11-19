@@ -26,13 +26,16 @@ enum AuditEvent: string
     case PermitSentForReview = 'permit.sent_for_review';
     case PaymentRejected = 'payment.rejected';
     case FeeScheduleSaved = 'fee_schedule.saved';
+    case FeeScheduleDeleted = 'fee_schedule.deleted';
     case UserCreated = 'user.created';
     case ApplicantRegistered = 'applicant.registered';
     case UserRoleChanged = 'user.role_changed';
     case VehicleTypeCreated = 'vehicle_type.created';
     case VehicleTypeUpdated = 'vehicle_type.updated';
+    case VehicleTypeDeleted = 'vehicle_type.deleted';
     case BranchCreated = 'branch.created';
     case BranchUpdated = 'branch.updated';
+    case BranchDeleted = 'branch.deleted';
     case UserBranchChanged = 'user.branch_changed';
     case SettingsUpdated = 'settings.updated';
     // Users, roles and branch scopes (EUISIS RBAC).
@@ -50,6 +53,12 @@ enum AuditEvent: string
     // The Authority's own vehicles (the register; their permits are permit transitions).
     case InstitutionVehicleUpdated = 'institution_vehicle.updated';
     case InstitutionVehicleDeleted = 'institution_vehicle.deleted';
+    // A vehicle of a request registered at the office, corrected while the request was open.
+    case VehicleCorrected = 'vehicle.corrected';
+    case VehicleDeleted = 'vehicle.deleted';
+    // The organizations requests are registered for.
+    case OrganizationUpdated = 'organization.updated';
+    case OrganizationDeleted = 'organization.deleted';
     case RoleCreated = 'role.created';
     case RoleUpdated = 'role.updated';
     case RoleDeleted = 'role.deleted';

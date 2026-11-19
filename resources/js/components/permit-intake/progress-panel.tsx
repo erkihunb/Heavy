@@ -1,5 +1,6 @@
 import { CircleAlert } from 'lucide-react';
 import { IntakeButtons } from '@/components/permit-intake/buttons';
+import type { IntakeButtonsOptions } from '@/components/permit-intake/buttons';
 import { errorsOf } from '@/components/permit-intake/form';
 import type {
     IntakeForm,
@@ -24,6 +25,7 @@ export function ProgressPanel({
     existingMode,
     fee,
     typeName,
+    buttons,
 }: {
     form: IntakeForm;
     steps: { key: StepKey; title: TranslationKey }[];
@@ -32,6 +34,7 @@ export function ProgressPanel({
     /** The letter's fee, added up while the form is filled in. */
     fee?: FeeEstimate;
     typeName?: (id: string) => string;
+    buttons?: IntakeButtonsOptions;
 }) {
     const { t } = useTranslation();
     const { data } = form;
@@ -159,7 +162,7 @@ export function ProgressPanel({
                     )}
 
                     <div className="hidden @5xl/intake:block">
-                        <IntakeButtons form={form} stacked />
+                        <IntakeButtons form={form} stacked {...buttons} />
                     </div>
                 </div>
             </div>

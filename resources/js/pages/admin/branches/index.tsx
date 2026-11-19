@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { Pencil, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import {
     EmptyRow,
     Table,
@@ -11,11 +11,13 @@ import {
     Tr,
 } from '@/components/data-table';
 import { PageHeader } from '@/components/page-header';
+import { RowActions } from '@/components/row-actions';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { create, edit, index } from '@/routes/admin/branches';
+import { create, destroy, edit, index } from '@/routes/admin/branches';
+import ConfirmProvider from '@/shell/Components/ConfirmProvider';
 import type { BreadcrumbItem } from '@/types';
 import type { AdminBranch } from '@/types/admin';
 
@@ -23,9 +25,11 @@ type Props = {
     branches: (AdminBranch & { staff: number; permits: number })[];
     /** Whether the permit number rule names the branch. */
     in_number: boolean;
+    /** What this person may do here (each its own permission). */
+    can: { create: boolean; update: boolean; delete: boolean };
 };
 
-export default function BranchesIndex({ branches, in_number }: Props) {
+function BranchesIndexPage({ branches, in_number, can }: Props) {
     const { t } = useTranslation();
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -40,12 +44,18 @@ export default function BranchesIndex({ branches, in_number }: Props) {
                 <PageHeader
                     title={t('admin.branches.title')}
                     action={
-                        <Button asChild size="lg" className="w-full sm:w-auto">
-                            <Link href={create()}>
-                                <Plus aria-hidden="true" />
-                                {t('admin.branches.new')}
-                            </Link>
-                        </Button>
+                        can.create && (
+                            <Button
+                                asChild
+                                size="lg"
+                                className="w-full sm:w-auto"
+                            >
+                                <Link href={create()}>
+                                    <Plus aria-hidden="true" />
+                                    {t('admin.branches.new')}
+                                </Link>
+                            </Button>
+                        )
                     }
                 />
 
@@ -115,20 +125,27 @@ export default function BranchesIndex({ branches, in_number }: Props) {
                                             </span>
                                         </Td>
                                         <Td align="right">
-                                            <Button
-                                                asChild
-                                                variant="outline"
-                                                size="sm"
-                                            >
-                                                <Link
-                                                    href={edit({
-                                                        branch: branch.id,
-                                                    })}
-                                                >
-                                                    <Pencil aria-hidden="true" />
-                                                    {t('permits.actions.edit')}
-                                                </Link>
-                                            </Button>
+                                            <RowActions
+                                                name={branch.name_am}
+                                                editHref={
+                                                    can.update
+                                                        ? edit.url({
+                                                              branch: branch.id,
+                                                          })
+                                                        : null
+                                                }
+                                                deleteUrl={
+                                                    can.delete
+                                                        ? destroy.url({
+                                                              branch: branch.id,
+                                                          })
+                                                        : null
+                                                }
+                                                deletable={
+                                                    branch.staff === 0 &&
+                                                    branch.permits === 0
+                                                }
+                                            />
                                         </Td>
                                     </Tr>
                                 ))
@@ -138,5 +155,13 @@ export default function BranchesIndex({ branches, in_number }: Props) {
                 </TableCard>
             </div>
         </AppLayout>
+    );
+}
+
+export default function BranchesIndex(props: Props) {
+    return (
+        <ConfirmProvider>
+            <BranchesIndexPage {...props} />
+        </ConfirmProvider>
     );
 }

@@ -91,6 +91,9 @@ return [
         'end_pending' => 'Choose a rate and the start date.',
     ],
     'form' => [
+        'correct_this_vehicle' => 'Correct this vehicle (plate, type, owner)',
+        'choose_other_vehicle' => 'Choose another vehicle instead',
+        'correct_vehicle' => 'Correct :plate (plate, type, owner)',
         'sections' => [
             'type' => [
                 'title' => 'Permit type',
@@ -184,7 +187,19 @@ return [
         'submit' => 'Add comment',
         'empty' => 'No comments yet.',
     ],
+    'delete' => [
+        'button' => 'Delete request',
+        'title' => 'Delete this request?',
+        'body' => 'It is withdrawn and stays in the record; it can no longer be sent.',
+        'confirm' => 'Delete',
+    ],
+    'correction' => [
+        'save' => 'Save changes',
+        'open' => 'Send again',
+        'open_with_delete' => 'Send again or delete',
+    ],
     'messages' => [
+        'deleted' => 'The request was deleted. It stays in the record as withdrawn.',
         'draft_saved' => 'Draft saved. Review it and submit when ready.',
         'submitted' => 'Application submitted.',
         'review_started' => 'Review started.',
@@ -199,6 +214,7 @@ return [
         'commented' => 'Comment added.',
     ],
     'errors' => [
+        'vehicle_on_other_permit' => 'This vehicle is also on a request that has gone further, so its details can no longer be changed here. Register the correct vehicle and choose it instead.',
         'issue_with_letter' => 'This vehicle is issued with the other vehicles of its letter, together on the letter\'s page.',
         'pay_with_letter' => 'This vehicle is paid for with the other vehicles of its letter, as one payment on the letter\'s page.',
         'fee_not_set_for_letter_vehicle' => 'The fee schedule has no fee for this vehicle type for :days days. Add the fee first, or leave this vehicle out of the letter.',

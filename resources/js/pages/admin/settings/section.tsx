@@ -76,6 +76,8 @@ type Props = {
     branding: { logo: string | null; favicon: string | null } | null;
     /** Security: the roles two-factor can be required for. */
     roles: ChecklistRole[] | null;
+    /** Without settings.update the settings are shown, not changed. */
+    canUpdate: boolean;
 };
 
 type FormValue = string | boolean | File | null | string[];
@@ -122,6 +124,7 @@ export default function SettingsSection({
     inUse,
     branding,
     roles,
+    canUpdate,
 }: Props) {
     const { t } = useTranslation();
     const optional = (key: string): string | undefined => {
@@ -667,81 +670,94 @@ export default function SettingsSection({
                     noValidate
                     className="flex flex-col gap-6"
                 >
-                    {section === 'codes' && preview && (
-                        <CodeRulesPreview
-                            values={form.data}
-                            preview={preview}
+                    <fieldset disabled={!canUpdate} className="contents">
+                        {section === 'codes' && preview && (
+                            <CodeRulesPreview
+                                values={form.data}
+                                preview={preview}
+                            />
+                        )}
+                        {section === 'general' && branding && (
+                            <BrandingPreview
+                                values={form.data}
+                                saved={branding}
+                            />
+                        )}
+                        {section === 'appearance' && (
+                            <ThemePreview values={form.data} />
+                        )}
+
+                        {section === 'security' && (
+                            <div
+                                role="note"
+                                className="flex gap-3 rounded-card border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200"
+                            >
+                                <TriangleAlert
+                                    aria-hidden
+                                    className="mt-0.5 size-4 shrink-0"
+                                />
+                                <div className="space-y-1">
+                                    <p className="font-medium">
+                                        {t(
+                                            'admin.settings.security_warning.title',
+                                        )}
+                                    </p>
+                                    <p>
+                                        {t(
+                                            'admin.settings.security_warning.body',
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {groups.map((group) => (
+                            <section
+                                key={group}
+                                aria-labelledby={`group-${group}`}
+                                className="space-y-5 rounded-card border border-border bg-card p-5 sm:p-6"
+                            >
+                                <h2
+                                    id={`group-${group}`}
+                                    className="text-section-title"
+                                >
+                                    {t(
+                                        `admin.settings.groups.${group}` as TranslationKey,
+                                    )}
+                                </h2>
+                                {optional(
+                                    `admin.settings.group_hints.${group}`,
+                                ) && (
+                                    <p className="-mt-3 text-sm text-muted-foreground">
+                                        {optional(
+                                            `admin.settings.group_hints.${group}`,
+                                        )}
+                                    </p>
+                                )}
+                                {fields
+                                    .filter((field) => field.group === group)
+                                    .filter(
+                                        (field) =>
+                                            !(field.field in shownWith) ||
+                                            form.data[
+                                                shownWith[field.field]
+                                            ] === true,
+                                    )
+                                    .map((field) => (
+                                        <div key={field.key}>
+                                            {control(field)}
+                                        </div>
+                                    ))}
+                            </section>
+                        ))}
+                    </fieldset>
+                    {canUpdate && (
+                        <SettingsSaveBar
+                            dirty={dirty}
+                            processing={form.processing}
+                            onDiscard={() => form.reset()}
                         />
                     )}
-                    {section === 'general' && branding && (
-                        <BrandingPreview values={form.data} saved={branding} />
-                    )}
-                    {section === 'appearance' && (
-                        <ThemePreview values={form.data} />
-                    )}
-
-                    {section === 'security' && (
-                        <div
-                            role="note"
-                            className="flex gap-3 rounded-card border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200"
-                        >
-                            <TriangleAlert
-                                aria-hidden
-                                className="mt-0.5 size-4 shrink-0"
-                            />
-                            <div className="space-y-1">
-                                <p className="font-medium">
-                                    {t('admin.settings.security_warning.title')}
-                                </p>
-                                <p>
-                                    {t('admin.settings.security_warning.body')}
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {groups.map((group) => (
-                        <section
-                            key={group}
-                            aria-labelledby={`group-${group}`}
-                            className="space-y-5 rounded-card border border-border bg-card p-5 sm:p-6"
-                        >
-                            <h2
-                                id={`group-${group}`}
-                                className="text-section-title"
-                            >
-                                {t(
-                                    `admin.settings.groups.${group}` as TranslationKey,
-                                )}
-                            </h2>
-                            {optional(
-                                `admin.settings.group_hints.${group}`,
-                            ) && (
-                                <p className="-mt-3 text-sm text-muted-foreground">
-                                    {optional(
-                                        `admin.settings.group_hints.${group}`,
-                                    )}
-                                </p>
-                            )}
-                            {fields
-                                .filter((field) => field.group === group)
-                                .filter(
-                                    (field) =>
-                                        !(field.field in shownWith) ||
-                                        form.data[shownWith[field.field]] ===
-                                            true,
-                                )
-                                .map((field) => (
-                                    <div key={field.key}>{control(field)}</div>
-                                ))}
-                        </section>
-                    ))}
-
-                    <SettingsSaveBar
-                        dirty={dirty}
-                        processing={form.processing}
-                        onDiscard={() => form.reset()}
-                    />
                 </form>
 
                 {section === 'email' && inUse && (
@@ -751,6 +767,7 @@ export default function SettingsSection({
                 {TESTABLE.includes(section) && (
                     <form
                         onSubmit={sendTest}
+                        hidden={!canUpdate}
                         noValidate
                         aria-labelledby="test-title"
                         className="space-y-4 rounded-card border border-dashed border-border p-5 sm:p-6"

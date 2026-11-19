@@ -116,7 +116,7 @@ describe('the Registrar', function () {
         $this->actingAs($this->registrar)
             ->get(route('admin.permits.show', $permit))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('actions', ['update' => false, 'submit' => false]));
+                ->where('actions', ['update' => false, 'submit' => false, 'delete' => false]));
     });
 
     it('has no edit page after the submission', function () {

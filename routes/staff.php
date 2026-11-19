@@ -99,7 +99,7 @@ Route::middleware(['auth', 'verified', 'can:scan,'.Permit::class])
  * The Authority's own vehicles and their permits, given directly by whoever
  * holds institution-permits.issue (PermitPolicy::issueInstitutional).
  */
-Route::middleware(['auth', 'verified', 'can:issueInstitutional,'.Permit::class])
+Route::middleware(['auth', 'verified'])
     ->name('staff.institution-permits.')
     ->controller(InstitutionPermitController::class)
     ->group(function () {
@@ -112,7 +112,7 @@ Route::middleware(['auth', 'verified', 'can:issueInstitutional,'.Permit::class])
 /*
  * The register of the Authority's own vehicles: list, register, change, remove.
  */
-Route::middleware(['auth', 'verified', 'can:issueInstitutional,'.Permit::class])
+Route::middleware(['auth', 'verified'])
     ->name('staff.institution-vehicles.')
     ->controller(InstitutionVehicleController::class)
     ->group(function () {

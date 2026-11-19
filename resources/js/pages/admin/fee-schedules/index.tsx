@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Info, Pencil, Plus } from 'lucide-react';
+import { Info, Plus } from 'lucide-react';
 import {
     EmptyRow,
     Table,
@@ -13,11 +13,13 @@ import {
 import { DualDate } from '@/components/dual-date';
 import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
+import { RowActions } from '@/components/row-actions';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { create, edit, index } from '@/routes/admin/fee-schedules';
+import { create, destroy, edit, index } from '@/routes/admin/fee-schedules';
+import ConfirmProvider from '@/shell/Components/ConfirmProvider';
 import { FilterField, Select } from '@/shell/Components/ui';
 import type { BreadcrumbItem, FeeSchedule, Paginated } from '@/types';
 import { PERMIT_TYPES } from '@/types/enums';
@@ -26,9 +28,11 @@ import type { PermitType } from '@/types/enums';
 type Props = {
     schedules: Paginated<FeeSchedule>;
     filters: { permit_type: PermitType | null };
+    /** What this person may do here (each its own permission). */
+    can: { create: boolean; update: boolean; delete: boolean };
 };
 
-export default function FeeSchedulesIndex({ schedules, filters }: Props) {
+function FeeSchedulesIndexPage({ schedules, filters, can }: Props) {
     const { t } = useTranslation();
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -51,12 +55,18 @@ export default function FeeSchedulesIndex({ schedules, filters }: Props) {
                     title={t('fees.title')}
                     description={t('fees.intro')}
                     action={
-                        <Button asChild size="lg" className="w-full sm:w-auto">
-                            <Link href={create()}>
-                                <Plus aria-hidden="true" />
-                                {t('fees.new')}
-                            </Link>
-                        </Button>
+                        can.create && (
+                            <Button
+                                asChild
+                                size="lg"
+                                className="w-full sm:w-auto"
+                            >
+                                <Link href={create()}>
+                                    <Plus aria-hidden="true" />
+                                    {t('fees.new')}
+                                </Link>
+                            </Button>
+                        )
                     }
                 />
 
@@ -166,21 +176,28 @@ export default function FeeSchedulesIndex({ schedules, filters }: Props) {
                                             </span>
                                         </Td>
                                         <Td align="right">
-                                            <Button
-                                                asChild
-                                                variant="outline"
-                                                size="sm"
-                                            >
-                                                <Link
-                                                    href={edit({
-                                                        fee_schedule:
-                                                            schedule.id,
-                                                    })}
-                                                >
-                                                    <Pencil aria-hidden="true" />
-                                                    {t('permits.actions.edit')}
-                                                </Link>
-                                            </Button>
+                                            <RowActions
+                                                name={t('fees.days_range', {
+                                                    min: schedule.min_days,
+                                                    max: schedule.max_days,
+                                                })}
+                                                editHref={
+                                                    can.update
+                                                        ? edit.url({
+                                                              fee_schedule:
+                                                                  schedule.id,
+                                                          })
+                                                        : null
+                                                }
+                                                deleteUrl={
+                                                    can.delete
+                                                        ? destroy.url({
+                                                              fee_schedule:
+                                                                  schedule.id,
+                                                          })
+                                                        : null
+                                                }
+                                            />
                                         </Td>
                                     </Tr>
                                 ))
@@ -192,5 +209,13 @@ export default function FeeSchedulesIndex({ schedules, filters }: Props) {
                 <Pagination links={schedules.links} meta={schedules.meta} />
             </div>
         </AppLayout>
+    );
+}
+
+export default function FeeSchedulesIndex(props: Props) {
+    return (
+        <ConfirmProvider>
+            <FeeSchedulesIndexPage {...props} />
+        </ConfirmProvider>
     );
 }

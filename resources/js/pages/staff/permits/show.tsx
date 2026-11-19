@@ -1,3 +1,5 @@
+import { Link } from '@inertiajs/react';
+import { Pencil } from 'lucide-react';
 import { DualDate } from '@/components/dual-date';
 import { PermitComments } from '@/components/permit-comments';
 import type { LetterVehicle } from '@/components/permit-details';
@@ -12,6 +14,7 @@ import {
     VehicleHistoryCard,
 } from '@/components/staff-permit-frame';
 import type { Desk } from '@/components/staff-permit-frame';
+import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n';
 import { store as storeComment } from '@/routes/staff/permits/comments';
 import type {
@@ -35,6 +38,8 @@ type Props = {
         last: { date: DualDateValue; time: string } | null;
     };
     desks: Desk[];
+    /** A draft or returned request this person may correct (PermitReviewController::correction). */
+    correction: { edit: string; open: string; delete: boolean } | null;
 };
 
 function ScansCard({ scans }: { scans: Props['scans'] }) {
@@ -114,6 +119,7 @@ export default function StaffPermitsShow({
     letterVehicles,
     scans,
     desks,
+    correction,
 }: Props) {
     const { t } = useTranslation();
     const { can } = permit;
@@ -124,6 +130,42 @@ export default function StaffPermitsShow({
             vehicleHistory={vehicleHistory}
             title={t('permits.staff.detail_title')}
         >
+            {correction && (
+                <section
+                    aria-labelledby="correction-title"
+                    className="mb-6 space-y-4 rounded-card border-2 border-primary bg-card p-6"
+                >
+                    <div className="space-y-1.5">
+                        <h2
+                            id="correction-title"
+                            className="text-section-title"
+                        >
+                            {t('permits.review.title')}
+                        </h2>
+                        <p className="max-w-2xl text-muted-foreground">
+                            {permit.status === 'changes_requested'
+                                ? t('permits.review.changes_requested')
+                                : t('applicants.review_draft')}
+                        </p>
+                    </div>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                        <Button asChild size="lg">
+                            <Link href={correction.edit}>
+                                <Pencil aria-hidden="true" />
+                                {t('permits.actions.edit')}
+                            </Link>
+                        </Button>
+                        <Button asChild variant="outline" size="lg">
+                            <Link href={correction.open}>
+                                {correction.delete
+                                    ? t('permits.correction.open_with_delete')
+                                    : t('permits.correction.open')}
+                            </Link>
+                        </Button>
+                    </div>
+                </section>
+            )}
+
             <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
                 <div className="space-y-6">
                     <PermitDetailsCard

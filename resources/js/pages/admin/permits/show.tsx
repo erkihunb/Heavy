@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Pencil, Send } from 'lucide-react';
+import { ArrowLeft, Pencil, Send, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { PaymentList } from '@/components/payment-list';
@@ -12,7 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
-import { edit, index, show, submit } from '@/routes/admin/permits';
+import { destroy, edit, index, show, submit } from '@/routes/admin/permits';
+import ConfirmProvider from '@/shell/Components/ConfirmProvider';
+import { useConfirm } from '@/shell/hooks/useConfirm';
 import type { BreadcrumbItem, Permit } from '@/types';
 import type { WalkInApplicant } from '@/types/admin';
 
@@ -20,7 +22,7 @@ type Props = {
     applicant: WalkInApplicant;
     permit: Permit;
     /** What the Registrar may do now (App\Policies\PermitPolicy::*For). */
-    actions: { update: boolean; submit: boolean };
+    actions: { update: boolean; submit: boolean; delete: boolean };
 };
 
 /**
@@ -29,8 +31,17 @@ type Props = {
  * changes) and print the permit once it is issued. The fee is taken by the
  * cashier, on the letter's page.
  */
-export default function PermitShow({ applicant, permit, actions }: Props) {
+export default function PermitShow(props: Props) {
+    return (
+        <ConfirmProvider>
+            <PermitShowPage {...props} />
+        </ConfirmProvider>
+    );
+}
+
+function PermitShowPage({ applicant, permit, actions }: Props) {
     const { t } = useTranslation();
+    const { confirm } = useConfirm();
     const [busy, setBusy] = useState(false);
     const route = permit.id;
     const payments = permit.payments ?? [];
@@ -45,6 +56,23 @@ export default function PermitShow({ applicant, permit, actions }: Props) {
                 onFinish: () => setBusy(false),
             },
         );
+
+    // Deleting keeps the request in the record as withdrawn.
+    const remove = async () => {
+        const { confirmed } = await confirm({
+            title: t('permits.delete.title'),
+            description: t('permits.delete.body'),
+            confirmLabel: t('permits.delete.confirm'),
+            variant: 'danger',
+        });
+
+        if (confirmed) {
+            router.delete(destroy.url(route), {
+                onStart: () => setBusy(true),
+                onFinish: () => setBusy(false),
+            });
+        }
+    };
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: t('register.title'), href: index() },
@@ -67,7 +95,7 @@ export default function PermitShow({ applicant, permit, actions }: Props) {
                     action={<StatusBadge status={permit.effective_status} />}
                 />
 
-                {(actions.submit || actions.update) && (
+                {(actions.submit || actions.update || actions.delete) && (
                     <section
                         aria-labelledby="review-title"
                         className="space-y-4 rounded-card border-2 border-primary bg-card p-6 sm:p-7"
@@ -109,6 +137,19 @@ export default function PermitShow({ applicant, permit, actions }: Props) {
                                         <Pencil aria-hidden="true" />
                                         {t('permits.actions.edit')}
                                     </Link>
+                                </Button>
+                            )}
+                            {actions.delete && (
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="lg"
+                                    disabled={busy}
+                                    onClick={remove}
+                                    className="sm:ml-auto"
+                                >
+                                    <Trash2 aria-hidden="true" />
+                                    {t('permits.delete.button')}
                                 </Button>
                             )}
                         </div>

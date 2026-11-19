@@ -16,6 +16,7 @@ use App\Support\QueryFilter;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -49,7 +50,7 @@ class PermitRegisterController extends Controller
         // What the viewer may open: the review screens show what reached the Authority;
         // a Registrar works on drafts too, from the applicant's page.
         $staffView = $viewer->can('viewQueue', Permit::class);
-        $registrar = $viewer->can('registerApplicant', User::class);
+        $registrar = $viewer->can('workOnRegisteredRequests', User::class);
 
         $like = fn (string $term): string => '%'.addcslashes($term, '%_\\').'%';
 
@@ -130,6 +131,12 @@ class PermitRegisterController extends Controller
      */
     private function href(Permit $permit, bool $staffView, bool $registrar): ?string
     {
+        // A request waiting to be corrected opens where it is corrected, for whoever may.
+        if ($registrar && $permit->status->isEditable() && $permit->applicant !== null
+            && Gate::allows('updateFor', [$permit, $permit->applicant])) {
+            return route('admin.permits.show', $permit);
+        }
+
         if ($staffView && $permit->status->isVisibleToStaff()) {
             return route('staff.permits.show', $permit);
         }

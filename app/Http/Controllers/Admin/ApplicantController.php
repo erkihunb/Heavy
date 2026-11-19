@@ -115,7 +115,7 @@ class ApplicantController extends Controller
      */
     public function feeRates(Request $request, FeeCalculator $fees): JsonResponse
     {
-        Gate::authorize('registerApplicant', User::class);
+        Gate::authorize('workOnRegisteredRequests', User::class);
 
         $validated = $request->validate([
             'permit_type' => ['required', Rule::enum(PermitType::class)],

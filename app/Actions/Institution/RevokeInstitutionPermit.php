@@ -23,7 +23,7 @@ final class RevokeInstitutionPermit
 
     public function handle(Permit $permit, User $actor, string $reason): Permit
     {
-        Gate::forUser($actor)->authorize(Permission::IssueInstitutionPermits->value);
+        Gate::forUser($actor)->authorize(Permission::RevokeInstitutionPermits->value);
 
         abort_unless($permit->is_institutional, 404);
 

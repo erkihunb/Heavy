@@ -47,7 +47,7 @@ class SettingsController extends Controller
 {
     public function overview(SystemSettings $settings): Response
     {
-        Gate::authorize('manageSettings');
+        Gate::authorize('viewSettings');
 
         $production = app()->isProduction();
         $lastChange = Activity::query()->where('event', 'settings.updated')->with('causer')->latest('id')->first();
@@ -96,12 +96,14 @@ class SettingsController extends Controller
 
     public function show(SystemSettings $settings, string $section): Response
     {
-        Gate::authorize('manageSettings');
+        Gate::authorize('viewSettings');
 
         $current = $settings->current($section);
 
         return Inertia::render('admin/settings/section', [
             'section' => $section,
+            // Without settings.update the page is read only.
+            'canUpdate' => Gate::allows('updateSettings'),
             'sections' => SettingsRegistry::SECTIONS,
             'categories' => SettingsRegistry::CATEGORIES,
             'fields' => array_map(
@@ -187,7 +189,7 @@ class SettingsController extends Controller
 
     public function update(Request $request, SystemSettings $settings, string $section): RedirectResponse
     {
-        Gate::authorize('manageSettings');
+        Gate::authorize('updateSettings');
 
         $definitions = SettingsRegistry::section($section);
         $input = [];
@@ -250,7 +252,7 @@ class SettingsController extends Controller
      */
     public function test(Request $request, string $section): RedirectResponse
     {
-        Gate::authorize('manageSettings');
+        Gate::authorize('updateSettings');
 
         try {
             match ($section) {

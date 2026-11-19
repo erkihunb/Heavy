@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { Pencil, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import {
     EmptyRow,
     Table,
@@ -11,19 +11,23 @@ import {
     Tr,
 } from '@/components/data-table';
 import { PageHeader } from '@/components/page-header';
+import { RowActions } from '@/components/row-actions';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { create, edit, index } from '@/routes/admin/vehicle-types';
+import { create, destroy, edit, index } from '@/routes/admin/vehicle-types';
+import ConfirmProvider from '@/shell/Components/ConfirmProvider';
 import type { BreadcrumbItem } from '@/types';
 import type { AdminVehicleType } from '@/types/admin';
 
 type Props = {
-    types: (AdminVehicleType & { vehicles: number })[];
+    types: (AdminVehicleType & { vehicles: number; deletable: boolean })[];
+    /** What this person may do here (each its own permission). */
+    can: { create: boolean; update: boolean; delete: boolean };
 };
 
-export default function VehicleTypesIndex({ types }: Props) {
+function VehicleTypesIndexPage({ types, can }: Props) {
     const { t } = useTranslation();
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -39,12 +43,18 @@ export default function VehicleTypesIndex({ types }: Props) {
                     title={t('admin.vehicle_types.title')}
                     description={t('admin.vehicle_types.intro')}
                     action={
-                        <Button asChild size="lg" className="w-full sm:w-auto">
-                            <Link href={create()}>
-                                <Plus aria-hidden="true" />
-                                {t('admin.vehicle_types.new')}
-                            </Link>
-                        </Button>
+                        can.create && (
+                            <Button
+                                asChild
+                                size="lg"
+                                className="w-full sm:w-auto"
+                            >
+                                <Link href={create()}>
+                                    <Plus aria-hidden="true" />
+                                    {t('admin.vehicle_types.new')}
+                                </Link>
+                            </Button>
+                        )
                     }
                 />
 
@@ -112,20 +122,26 @@ export default function VehicleTypesIndex({ types }: Props) {
                                             </span>
                                         </Td>
                                         <Td align="right">
-                                            <Button
-                                                asChild
-                                                variant="outline"
-                                                size="sm"
-                                            >
-                                                <Link
-                                                    href={edit({
-                                                        vehicle_type: type.id,
-                                                    })}
-                                                >
-                                                    <Pencil aria-hidden="true" />
-                                                    {t('permits.actions.edit')}
-                                                </Link>
-                                            </Button>
+                                            <RowActions
+                                                name={type.name_am}
+                                                editHref={
+                                                    can.update
+                                                        ? edit.url({
+                                                              vehicle_type:
+                                                                  type.id,
+                                                          })
+                                                        : null
+                                                }
+                                                deleteUrl={
+                                                    can.delete
+                                                        ? destroy.url({
+                                                              vehicle_type:
+                                                                  type.id,
+                                                          })
+                                                        : null
+                                                }
+                                                deletable={type.deletable}
+                                            />
                                         </Td>
                                     </Tr>
                                 ))
@@ -135,5 +151,13 @@ export default function VehicleTypesIndex({ types }: Props) {
                 </TableCard>
             </div>
         </AppLayout>
+    );
+}
+
+export default function VehicleTypesIndex(props: Props) {
+    return (
+        <ConfirmProvider>
+            <VehicleTypesIndexPage {...props} />
+        </ConfirmProvider>
     );
 }

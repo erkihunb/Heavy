@@ -8,6 +8,7 @@ use App\Domain\Documents\StoredDocument;
 use App\Domain\Institution\InstitutionFleet;
 use App\Domain\Permits\ValidityRules;
 use App\Domain\Vehicles\PlateNumber;
+use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Permit;
@@ -42,7 +43,7 @@ class InstitutionPermitController extends Controller
 
     public function index(Request $request): Response
     {
-        Gate::authorize('issueInstitutional', Permit::class);
+        abort_unless($request->user()?->can(Permission::ViewInstitutionPermits->value) ?? false, 403);
 
         $locale = app()->getLocale();
         $today = ValidityRules::today();
@@ -75,8 +76,8 @@ class InstitutionPermitController extends Controller
             ], self::STATUSES),
             'urls' => [
                 'index' => route('staff.institution-permits.index'),
-                'create' => route('staff.institution-permits.create'),
-                'vehicles' => route('staff.institution-vehicles.index'),
+                'create' => $request->user()->can(Permission::IssueInstitutionPermits->value) ? route('staff.institution-permits.create') : null,
+                'vehicles' => $request->user()->can(Permission::ViewInstitutionVehicles->value) ? route('staff.institution-vehicles.index') : null,
             ],
         ]);
     }
@@ -143,7 +144,7 @@ class InstitutionPermitController extends Controller
 
     public function revoke(Request $request, Permit $permit, RevokeInstitutionPermit $revoke): RedirectResponse
     {
-        Gate::authorize('issueInstitutional', Permit::class);
+        abort_unless($request->user()?->can(Permission::RevokeInstitutionPermits->value) ?? false, 403);
 
         $validated = $request->validate(['reason' => ['required', 'string', 'max:500']], attributes: ['reason' => __('institution.fields.revoke_reason')]);
 
@@ -211,7 +212,7 @@ class InstitutionPermitController extends Controller
                     'permits.document', now()->addMinutes(30), ['permit' => $permit->id, 'language' => $language],
                 ))->all()
                 : null,
-            'revokeUrl' => route('staff.institution-permits.revoke', $permit),
+            'revokeUrl' => request()->user()?->can(Permission::RevokeInstitutionPermits->value) ? route('staff.institution-permits.revoke', $permit) : null,
         ];
     }
 }

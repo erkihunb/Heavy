@@ -281,12 +281,34 @@ class PermitReviewController extends Controller
             'letterVehicles' => $this->letterVehicles($permit),
             'scans' => $this->scans($permit),
             'receiptMaxKilobytes' => (int) config('permits.receipt_max_kilobytes'),
+            'correction' => $this->correction($request->user(), $permit),
             'direct' => $direct,
             'desks' => array_map(
                 fn (string $key): array => ['key' => $key, 'url' => route($routes[$key], $permit), 'pending' => $pending[$key]],
                 array_keys(array_filter($desks)),
             ),
         ]);
+    }
+
+    /**
+     * A draft or returned request this person may correct: where to edit it
+     * and where to send it again or delete it (the Registrar's pages).
+     *
+     * @return array{edit: string, open: string, delete: bool}|null
+     */
+    private function correction(?User $user, Permit $permit): ?array
+    {
+        $applicant = $permit->applicant;
+
+        if ($user === null || $applicant === null || ! Gate::forUser($user)->allows('updateFor', [$permit, $applicant])) {
+            return null;
+        }
+
+        return [
+            'edit' => route('admin.permits.edit', $permit),
+            'open' => route('admin.permits.show', $permit),
+            'delete' => Gate::forUser($user)->allows('deleteFor', [$permit, $applicant]),
+        ];
     }
 
     /**

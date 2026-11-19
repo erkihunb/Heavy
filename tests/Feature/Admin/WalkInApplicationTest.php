@@ -49,7 +49,7 @@ it('opens the request from Permits with what may be done to it', function () {
             ->component('admin/permits/show')
             ->where('applicant.id', $this->applicant->id)
             ->where('permit.id', $permit->id)
-            ->where('actions', ['update' => true, 'submit' => true]));
+            ->where('actions', ['update' => true, 'submit' => true, 'delete' => true]));
 });
 
 it('registers a vehicle the request needs in its organization\'s register', function () {
@@ -97,7 +97,9 @@ it('edits and submits the request for the applicant', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('admin/permits/edit')
-            ->has('vehicles', 2));
+            ->has('intake.plate')
+            ->has('vehicleTypes')
+            ->has('organization.name'));
 
     $this->actingAs($this->registrar)
         ->put(route('admin.permits.update', $permit), [...$payload, 'reason' => 'ሌላ ምክንያት'])

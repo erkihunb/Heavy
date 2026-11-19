@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PermitStatus;
 use App\Enums\VehicleRole;
 use Database\Factories\VehicleFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -76,6 +77,19 @@ class Vehicle extends Model
         return $this->belongsToMany(Permit::class, 'permit_vehicles')
             ->using(PermitVehicle::class)
             ->withPivot(['role', 'is_blocking']);
+    }
+
+    /**
+     * No request that has gone further than a draft or a return for changes
+     * carries the vehicle (withdrawn ones aside), so its plate, type and owner
+     * may still be corrected: no decision or certificate changes under them.
+     */
+    public function isOnlyOnOpenRequests(?string $exceptPermitId = null): bool
+    {
+        return ! $this->permits()
+            ->when($exceptPermitId !== null, fn ($query) => $query->whereKeyNot($exceptPermitId))
+            ->whereNotIn('status', [PermitStatus::Draft->value, PermitStatus::ChangesRequested->value, PermitStatus::Withdrawn->value])
+            ->exists();
     }
 
     /**

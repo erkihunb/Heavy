@@ -6,6 +6,7 @@ use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Models\Permit;
 use App\Models\User;
+use App\Models\Vehicle;
 use Illuminate\Auth\Access\Response;
 
 /**
@@ -19,6 +20,14 @@ use Illuminate\Auth\Access\Response;
  */
 class PermitPolicy
 {
+    /**
+     * Registering, correcting or deleting requests at the office: any of these
+     * opens a registered request.
+     *
+     * @var list<Permission>
+     */
+    private const array WORKS_ON_REQUESTS = [Permission::RegisterApplicants, Permission::UpdateRegisteredPermits, Permission::DeleteRegisteredPermits];
+
     public function view(User $user, Permit $permit): Response
     {
         return $this->isVisibleToStaff($user, $permit) && ! $this->hidesIssued($user, $permit)
@@ -243,25 +252,62 @@ class PermitPolicy
             return Response::denyAsNotFound();
         }
 
-        return $this->forApplicant($user, $permit, $applicant, PermitStatus::cases());
+        return $this->forApplicant($user, $permit, $applicant, PermitStatus::cases(), self::WORKS_ON_REQUESTS);
     }
 
+    /**
+     * Correcting the request: a draft by whoever registers requests or may
+     * correct them, a request returned for changes by whoever may correct it.
+     */
     public function updateFor(User $user, Permit $permit, User $applicant): Response
     {
-        return $this->forApplicant($user, $permit, $applicant, [PermitStatus::Draft, PermitStatus::ChangesRequested]);
+        return $permit->status === PermitStatus::Draft
+            ? $this->forApplicant($user, $permit, $applicant, [PermitStatus::Draft], [Permission::RegisterApplicants, Permission::UpdateRegisteredPermits])
+            : $this->forApplicant($user, $permit, $applicant, [PermitStatus::ChangesRequested], [Permission::UpdateRegisteredPermits]);
     }
 
     public function submitFor(User $user, Permit $permit, User $applicant): Response
     {
-        return $this->forApplicant($user, $permit, $applicant, [PermitStatus::Draft, PermitStatus::ChangesRequested]);
+        return $this->updateFor($user, $permit, $applicant);
+    }
+
+    /**
+     * Deleting a draft or returned request: it is withdrawn and stays in the record.
+     */
+    public function deleteFor(User $user, Permit $permit, User $applicant): Response
+    {
+        return $this->forApplicant($user, $permit, $applicant, [PermitStatus::Draft, PermitStatus::ChangesRequested], [Permission::DeleteRegisteredPermits]);
+    }
+
+    /**
+     * Correcting a vehicle of the request (plate, type, owner): the request may
+     * be corrected, the vehicle is on it, and no other request that has gone
+     * further carries it, so an issued certificate never changes under it.
+     */
+    public function updateVehicleFor(User $user, Permit $permit, User $applicant, Vehicle $vehicle): Response
+    {
+        $may = $this->updateFor($user, $permit, $applicant);
+
+        if ($may->denied()) {
+            return $may;
+        }
+
+        if (! $permit->vehicles()->whereKey($vehicle->getKey())->exists()) {
+            return Response::denyAsNotFound();
+        }
+
+        return $vehicle->isOnlyOnOpenRequests($permit->id) ? Response::allow() : Response::deny(__('permits.errors.vehicle_on_other_permit'));
     }
 
     /**
      * @param  list<PermitStatus>  $statuses
+     * @param  list<Permission>  $permissions  any one of them will do
      */
-    private function forApplicant(User $user, Permit $permit, User $applicant, array $statuses): Response
+    private function forApplicant(User $user, Permit $permit, User $applicant, array $statuses, array $permissions): Response
     {
-        if (! $user->can(Permission::RegisterApplicants->value)
+        $may = fn (array $any): bool => collect($any)->contains(fn (Permission $permission): bool => $user->can($permission->value));
+
+        if (! $may(self::WORKS_ON_REQUESTS)
             || ! $applicant->can(Permission::ApplyForPermits->value)
             || $applicant->organization_id === null
             || $applicant->organization_id !== $permit->organization_id
@@ -269,7 +315,8 @@ class PermitPolicy
             return Response::denyAsNotFound();
         }
 
-        return in_array($permit->status, $statuses, true) ? Response::allow() : Response::deny();
+        // Someone who works on registered requests sees this one, but this action is another permission's.
+        return $may($permissions) && in_array($permit->status, $statuses, true) ? Response::allow() : Response::deny();
     }
 
     /**

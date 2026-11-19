@@ -82,6 +82,7 @@ enum Role: string
                 Permission::ViewIssuedPermits,
                 Permission::ViewReviewQueue,
                 Permission::VerifyPayments,
+                Permission::ViewPayments,
                 Permission::ViewReports,
             ],
             self::TrafficOfficer => [
@@ -92,6 +93,13 @@ enum Role: string
                 Permission::ViewDashboard,
                 Permission::ViewIssuedPermits,
                 Permission::RegisterApplicants,
+                Permission::UpdateRegisteredPermits,
+                Permission::DeleteRegisteredPermits,
+                Permission::ViewOrganizations,
+                Permission::UpdateOrganizations,
+                Permission::DeleteOrganizations,
+                Permission::UpdateVehicles,
+                Permission::DeleteVehicles,
             ],
             // The Issuer opens paid applications to check, issue and print them.
             self::Issuer => [

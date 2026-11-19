@@ -38,18 +38,25 @@ it('matches the role table in the specification', function (Role $role, array $e
     'applicant' => [Role::Applicant, ['permits.apply']],
     'reviewer' => [Role::Reviewer, ['dashboard.view', 'permits.view-issued', 'permits.view-queue', 'permits.review', 'permits.approve']],
     'approver' => [Role::Approver, ['dashboard.view', 'permits.view-issued', 'permits.view-queue', 'permits.approve', 'permits.revoke', 'reports.view']],
-    'cashier' => [Role::Cashier, ['dashboard.view', 'permits.view-issued', 'permits.view-queue', 'payments.verify', 'reports.view']],
+    'cashier' => [Role::Cashier, ['dashboard.view', 'permits.view-issued', 'permits.view-queue', 'payments.verify', 'payments.view', 'reports.view']],
     'traffic officer' => [Role::TrafficOfficer, ['dashboard.view', 'verification.scan']],
-    'registrar' => [Role::Registrar, ['dashboard.view', 'permits.view-issued', 'applicants.register']],
+    'registrar' => [Role::Registrar, ['dashboard.view', 'permits.view-issued', 'applicants.register', 'permits.update-registered', 'permits.delete-registered', 'organizations.view', 'organizations.update', 'organizations.delete', 'vehicles.update', 'vehicles.delete']],
     'issuer' => [Role::Issuer, ['dashboard.view', 'permits.view-issued', 'permits.view-queue', 'permits.issue']],
     'supervisor' => [Role::Supervisor, ['dashboard.view', 'permits.view-issued', 'permits.view-queue', 'permits.comment', 'reports.view']],
     'admin' => [Role::Admin, [
         'dashboard.view', 'permits.view-issued', 'institution-permits.issue',
         'users.view', 'users.create', 'users.update', 'users.deactivate', 'users.reset-passwords', 'users.assign-roles',
         'roles.view', 'roles.create', 'roles.update', 'roles.delete', 'roles.manage-global', 'permissions.view',
-        'vehicle-types.manage', 'fee-schedules.manage', 'settings.manage', 'audit-log.view',
+        'vehicle-types.view', 'vehicle-types.create', 'vehicle-types.update', 'vehicle-types.delete',
+        'fee-schedules.view', 'fee-schedules.create', 'fee-schedules.update', 'fee-schedules.delete',
+        'branches.view', 'branches.create', 'branches.update', 'branches.delete',
+        'settings.view', 'settings.update', 'audit-log.view',
+        'institution-vehicles.view', 'institution-vehicles.create', 'institution-vehicles.update', 'institution-vehicles.delete',
         'permits.view-queue', 'permits.review', 'permits.approve', 'permits.revoke', 'payments.verify', 'permits.issue',
         'permits.comment', 'verification.scan', 'reports.view', 'applicants.register',
+        'permits.update-registered', 'permits.delete-registered',
+        'organizations.view', 'organizations.update', 'organizations.delete', 'vehicles.update', 'vehicles.delete',
+        'payments.view', 'institution-permits.view', 'institution-permits.revoke',
     ]],
 ]);
 
@@ -113,11 +120,11 @@ it('keeps what administrators changed on a role when it seeds again', function (
 });
 
 it('always gives the administrator role every staff permission', function () {
-    RoleModel::findByName(Role::Admin->value)->revokePermissionTo(Permission::ManageSettings->value);
+    RoleModel::findByName(Role::Admin->value)->revokePermissionTo(Permission::UpdateSettings->value);
 
     $this->seed(RolesAndPermissionsSeeder::class);
 
-    expect(RoleModel::findByName(Role::Admin->value)->hasPermissionTo(Permission::ManageSettings->value))->toBeTrue();
+    expect(RoleModel::findByName(Role::Admin->value)->hasPermissionTo(Permission::UpdateSettings->value))->toBeTrue();
 });
 
 it('treats every role except applicant as staff', function () {

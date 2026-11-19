@@ -9,5 +9,5 @@ export const CRITICAL_PERMISSIONS: ReadonlySet<string> = new Set([
     'roles.update',
     'roles.delete',
     'roles.manage-global',
-    'settings.manage',
+    'settings.update',
 ]);

@@ -10,9 +10,19 @@ import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
+/** The applicant of a request being corrected: shown as registered, not changed. */
+export type LockedApplicant = {
+    name: string;
+    tin: string | null;
+    phone: string | null;
+    contact_name: string;
+    contact_email: string;
+};
+
 /**
  * 1. The applicant: an organization on record, found with the lookup, or a
- * new one, registered with the request.
+ * new one, registered with the request. Correcting a request, it is the
+ * organization the request was registered for, shown in the same fields.
  */
 export function ApplicantStep({
     form,
@@ -22,6 +32,7 @@ export function ApplicantStep({
     chooseMode,
     chooseExisting,
     known = null,
+    locked,
 }: {
     form: IntakeForm;
     state: StepState;
@@ -31,11 +42,59 @@ export function ApplicantStep({
     chooseExisting: (match: OrganizationMatch | null) => void;
     /** An organization on record that the one being typed already is. */
     known?: OrganizationMatch | null;
+    /** Correcting a request: its organization, read only. */
+    locked?: LockedApplicant;
 }) {
     const { t } = useTranslation();
     const { data } = form;
     const errors = errorsOf(form);
     const text = intakeTextField(form);
+
+    if (locked) {
+        const fields: [string, string, string | null][] = [
+            [
+                'name_am',
+                t('applicants.intake.fields.organization'),
+                locked.name,
+            ],
+            ['tin', t('applicants.intake.fields.tin'), locked.tin],
+            ['phone', t('applicants.intake.fields.phone'), locked.phone],
+            [
+                'contact_name',
+                t('applicants.intake.fields.name'),
+                locked.contact_name,
+            ],
+            [
+                'contact_email',
+                t('applicants.intake.fields.email'),
+                locked.contact_email,
+            ],
+        ];
+
+        return (
+            <Step
+                id="applicant"
+                number={1}
+                title={t('applicants.intake.sections.applicant.title')}
+                state={state}
+            >
+                <div className="grid gap-5 @2xl:grid-cols-2">
+                    {fields.map(([id, label, value]) => (
+                        <FormField key={id} id={id} label={label}>
+                            {(control) => (
+                                <Input
+                                    {...control}
+                                    readOnly
+                                    value={value ?? ''}
+                                    className="bg-muted"
+                                />
+                            )}
+                        </FormField>
+                    ))}
+                </div>
+            </Step>
+        );
+    }
 
     return (
         <Step

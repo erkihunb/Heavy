@@ -22,7 +22,7 @@ class PaymentPolicy
      */
     public function viewQueue(User $user): bool
     {
-        return $user->can(Permission::VerifyPayments->value);
+        return $user->can(Permission::ViewPayments->value);
     }
 
     public function view(User $user, Payment $payment): Response
@@ -42,7 +42,7 @@ class PaymentPolicy
 
     private function isCashierFor(User $user, Payment $payment): bool
     {
-        if (! $user->can(Permission::VerifyPayments->value)) {
+        if (! $user->can(Permission::ViewPayments->value)) {
             return false;
         }
 

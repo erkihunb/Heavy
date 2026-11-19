@@ -12,13 +12,22 @@ import { index } from '@/routes/admin/permits';
  * part is switched off) and cancel. Stacked in the side panel,
  * in a row under the form.
  */
+export type IntakeButtonsOptions = {
+    /** The words on the save button (correcting a request). */
+    submitLabel?: string;
+    /** Where cancel goes (correcting a request: back to it). */
+    cancelHref?: string;
+};
+
 export function IntakeButtons({
     form,
     stacked,
+    submitLabel,
+    cancelHref,
 }: {
     form: IntakeForm;
     stacked: boolean;
-}) {
+} & IntakeButtonsOptions) {
     const { t } = useTranslation();
     const { data } = form;
 
@@ -36,7 +45,7 @@ export function IntakeButtons({
                     ) : (
                         <Send aria-hidden="true" />
                     )}
-                    {t('applicants.intake.submit')}
+                    {submitLabel ?? t('applicants.intake.submit')}
                 </Button>
             ) : (
                 <Button type="submit" size="lg" disabled={form.processing}>
@@ -49,7 +58,9 @@ export function IntakeButtons({
                 </Button>
             )}
             <Button asChild variant="ghost" size={stacked ? 'default' : 'lg'}>
-                <Link href={index()}>{t('applicants.intake.cancel')}</Link>
+                <Link href={cancelHref ?? index()}>
+                    {t('applicants.intake.cancel')}
+                </Link>
             </Button>
         </div>
     );

@@ -121,4 +121,17 @@ class UserPolicy
     {
         return $user->can(Permission::RegisterApplicants->value);
     }
+
+    /**
+     * Opening requests registered at the office: registering, correcting or
+     * deleting them (each checked again in PermitPolicy).
+     */
+    public function workOnRegisteredRequests(User $user): bool
+    {
+        return $user->canAny([
+            Permission::RegisterApplicants->value,
+            Permission::UpdateRegisteredPermits->value,
+            Permission::DeleteRegisteredPermits->value,
+        ]);
+    }
 }

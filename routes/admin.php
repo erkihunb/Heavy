@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\ApplicantController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\FeeScheduleController;
+use App\Http\Controllers\Admin\OrganizationController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\PermitRegisterController;
 use App\Http\Controllers\Admin\RoleController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\Admin\VehicleTypeController;
 use App\Http\Controllers\Admin\WalkInController;
 use App\Models\Branch;
 use App\Models\FeeSchedule;
+use App\Models\Organization;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VehicleType;
@@ -29,7 +31,7 @@ Route::middleware(['auth', 'verified', 'can:viewAny,'.FeeSchedule::class])
     ->name('admin.')
     ->group(function () {
         Route::resource('fee-schedules', FeeScheduleController::class)
-            ->only(['index', 'create', 'store', 'edit', 'update']);
+            ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
     });
 
 // Users: accounts, roles, branch scopes, sign-in resets, deactivation (EUISIS RBAC).
@@ -85,10 +87,6 @@ Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
     ->controller(ApplicantController::class)
     ->group(function () {
         Route::get('permit-register/create', 'create')->name('permits.create');
-        // The fee rates the request on the form can be registered at, by permit and vehicle type.
-        Route::get('permit-register/intake-rates', 'feeRates')
-            ->middleware('throttle:60,1')
-            ->name('permits.intake-rates');
         // An organization already on record, for a new request of theirs.
         Route::get('permit-register/organizations', 'organizations')
             ->middleware('throttle:60,1')
@@ -107,14 +105,39 @@ Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
             ->name('permits.store');
     });
 
+// The fee rates a request on the form can be registered at, by permit and vehicle type:
+// for registering a request and for correcting one, on the same form.
+Route::middleware(['auth', 'verified', 'can:workOnRegisteredRequests,'.User::class])
+    ->get('permit-register/intake-rates', [ApplicantController::class, 'feeRates'])
+    ->middleware('throttle:60,1')
+    ->name('admin.permits.intake-rates');
+
+// The organizations requests are registered for, and their vehicles (OrganizationPolicy:
+// each action its own permission).
+Route::middleware(['auth', 'verified', 'can:viewAny,'.Organization::class])
+    ->name('admin.organizations.')
+    ->controller(OrganizationController::class)
+    ->whereNumber('organization')
+    ->group(function () {
+        Route::get('organizations', 'index')->name('index');
+        Route::get('organizations/{organization}', 'show')->name('show');
+        Route::get('organizations/{organization}/edit', 'edit')->name('edit');
+        Route::put('organizations/{organization}', 'update')->name('update');
+        Route::delete('organizations/{organization}', 'destroy')->name('destroy');
+        Route::get('organizations/{organization}/vehicles/{vehicle}/edit', 'editVehicle')->whereUlid('vehicle')->name('vehicles.edit');
+        Route::put('organizations/{organization}/vehicles/{vehicle}', 'updateVehicle')->whereUlid('vehicle')->name('vehicles.update');
+        Route::delete('organizations/{organization}/vehicles/{vehicle}', 'destroyVehicle')->whereUlid('vehicle')->name('vehicles.destroy');
+    });
+
 // The register of all permits (review roles, Admins, Registrars; checked in the controller).
 Route::middleware(['auth', 'verified'])
     ->get('permit-register', PermitRegisterController::class)
     ->name('admin.permits.index');
 
-// A request taken at the office, as the Registrar works on it (Registrar, Admin):
-// open it, correct and send it again, a vehicle it needs. Reached from Permits.
-Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
+// A request taken at the office, as the Registrar works on it: open it, correct
+// and send it again, correct or add a vehicle it needs, delete it. Each action is
+// checked against its own permission in PermitPolicy. Reached from Permits.
+Route::middleware(['auth', 'verified', 'can:workOnRegisteredRequests,'.User::class])
     ->prefix('permit-register/{permit}')
     ->name('admin.permits.')
     ->controller(WalkInController::class)
@@ -123,9 +146,12 @@ Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
         Route::get('/', 'show')->name('show');
         Route::get('edit', 'edit')->name('edit');
         Route::put('/', 'update')->name('update');
+        Route::delete('/', 'destroy')->name('destroy');
         Route::post('submit', 'submit')->name('submit');
         Route::get('vehicles/create', 'createVehicle')->name('vehicles.create');
         Route::post('vehicles', 'storeVehicle')->name('vehicles.store');
+        Route::get('vehicles/{vehicle}/edit', 'editVehicle')->whereUlid('vehicle')->name('vehicles.edit');
+        Route::put('vehicles/{vehicle}', 'updateVehicle')->whereUlid('vehicle')->name('vehicles.update');
         Route::get('fee-rates', 'feeRates')
             ->middleware('throttle:60,1')
             ->name('fee-rates');
@@ -136,7 +162,7 @@ Route::middleware(['auth', 'verified', 'can:viewAny,'.VehicleType::class])
     ->name('admin.')
     ->group(function () {
         Route::resource('vehicle-types', VehicleTypeController::class)
-            ->only(['index', 'create', 'store', 'edit', 'update']);
+            ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
     });
 
 // Branch offices.
@@ -144,14 +170,14 @@ Route::middleware(['auth', 'verified', 'can:viewAny,'.Branch::class])
     ->name('admin.')
     ->group(function () {
         Route::resource('branches', BranchController::class)
-            ->only(['index', 'create', 'store', 'edit', 'update']);
+            ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
     });
 
 // System settings and the audit log (spec §11, §15).
 Route::middleware(['auth', 'verified'])
     ->name('admin.')
     ->group(function () {
-        Route::middleware('can:manageSettings')->group(function () {
+        Route::middleware('can:viewSettings')->group(function () {
             $sections = implode('|', SettingsRegistry::SECTIONS);
 
             Route::get('system-settings', [SettingsController::class, 'overview'])->name('settings.overview');

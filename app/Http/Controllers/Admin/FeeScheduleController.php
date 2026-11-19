@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Actions\Fees\SaveFeeSchedule;
+use App\Domain\Audit\AuditEvent;
+use App\Domain\Audit\AuditLog;
+use App\Enums\Permission;
 use App\Enums\PermitType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\FeeScheduleRequest;
@@ -14,14 +17,16 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * The fee schedule (spec §4.4, §11 Admin). Lines are never deleted: a line
- * that should stop applying is given an end date, so the history of what was
- * charged stays readable.
+ * The fee schedule (spec §4.4, §11 Admin). A line that should stop applying
+ * is usually given an end date; one entered by mistake may be deleted
+ * (fee-schedules.delete). Permits keep the fee they were charged, so deleting
+ * a line changes no permit, and the audit log keeps what the line was.
  */
 class FeeScheduleController extends Controller
 {
@@ -46,6 +51,11 @@ class FeeScheduleController extends Controller
         return Inertia::render('admin/fee-schedules/index', [
             'schedules' => FeeScheduleResource::collection($schedules),
             'filters' => ['permit_type' => $permitType?->value],
+            'can' => [
+                'create' => Gate::allows('create', FeeSchedule::class),
+                'update' => $request->user()?->can(Permission::UpdateFeeSchedules->value) ?? false,
+                'delete' => $request->user()?->can(Permission::DeleteFeeSchedules->value) ?? false,
+            ],
         ]);
     }
 
@@ -80,6 +90,20 @@ class FeeScheduleController extends Controller
         $saveFeeSchedule->handle($request->toData(), $feeSchedule, $request->user());
 
         return to_route('admin.fee-schedules.index')->with('success', __('fees.messages.saved'));
+    }
+
+    public function destroy(Request $request, FeeSchedule $feeSchedule, AuditLog $audit): RedirectResponse
+    {
+        Gate::authorize('delete', $feeSchedule);
+
+        DB::transaction(function () use ($request, $feeSchedule, $audit): void {
+            $audit->record(AuditEvent::FeeScheduleDeleted, $feeSchedule, $request->user(), old: $feeSchedule->only([
+                'permit_type', 'vehicle_type_id', 'min_days', 'max_days', 'amount_cents', 'effective_from', 'effective_to',
+            ]));
+            $feeSchedule->delete();
+        });
+
+        return to_route('admin.fee-schedules.index')->with('success', __('fees.messages.deleted'));
     }
 
     private function vehicleTypes(): AnonymousResourceCollection
