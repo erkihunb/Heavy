@@ -82,7 +82,7 @@ class PermitReviewController extends Controller
             ->whereNotIn('status', PermitStatus::hiddenFromStaff())
             // Staff placed at a branch work on that branch's applications only.
             ->inBranchOf($request->user())
-            ->when($status !== null, fn (Builder $query) => $query->inEffectiveStatus($status))
+            ->when($status !== null, fn (Builder $query) => $query->inStatusGroup($status))
             // Unless asked otherwise, the queue is what waits for this person's desk.
             ->when($status === null && ! $all, fn (Builder $query) => $this->onDesk($query, $request->user()))
             ->when($permitType !== null, fn (Builder $query) => $query->where('permit_type', $permitType))

@@ -158,8 +158,10 @@ describe('the queue', function () {
                     ->where('permits.data.0.waiting_hours', null));
         });
 
-        it('filters by one stage', function () {
-            expect(queueIds($this->reviewer, ['status' => 'submitted']))->toBe([$this->submitted->id])
+        it('filters by one stage, or by its group', function () {
+            // "submitted" is the group of everything waiting for a decision.
+            expect(collect(queueIds($this->reviewer, ['status' => 'submitted']))->sort()->values()->all())
+                ->toBe(collect([$this->submitted->id, $this->underReview->id])->sort()->values()->all())
                 ->and(queueIds($this->reviewer, ['status' => 'under_review']))->toBe([$this->underReview->id])
                 ->and(queueIds($this->reviewer, ['status' => 'rejected']))->toBe([$this->rejected->id])
                 ->and(queueIds($this->reviewer, ['status' => 'awaiting_payment']))->toBe([$this->awaitingPayment->id])

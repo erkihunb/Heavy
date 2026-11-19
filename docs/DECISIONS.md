@@ -1335,3 +1335,21 @@ the fee and recorded it directly. Only the second is kept.
 - **A vehicle already on record** keeps its owner unless the letter names another one; then the
   vehicle's owner is updated.
 
+## Seven status groups for people; the stages stay as they are (owner's decision, 2026-11-19)
+
+People saw thirteen stage names. The database keeps its statuses (the state machine, reports and
+older rows depend on them); what people see is simpler.
+
+- **Filters offer seven groups** (`PermitStatus::groups()`, mirrored in
+  `resources/js/lib/status-groups.ts`): waiting for a decision (submitted, under review),
+  returned for changes, waiting for payment (awaiting payment, payment submitted), paid and
+  ready to issue, issued (issued, in force), rejected, and ended (expired, revoked). A group is
+  named by its first status, so links such as `?status=awaiting_payment` keep working; a status
+  that names no group still filters on its own (`Permit::scopeInStatusGroup`). The permits list
+  and the queue use them.
+- **Plainer names on the badges.** Stages that mean the same to a user share a name ("Waiting
+  for a decision", "Waiting for payment"); the rest say what happens next ("Paid, ready to
+  issue", "In force", "Issued (not started yet)"). Expired and revoked keep their own names on
+  a badge, since the difference matters on the road.
+- **Not changed:** reports and exports still count each stored status.
+

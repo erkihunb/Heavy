@@ -21,10 +21,11 @@ import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
+import { PERMIT_STATUS_GROUPS } from '@/lib/status-groups';
 import { index, show } from '@/routes/staff/permits';
 import { FilterField, FilterPanel, Input, Select } from '@/shell/Components/ui';
 import type { BreadcrumbItem, Paginated, Permit } from '@/types';
-import { PERMIT_STATUSES, PERMIT_TYPES } from '@/types/enums';
+import { PERMIT_TYPES } from '@/types/enums';
 import type { PermitStatus, PermitType } from '@/types/enums';
 
 /** A row standing for a request letter's one payment (PermitReviewController::letterPayments). */
@@ -50,11 +51,6 @@ type Props = {
         submitted_to: string | null;
     };
 };
-
-/** Staff never see drafts or withdrawn applications. */
-const STAFF_STATUSES = PERMIT_STATUSES.filter(
-    (status) => status !== 'draft' && status !== 'withdrawn',
-);
 
 export default function StaffPermitsIndex({
     permits,
@@ -141,9 +137,9 @@ export default function StaffPermitsIndex({
                             <option value="all">
                                 {t('permits.filters.all_statuses')}
                             </option>
-                            {STAFF_STATUSES.map((value) => (
+                            {PERMIT_STATUS_GROUPS.map((value) => (
                                 <option key={value} value={value}>
-                                    {t(`permits.status.${value}`)}
+                                    {t(`permits.status_group.${value}`)}
                                 </option>
                             ))}
                         </Select>

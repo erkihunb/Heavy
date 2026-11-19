@@ -322,6 +322,21 @@ class Permit extends Model
     }
 
     /**
+     * Permits in the status's filter group (PermitStatus::groups()), or in
+     * the status alone when it names no group.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeInStatusGroup(Builder $query, PermitStatus $status): void
+    {
+        $query->where(function (Builder $query) use ($status): void {
+            foreach ($status->members() as $member) {
+                $query->orWhere(fn (Builder $query) => $query->inEffectiveStatus($member));
+            }
+        });
+    }
+
+    /**
      * Permits whose status, as people see it today, is the given one:
      * "issued", "active" and "expired" are told apart by the dates of an
      * issued permit, exactly as {@see effectiveStatus()} does.

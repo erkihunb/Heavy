@@ -72,6 +72,36 @@ enum PermitStatus: string
     }
 
     /**
+     * The seven groups people filter by, each named by its first status: a
+     * simpler view of the stages (owner's decision, 2026-11-19). Mirrored in
+     * resources/js/lib/status-groups.ts.
+     *
+     * @return array<string, list<self>>
+     */
+    public static function groups(): array
+    {
+        return [
+            self::Submitted->value => [self::Submitted, self::UnderReview],
+            self::ChangesRequested->value => [self::ChangesRequested],
+            self::AwaitingPayment->value => [self::AwaitingPayment, self::PaymentSubmitted],
+            self::PaymentConfirmed->value => [self::PaymentConfirmed],
+            self::Active->value => [self::Issued, self::Active],
+            self::Rejected->value => [self::Rejected],
+            self::Expired->value => [self::Expired, self::Revoked],
+        ];
+    }
+
+    /**
+     * The statuses a filter on this one finds: its group's, or itself alone.
+     *
+     * @return list<self>
+     */
+    public function members(): array
+    {
+        return self::groups()[$this->value] ?? [$this];
+    }
+
+    /**
      * @return list<self> the statuses a row can have in the database
      */
     public static function stored(): array

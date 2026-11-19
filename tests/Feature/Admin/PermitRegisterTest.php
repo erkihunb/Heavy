@@ -44,14 +44,35 @@ it('lists every permit newest first, drafts only for registrars', function () {
             ->has('permits.data', 3)
             ->where('permits.data.0.id', $draft->id)
             ->where('permits.data.2.id', $older->id)
-            ->where('statuses', fn ($statuses) => collect($statuses)->contains('draft')));
+            // Seven groups to filter by, the same for everyone.
+            ->where('statuses', ['submitted', 'changes_requested', 'awaiting_payment', 'payment_confirmed', 'active', 'rejected', 'expired']));
 
     $this->actingAs(staffUser(Role::Reviewer))
         ->get(route('admin.permits.index'))
         ->assertInertia(fn (Assert $page) => $page
             ->has('permits.data', 2)
             ->where('permits.data.0.id', $newer->id)
-            ->where('statuses', fn ($statuses) => ! collect($statuses)->contains('draft')));
+            ->where('statuses', ['submitted', 'changes_requested', 'awaiting_payment', 'payment_confirmed', 'active', 'rejected', 'expired']));
+});
+
+it('filters by group: each group finds every status in it', function () {
+    $submitted = Permit::factory()->submitted()->create();
+    $underReview = Permit::factory()->underReview()->create();
+    $issued = Permit::factory()->issued()->create();
+    $active = Permit::factory()->active()->create();
+    $expired = Permit::factory()->expired()->create();
+    $revoked = Permit::factory()->revoked()->create();
+
+    $found = fn (string $group) => collect($this->actingAs(staffUser(Role::Admin))
+        ->get(route('admin.permits.index', ['status' => $group]))
+        ->viewData('page')['props']['permits']['data'])->pluck('id')->sort()->values()->all();
+    $ids = fn (Permit ...$permits) => collect($permits)->pluck('id')->sort()->values()->all();
+
+    expect($found('submitted'))->toBe($ids($submitted, $underReview))
+        ->and($found('active'))->toBe($ids($issued, $active))
+        ->and($found('expired'))->toBe($ids($expired, $revoked))
+        // A single status still works on its own.
+        ->and($found('revoked'))->toBe($ids($revoked));
 });
 
 it('finds a permit by number, plate, organization, TIN or applicant', function (string $field) {

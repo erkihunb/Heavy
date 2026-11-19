@@ -30,25 +30,6 @@ class PermitRegisterController extends Controller
 {
     private const int PER_PAGE = 25;
 
-    /**
-     * The statuses offered as filters, in the order of a permit's life.
-     */
-    private const array STATUSES = [
-        PermitStatus::Draft,
-        PermitStatus::Submitted,
-        PermitStatus::UnderReview,
-        PermitStatus::ChangesRequested,
-        PermitStatus::AwaitingPayment,
-        PermitStatus::PaymentSubmitted,
-        PermitStatus::PaymentConfirmed,
-        PermitStatus::Issued,
-        PermitStatus::Active,
-        PermitStatus::Expired,
-        PermitStatus::Revoked,
-        PermitStatus::Rejected,
-        PermitStatus::Withdrawn,
-    ];
-
     public function __invoke(Request $request): Response
     {
         /** @var User $viewer */
@@ -90,14 +71,12 @@ class PermitRegisterController extends Controller
             ->when($from !== null, fn (Builder $query) => $query->where('created_at', '>=', $from->startOfDay()->utc()))
             ->when($to !== null, fn (Builder $query) => $query->where('created_at', '<=', $to->endOfDay()->utc()));
 
-        $statuses = array_values(array_filter(
-            self::STATUSES,
-            fn (PermitStatus $status): bool => $registrar || $status->isVisibleToStaff(),
-        ));
+        // The seven groups people filter by, in the order of a permit's life.
+        $statuses = array_keys(PermitStatus::groups());
 
         $permits = $base()
             ->with(['vehicles', 'organization', 'applicant:id,name'])
-            ->when($status !== null, fn (Builder $query) => $query->inEffectiveStatus($status))
+            ->when($status !== null, fn (Builder $query) => $query->inStatusGroup($status))
             ->latest()
             ->orderByDesc('id')
             ->paginate(self::PER_PAGE)
@@ -113,7 +92,7 @@ class PermitRegisterController extends Controller
                 'from' => $from?->toDateString(),
                 'to' => $to?->toDateString(),
             ],
-            'statuses' => array_map(fn (PermitStatus $status): string => $status->value, $statuses),
+            'statuses' => $statuses,
             // A new permit is taken at the office: the walk-in form registers the applicant and the application.
             'createUrl' => $registrar ? route('admin.permits.create') : null,
         ]);

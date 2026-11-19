@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { visitWithFilters } from '@/lib/filters';
 import { useTranslation } from '@/lib/i18n';
+import type { PermitStatusGroup } from '@/lib/status-groups';
 import { index } from '@/routes/admin/permits';
 import { FilterField, FilterPanel, Input, Select } from '@/shell/Components/ui';
 import type {
@@ -59,7 +60,8 @@ type Filters = {
 type Props = {
     permits: Paginated<RegisterRow>;
     filters: Filters;
-    statuses: PermitStatus[];
+    /** The seven filter groups (App\Enums\PermitStatus::groups()). */
+    statuses: PermitStatusGroup[];
     /** The walk-in form, for those who take applications at the office; null otherwise. */
     createUrl: string | null;
 };
@@ -152,7 +154,7 @@ export default function PermitRegister({
                             <option value="">{t('register.any_status')}</option>
                             {statuses.map((status) => (
                                 <option key={status} value={status}>
-                                    {t(`permits.status.${status}`)}
+                                    {t(`permits.status_group.${status}`)}
                                 </option>
                             ))}
                         </Select>
