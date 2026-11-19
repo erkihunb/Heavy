@@ -2,11 +2,12 @@
 
 use App\Actions\Permits\ApprovePermit;
 use App\Actions\Permits\IssuePaidPermit;
-use App\Actions\Permits\RejectPayment;
+use App\Actions\Permits\RecordPayment;
 use App\Actions\Permits\RejectPermit;
 use App\Actions\Permits\RequestChanges;
 use App\Actions\Permits\RevokePermit;
-use App\Actions\Permits\VerifyPayment;
+use App\Data\PaymentData;
+use App\Enums\PaymentMethod;
 use App\Enums\Role;
 use App\Exceptions\PermitRuleViolation;
 use App\Models\Organization;
@@ -16,13 +17,13 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Notifications\ChangesRequested;
 use App\Notifications\Channels\SmsChannel;
-use App\Notifications\PaymentRejected;
 use App\Notifications\PermitApproved;
 use App\Notifications\PermitExpiringSoon;
 use App\Notifications\PermitIssued;
 use App\Notifications\PermitNotification;
 use App\Notifications\PermitRejected;
 use App\Notifications\PermitRevoked;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
@@ -90,25 +91,17 @@ it('tells the organization when an application is rejected, with the reason', fu
 });
 
 it('tells the organization when the permit is issued, without the cashier\'s internal remark', function () {
-    $permit = Permit::factory()->forVehicles($this->vehicle)->paymentSubmitted()->create();
-    $payment = Payment::factory()->forPermit($permit)->create();
+    $permit = Permit::factory()->forVehicles($this->vehicle)->awaitingPayment()->create();
 
-    app(VerifyPayment::class)->handle($payment, $this->cashier, 'Checked against bank statement.');
-    // Confirming the payment says nothing yet; issuing does.
+    app(RecordPayment::class)->handle($permit, $this->cashier, new PaymentData(
+        PaymentMethod::Cash, 'NOTIFY-1', (int) $permit->fee_cents, CarbonImmutable::now(),
+    ), 'Checked against bank statement.');
+    // Taking the payment says nothing yet; issuing does.
     Notification::assertNothingSent();
 
     app(IssuePaidPermit::class)->handle($permit->refresh(), userWithRole(Role::Issuer));
 
     assertOrganizationNotified(PermitIssued::class, $permit);
-});
-
-it('tells the organization when a receipt is rejected, with the reason', function () {
-    $permit = Permit::factory()->forVehicles($this->vehicle)->paymentSubmitted()->create();
-    $payment = Payment::factory()->forPermit($permit)->create();
-
-    app(RejectPayment::class)->handle($payment, $this->cashier, 'Receipt is unreadable.');
-
-    assertOrganizationNotified(PaymentRejected::class, $permit, 'Receipt is unreadable.');
 });
 
 it('tells the organization when the permit is revoked, with the reason', function () {
@@ -152,7 +145,7 @@ it('queues every permit notification and sends it only after commit', function (
     expect($notification)->toBeInstanceOf(ShouldQueue::class)
         ->and($notification->afterCommit)->toBeTrue()
         ->and($notification->tries)->toBe(3);
-})->with([PermitApproved::class, PermitIssued::class, PermitRevoked::class, ChangesRequested::class, PermitRejected::class, PaymentRejected::class, PermitExpiringSoon::class]);
+})->with([PermitApproved::class, PermitIssued::class, PermitRevoked::class, ChangesRequested::class, PermitRejected::class, PermitExpiringSoon::class]);
 
 it('reaches users by e-mail and the phone route by SMS', function () {
     $notification = new PermitRevoked(Permit::factory()->make());

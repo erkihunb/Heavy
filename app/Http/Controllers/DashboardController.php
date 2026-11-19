@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Domain\Permits\ValidityRules;
 use App\Domain\Reports\DashboardInsights;
 use App\Domain\Reports\PermitReports;
-use App\Enums\PaymentStatus;
 use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Models\Payment;
@@ -81,9 +80,6 @@ class DashboardController extends Controller
                 : null,
             'waiting_review' => $reviews
                 ? Permit::query()->inBranchOf($user)->whereIn('status', [PermitStatus::Submitted, PermitStatus::UnderReview])->count()
-                : null,
-            'payments_to_verify' => $cashier
-                ? Payment::query()->where('status', PaymentStatus::Submitted)->whereHas('permit', fn (Builder $query) => $query->inBranchOf($user))->count()
                 : null,
             'expiring' => $seesPermits
                 ? $permits()->where('status', PermitStatus::Issued)->whereBetween('valid_to', [$today->toDateString(), $expiringUntil])->count()

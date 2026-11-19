@@ -2,20 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Actions\Permits\SubmitPayment;
 use App\Actions\Permits\SubmitPermit;
 use App\Actions\Permits\UpdateDraftPermit;
 use App\Actions\Vehicles\RegisterVehicle;
 use App\Domain\Permits\FeeCalculator;
 use App\Domain\Permits\ValidityRules;
-use App\Enums\PaymentMethod;
 use App\Enums\Permission;
 use App\Enums\PermitType;
 use App\Enums\PlateRegion;
 use App\Enums\VehicleRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Registrar\FeeRatesForApplicantRequest;
-use App\Http\Requests\Registrar\StorePaymentForApplicantRequest;
 use App\Http\Requests\Registrar\StoreVehicleForApplicantRequest;
 use App\Http\Requests\Registrar\UpdatePermitForApplicantRequest;
 use App\Http\Resources\FeeRateResource;
@@ -58,7 +55,6 @@ class WalkInController extends Controller
             'actions' => [
                 'update' => $may('updateFor'),
                 'submit' => $may('submitFor'),
-                'submitPayment' => $may('submitPaymentFor'),
             ],
         ]);
     }
@@ -93,38 +89,6 @@ class WalkInController extends Controller
         $submitPermit->handle($permit, $request->user());
 
         return to_route('admin.permits.show', $permit)->with('success', __('permits.messages.submitted'));
-    }
-
-    /**
-     * The receipt for an approved request, on a page of its own: the request
-     * is not opened for editing to pay for it.
-     */
-    public function payment(Permit $permit): Response|RedirectResponse
-    {
-        $applicant = $this->applicant($permit);
-
-        // One vehicle of a letter is paid for with the others, on the letter's page.
-        if ($permit->isPaidWithLetter()) {
-            Gate::authorize('viewFor', [$permit, $applicant]);
-
-            return to_route('letters.show', $permit->request_letter_id)->with('warning', __('letters.errors.pay_with_letter'));
-        }
-
-        Gate::authorize('submitPaymentFor', [$permit, $applicant]);
-
-        return Inertia::render('admin/permits/payment', [
-            'applicant' => $this->summary($applicant),
-            'permit' => PermitResource::make($permit->load(['vehicles.vehicleType', 'organization', 'branch', 'payments'])),
-            'paymentMethods' => array_map(fn (PaymentMethod $method): string => $method->value, PaymentMethod::selectable()),
-            'receiptMaxKilobytes' => (int) config('permits.receipt_max_kilobytes'),
-        ]);
-    }
-
-    public function storePayment(StorePaymentForApplicantRequest $request, Permit $permit, SubmitPayment $submitPayment): RedirectResponse
-    {
-        $submitPayment->handle($permit, $request->user(), $request->toData());
-
-        return to_route('admin.permits.show', $permit)->with('success', __('payments.messages.submitted'));
     }
 
     /**

@@ -4,7 +4,6 @@ use App\Enums\Role;
 use App\Models\Permit;
 use App\Models\User;
 use App\Models\Vehicle;
-use App\Notifications\PaymentRejected;
 use App\Notifications\PermitApproved;
 use App\Notifications\PermitIssued;
 use App\Notifications\PermitRevoked;
@@ -95,10 +94,10 @@ it('keeps SMS short and free of fees, receipts and links', function (string $cla
         ->not->toContain('6,000')
         ->not->toContain('FS-228740')
         ->not->toContain('http');
-})->with([PermitApproved::class, PermitIssued::class, PermitRevoked::class, PaymentRejected::class]);
+})->with([PermitApproved::class, PermitIssued::class, PermitRevoked::class]);
 
 it('has every message in both languages', function () {
-    foreach (['approved', 'issued', 'revoked', 'expiring_soon', 'changes_requested', 'rejected', 'payment_rejected'] as $key) {
+    foreach (['approved', 'issued', 'revoked', 'expiring_soon', 'changes_requested', 'rejected'] as $key) {
         foreach (['subject', 'body', 'sms'] as $part) {
             foreach (['am', 'en'] as $locale) {
                 expect(trans("notifications.{$key}.{$part}", [], $locale))->not->toBe("notifications.{$key}.{$part}");

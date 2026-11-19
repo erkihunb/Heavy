@@ -21,7 +21,8 @@ final class Landing
     private const array PAGES = [
         Permission::ViewDashboard->value => 'dashboard',
         Permission::ViewReviewQueue->value => 'staff.permits.index',
-        Permission::VerifyPayments->value => 'staff.payments.index',
+        // The cashier collects from the queue (approved requests waiting for payment).
+        Permission::VerifyPayments->value => 'staff.permits.index',
         Permission::RegisterApplicants->value => 'admin.permits.index',
         Permission::ScanPermits->value => 'officer.verify',
         Permission::ViewReports->value => 'staff.reports.index',

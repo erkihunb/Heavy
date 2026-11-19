@@ -28,7 +28,7 @@ import type { PaymentStatus } from '@/types/enums';
 type Props = {
     payments: Paginated<Payment>;
     filters: {
-        /** "submitted" is the default queue; "all" lifts the filter. */
+        /** "all" (the default) or one status: a record of payments taken. */
         status: PaymentStatus | 'all';
         receipt: string;
     };
@@ -39,7 +39,7 @@ export default function StaffPaymentsIndex({ payments, filters }: Props) {
     const [status, setStatus] = useState<string>(filters.status);
     const [receipt, setReceipt] = useState(filters.receipt);
 
-    const filtered = filters.status !== 'submitted' || filters.receipt !== '';
+    const filtered = filters.status !== 'all' || filters.receipt !== '';
 
     const search = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -47,7 +47,7 @@ export default function StaffPaymentsIndex({ payments, filters }: Props) {
         router.get(
             index.url(),
             {
-                ...(status !== 'submitted' && { status }),
+                ...(status !== 'all' && { status }),
                 ...(receipt.trim() !== '' && { receipt: receipt.trim() }),
             },
             { preserveState: true, replace: true },
@@ -82,9 +82,6 @@ export default function StaffPaymentsIndex({ payments, filters }: Props) {
                             value={status}
                             onChange={(event) => setStatus(event.target.value)}
                         >
-                            <option value="submitted">
-                                {t('payments.cashier.filters.waiting')}
-                            </option>
                             <option value="all">
                                 {t('payments.cashier.filters.all')}
                             </option>

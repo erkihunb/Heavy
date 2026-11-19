@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Banknote, Pencil, Send } from 'lucide-react';
+import { ArrowLeft, Pencil, Send } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { PaymentList } from '@/components/payment-list';
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
-import { edit, index, payment, show, submit } from '@/routes/admin/permits';
+import { edit, index, show, submit } from '@/routes/admin/permits';
 import type { BreadcrumbItem, Permit } from '@/types';
 import type { WalkInApplicant } from '@/types/admin';
 
@@ -20,23 +20,20 @@ type Props = {
     applicant: WalkInApplicant;
     permit: Permit;
     /** What the Registrar may do now (App\Policies\PermitPolicy::*For). */
-    actions: { update: boolean; submit: boolean; submitPayment: boolean };
+    actions: { update: boolean; submit: boolean };
 };
 
 /**
  * A request taken at the office, as the Registrar opens it from Permits:
  * correct and submit it while it is theirs to (a draft, or sent back for
- * changes), hand in the receipt once it is approved — the request is not
- * edited to pay — and print the permit once it is issued.
+ * changes) and print the permit once it is issued. The fee is taken by the
+ * cashier, on the letter's page.
  */
 export default function PermitShow({ applicant, permit, actions }: Props) {
     const { t } = useTranslation();
     const [busy, setBusy] = useState(false);
     const route = permit.id;
     const payments = permit.payments ?? [];
-    const pendingPayment = payments.some(
-        (payment) => payment.status === 'submitted',
-    );
 
     const send = () =>
         router.post(
@@ -148,40 +145,6 @@ export default function PermitShow({ applicant, permit, actions }: Props) {
                     >
                         {t('permits.document.pending')}
                     </p>
-                )}
-
-                {pendingPayment && (
-                    <p
-                        role="status"
-                        className="rounded-card border border-border bg-muted px-5 py-4 font-medium"
-                    >
-                        {t('payments.waiting_notice')}
-                    </p>
-                )}
-
-                {actions.submitPayment && (
-                    <section
-                        aria-labelledby="payment-title"
-                        className="flex flex-col gap-4 rounded-card border-2 border-primary bg-card p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7"
-                    >
-                        <div className="space-y-1.5">
-                            <h2
-                                id="payment-title"
-                                className="text-section-title"
-                            >
-                                {t('payments.enter')}
-                            </h2>
-                            <p className="max-w-2xl text-muted-foreground">
-                                {t('payments.enter_intro')}
-                            </p>
-                        </div>
-                        <Button asChild size="lg">
-                            <Link href={payment(route)}>
-                                <Banknote aria-hidden="true" />
-                                {t('payments.enter')}
-                            </Link>
-                        </Button>
-                    </section>
                 )}
 
                 <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">

@@ -21,8 +21,8 @@ use Illuminate\Support\Str;
 beforeEach(function () {
     Storage::fake('documents');
 
-    // The Registrar hands the receipt in for the applicant, at the office.
-    $this->registrar = staffUser(Role::Registrar);
+    // The cashier records the receipt at the office (the only way to pay).
+    $this->cashier = staffUser(Role::Cashier);
     $this->applicant = applicantWithOrganization();
     $vehicle = Vehicle::factory()->for($this->applicant->organization)->create();
     $this->permit = Permit::factory()->forVehicles($vehicle)->awaitingPayment()->create(['fee_cents' => 100_000, 'applicant_id' => $this->applicant->id]);
@@ -51,8 +51,8 @@ function receiptForm(string $receipt): array
 it('refuses a receipt already used by another organization without saying who used it', function (string $typed) {
     Payment::factory()->forPermit($this->otherPermit)->create(['receipt_number' => 'FS-228740']);
 
-    $response = $this->actingAs($this->registrar)
-        ->post(route('admin.permits.payments.store', $this->permit), receiptForm($typed))
+    $response = $this->actingAs($this->cashier)
+        ->post(route('staff.permits.record-payment', $this->permit), receiptForm($typed))
         ->assertSessionHasErrors('receipt_number');
 
     $message = session('errors')->first('receipt_number');
@@ -68,8 +68,8 @@ it('refuses a receipt already used by another organization without saying who us
 })->with(['FS-228740', 'fs-228740', ' FS - 228740 ', "fs\u{2013}228740"]);
 
 it('stores the receipt number in its canonical form', function () {
-    $this->actingAs($this->registrar)
-        ->post(route('admin.permits.payments.store', $this->permit), receiptForm(' fs 228 740 '))
+    $this->actingAs($this->cashier)
+        ->post(route('staff.permits.record-payment', $this->permit), receiptForm(' fs 228 740 '))
         ->assertSessionHasNoErrors();
 
     expect(Payment::query()->where('permit_id', $this->permit->id)->value('receipt_number'))->toBe('FS228740');
@@ -78,8 +78,8 @@ it('stores the receipt number in its canonical form', function () {
 it('accepts a receipt number whose only earlier use was rejected', function () {
     Payment::factory()->forPermit($this->otherPermit)->rejected()->create(['receipt_number' => 'FS228740']);
 
-    $this->actingAs($this->registrar)
-        ->post(route('admin.permits.payments.store', $this->permit), receiptForm('FS228740'))
+    $this->actingAs($this->cashier)
+        ->post(route('staff.permits.record-payment', $this->permit), receiptForm('FS228740'))
         ->assertSessionHasNoErrors();
 
     expect(Payment::query()->where('receipt_number', 'FS228740')->count())->toBe(2);
@@ -88,8 +88,8 @@ it('accepts a receipt number whose only earlier use was rejected', function () {
 it('refuses a receipt that is already verified', function () {
     Payment::factory()->forPermit($this->otherPermit)->verified()->create(['receipt_number' => 'FS228740']);
 
-    $this->actingAs($this->registrar)
-        ->post(route('admin.permits.payments.store', $this->permit), receiptForm('FS228740'))
+    $this->actingAs($this->cashier)
+        ->post(route('staff.permits.record-payment', $this->permit), receiptForm('FS228740'))
         ->assertSessionHasErrors('receipt_number');
 });
 

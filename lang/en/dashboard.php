@@ -10,7 +10,6 @@ return [
         'in_progress' => 'Applications being reviewed',
         'awaiting_payment' => 'Waiting for payment',
         'waiting_review' => 'Waiting for review',
-        'payments_to_verify' => 'Receipts to verify',
         'expiring' => 'Ending in 7 days',
         'scans_today' => 'Checks today',
         'to_collect' => 'Payments to take',
@@ -24,7 +23,6 @@ return [
         'in_progress' => 'Sent in and being looked at by the Authority.',
         'awaiting_payment' => 'Approved; the fee is still to be paid.',
         'waiting_review' => 'Sent in and not decided yet.',
-        'payments_to_verify' => 'Receipts applicants have uploaded.',
         'expiring' => 'Their last valid day is within a week.',
         'scans_today' => 'QR scans and number look-ups since midnight.',
         'to_collect' => 'Approved requests whose fee is still to be paid.',
@@ -121,10 +119,6 @@ return [
             'to_issue' => [
                 'label' => 'Paid requests waiting to be issued',
                 'description' => 'Check them, issue the permit and print it.',
-            ],
-            'payments_to_verify' => [
-                'label' => 'Receipts waiting for verification',
-                'description' => 'Check them against the bank statement.',
             ],
             'expiring' => [
                 'label' => 'Permits ending in the next 7 days',

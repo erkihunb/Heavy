@@ -11,7 +11,7 @@ use App\Models\User;
  * who hold every staff permission) see and decide on all of them.
  */
 
-const PAYMENT_ABILITIES = ['view', 'downloadReceipt', 'verify', 'reject'];
+const PAYMENT_ABILITIES = ['view', 'downloadReceipt'];
 
 /**
  * A user with the role who belongs to the organization of the payment's

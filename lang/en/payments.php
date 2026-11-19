@@ -57,7 +57,7 @@ return [
     ],
     'cashier' => [
         'queue_title' => 'Payments',
-        'queue_intro' => 'Receipts waiting for verification, oldest first.',
+        'queue_intro' => 'Payments the cashier recorded, newest first. Payments are recorded on the page of the letter.',
         'count' => ':count payments',
         'empty' => 'No payments match.',
         'filters' => [

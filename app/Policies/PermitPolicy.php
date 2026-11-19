@@ -232,15 +232,6 @@ class PermitPolicy
         return $this->forApplicant($user, $permit, $applicant, [PermitStatus::Draft, PermitStatus::ChangesRequested]);
     }
 
-    public function submitPaymentFor(User $user, Permit $permit, User $applicant): Response
-    {
-        if ($permit->isPaidWithLetter()) {
-            return Response::deny(__('letters.errors.pay_with_letter'));
-        }
-
-        return $this->forApplicant($user, $permit, $applicant, [PermitStatus::AwaitingPayment]);
-    }
-
     /**
      * @param  list<PermitStatus>  $statuses
      */

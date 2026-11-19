@@ -41,11 +41,6 @@ return [
         'body' => 'The Authority has rejected your application for a :type permit from :from to :to.',
         'sms' => 'AACRA: your permit application was rejected. Contact the office for the reason.',
     ],
-    'payment_rejected' => [
-        'subject' => 'Receipt for permit :number not accepted',
-        'body' => 'The cashier could not accept the receipt you submitted for permit :number. Bring a correct receipt for :fee to the office.',
-        'sms' => 'AACRA: the receipt for permit :number was not accepted. Please contact the office.',
-    ],
     'letter_approved' => [
         'subject' => 'Letter :letter: :count vehicles approved — please pay the fee',
         'body' => 'Your letter :letter has been decided: permits for :count vehicles were approved. Pay :total in total at the bank or the Authority\'s cashier, then bring the receipt to the office where you applied.',

@@ -83,9 +83,6 @@ it('limits a branch cashier to the payments of their branch', function () {
     expect($listed->all())->toBe([$mine->id]);
 
     $this->actingAs($cashier)->get(route('staff.payments.show', $theirs))->assertNotFound();
-    $this->actingAs($cashier)->post(route('staff.payments.verify', $theirs))->assertNotFound();
-
-    expect($theirs->refresh()->status)->toBe(PaymentStatus::Submitted);
 
     // The head office still sees both.
     $all = collect($this->actingAs(($this->at)(Role::Cashier, null))->get(route('staff.payments.index'))->viewData('page')['props']['payments']['data'])->pluck('id');

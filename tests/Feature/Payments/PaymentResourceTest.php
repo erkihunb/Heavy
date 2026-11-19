@@ -18,7 +18,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 const PAYMENT_FIELDS = [
     'id', 'permit_id', 'method', 'receipt_number', 'amount', 'paid_at', 'status',
-    'notes', 'has_receipt_file', 'submitted_at', 'decided_at', 'can',
+    'notes', 'has_receipt_file', 'submitted_at', 'decided_at',
 ];
 
 const PAYMENT_CASHIER_FIELDS = ['submitted_by', 'decided_by'];
@@ -75,8 +75,7 @@ it('gives the applicant exactly the public fields', function () {
         ->and($data['has_receipt_file'])->toBeTrue()
         // A remark on a verified payment is internal.
         ->and($data['notes'])->toBeNull()
-        ->and($data['amount'])->toBe(['amount_cents' => 100_000, 'currency' => 'ETB', 'formatted' => 'ETB 1,000.00'])
-        ->and($data['can'])->toBe(['verify' => false, 'reject' => false]);
+        ->and($data['amount'])->toBe(['amount_cents' => 100_000, 'currency' => 'ETB', 'formatted' => 'ETB 1,000.00']);
 });
 
 it('gives cashiers and Admins the handling fields as well', function (Role $role) {
@@ -102,14 +101,6 @@ it('never sends the stored path of the receipt', function (?Role $role) {
         ->not->toContain('receipts/')
         ->not->toContain('receipt_file_path');
 })->with([Role::Applicant, Role::Cashier, Role::Admin, null]);
-
-it('offers decisions only on a payment waiting for verification', function () {
-    $waiting = Payment::factory()->create();
-    $cashier = userWithRole(Role::Cashier);
-
-    expect(paymentResourceAs($cashier, PaymentResource::make($waiting))['can'])->toBe(['verify' => true, 'reject' => true])
-        ->and(paymentResourceAs($cashier, PaymentResource::make($this->payment))['can'])->toBe(['verify' => false, 'reject' => false]);
-});
 
 describe('FeeScheduleResource', function () {
     it('sends a line in both calendars with the amount', function () {

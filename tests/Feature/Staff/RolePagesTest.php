@@ -110,30 +110,17 @@ describe('the Registrar', function () {
         $this->vehicle = Vehicle::factory()->for($this->applicant->organization)->create();
     });
 
-    it('enters the payment on its own page once the application is approved', function () {
+    it('takes no payment: the cashier does, on the letter\'s page', function () {
         $permit = Permit::factory()->forVehicles($this->vehicle)->awaitingPayment()->create(['fee_cents' => 600_050, 'applicant_id' => $this->applicant->id]);
 
         $this->actingAs($this->registrar)
             ->get(route('admin.permits.show', $permit))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('actions.submitPayment', true)
-                ->where('actions.update', false)
-                ->missing('paymentMethods'));
-
-        $this->actingAs($this->registrar)
-            ->get(route('admin.permits.payment', $permit))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('admin/permits/payment')
-                ->has('paymentMethods'));
+                ->where('actions', ['update' => false, 'submit' => false]));
     });
 
-    it('has no payment page before the approval, nor an edit page after the submission', function () {
+    it('has no edit page after the submission', function () {
         $permit = Permit::factory()->forVehicles($this->vehicle)->submitted()->create(['applicant_id' => $this->applicant->id]);
-
-        $this->actingAs($this->registrar)
-            ->get(route('admin.permits.payment', $permit))
-            ->assertForbidden();
 
         $this->actingAs($this->registrar)
             ->get(route('admin.permits.edit', $permit))

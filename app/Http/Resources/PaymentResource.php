@@ -42,10 +42,6 @@ class PaymentResource extends JsonResource
             'submitted_at' => EthiopianCalendar::present($this->created_at?->setTimezone($timezone), $locale),
             'decided_at' => EthiopianCalendar::present($this->verified_at?->setTimezone($timezone), $locale),
             'permit' => PermitResource::make($this->whenLoaded('permit')),
-            'can' => [
-                'verify' => $this->status === PaymentStatus::Submitted && (bool) $user?->can('verify', $this->resource),
-                'reject' => $this->status === PaymentStatus::Submitted && (bool) $user?->can('reject', $this->resource),
-            ],
 
             ...($forCashier ? [
                 'submitted_by' => $this->whenLoaded('submitter', fn (): ?string => $this->submitter?->name),

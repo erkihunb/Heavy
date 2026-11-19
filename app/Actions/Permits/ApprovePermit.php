@@ -2,14 +2,11 @@
 
 namespace App\Actions\Permits;
 
-use App\Domain\Audit\AuditEvent;
-use App\Domain\Audit\AuditLog;
 use App\Domain\Notifications\PermitNotifier;
 use App\Domain\Permits\FeeCalculator;
 use App\Domain\Permits\OverlapGuard;
 use App\Domain\Permits\PermitNumberGenerator;
 use App\Domain\Permits\PermitTransitions;
-use App\Enums\PaymentStatus;
 use App\Enums\Permission;
 use App\Enums\PermitStatus;
 use App\Exceptions\InvalidPermitTransition;
@@ -20,7 +17,6 @@ use App\Models\Payment;
 use App\Models\Permit;
 use App\Models\User;
 use App\Notifications\PermitApproved;
-use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Gate;
@@ -36,7 +32,6 @@ class ApprovePermit
         private readonly PermitNumberGenerator $numbers,
         private readonly FeeCalculator $fees,
         private readonly PermitNotifier $notifier,
-        private readonly AuditLog $audit,
     ) {}
 
     /**
@@ -60,46 +55,7 @@ class ApprovePermit
             $this->notifier->send($approved, new PermitApproved($approved, $note));
         }
 
-        return $this->receiptTakenAtIntake($approved, $approver);
-    }
-
-    /**
-     * A receipt the Registrar took with the request — the office form did so
-     * until payment moved after approval; such receipts may still be open —
-     * goes to the cashier now, when it is for the fee just fixed: the permit waits
-     * for its verification instead of for a payment. A receipt for another
-     * amount cannot pay this fee; it is set aside, with the reason, and the
-     * permit waits for payment as usual.
-     */
-    private function receiptTakenAtIntake(Permit $permit, User $approver): Permit
-    {
-        /** @var Payment|null $payment */
-        $payment = $permit->payments()->where('status', PaymentStatus::Submitted)->latest('created_at')->first();
-
-        if ($payment === null) {
-            return $permit;
-        }
-
-        if ($payment->amount_cents === $permit->fee_cents) {
-            return $this->transitions->apply($permit, PermitStatus::PaymentSubmitted, $approver, __('payments.intake.forwarded'));
-        }
-
-        $payment->status = PaymentStatus::Rejected;
-        $payment->verified_by = $approver->id;
-        $payment->verified_at = CarbonImmutable::now();
-        $payment->notes = __('payments.intake.amount_differs', [
-            'paid' => Money::format($payment->amount_cents, $permit->currency),
-            'fee' => Money::format((int) $permit->fee_cents, $permit->currency),
-        ]);
-        $payment->save();
-
-        $this->audit->record(AuditEvent::PaymentRejected, $payment, $approver,
-            old: ['status' => PaymentStatus::Submitted->value],
-            new: ['status' => PaymentStatus::Rejected->value],
-            context: ['receipt_number' => $payment->receipt_number, 'amount_cents' => $payment->amount_cents, 'reason' => 'amount_differs'],
-        );
-
-        return $permit;
+        return $approved;
     }
 
     /**

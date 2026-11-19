@@ -123,7 +123,8 @@ Route::middleware(['auth', 'verified', 'can:issueInstitutional,'.Permit::class])
     });
 
 /*
- * The cashier's payment verification (spec §2: Cashier / Finance).
+ * The record of payments taken by the cashier (spec §2: Cashier / Finance), read only:
+ * payments are recorded on the letter's page (or the permit's payment desk).
  */
 Route::middleware(['auth', 'verified', 'can:viewQueue,'.Payment::class])
     ->name('staff.')
@@ -132,9 +133,6 @@ Route::middleware(['auth', 'verified', 'can:viewQueue,'.Payment::class])
         Route::get('payment-queue', 'index')->name('payments.index');
         Route::get('payment-queue/{payment}', 'show')->name('payments.show');
         Route::get('payment-queue/{payment}/receipt', 'receipt')->name('payments.receipt');
-
-        Route::post('payment-queue/{payment}/verify', 'verify')->name('payments.verify');
-        Route::post('payment-queue/{payment}/reject', 'reject')->name('payments.reject');
     });
 
 /*

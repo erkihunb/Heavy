@@ -1,19 +1,21 @@
 <?php
 
 use App\Actions\Permits\IssuePaidPermit;
+use App\Actions\Permits\RecordPayment;
 use App\Actions\Permits\ReissuePermit;
-use App\Actions\Permits\VerifyPayment;
+use App\Data\PaymentData;
 use App\Domain\Permits\PermitVerifier;
 use App\Domain\Permits\VerificationTokenService;
+use App\Enums\PaymentMethod;
 use App\Enums\PermitStatus;
 use App\Enums\Role;
 use App\Enums\ScanResult;
 use App\Exceptions\PermitRuleViolation;
 use App\Jobs\GeneratePermitDocument;
-use App\Models\Payment;
 use App\Models\Permit;
 use App\Models\PermitStatusTransition;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
@@ -21,7 +23,7 @@ use Illuminate\Support\Facades\Storage;
 /*
  * Issuing a permit gives it a verification token (spec §7) and queues its
  * document (spec §8); reissuing rotates the token; revoking takes effect for
- * verification at once (spec §4.8). A cashier confirms the payment, then an
+ * verification at once (spec §4.8). A cashier records the payment, then an
  * Issuer issues the permit.
  */
 
@@ -30,19 +32,31 @@ beforeEach(function () {
     Bus::fake([GeneratePermitDocument::class]);
 
     $this->cashier = userWithRole(Role::Cashier);
-    $this->permit = Permit::factory()->active()->create(['status' => PermitStatus::PaymentSubmitted]);
-    $this->payment = Payment::factory()->forPermit($this->permit)->create();
+    $this->permit = Permit::factory()->active()->create(['status' => PermitStatus::AwaitingPayment, 'fee_cents' => 100_000]);
 });
+
+/**
+ * The cashier records the fee for the permit (the only way to pay).
+ */
+function recordFee(Permit $permit, User $cashier): void
+{
+    app(RecordPayment::class)->handle($permit, $cashier, new PaymentData(
+        PaymentMethod::Cash,
+        'ISS-'.fake()->unique()->numerify('######'),
+        (int) $permit->fee_cents,
+        CarbonImmutable::now(),
+    ));
+}
+
+function payAndIssue(Permit $permit, User $cashier): void
+{
+    recordFee($permit, $cashier);
+    app(IssuePaidPermit::class)->handle($permit->fresh(), userWithRole(Role::Issuer));
+}
 
 /**
  * The token the queued document job was given for the permit.
  */
-function payAndIssue(Payment $payment, User $cashier): void
-{
-    app(VerifyPayment::class)->handle($payment, $cashier);
-    app(IssuePaidPermit::class)->handle($payment->permit()->firstOrFail(), userWithRole(Role::Issuer));
-}
-
 function queuedToken(Permit $permit): string
 {
     $token = null;
@@ -62,7 +76,7 @@ function queuedToken(Permit $permit): string
 
 describe('issuing', function () {
     it('gives the permit a token whose hash only is stored, and queues its document', function () {
-        payAndIssue($this->payment, $this->cashier);
+        payAndIssue($this->permit, $this->cashier);
 
         $this->permit->refresh();
         $token = queuedToken($this->permit);
@@ -81,18 +95,17 @@ describe('issuing', function () {
     it('queues nothing when the payment is refused', function () {
         $this->permit->forceFill(['approved_by' => $this->cashier->id])->save();
 
-        expect(fn () => app(VerifyPayment::class)->handle($this->payment, $this->cashier))->toThrow(PermitRuleViolation::class);
+        expect(fn () => recordFee($this->permit, $this->cashier))->toThrow(PermitRuleViolation::class);
 
         Bus::assertNotDispatched(GeneratePermitDocument::class);
         expect($this->permit->refresh()->verification_token_hash)->toBeNull();
     });
 
     it('gives every permit a different token', function () {
-        $other = Permit::factory()->paymentSubmitted()->create();
-        $otherPayment = Payment::factory()->forPermit($other)->create();
+        $other = Permit::factory()->awaitingPayment()->create();
 
-        payAndIssue($this->payment, $this->cashier);
-        payAndIssue($otherPayment, $this->cashier);
+        payAndIssue($this->permit, $this->cashier);
+        payAndIssue($other, $this->cashier);
 
         expect(queuedToken($this->permit))->not->toBe(queuedToken($other));
     });
@@ -100,7 +113,7 @@ describe('issuing', function () {
 
 describe('reissuing', function () {
     beforeEach(function () {
-        payAndIssue($this->payment, $this->cashier);
+        payAndIssue($this->permit, $this->cashier);
         $this->oldToken = queuedToken($this->permit->refresh());
         $this->approver = userWithRole(Role::Approver);
     });
@@ -174,7 +187,7 @@ describe('reissuing', function () {
 
 describe('revoking', function () {
     beforeEach(function () {
-        payAndIssue($this->payment, $this->cashier);
+        payAndIssue($this->permit, $this->cashier);
         $this->token = queuedToken($this->permit->refresh());
     });
 

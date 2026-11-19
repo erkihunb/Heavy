@@ -239,7 +239,7 @@ it('covers every ability of the policy', function () {
     // issueInstitutional in Staff/InstitutionPermitTest; recordLetterPayment and issueWithLetter in Letters/RequestLetterTest.
     $tested = [
         'view', 'viewQueue', 'download', 'reissue', 'scan', 'report',
-        'viewFor', 'updateFor', 'submitFor', 'submitPaymentFor', 'viewLetter',
+        'viewFor', 'updateFor', 'submitFor', 'viewLetter',
         'issueInstitutional', 'recordLetterPayment', 'issueWithLetter',
         ...REVIEWER_ABILITIES, ...APPROVER_ABILITIES, ...DESK_ABILITIES,
     ];

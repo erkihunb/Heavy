@@ -1303,3 +1303,24 @@ person who decides.
   button remain for requests that are already drafts (none exist locally) and for resubmitting
   a returned request.
 
+## One way to pay: the cashier records the receipt (owner's decision, 2026-11-19)
+
+There were two ways for a fee to be paid: the Registrar handed a receipt in for the applicant,
+which then waited in the "payment queue" for a cashier to verify or reject; or the cashier took
+the fee and recorded it directly. Only the second is kept.
+
+- **The cashier records the payment** on the letter's page (`RecordLetterPayment`), or on the
+  permit's payment desk for a request without a letter (`RecordPayment`). The payment is verified
+  as it is recorded and the vehicles move to "paid", ready to issue. Whoever holds
+  `payments.verify` does this; separation of duties still applies.
+- **Removed:** the Registrar's receipt page (`admin.permits.payment`, `payments.store`,
+  `SubmitPayment`, `submitPaymentFor`), the verify/reject step (`staff.payments.verify`,
+  `staff.payments.reject`, `VerifyPayment`, `RejectPayment`, the "receipt rejected" notice), the
+  dashboard's "receipts to verify" count, and the forwarding of a receipt taken with the request
+  at approval.
+- **Kept as a record:** the "Payments" page lists every payment taken, newest first, with its
+  receipt file; it has nothing to decide. People holding `payments.verify` now land on the queue,
+  where approved requests wait for payment.
+- **Left in place:** the `payment_submitted` status and `submitted` payment status stay in the
+  enums and the state machine so older rows still read correctly; nothing new reaches them.
+

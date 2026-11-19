@@ -40,16 +40,6 @@ class PaymentPolicy
         return $this->view($user, $payment);
     }
 
-    public function verify(User $user, Payment $payment): Response
-    {
-        return $this->isCashierFor($user, $payment) ? Response::allow() : Response::denyAsNotFound();
-    }
-
-    public function reject(User $user, Payment $payment): Response
-    {
-        return $this->isCashierFor($user, $payment) ? Response::allow() : Response::denyAsNotFound();
-    }
-
     private function isCashierFor(User $user, Payment $payment): bool
     {
         if (! $user->can(Permission::VerifyPayments->value)) {

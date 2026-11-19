@@ -6,17 +6,14 @@ import { PageHeader } from '@/components/page-header';
 import { PaymentList } from '@/components/payment-list';
 import { PaymentStatusBadge } from '@/components/payment-status-badge';
 import { PermitDetails } from '@/components/permit-details';
-import { StaffAction } from '@/components/staff-action';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/lib/i18n';
-import { index, receipt, reject, show, verify } from '@/routes/staff/payments';
+import { index, receipt, show } from '@/routes/staff/payments';
 import type { BreadcrumbItem, Payment } from '@/types';
 
 type Props = {
     payment: Payment;
-    /** The viewer approved this permit and so may not verify its payment. */
-    approvedByViewer: boolean;
 };
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -28,10 +25,12 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
     );
 }
 
-export default function StaffPaymentsShow({
-    payment,
-    approvedByViewer,
-}: Props) {
+/**
+ * One payment taken by the cashier, read only: the receipt, the permit it
+ * paid for and its earlier payments. Payments are recorded on the letter's
+ * page; there is nothing to decide here.
+ */
+export default function StaffPaymentsShow({ payment }: Props) {
     const { t } = useTranslation();
     const permit = payment.permit;
     const args = { payment: payment.id };
@@ -41,7 +40,6 @@ export default function StaffPaymentsShow({
     const earlier = (permit?.payments ?? []).filter(
         (other) => other.id !== payment.id,
     );
-    const hasAction = payment.can.verify || payment.can.reject;
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: t('payments.cashier.queue_title'), href: index() },
@@ -59,7 +57,7 @@ export default function StaffPaymentsShow({
                     action={<PaymentStatusBadge status={payment.status} />}
                 />
 
-                <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+                <div className="grid items-start gap-6">
                     <div className="space-y-6">
                         <section
                             aria-labelledby="payment-title"
@@ -223,57 +221,6 @@ export default function StaffPaymentsShow({
                             </section>
                         )}
                     </div>
-
-                    <section
-                        aria-labelledby="decision-title"
-                        className="h-fit space-y-4 lg:sticky lg:top-6"
-                    >
-                        <h2 id="decision-title" className="text-section-title">
-                            {t('permits.staff.decision')}
-                        </h2>
-
-                        {!hasAction && (
-                            <p className="rounded-card border border-border bg-card p-5 text-sm text-muted-foreground">
-                                {t('payments.cashier.no_action')}
-                            </p>
-                        )}
-
-                        {hasAction && approvedByViewer && (
-                            <p className="rounded-card border border-border bg-card p-5 text-sm font-medium">
-                                {t('payments.cashier.own_approval')}
-                            </p>
-                        )}
-
-                        {payment.can.verify && !approvedByViewer && (
-                            <StaffAction
-                                id="verify"
-                                title={t('payments.cashier.verify.title')}
-                                hint={t('payments.cashier.verify.hint')}
-                                action={verify.url(args)}
-                                submitLabel={t(
-                                    'payments.cashier.verify.submit',
-                                )}
-                                note="optional"
-                            />
-                        )}
-
-                        {payment.can.reject && (
-                            <StaffAction
-                                id="reject"
-                                title={t('payments.cashier.reject.title')}
-                                hint={t('payments.cashier.reject.hint')}
-                                action={reject.url(args)}
-                                submitLabel={t(
-                                    'payments.cashier.reject.submit',
-                                )}
-                                note="required"
-                                noteLabel={t(
-                                    'permits.staff.note_for_applicant',
-                                )}
-                                destructive
-                            />
-                        )}
-                    </section>
                 </div>
 
                 <Button asChild variant="outline" className="w-fit">

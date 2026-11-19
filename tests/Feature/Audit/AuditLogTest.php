@@ -3,13 +3,14 @@
 use App\Actions\Fees\SaveFeeSchedule;
 use App\Actions\Permits\ApprovePermit;
 use App\Actions\Permits\ExpirePermits;
+use App\Actions\Permits\RecordPayment;
 use App\Actions\Permits\ReissuePermit;
-use App\Actions\Permits\RejectPayment;
-use App\Actions\Permits\VerifyPayment;
 use App\Data\FeeScheduleData;
+use App\Data\PaymentData;
 use App\Domain\Audit\AuditEvent;
 use App\Domain\Audit\AuditLog;
 use App\Domain\Permits\ValidityRules;
+use App\Enums\PaymentMethod;
 use App\Enums\PermitStatus;
 use App\Enums\PermitType;
 use App\Enums\Role;
@@ -73,29 +74,23 @@ it('records changes the system makes with no person as the actor', function () {
         ->and($entry->properties['attributes'])->toBe(['status' => 'expired']);
 });
 
-it('records payment verification and rejection with the receipt', function () {
+it('records the payment the cashier takes, with the receipt', function () {
     $cashier = userWithRole(Role::Cashier);
+    $permit = Permit::factory()->awaitingPayment()->create();
 
-    $verified = Payment::factory()->create(['receipt_number' => 'FS-AUDIT-1']);
-    app(VerifyPayment::class)->handle($verified, $cashier);
+    $payment = app(RecordPayment::class)->handle($permit, $cashier, new PaymentData(
+        PaymentMethod::Cash, 'FS-AUDIT-1', (int) $permit->fee_cents, CarbonImmutable::now(),
+    ));
 
-    $rejected = Payment::factory()->create(['receipt_number' => 'FS-AUDIT-2']);
-    app(RejectPayment::class)->handle($rejected, $cashier, 'Unreadable.');
+    $entry = auditEntries(AuditEvent::PaymentRecorded)->sole();
 
-    $verification = auditEntries(AuditEvent::PaymentVerified)->sole();
-    $rejection = auditEntries(AuditEvent::PaymentRejected)->sole();
+    expect($entry->subject_id)->toBe($payment->id)
+        ->and((int) $entry->causer_id)->toBe($cashier->id)
+        ->and($entry->properties['context']['receipt_number'])->toBe('FS-AUDIT-1');
 
-    expect($verification->subject_id)->toBe($verified->id)
-        ->and((int) $verification->causer_id)->toBe($cashier->id)
-        ->and($verification->properties['attributes'])->toBe(['status' => 'verified'])
-        ->and($verification->properties['context']['receipt_number'])->toBe('FS-AUDIT-1')
-        ->and($rejection->subject_id)->toBe($rejected->id)
-        ->and($rejection->properties['old'])->toBe(['status' => 'submitted'])
-        ->and($rejection->properties['attributes'])->toBe(['status' => 'rejected']);
-
-    // The permit transitions are recorded as well.
+    // The permit transition is recorded as well.
     expect(auditEntries(AuditEvent::PermitTransition)->pluck('properties.attributes.status')->all())
-        ->toContain('payment_confirmed', 'awaiting_payment');
+        ->toContain('payment_confirmed');
 });
 
 it('records a reissue as its own event', function () {

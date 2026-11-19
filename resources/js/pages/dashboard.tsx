@@ -1,5 +1,4 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Banknote2Icon } from '@solar-icons/react/linear/banknote-2';
 import { CalendarMarkIcon } from '@solar-icons/react/linear/calendar-mark';
 import { ChartSquareIcon } from '@solar-icons/react/linear/chart-square';
 import { ClipboardListIcon } from '@solar-icons/react/linear/clipboard-list';
@@ -37,7 +36,6 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { verify as officerVerify } from '@/routes/officer';
-import { index as paymentQueue } from '@/routes/staff/payments';
 import {
     index as reviewQueue,
     show as staffPermitPage,
@@ -55,7 +53,6 @@ import { badgeClassName } from '@app/ui';
 type CountKey =
     | 'in_force'
     | 'waiting_review'
-    | 'payments_to_verify'
     | 'expiring'
     | 'to_collect'
     | 'to_issue'
@@ -320,13 +317,6 @@ export default function Dashboard({
         true,
     );
     add(
-        'payments_to_verify',
-        Banknote2Icon,
-        'primary',
-        paymentQueue.url(),
-        true,
-    );
-    add(
         'expiring',
         CalendarMarkIcon,
         'neutral',
@@ -489,7 +479,6 @@ export default function Dashboard({
     };
 
     countItem('waiting_review', 'medium', reviewQueue.url());
-    countItem('payments_to_verify', 'medium', paymentQueue.url());
     countItem(
         'to_collect',
         'medium',
@@ -516,10 +505,14 @@ export default function Dashboard({
             <Button asChild>
                 <Link href={reviewQueue()}>{t('dashboard.actions.queue')}</Link>
             </Button>
-        ) : counts.payments_to_verify !== undefined ? (
+        ) : counts.to_collect !== undefined ? (
             <Button asChild>
-                <Link href={paymentQueue()}>
-                    {t('dashboard.actions.payments')}
+                <Link
+                    href={reviewQueue({
+                        query: { status: 'awaiting_payment' },
+                    })}
+                >
+                    {t('dashboard.actions.collect')}
                 </Link>
             </Button>
         ) : (

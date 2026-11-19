@@ -10,7 +10,6 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
 use Database\Factories\PermitFactory;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -50,7 +49,7 @@ it('opens the request from Permits with what may be done to it', function () {
             ->component('admin/permits/show')
             ->where('applicant.id', $this->applicant->id)
             ->where('permit.id', $permit->id)
-            ->where('actions', ['update' => true, 'submit' => true, 'submitPayment' => false]));
+            ->where('actions', ['update' => true, 'submit' => true]));
 });
 
 it('registers a vehicle the request needs in its organization\'s register', function () {
@@ -162,29 +161,6 @@ it('lists the fee rates for the organization\'s vehicle', function () {
         ]))
         ->assertUnprocessable()
         ->assertJsonValidationErrors('primary_vehicle_id');
-});
-
-it('hands in the payment receipt of an approved request', function () {
-    $permit = officeRequest($this->applicant, Permit::factory()->awaitingPayment()->state(['fee_cents' => 600_050]));
-
-    $this->actingAs($this->registrar)
-        ->get(route('admin.permits.payment', $permit))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page->component('admin/permits/payment'));
-
-    $this->actingAs($this->registrar)
-        ->post(route('admin.permits.payments.store', $permit), [
-            'method' => 'bank_deposit',
-            'receipt_number' => 'FS228740',
-            'amount' => '6000.50',
-            'paid_at' => now(config('localization.display_timezone'))->subDay()->toDateString(),
-            'receipt_file' => UploadedFile::fake()->createWithContent('receipt.pdf', "%PDF-1.4\n0\n%%EOF\n"),
-        ])
-        ->assertSessionHasNoErrors()
-        ->assertRedirect(route('admin.permits.show', $permit));
-
-    expect($permit->refresh()->status)->toBe(PermitStatus::PaymentSubmitted)
-        ->and(Payment::query()->sole()->submitted_by)->toBe($this->registrar->id);
 });
 
 it('lets the registrar print an issued permit', function () {

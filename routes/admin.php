@@ -113,7 +113,7 @@ Route::middleware(['auth', 'verified'])
     ->name('admin.permits.index');
 
 // A request taken at the office, as the Registrar works on it (Registrar, Admin):
-// open it, correct and send it again, a vehicle it needs, the receipt. Reached from Permits.
+// open it, correct and send it again, a vehicle it needs. Reached from Permits.
 Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
     ->prefix('permit-register/{permit}')
     ->name('admin.permits.')
@@ -124,10 +124,6 @@ Route::middleware(['auth', 'verified', 'can:registerApplicant,'.User::class])
         Route::get('edit', 'edit')->name('edit');
         Route::put('/', 'update')->name('update');
         Route::post('submit', 'submit')->name('submit');
-        Route::get('payment', 'payment')->name('payment');
-        Route::post('payments', 'storePayment')
-            ->middleware('throttle:10,1')
-            ->name('payments.store');
         Route::get('vehicles/create', 'createVehicle')->name('vehicles.create');
         Route::post('vehicles', 'storeVehicle')->name('vehicles.store');
         Route::get('fee-rates', 'feeRates')

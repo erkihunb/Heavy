@@ -33,7 +33,6 @@ export type Payment = {
     submitted_at: DualDate | null;
     decided_at: DualDate | null;
     permit?: Permit;
-    can: { verify: boolean; reject: boolean };
     /** Cashiers only. */
     submitted_by?: string | null;
     /** Cashiers only. */
