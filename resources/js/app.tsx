@@ -1,20 +1,28 @@
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { StrictMode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import '../css/app.css';
 import { initializeTheme } from '@/hooks/use-appearance';
+import { appNameOf, appTitle } from '@/lib/app-title';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+// The system's name as the server sends it (APP_NAME or System settings).
+let appName = '';
 
 createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    title: (title) => appTitle(title, appName),
     resolve: (name) =>
         resolvePageComponent(
             `./pages/${name}.tsx`,
             import.meta.glob('./pages/**/*.tsx'),
         ),
     setup({ el, App, props }) {
+        appName = appNameOf(props.initialPage.props) ?? appName;
+        // A name changed in System settings shows from the next page on.
+        router.on('navigate', (event) => {
+            appName = appNameOf(event.detail.page.props) ?? appName;
+        });
+
         const app = (
             <StrictMode>
                 <App {...props} />
