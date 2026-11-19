@@ -306,6 +306,9 @@ return [
         'lockout_minutes' => (int) env('PERMITS_LOCKOUT_MINUTES', 15),
         // Links and redirects always use https (never in local development or tests).
         'force_https' => (bool) env('PERMITS_FORCE_HTTPS', false),
+        // People confirm their e-mail address by a link before using the system.
+        // Off for now: nobody is asked, and a changed address counts as confirmed.
+        'email_verification' => (bool) env('PERMITS_EMAIL_VERIFICATION', false),
         // Two-factor authentication: off means nobody is made to use it.
         'mfa_enabled' => (bool) env('PERMITS_MFA_ENABLED', true),
         'mfa_required_for_all' => (bool) env('PERMITS_MFA_REQUIRED_FOR_ALL', true),

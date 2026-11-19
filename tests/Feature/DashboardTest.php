@@ -51,9 +51,22 @@ test('the dashboard permission alone opens the dashboard, whatever the role is c
 });
 
 test('unverified users are sent to verify their email address first', function () {
+    config(['permits.security.email_verification' => true]);
+
     $this->actingAs(User::factory()->unverified()->create())
         ->get(route('dashboard'))
         ->assertRedirect(route('verification.notice'));
+});
+
+test('nobody is asked to verify their email address while verification is off', function () {
+    config(['permits.security.email_verification' => false]);
+
+    $staff = staffUser(Role::Reviewer);
+    $staff->forceFill(['email_verified_at' => null])->save();
+
+    $this->actingAs($staff)
+        ->get(route('dashboard'))
+        ->assertOk();
 });
 
 test('the dashboard reports the account status of the signed-in user', function () {

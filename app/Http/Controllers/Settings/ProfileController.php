@@ -83,7 +83,8 @@ class ProfileController extends Controller
             }
 
             if (array_key_exists('email', $new)) {
-                $fields['email_verified_at'] = null;
+                // Confirmed again by link only while the system asks for that.
+                $fields['email_verified_at'] = config('permits.security.email_verification') ? null : now();
             }
 
             $previousAvatar = $user->avatar_path;

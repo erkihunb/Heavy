@@ -130,6 +130,7 @@ final class SettingsRegistry
             'permits.security.max_login_attempts' => ['section' => 'security', 'group' => 'sign_in', 'type' => 'int', 'min' => 1, 'max' => 20],
             'permits.security.lockout_minutes' => ['section' => 'security', 'group' => 'sign_in', 'type' => 'int', 'min' => 1, 'max' => 1440],
             'permits.security.force_https' => ['section' => 'security', 'group' => 'sign_in', 'type' => 'bool'],
+            'permits.security.email_verification' => ['section' => 'security', 'group' => 'sign_in', 'type' => 'bool'],
             'permits.security.mfa_enabled' => ['section' => 'security', 'group' => 'two_factor', 'type' => 'bool'],
             'permits.security.mfa_required_for_all' => ['section' => 'security', 'group' => 'two_factor', 'type' => 'bool'],
             'permits.security.mfa_required_roles' => ['section' => 'security', 'group' => 'two_factor', 'type' => 'roles'],

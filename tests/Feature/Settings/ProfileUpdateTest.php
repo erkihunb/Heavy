@@ -14,6 +14,8 @@ test('profile page is displayed', function () {
 });
 
 test('profile information can be updated', function () {
+    config(['permits.security.email_verification' => true]);
+
     $user = User::factory()->create();
 
     $response = $this
@@ -32,6 +34,17 @@ test('profile information can be updated', function () {
     expect($user->name)->toBe('Test User');
     expect($user->email)->toBe('test@example.com');
     expect($user->email_verified_at)->toBeNull();
+});
+
+test('a changed email address counts as confirmed while verification is off', function () {
+    config(['permits.security.email_verification' => false]);
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->patch(route('profile.update'), ['name' => 'Test User', 'email' => 'new@example.com'])
+        ->assertSessionHasNoErrors();
+
+    expect($user->refresh()->email_verified_at)->not->toBeNull();
 });
 
 test('email verification status is unchanged when the email address is unchanged', function () {

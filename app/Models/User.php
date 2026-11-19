@@ -57,6 +57,26 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
 
+    /**
+     * Whether the person has confirmed their e-mail address. While the
+     * system does not ask for that (permits.security.email_verification
+     * off), everyone counts as confirmed and no one sees the verify page.
+     */
+    public function hasVerifiedEmail(): bool
+    {
+        return ! config('permits.security.email_verification') || $this->email_verified_at !== null;
+    }
+
+    /**
+     * The link to confirm the address, sent only while the system asks for it.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        if (config('permits.security.email_verification')) {
+            parent::sendEmailVerificationNotification();
+        }
+    }
+
     /** An Admin's choice for one person, over the two-factor policy (users.two_factor_requirement). */
     public const string TWO_FACTOR_REQUIRED = 'required';
 
