@@ -25,7 +25,7 @@ backup_once() {
     # dropped so that the dump restores under any account.
     MYSQL_PWD="${DB_PASSWORD}" mariadb-dump \
         --host="${DB_HOST}" --port="${DB_PORT:-3306}" --user="${DB_USERNAME}" \
-        --single-transaction --quick --routines --triggers --events \
+        --single-transaction --quick --routines --triggers --events --no-tablespaces \
         --default-character-set=utf8mb4 "${DB_DATABASE}" \
         | sed -E 's/DEFINER=`[^`]+`@`[^`]+`//g' \
         | gzip -9 > "${db}.part"

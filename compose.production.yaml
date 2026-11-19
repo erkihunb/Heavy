@@ -4,7 +4,7 @@
 #   docker compose -f compose.production.yaml --env-file .env.production run --rm app php artisan migrate --force
 #
 # Services: app (PHP-FPM), web (nginx), ssr (Node, draws first pages on the
-# server), worker (queue), scheduler, mariadb, redis, gotenberg (PDF) and
+# server), worker (queue), scheduler, mysql, redis, gotenberg (PDF) and
 # backup (daily dump + files, 30 days).
 # TLS ends at a reverse proxy in front of "web" (set TRUSTED_PROXIES).
 # See README.md → Deploying.
@@ -20,7 +20,7 @@ x-app: &app
     volumes:
         - storage:/var/www/html/storage
     depends_on:
-        mariadb:
+        mysql:
             condition: service_healthy
         redis:
             condition: service_healthy
@@ -74,22 +74,25 @@ services:
             target: ssr
         restart: unless-stopped
 
-    mariadb:
-        image: mariadb:10.11
+    # MySQL 8.0, as on the server the system ran on before Docker: its data moves
+    # over as it is. (MariaDB 10.11 refuses a generated column of the payments table.)
+    mysql:
+        image: mysql:8.0
         restart: unless-stopped
         environment:
-            MARIADB_DATABASE: ${DB_DATABASE}
-            MARIADB_USER: ${DB_USERNAME}
-            MARIADB_PASSWORD: ${DB_PASSWORD}
-            MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-        command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_USER: ${DB_USERNAME}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+        command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci', '--log-bin-trust-function-creators=1']
         volumes:
-            - mariadb-data:/var/lib/mysql
+            - mysql-data:/var/lib/mysql
         healthcheck:
-            test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+            test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent']
             interval: 10s
             timeout: 5s
-            retries: 10
+            retries: 12
+            start_period: 30s
 
     redis:
         image: redis:7-alpine
@@ -109,12 +112,13 @@ services:
         image: gotenberg/gotenberg:8
         restart: unless-stopped
 
+    # The MariaDB image only for its client tools (dump, restore, gzip, tar, GNU date).
     backup:
         image: mariadb:10.11
         restart: unless-stopped
         entrypoint: ['/bin/bash', '/backup/backup.sh', '--loop']
         environment:
-            DB_HOST: mariadb
+            DB_HOST: mysql
             DB_DATABASE: ${DB_DATABASE}
             DB_USERNAME: ${DB_USERNAME}
             DB_PASSWORD: ${DB_PASSWORD}
@@ -125,10 +129,10 @@ services:
             - storage:/storage
             - ${BACKUP_PATH:-./backups}:/backups
         depends_on:
-            mariadb:
+            mysql:
                 condition: service_healthy
 
 volumes:
     storage:
-    mariadb-data:
+    mysql-data:
     redis-data:

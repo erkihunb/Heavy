@@ -82,12 +82,13 @@ docker compose -f compose.production.yaml --env-file .env.production ps
 cd /var/www/Heavy
 sudo -u www-data php8.4 artisan down
 mkdir -p /var/www/permit-pro/backups
-mysqldump -u <DB_USERNAME> -p --single-transaction --quick --routines --triggers --events \
-    --no-tablespaces --default-character-set=utf8mb4 <DB_DATABASE> \
-  | sed -E -e 's/DEFINER=`[^`]+`@`[^`]+`//g' \
-           -e 's/utf8mb4_0900_ai_ci/utf8mb4_unicode_ci/g' \
-           -e "s#/\*!80016 DEFAULT ENCRYPTION='N' \*/##g" \
-  | gzip -9 > /var/www/permit-pro/backups/db-import.sql.gz
+set -o pipefail
+export MYSQL_PWD="$(sudo grep -E '^DB_PASSWORD=' /var/www/Heavy/.env | cut -d= -f2- | sed -E 's/^"//; s/"$//')"
+mysqldump -h 127.0.0.1 -P 3306 -u <DB_USERNAME> --single-transaction --quick --triggers \
+    --no-tablespaces --set-gtid-purged=OFF --default-character-set=utf8mb4 <DB_DATABASE> \
+  | sed -E 's/DEFINER=`[^`]+`@`[^`]+`//g' \
+  | gzip -9 | sudo tee /var/www/permit-pro/backups/db-import.sql.gz > /dev/null && echo "DUMP OK"
+unset MYSQL_PWD
 sudo tar -czf /var/www/permit-pro/backups/files-import.tar.gz -C /var/www/Heavy/storage app
 ls -lh /var/www/permit-pro/backups
 ```
