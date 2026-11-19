@@ -19,6 +19,8 @@ export type MoreVehicle = {
     type_detail: string;
     plate: string;
     trailer_plate: string;
+    /** Who owns the vehicle (and its trailer); empty means the organization asking. */
+    owner_name: string;
 };
 
 export type IntakeFormData = {
@@ -32,11 +34,13 @@ export type IntakeFormData = {
     locale: string;
     apply: boolean;
     submit: boolean;
-    // 2. The vehicle, and its trailer if any; the organization asking owns it.
+    // 2. The vehicle, and its trailer if any, and who owns them.
     vehicle_type_id: string;
     type_detail: string;
     plate: string;
     trailer_plate: string;
+    /** Printed on the certificate; empty means the organization asking. */
+    owner_name: string;
     /** The other vehicles the same letter asks for. */
     more: MoreVehicle[];
     // 3. The permit.

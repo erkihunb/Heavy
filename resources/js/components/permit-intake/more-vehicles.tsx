@@ -24,6 +24,7 @@ export const emptyMoreVehicle = (): MoreVehicle => ({
     type_detail: '',
     plate: '',
     trailer_plate: '',
+    owner_name: '',
 });
 
 /**
@@ -179,6 +180,26 @@ export function MoreVehicles({
                                 )}
                             </FormField>
                         )}
+                        <FormField
+                            id={`more_${index}_owner`}
+                            label={t('vehicles.fields.owner_name')}
+                            hint={t('applicants.intake.owner_hint')}
+                            error={errors[`${prefix}.0.owner_name`]}
+                        >
+                            {(control) => (
+                                <Input
+                                    {...control}
+                                    maxLength={255}
+                                    autoComplete="off"
+                                    value={row.owner_name}
+                                    onChange={(event) =>
+                                        update(index, {
+                                            owner_name: event.target.value,
+                                        })
+                                    }
+                                />
+                            )}
+                        </FormField>
                         {showTrailer && (
                             <TrailerField
                                 id={`more_${index}_trailer`}

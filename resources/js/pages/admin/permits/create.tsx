@@ -75,6 +75,7 @@ export default function ApplicantsCreate({
         type_detail: '',
         plate: '',
         trailer_plate: '',
+        owner_name: '',
         more: [],
         permit_type: '',
         reason: '',
@@ -234,6 +235,7 @@ export default function ApplicantsCreate({
                 type_detail,
                 plate,
                 trailer_plate,
+                owner_name,
                 more,
                 ...rest
             } = current;
@@ -242,6 +244,7 @@ export default function ApplicantsCreate({
                     plate,
                     vehicle_type_id,
                     type_detail: typeCode === OTHER_TYPE ? type_detail : '',
+                    owner_name,
                 },
                 // The trailer is registered as a trailer of the same organization.
                 ...(canTow && trailer_plate.trim() !== ''
@@ -250,6 +253,7 @@ export default function ApplicantsCreate({
                               plate: trailer_plate,
                               vehicle_type_id: String(trailerType.id),
                               type_detail: '',
+                              owner_name,
                           },
                       ]
                     : []),
@@ -268,6 +272,7 @@ export default function ApplicantsCreate({
                             vehicle_type_id: row.vehicle_type_id,
                             type_detail:
                                 code === OTHER_TYPE ? row.type_detail : '',
+                            owner_name: row.owner_name,
                         },
                         ...(canTow && row.trailer_plate.trim() !== ''
                             ? [
@@ -275,6 +280,7 @@ export default function ApplicantsCreate({
                                       plate: row.trailer_plate,
                                       vehicle_type_id: String(trailerType.id),
                                       type_detail: '',
+                                      owner_name: row.owner_name,
                                   },
                               ]
                             : []),

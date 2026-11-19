@@ -1324,3 +1324,14 @@ the fee and recorded it directly. Only the second is kept.
 - **Left in place:** the `payment_submitted` status and `submitted` payment status stay in the
   enums and the state machine so older rows still read correctly; nothing new reaches them.
 
+## The owner of each vehicle is recorded and printed (owner's decision, 2026-11-19)
+
+- **The organization that applied** is the applicant step's "Name of the organization applying"
+  (`name_am`); the certificate prints it as entry 1.
+- **Each vehicle's owner** now has a box on the one-page form, for the first vehicle and for
+  every other vehicle of the letter. Its trailer gets the same owner. Left empty, the name of
+  the organization applying is recorded, as before. The certificate prints the owner of that
+  permit's vehicles as entry 2.
+- **A vehicle already on record** keeps its owner unless the letter names another one; then the
+  vehicle's owner is updated.
+

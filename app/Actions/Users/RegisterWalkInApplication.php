@@ -84,10 +84,24 @@ class RegisterWalkInApplication
             /** @var Organization $profile */
             $profile = $applicant->organization;
 
-            return $this->requestFor($profile, $applicant, [$vehicles, ...$more], $permit, $registrar, fn (VehicleData $vehicle): string => Vehicle::query()
-                ->whereBelongsTo($profile)
-                ->where('plate_normalized', $vehicle->plate->normalized)
-                ->value('id') ?? $this->registerVehicle->handle($profile, $vehicle)->id);
+            return $this->requestFor($profile, $applicant, [$vehicles, ...$more], $permit, $registrar, function (VehicleData $vehicle) use ($profile): string {
+                $known = Vehicle::query()
+                    ->whereBelongsTo($profile)
+                    ->where('plate_normalized', $vehicle->plate->normalized)
+                    ->first();
+
+                if ($known === null) {
+                    return $this->registerVehicle->handle($profile, $vehicle)->id;
+                }
+
+                // A known vehicle keeps its owner unless the letter names another one.
+                if ($vehicle->ownerName !== $profile->localizedName('am') && $vehicle->ownerName !== $known->owner_name) {
+                    $known->owner_name = $vehicle->ownerName;
+                    $known->save();
+                }
+
+                return $known->id;
+            });
         });
 
         return ['applicant' => $applicant, 'permit' => $application, 'letter' => $letter];

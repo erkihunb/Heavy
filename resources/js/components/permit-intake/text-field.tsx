@@ -12,7 +12,7 @@ export function intakeTextField(form: IntakeForm) {
     const errors = errorsOf(form);
 
     const text = (
-        field: 'contact_name' | 'name_am' | 'type_detail',
+        field: 'contact_name' | 'name_am' | 'type_detail' | 'owner_name',
         label: string,
         extra: {
             lang?: string;

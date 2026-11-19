@@ -122,6 +122,12 @@ export function VehicleStep({
                         }}
                     />
                 )}
+                {text('owner_name', t('vehicles.fields.owner_name'), {
+                    maxLength: 255,
+                    autoComplete: 'off',
+                    hint: t('applicants.intake.owner_hint'),
+                    error: errors['vehicles.0.owner_name'],
+                })}
                 <InputError message={errors.vehicles} />
                 {letterOpen && (
                     <MoreVehicles

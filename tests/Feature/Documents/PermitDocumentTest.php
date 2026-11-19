@@ -74,6 +74,17 @@ it('prints each document in one language only', function () {
         ->not->toContain('የተሽከርካሪ ሰሌዳ ቁጥር');
 });
 
+it('prints the organization that applied and the owner of the vehicle', function () {
+    $this->permit->vehicles()->first()->forceFill(['owner_name' => 'ከበደ ተሰማ'])->save();
+
+    $html = PermitDocument::html($this->permit->refresh(), $this->token, 'am');
+
+    expect($html)->toContain('ፈቃዱን የጠየቀው ተቋም ስም')
+        ->toContain('አበበ የጭነት ማጓጓዣ')
+        ->toContain('የተሽከርካሪው ባለንብረት ስም')
+        ->toContain('ከበደ ተሰማ');
+});
+
 it('prints the entries of the paper permit and a QR code for the current token', function () {
     Payment::factory()->for($this->permit)->verified()->create(['receipt_number' => 'RCPT-230729']);
     $this->permit->approver->forceFill(['name' => 'ከበበው ሚደቅሳ'])->save();

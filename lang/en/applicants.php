@@ -70,6 +70,7 @@ return [
         'more_hint' => 'Optional; can be completed later on the organization’s profile.',
         'org_email_hint' => 'If left empty, the applicant’s e-mail is used.',
         'type_detail' => 'Vehicle type (describe)',
+        'owner_hint' => 'Left empty, the name of the organization applying is recorded. It is printed on the certificate.',
         'add_trailer' => 'Add trailer',
         'known' => ':organization (TIN :tin) is already registered.',
         'use_known' => 'Use this organization',

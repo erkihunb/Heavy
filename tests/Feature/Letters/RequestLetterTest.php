@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\Permit;
 use App\Models\RequestLetter;
 use App\Models\User;
+use App\Models\Vehicle;
 use App\Models\VehicleType;
 use App\Notifications\LetterNotification;
 use App\Notifications\PermitApproved;
@@ -98,6 +99,25 @@ describe('registering', function () {
             ->assertSessionHasErrors('more.0.vehicles.0.vehicle_type_id');
 
         expect(Permit::query()->count())->toBe(0);
+    });
+
+    it('records the owner of each vehicle, and the organization when none is given', function () {
+        $form = letterForm();
+        $form['vehicles'][0]['owner_name'] = 'ከበደ ተሰማ';
+        $form['vehicles'][1]['owner_name'] = 'ከበደ ተሰማ';
+        $form['more'][0]['vehicles'][0]['owner_name'] = '';
+
+        $this->actingAs($this->registrar)
+            ->post(route('admin.permits.store'), $form)
+            ->assertSessionHasNoErrors();
+
+        $owners = Vehicle::query()->pluck('owner_name', 'plate_normalized');
+
+        expect($owners['ኢት-03-40134'])->toBe('ከበደ ተሰማ')
+            ->and($owners['ኢት-03-40135'])->toBe('ከበደ ተሰማ')
+            // Left empty: the organization asking owns it.
+            ->and($owners['ኢት-03-50001'])->toBe('አበበ የጭነት ማጓጓዣ')
+            ->and($owners['ኢት-03-50002'])->toBe('ሰላም ተስፋዬ');
     });
 
     it('keeps a request for one vehicle as before', function () {
