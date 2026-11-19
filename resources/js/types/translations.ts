@@ -600,7 +600,6 @@ export type TranslationKey =
     | 'applicants.intake.more_hint'
     | 'applicants.intake.org_email_hint'
     | 'applicants.intake.remove_trailer'
-    | 'applicants.intake.save_draft'
     | 'applicants.intake.sections.applicant.intro'
     | 'applicants.intake.sections.applicant.title'
     | 'applicants.intake.sections.permit.intro'

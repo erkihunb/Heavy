@@ -86,7 +86,6 @@ return [
         'remove_trailer' => 'Remove the trailer',
         'type_detail_required' => 'Describe what the “other” vehicle is.',
         'submit' => 'Submit',
-        'save_draft' => 'Save draft',
         'cancel' => 'Cancel',
         'fee' => 'Fee for this permit',
         'fee_after_approval' => 'The fee is paid once the permit is approved; the receipt is recorded then.',

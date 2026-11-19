@@ -113,7 +113,6 @@ class RegisterApplicantRequest extends OrganizationRequest
             ...$organization,
             'vehicles.*.type_detail' => [...$apply, 'nullable', 'string', 'max:100'],
             'apply' => ['boolean'],
-            'submit' => ['boolean'],
             'vehicles' => [...$apply, 'required', 'array', 'min:1', 'max:'.(1 + (int) config('permits.max_trailers'))],
             'vehicles.*.plate' => [...$apply, 'bail', 'required', 'string', 'max:50', $this->freePlate(...)],
             'vehicles.*.vehicle_type_id' => [...$apply, 'required', 'integer', Rule::exists(VehicleType::class, 'id')->where('is_active', true)],
@@ -352,7 +351,8 @@ class RegisterApplicantRequest extends OrganizationRequest
             validFrom: $this->validFrom(),
             validTo: $this->validTo(),
             reason: $this->string('reason')->toString(),
-            submit: $this->boolean('submit'),
+            // Recorded and sent in one step: the office keeps no drafts.
+            submit: true,
             hours: $this->movementHours(),
             letter: $this->letter(),
             route: $this->filled('route') ? $this->string('route')->trim()->toString() : null,

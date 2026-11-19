@@ -188,7 +188,6 @@ describe('entering the hours on an application', function () {
                 'email' => 'office@abebe.test',
                 'address' => 'Bole',
                 'apply' => true,
-                'submit' => false,
                 'vehicles' => [['plate' => 'ኢት-03-40134', 'vehicle_type_id' => $type->id, 'owner_name' => 'አበበ']],
                 'permit_type' => 'pass',
                 'valid_from' => now()->addDays(3)->toDateString(),

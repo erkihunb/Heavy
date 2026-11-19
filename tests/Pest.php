@@ -153,7 +153,7 @@ function feeRateId(PermitType|string|null $type = PermitType::FullDay, ?int $veh
 
 /**
  * Permits › Add new for an organization already on record: a new request of
- * theirs, with one vehicle, kept as a draft.
+ * theirs, with one vehicle, sent for a decision.
  *
  * @param  array<string, mixed>  $overrides
  * @return array<string, mixed>
@@ -165,7 +165,6 @@ function requestFor(User $applicant, array $overrides = []): array
     $form = [
         'applicant_id' => $applicant->id,
         'apply' => true,
-        'submit' => false,
         'vehicles' => [['plate' => 'ኢት-03-40134', 'vehicle_type_id' => VehicleType::factory()->create()->id, 'owner_name' => 'አበበ ከበደ']],
         'permit_type' => PermitType::FullDay->value,
         'valid_from' => $today->addDays(3)->toDateString(),

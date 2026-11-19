@@ -53,7 +53,6 @@ function rateForm(VehicleType $type, array $overrides = []): array
         'name_am' => 'አበበ የጭነት ማጓጓዣ',
         'phone' => '0911223344',
         'apply' => true,
-        'submit' => false,
         'vehicles' => [['plate' => 'ኢት-03-40134', 'vehicle_type_id' => $type->id, 'owner_name' => 'አበበ ከበደ']],
         'permit_type' => 'full_day',
         'valid_from' => ValidityRules::today()->addDays(3)->toDateString(),

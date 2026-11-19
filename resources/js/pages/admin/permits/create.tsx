@@ -47,7 +47,7 @@ type Props = {
 /**
  * The office's application form, in the order of the Authority's form:
  * the applicant, the vehicle and the permit asked for.
- * Saved together — as a draft, or submitted for review. There is no payment
+ * Saved together and sent for a decision in one step (no drafts). There is no payment
  * here: the fee is paid once the permit is approved, and the receipt is
  * recorded then (by the applicant, the Registrar or the cashier). A
  * sticky panel shows how far the form is and keeps the buttons in reach.
@@ -204,7 +204,7 @@ export default function ApplicantsCreate({
         form.setData('applicant_id', match === null ? '' : String(match.id));
     };
 
-    const save = (submitNow: boolean) => (event?: FormEvent) => {
+    const save = (event?: FormEvent) => {
         event?.preventDefault();
 
         if (existingMode && existing === null) {
@@ -287,7 +287,6 @@ export default function ApplicantsCreate({
                 applicant_id: existingMode ? rest.applicant_id : '',
                 vehicles,
                 more: moreVehicles,
-                submit: submitNow,
             };
         });
         form.post(store.url(), {
@@ -378,7 +377,7 @@ export default function ApplicantsCreate({
             {/* The layout follows the room the form has, not the window: the sidebar takes its share. */}
             <div className="@container/intake">
                 <form
-                    onSubmit={save(data.apply)}
+                    onSubmit={save}
                     noValidate
                     className="grid items-start gap-6 @5xl/intake:grid-cols-[minmax(0,1fr)_20rem]"
                 >
@@ -416,11 +415,7 @@ export default function ApplicantsCreate({
                         )}
 
                         <div className="@5xl/intake:hidden">
-                            <IntakeButtons
-                                form={smartForm}
-                                stacked={false}
-                                save={save}
-                            />
+                            <IntakeButtons form={smartForm} stacked={false} />
                         </div>
                     </div>
 
@@ -429,7 +424,6 @@ export default function ApplicantsCreate({
                         steps={steps}
                         states={states}
                         existingMode={existingMode}
-                        save={save}
                         fee={fee}
                         typeName={typeName}
                     />

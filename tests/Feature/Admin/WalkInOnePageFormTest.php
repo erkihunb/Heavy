@@ -103,40 +103,24 @@ it('records the organization asking as the owner of its vehicles', function () {
     expect(Vehicle::query()->pluck('owner_name')->unique()->all())->toBe(['አበበ የጭነት ማጓጓዣ']);
 });
 
-it('can keep the application as a draft', function () {
+it('always sends the request for a decision: the office keeps no drafts', function () {
     $this->actingAs($this->registrar)
         ->post(route('admin.permits.store'), onePageForm(['submit' => false]))
         ->assertSessionHasNoErrors();
 
-    expect(Permit::query()->sole()->status)->toBe(PermitStatus::Draft);
+    expect(Permit::query()->sole()->status)->toBe(PermitStatus::Submitted);
 });
 
-it('refuses a permit the fee schedule has no fee for, saving nothing', function (bool $submit) {
+it('refuses a permit the fee schedule has no fee for, saving nothing', function () {
     FeeSchedule::query()->delete();
     FeeCalculator::forgetCache();
 
     $this->actingAs($this->registrar)
-        ->post(route('admin.permits.store'), onePageForm(['submit' => $submit]))
+        ->post(route('admin.permits.store'), onePageForm())
         ->assertSessionHasErrors(['permit_type' => __('permits.errors.fee_not_set_for_registration')]);
 
     expect(Permit::query()->count())->toBe(0)
         ->and(User::query()->where('email', 'abebe@example.test')->exists())->toBeFalse();
-})->with(['submitted' => [true], 'kept as a draft' => [false]]);
-
-it('does not send a draft for review while its fee is missing', function () {
-    $this->actingAs($this->registrar)
-        ->post(route('admin.permits.store'), onePageForm(['submit' => false]))
-        ->assertSessionHasNoErrors();
-    $permit = Permit::query()->sole();
-
-    FeeSchedule::query()->delete();
-    FeeCalculator::forgetCache();
-
-    $this->actingAs($this->registrar)
-        ->post(route('admin.permits.submit', $permit))
-        ->assertSessionHas('warning', __('permits.errors.fee_not_set_for_registration'));
-
-    expect($permit->fresh()->status)->toBe(PermitStatus::Draft);
 });
 
 it('registers only the person when the permit part is off', function () {

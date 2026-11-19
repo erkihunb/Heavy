@@ -1,6 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Save, Send, UserPlus } from 'lucide-react';
-import type { FormEvent } from 'react';
+import { Send, UserPlus } from 'lucide-react';
 import type { IntakeForm } from '@/components/permit-intake/form';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -8,22 +7,17 @@ import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { index } from '@/routes/admin/permits';
 
-/** Saves the form: submitted for review, or kept as a draft. */
-export type SaveIntake = (submitNow: boolean) => (event?: FormEvent) => void;
-
 /**
- * The form's buttons: submit and save as a draft (or register only, when
- * the request part is switched off) and cancel. Stacked in the side panel,
+ * The form's buttons: save and send (or register only, when the request
+ * part is switched off) and cancel. Stacked in the side panel,
  * in a row under the form.
  */
 export function IntakeButtons({
     form,
     stacked,
-    save,
 }: {
     form: IntakeForm;
     stacked: boolean;
-    save: SaveIntake;
 }) {
     const { t } = useTranslation();
     const { data } = form;
@@ -36,26 +30,14 @@ export function IntakeButtons({
             )}
         >
             {data.apply ? (
-                <>
-                    <Button type="submit" size="lg" disabled={form.processing}>
-                        {form.processing ? (
-                            <Spinner />
-                        ) : (
-                            <Send aria-hidden="true" />
-                        )}
-                        {t('applicants.intake.submit')}
-                    </Button>
-                    <Button
-                        type="button"
-                        size="lg"
-                        variant="outline"
-                        disabled={form.processing}
-                        onClick={() => save(false)()}
-                    >
-                        <Save aria-hidden="true" />
-                        {t('applicants.intake.save_draft')}
-                    </Button>
-                </>
+                <Button type="submit" size="lg" disabled={form.processing}>
+                    {form.processing ? (
+                        <Spinner />
+                    ) : (
+                        <Send aria-hidden="true" />
+                    )}
+                    {t('applicants.intake.submit')}
+                </Button>
             ) : (
                 <Button type="submit" size="lg" disabled={form.processing}>
                     {form.processing ? (

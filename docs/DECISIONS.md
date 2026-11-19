@@ -1287,3 +1287,19 @@ a permit is given when a compelling need arises. The system must stay very simpl
   permission; one person holding several permissions may do several steps in a row.
 - **Not done here.** Reviewers are not sent a notice (the queue is the signal); the one-vehicle
   decision page has no "send for review" (every new request has a letter).
+
+## No drafts: recording a request sends it (owner's decision, 2026-11-19)
+
+Part of keeping the system simple: the office records a letter and it goes straight to the
+person who decides.
+
+- **One button.** The one-page form's "Save draft" button is gone; "Register the application"
+  records the request and sends it in one step. `RegisterApplicantRequest` no longer reads a
+  `submit` field: a request recorded with the form is always submitted.
+- **Mistakes are fixed by returning it.** A request can no longer be kept back to finish later.
+  If something is wrong, the person who decides returns it for changes; the Registrar corrects
+  it and sends it again from the request's page, as before.
+- **What stays.** The `draft` status, its state-machine edge and the request page's "Submit"
+  button remain for requests that are already drafts (none exist locally) and for resubmitting
+  a returned request.
+
