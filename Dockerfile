@@ -44,6 +44,11 @@ RUN composer dump-autoload --no-dev --optimize --classmap-authoritative \
 # ---- app: PHP-FPM ----
 FROM php-base AS app
 
+# Chromium prints the permit certificates (App\Domain\Documents\ChromePdfRenderer);
+# the certificate carries its own Ethiopic font, so no system fonts are needed for it.
+RUN apk add --no-cache chromium
+ENV CHROME_BINARY=/usr/bin/chromium-browser
+
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/zz-app.ini
 COPY docker/php/www.conf /usr/local/etc/php-fpm.d/zz-www.conf
 COPY docker/app/entrypoint.sh /usr/local/bin/entrypoint
