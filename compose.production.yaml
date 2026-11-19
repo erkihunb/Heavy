@@ -11,11 +11,10 @@
 
 name: heavy
 
+# The worker and the scheduler run the image "app" builds: only "app" builds it,
+# since several services building one image at once fail with "already exists".
 x-app: &app
     image: heavy-app:${APP_VERSION:-latest}
-    build:
-        context: .
-        target: app
     env_file: .env.production
     restart: unless-stopped
     volumes:
@@ -29,9 +28,13 @@ x-app: &app
 services:
     app:
         <<: *app
+        build:
+            context: .
+            target: app
 
     worker:
         <<: *app
+        pull_policy: never
         # Longer than any job's timeout (exports: 30 minutes), so a job is never run twice.
         command: ['php', 'artisan', 'queue:work', 'redis', '--sleep=3', '--tries=3', '--max-time=3600', '--memory=256']
         stop_grace_period: 60s
@@ -40,6 +43,7 @@ services:
 
     scheduler:
         <<: *app
+        pull_policy: never
         command: ['php', 'artisan', 'schedule:work']
         healthcheck:
             disable: true
