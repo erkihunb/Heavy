@@ -19,8 +19,9 @@ beforeEach(function () {
     Storage::fake('documents');
 });
 
-it('keeps the application page read only and links each role to its own page', function (Role $role, array $desks) {
-    // Issued: nothing waits for anyone, so every role sees the read-only page.
+it('keeps the application page read only and links only to pages with something to do', function (Role $role, array $desks) {
+    // Issued: nothing waits for anyone, so every role sees the read-only page, with no
+    // dead links; whoever may revoke it is offered that, marked as not waiting.
     $permit = Permit::factory()->issued()->create();
 
     $this->actingAs(staffUser($role))
@@ -31,12 +32,23 @@ it('keeps the application page read only and links each role to its own page', f
             ->where('direct', false)
             ->where('desks', fn ($given) => collect($given)->pluck('key')->all() === $desks));
 })->with([
-    'reviewer' => [Role::Reviewer, ['decision']],
+    'reviewer' => [Role::Reviewer, []],
     'approver' => [Role::Approver, ['decision']],
-    'cashier' => [Role::Cashier, ['payment']],
-    'issuer' => [Role::Issuer, ['issue']],
+    'cashier' => [Role::Cashier, []],
+    'issuer' => [Role::Issuer, []],
     'supervisor' => [Role::Supervisor, []],
 ]);
+
+it('offers revoking an issued permit without saying it waits for the person', function () {
+    $permit = Permit::factory()->issued()->create();
+
+    $this->actingAs(staffUser(Role::Approver))
+        ->get(route('staff.permits.show', $permit))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('desks.0.key', 'decision')
+            ->where('desks.0.pending', false)
+            ->where('desks.0.afterIssue', true));
+});
 
 it('opens the work waiting for the person directly on the application page', function (PermitStatus $status, Role $role, string $component) {
     $permit = Permit::factory()->awaitingPayment()->create(['status' => $status, 'fee_cents' => 100_000]);
@@ -61,8 +73,8 @@ it('shows the read-only page when nothing waits for the person', function () {
         ->get(route('staff.permits.show', $permit))
         ->assertInertia(fn (Assert $page) => $page
             ->component('staff/permits/show')
-            ->where('desks.0.key', 'payment')
-            ->where('desks.0.pending', false));
+            // No link to the payment page: there is nothing to do there yet.
+            ->where('desks', []));
 });
 
 it('marks the page where something waits for the person now', function () {
@@ -145,11 +157,15 @@ it('shows a person who holds the permissions of several desks the work of all of
             ->where('permits.data', fn ($rows) => collect($rows)->pluck('id')->sort()->values()->all()
                 === collect([$toPay->id, $toIssue->id])->sort()->values()->all()));
 
-    // Both role pages are theirs, and only those.
+    // Each application links to the page where their work on it waits, and only that one.
     $this->actingAs($user)
         ->get(route('staff.permits.show', $toPay))
         ->assertInertia(fn (Assert $page) => $page
-            ->where('desks', fn ($given) => collect($given)->pluck('key')->all() === ['payment', 'issue']));
+            ->where('desks', fn ($given) => collect($given)->pluck('key')->all() === ['payment']));
+    $this->actingAs($user)
+        ->get(route('staff.permits.show', $toIssue))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('desks', fn ($given) => collect($given)->pluck('key')->all() === ['issue']));
 
     $this->actingAs($user)->get(route('staff.permits.decision', $review))->assertForbidden();
 });

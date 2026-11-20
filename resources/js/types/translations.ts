@@ -1387,6 +1387,8 @@ export type TranslationKey =
     | 'permits.staff.decide.hint'
     | 'permits.staff.decide.title'
     | 'permits.staff.decision'
+    | 'permits.staff.desks.after_issue'
+    | 'permits.staff.desks.after_issue_hint'
     | 'permits.staff.desks.back'
     | 'permits.staff.desks.decision'
     | 'permits.staff.desks.decision_intro'

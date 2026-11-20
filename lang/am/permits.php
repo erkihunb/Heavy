@@ -258,6 +258,8 @@ return [
         'no_action' => 'በዚህ ደረጃ በዚህ ማመልከቻ ላይ እርስዎ የሚወስኑት ነገር የለም።',
         // One page per role; the application page itself is read only.
         'desks' => [
+            'after_issue' => 'ፈቃዱን መሰረዝ ወይም እንደገና ማውጣት',
+            'after_issue_hint' => 'አስፈላጊ ሲሆን ብቻ',
             'title' => 'በዚህ ማመልከቻ ላይ የሚጠበቁ ተግባራት',
             'intro' => 'እያንዳንዱ የሥራ ኃላፊነት በተመደበው የሥራ መስክ መሠረት ይከናወናል።',
             'decision' => 'ግምገማና ውሳኔ',

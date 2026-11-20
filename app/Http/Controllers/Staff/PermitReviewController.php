@@ -268,11 +268,18 @@ class PermitReviewController extends Controller
         $desks = $this->desks($request->user());
         // Waiting for this person on that page now.
         $pending = [
-            'decision' => $can['startReview'] || $can['recommend'] || $can['approve'] || $can['requestChanges'] || $can['reject'] || $can['revoke'] || $can['reissue'],
+            'decision' => $can['startReview'] || $can['recommend'] || $can['approve'] || $can['requestChanges'] || $can['reject'],
             'payment' => $can['recordPayment'],
             'issue' => $can['issue'],
         ];
+        // Nothing waits, but the permit is issued and this person may revoke or reissue it.
+        $afterIssue = ! $pending['decision'] && ($can['revoke'] || $can['reissue']);
         $routes = ['decision' => 'staff.permits.decision', 'payment' => 'staff.permits.payment-desk', 'issue' => 'staff.permits.issue-desk'];
+        // Only the pages with something to do on this application now: no dead links.
+        $open = array_values(array_filter(
+            array_keys(array_filter($desks)),
+            fn (string $key): bool => $pending[$key] || ($key === 'decision' && $afterIssue),
+        ));
 
         return Inertia::render($page, [
             'permit' => $resource,
@@ -284,8 +291,14 @@ class PermitReviewController extends Controller
             'correction' => $this->correction($request->user(), $permit),
             'direct' => $direct,
             'desks' => array_map(
-                fn (string $key): array => ['key' => $key, 'url' => route($routes[$key], $permit), 'pending' => $pending[$key]],
-                array_keys(array_filter($desks)),
+                fn (string $key): array => [
+                    'key' => $key,
+                    'url' => route($routes[$key], $permit),
+                    'pending' => $pending[$key],
+                    // The decision page of an issued permit: revoking or reissuing, when needed.
+                    'afterIssue' => $key === 'decision' && $afterIssue,
+                ],
+                $open,
             ),
         ]);
     }

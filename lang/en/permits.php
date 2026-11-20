@@ -258,6 +258,8 @@ return [
         'no_action' => 'There is nothing for you to decide on this application at this stage.',
         // One page per role; the application page itself is read only.
         'desks' => [
+            'after_issue' => 'Revoke or reissue the permit',
+            'after_issue_hint' => 'Only when it is needed',
             'title' => 'Your work on this application',
             'intro' => 'Each role works on the application on its own page.',
             'decision' => 'Review and decision',

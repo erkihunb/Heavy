@@ -21,6 +21,8 @@ export type Desk = {
     url: string;
     /** Something on that page waits for this person now. */
     pending: boolean;
+    /** The permit is issued: the page is for revoking or reissuing it, when needed. */
+    afterIssue?: boolean;
 };
 
 /**
@@ -237,6 +239,11 @@ export function VehicleHistoryCard({
 export function DeskLinks({ desks }: { desks: Desk[] }) {
     const { t } = useTranslation();
 
+    // Nothing to do on this application: no card at all.
+    if (desks.length === 0) {
+        return null;
+    }
+
     return (
         <section
             aria-labelledby="desks-title"
@@ -247,9 +254,7 @@ export function DeskLinks({ desks }: { desks: Desk[] }) {
                     {t('permits.staff.desks.title')}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                    {desks.length === 0
-                        ? t('permits.staff.desks.none')
-                        : t('permits.staff.desks.intro')}
+                    {t('permits.staff.desks.intro')}
                 </p>
             </div>
             {desks.map((desk) => (
@@ -265,7 +270,9 @@ export function DeskLinks({ desks }: { desks: Desk[] }) {
                 >
                     <span className="min-w-0">
                         <span className="block font-semibold">
-                            {t(`permits.staff.desks.${desk.key}`)}
+                            {desk.afterIssue
+                                ? t('permits.staff.desks.after_issue')
+                                : t(`permits.staff.desks.${desk.key}`)}
                         </span>
                         <span
                             className={cn(
@@ -277,7 +284,9 @@ export function DeskLinks({ desks }: { desks: Desk[] }) {
                         >
                             {desk.pending
                                 ? t('permits.staff.desks.pending')
-                                : t('permits.staff.desks.nothing')}
+                                : desk.afterIssue
+                                  ? t('permits.staff.desks.after_issue_hint')
+                                  : t('permits.staff.desks.nothing')}
                         </span>
                     </span>
                     <ChevronRight
