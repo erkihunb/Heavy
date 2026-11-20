@@ -63,12 +63,12 @@ it('prints each document in one language only', function () {
     [$amharic, $english] = FakePdfRenderer::$rendered;
 
     expect($amharic)->toContain('<html lang="am">')
-        ->toContain('ፈቃዱን የጠየቀው ተቋም ስም')
+        ->toContain('ፈቃድ የተሰጠው ተቋም ስም')
         ->toContain(e(config('permits.document.notes.am.0')))
         ->not->toContain(e(config('permits.document.notes.en.0')))
         ->not->toContain('Plate number')
         ->and($english)->toContain('<html lang="en">')
-        ->toContain('Organisation that requested the permit')
+        ->toContain('Organisation the permit is issued to')
         ->toContain(e(config('permits.document.notes.en.0')))
         ->not->toContain(e(config('permits.document.notes.am.0')))
         ->not->toContain('የተሽከርካሪ ሰሌዳ ቁጥር');
@@ -79,7 +79,7 @@ it('prints the organization that applied and the owner of the vehicle', function
 
     $html = PermitDocument::html($this->permit->refresh(), $this->token, 'am');
 
-    expect($html)->toContain('ፈቃዱን የጠየቀው ተቋም ስም')
+    expect($html)->toContain('ፈቃድ የተሰጠው ተቋም ስም')
         ->toContain('አበበ የጭነት ማጓጓዣ')
         ->toContain('የተሽከርካሪው ባለንብረት ስም')
         ->toContain('ከበደ ተሰማ');

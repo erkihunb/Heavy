@@ -187,7 +187,7 @@
             'code' => 'ኮድ',
             'title' => 'የተገደበ የከባድ ተሽከርካሪዎች መንቀሳቀሻ ፈቃድ',
             'entries' => [
-                'organisation' => 'ፈቃዱን የጠየቀው ተቋም ስም',
+                'organisation' => 'ፈቃድ የተሰጠው ተቋም ስም',
                 'owner' => 'የተሽከርካሪው ባለንብረት ስም',
                 'time' => 'እንዲንቀሳቀስ የተፈቀደለት ጊዜ',
                 'type' => 'የተሽከርካሪ ዓይነት',
@@ -218,7 +218,7 @@
             'code' => 'Code',
             'title' => 'Time-restricted movement permit for heavy vehicles',
             'entries' => [
-                'organisation' => 'Organisation that requested the permit',
+                'organisation' => 'Organisation the permit is issued to',
                 'owner' => 'Vehicle owner',
                 'time' => 'Permitted movement time',
                 'type' => 'Vehicle type',
