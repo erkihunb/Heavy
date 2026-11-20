@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/react';
 import type { CSSProperties } from 'react';
 import { HeavyVehicleMotion } from '@/components/auth/heavy-vehicle-motion';
 import { BrandMark } from '@/components/brand-mark';
+import { DeveloperCredit } from '@/components/developer-credit';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { SupportContacts } from '@/components/support-contacts';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -112,6 +113,7 @@ export default function AuthSplitLayout({
                             </p>
                         )}
                         <SupportContacts className="justify-center" />
+                        <DeveloperCredit />
                     </div>
                 </main>
             </div>

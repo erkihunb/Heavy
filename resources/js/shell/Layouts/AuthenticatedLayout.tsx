@@ -7,6 +7,7 @@ import {
 import { usePage } from '@inertiajs/react';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import type { PropsWithChildren, ReactNode } from 'react';
+import { DeveloperCredit } from '@/components/developer-credit';
 import { SupportContacts } from '@/components/support-contacts';
 import { adoptAccountTheme } from '@/hooks/use-appearance';
 import { useHydrated } from '@/hooks/use-hydrated';
@@ -450,6 +451,7 @@ function Shell({
                     >
                         <p>{t('common.authority')}</p>
                         <SupportContacts />
+                        <DeveloperCredit />
                     </div>
                 </footer>
             </div>

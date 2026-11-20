@@ -60,7 +60,7 @@
 
     @php($branding = \App\Domain\Settings\Branding::shared())
     @if ($branding['supportEmail'] || $branding['supportPhone'])
-        <footer class="mx-auto flex max-w-2xl flex-wrap justify-center gap-x-4 gap-y-1 px-4 pb-8 text-xs text-muted-foreground">
+        <footer class="mx-auto flex max-w-2xl flex-wrap justify-center gap-x-4 gap-y-1 px-4 pb-2 text-xs text-muted-foreground">
             <span>{{ __('common.support') }}:</span>
             @if ($branding['supportEmail'])
                 <a href="mailto:{{ $branding['supportEmail'] }}" class="font-medium text-foreground underline-offset-4 hover:underline" translate="no">{{ $branding['supportEmail'] }}</a>
@@ -70,5 +70,6 @@
             @endif
         </footer>
     @endif
+    <p class="mx-auto max-w-2xl px-4 pb-8 text-center text-xs text-muted-foreground" translate="no">Design and Developed By <span class="font-medium">Erkihun Bewket</span></p>
 </body>
 </html>
