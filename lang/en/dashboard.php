@@ -154,7 +154,6 @@ return [
         'reissued' => 'Reissued with a new QR code',
         'when' => 'When',
         'what' => 'What happened',
-        'now' => 'Status now',
         'permit' => 'Permit',
         'organization' => 'Organisation',
         'by' => 'By',

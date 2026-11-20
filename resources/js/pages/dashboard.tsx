@@ -31,7 +31,6 @@ import {
 } from '@/components/data-table';
 import { DualDate } from '@/components/dual-date';
 import { PERMIT_STATUS_COLOR } from '@/components/permit-status-colors';
-import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -89,7 +88,6 @@ type Props = {
               from: PermitStatus | null;
               to: PermitStatus;
               /** The status the permit has today. */
-              now: PermitStatus;
               at: DualDateValue;
               time: string;
               actor: string | null;
@@ -956,7 +954,6 @@ export default function Dashboard({
                                     </Th>
                                     <Th>{t('dashboard.activity.what')}</Th>
                                     <Th>{t('dashboard.activity.by')}</Th>
-                                    <Th>{t('dashboard.activity.now')}</Th>
                                 </tr>
                             </THead>
                             <TBody>
@@ -1007,11 +1004,6 @@ export default function Dashboard({
                                                 )}
                                             </Td>
                                             <Td muted>{step.actor ?? '—'}</Td>
-                                            <Td>
-                                                <StatusBadge
-                                                    status={step.now}
-                                                />
-                                            </Td>
                                         </Tr>
                                     ))
                                 )}

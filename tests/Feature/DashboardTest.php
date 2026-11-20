@@ -98,7 +98,7 @@ test('every role has a name and a summary in both languages', function () {
     }
 });
 
-test('the recent activity shows each step with the status its permit has now', function () {
+test('the recent activity shows what was done, not where the permit stands now', function () {
     $permit = Permit::factory()->revoked()->create();
     $permit->transitions()->create(['from_status' => 'changes_requested', 'to_status' => 'submitted']);
 
@@ -106,5 +106,5 @@ test('the recent activity shows each step with the status its permit has now', f
         ->get(route('dashboard'))
         ->assertInertia(fn (Assert $page) => $page
             ->where('activity.0.to', 'submitted')
-            ->where('activity.0.now', 'revoked'));
+            ->missing('activity.0.now'));
 });

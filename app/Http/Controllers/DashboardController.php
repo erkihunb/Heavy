@@ -17,7 +17,6 @@ use App\Support\EthiopianMonth;
 use App\Support\Money;
 use App\Support\Rbac\BranchScope;
 use App\Support\Rbac\Landing;
-use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -165,8 +164,9 @@ class DashboardController extends Controller
     }
 
     /**
-     * The latest permit status changes, newest first, each with the status
-     * its permit has now.
+     * The latest permit status changes, newest first: what was done, when and
+     * by whom. Where a permit stands today is on its own page, not beside a
+     * past step, where the two read as a contradiction.
      *
      * @return list<array<string, mixed>>
      */
@@ -188,8 +188,6 @@ class DashboardController extends Controller
                 'organization' => $step->permit->organization->localizedName($locale),
                 'from' => $step->from_status?->value,
                 'to' => $step->to_status->value,
-                // Where the permit stands today: a step in this list may be long past.
-                'now' => $step->permit->effectiveStatus(CarbonImmutable::now())->value,
                 'at' => EthiopianCalendar::present($step->created_at->setTimezone($timezone), $locale),
                 'time' => $step->created_at->setTimezone($timezone)->format('H:i'),
                 'actor' => $step->actor?->name,

@@ -713,7 +713,6 @@ export type TranslationKey =
     | 'dashboard.activity.by'
     | 'dashboard.activity.created'
     | 'dashboard.activity.empty'
-    | 'dashboard.activity.now'
     | 'dashboard.activity.organization'
     | 'dashboard.activity.permit'
     | 'dashboard.activity.reissued'
