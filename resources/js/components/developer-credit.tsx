@@ -5,7 +5,7 @@
 export function DeveloperCredit({ className }: { className?: string }) {
     return (
         <p className={className} translate="no">
-            Design and Developed By{' '}
+            Designed &amp; Developed by{' '}
             <span className="font-medium">Erkihun Bewket</span>
         </p>
     );

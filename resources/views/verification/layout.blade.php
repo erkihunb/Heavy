@@ -70,6 +70,6 @@
             @endif
         </footer>
     @endif
-    <p class="mx-auto max-w-2xl px-4 pb-8 text-center text-xs text-muted-foreground" translate="no">Design and Developed By <span class="font-medium">Erkihun Bewket</span></p>
+    <p class="mx-auto max-w-2xl px-4 pb-8 text-center text-xs text-muted-foreground" translate="no">Designed &amp; Developed by <span class="font-medium">Erkihun Bewket</span></p>
 </body>
 </html>
