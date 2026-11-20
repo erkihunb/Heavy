@@ -3,7 +3,7 @@
 return [
     'dashboard' => 'ዳሽቦርድ',
     'vehicles' => 'ተሽከርካሪዎች',
-    'review_queue' => 'የግምገማ ወረፋ',
+    'review_queue' => 'በሂደት ላይ ያሉ ማመልከቻዎች',
     'payments' => 'የክፍያ ማረጋገጫዎች',
     'fee_schedules' => 'የአገልግሎት ክፍያ ተመን',
     'reports' => 'ሪፖርቶች',

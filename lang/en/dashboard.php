@@ -144,7 +144,7 @@ return [
         'by' => 'By',
     ],
     'actions' => [
-        'queue' => 'Review queue',
+        'queue' => 'Applications in process',
         'payments' => 'Verify payments',
         'scan' => 'Check a permit',
         'collect' => 'Payments to take',

@@ -3,7 +3,7 @@
 return [
     'dashboard' => 'Dashboard',
     'vehicles' => 'Vehicles',
-    'review_queue' => 'Review queue',
+    'review_queue' => 'Applications in process',
     'payments' => 'Payments',
     'fee_schedules' => 'Fee schedule',
     'reports' => 'Reports',

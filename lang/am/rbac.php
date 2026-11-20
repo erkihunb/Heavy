@@ -10,7 +10,7 @@ return [
     'permission_labels' => [
         'dashboard.view' => 'ዳሽቦርድ መመልከት',
         'permits.apply' => 'የአመልካች መለያ',
-        'permits.view-queue' => 'የግምገማ ወረፋውን መክፈት',
+        'permits.view-queue' => 'በሂደት ላይ ያሉ ማመልከቻዎችን ዝርዝር መክፈት',
         'permits.view-issued' => 'የተሰጡ ፈቃዶችን ማየት',
         'permits.review' => 'ማመልከቻዎችን መመርመርና መገምገም',
         'permits.approve' => 'ማመልከቻዎችን ማጽደቅ ወይም ውድቅ ማድረግ',

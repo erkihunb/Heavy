@@ -9,7 +9,7 @@ return [
     'permission_labels' => [
         'dashboard.view' => 'See the dashboard',
         'permits.apply' => 'Applicant account',
-        'permits.view-queue' => 'Open the review queue',
+        'permits.view-queue' => 'Open the list of applications in process',
         'permits.view-issued' => 'See issued permits',
         'permits.review' => 'Review applications',
         'permits.approve' => 'Approve or reject applications',

@@ -28,7 +28,7 @@ return [
     'table' => [
         'approved' => 'ፀድቋል',
         'title' => 'በደብዳቤው ያሉ ተሽከርካሪዎች',
-        'select_all' => 'ውሳኔ የሚጠብቁትን ሁሉ ምረጥ',
+        'select_all' => 'ማጽደቅ የሚጠብቁትን ሁሉ ምረጥ',
         'select' => ':plate ምረጥ',
         'plate' => 'ሰሌዳ',
         'type' => 'የተሽከርካሪ ዓይነት',
@@ -112,10 +112,10 @@ return [
     'go_issue' => 'የደብዳቤውን ፈቃዶች ስጥ',
     'queue_row' => 'ደብዳቤ :letter · :count ተሽከርካሪዎች · :total',
     'go_decide' => 'ወስን ወይም ለግምገማ ላክ',
-    'queue_row_review' => 'ደብዳቤ :letter · ውሳኔ የሚጠብቁ :count ተሽከርካሪዎች',
+    'queue_row_review' => 'ደብዳቤ :letter · ማጽደቅ የሚጠብቁ :count ተሽከርካሪዎች',
     'messages' => [
         'returned' => ':count ተሽከርካሪዎች ለማስተካከያ ተመልሰዋል።',
-        'resubmitted' => 'የተስተካከሉ :count ተሽከርካሪዎች ለውሳኔ እንደገና ተልከዋል።',
+        'resubmitted' => 'የተስተካከሉ :count ተሽከርካሪዎች ለማጽደቅ እንደገና ተልከዋል።',
         'sent_for_review' => ':count ተሽከርካሪዎች ለግምገማ ተልከዋል።',
         'registered' => 'ደብዳቤው ከ:count ተሽከርካሪዎች ጋር ተመዝግቧል፤ እያንዳንዱ የራሱ ጥያቄ አለው።',
         'recommended' => 'ለ:count ተሽከርካሪዎች የውሳኔ ሀሳብ ተመዝግቧል።',
