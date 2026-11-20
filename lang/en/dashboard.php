@@ -132,6 +132,22 @@ return [
         'empty' => 'No permits yet.',
     ],
     'activity' => [
+        // What was done at that step, said as done: never as something still waited for.
+        'steps' => [
+            'draft' => 'Returned to draft',
+            'submitted' => 'Sent for approval',
+            'under_review' => 'Review started',
+            'changes_requested' => 'Returned for changes',
+            'rejected' => 'Rejected',
+            'awaiting_payment' => 'Approved',
+            'payment_submitted' => 'Payment recorded',
+            'payment_confirmed' => 'Payment confirmed',
+            'issued' => 'Permit issued',
+            'active' => 'Permit came into force',
+            'expired' => 'Permit expired',
+            'revoked' => 'Permit revoked',
+            'withdrawn' => 'Application withdrawn',
+        ],
         'title' => 'Recent activity',
         'empty' => 'Nothing has happened yet.',
         'created' => 'Application started',

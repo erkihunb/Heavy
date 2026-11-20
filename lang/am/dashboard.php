@@ -132,6 +132,22 @@ return [
         'empty' => 'ምንም የተመዘገበ ፈቃድ የለም።',
     ],
     'activity' => [
+        // What was done at that step, said as done: never as something still waited for.
+        'steps' => [
+            'draft' => 'ወደ ረቂቅ ተመልሷል',
+            'submitted' => 'ለማጽደቅ ተልኳል',
+            'under_review' => 'ግምገማ ተጀምሯል',
+            'changes_requested' => 'ለማስተካከያ ተመልሷል',
+            'rejected' => 'ውድቅ ተደርጓል',
+            'awaiting_payment' => 'ጸድቋል',
+            'payment_submitted' => 'ክፍያ ተመዝግቧል',
+            'payment_confirmed' => 'ክፍያ ተረጋግጧል',
+            'issued' => 'ፈቃድ ተሰጥቷል',
+            'active' => 'ፈቃዱ ሥራ ላይ ውሏል',
+            'expired' => 'ፈቃዱ ጊዜው አብቅቷል',
+            'revoked' => 'ፈቃዱ ተሰርዟል',
+            'withdrawn' => 'ማመልከቻው ተሰርዟል',
+        ],
         'title' => 'የቅርብ ጊዜ የሥራ እንቅስቃሴ',
         'empty' => 'እስካሁን የተከናወነ ተግባር የለም።',
         'created' => 'ማመልከቻ ተመዝግቧል',

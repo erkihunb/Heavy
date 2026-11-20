@@ -999,9 +999,11 @@ export default function Dashboard({
                                                         )}
                                                     </span>
                                                 ) : (
-                                                    <StatusBadge
-                                                        status={step.to}
-                                                    />
+                                                    <span className="font-medium">
+                                                        {t(
+                                                            `dashboard.activity.steps.${step.to}` as TranslationKey,
+                                                        )}
+                                                    </span>
                                                 )}
                                             </Td>
                                             <Td muted>{step.actor ?? '—'}</Td>
